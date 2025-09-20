@@ -134,35 +134,29 @@ export const SidebarNav = () => {
         </nav>
       </div>
       <div className="border-t border-border/30 pt-4">
-        {!isCollapsed && ( // Condicionalmente renderiza o botão de autenticação completo
-          <Button
-            variant="outline"
-            className="w-full border-neural text-neural hover:bg-neural/10"
-            onClick={handleAuthButtonClick}
-          >
-            {user ? (
-              <>
-                <LogOut className="mr-2 h-4 w-4" />
-                Sair
-              </>
-            ) : (
-              <>
-                <CheckCircle className="mr-2 h-4 w-4" />
-                Login / Cadastro
-              </>
-            )}
-          </Button>
-        )}
-        {isCollapsed && ( // Renderiza apenas o ícone do botão de autenticação quando recolhido
-          <Button
-            variant="ghost"
-            size="icon"
-            className="w-full h-12 text-neural hover:bg-neural/10"
-            onClick={handleAuthButtonClick}
-          >
-            {user ? <LogOut className="h-6 w-6" /> : <CheckCircle className="h-6 w-6" />}
-          </Button>
-        )}
+        {/* O botão de autenticação agora sempre exibe o texto, ajustando o layout */}
+        <Button
+          variant="outline"
+          className={cn(
+            "w-full border-neural text-neural hover:bg-neural/10",
+            isCollapsed ? "justify-center px-0" : "justify-start" // Ajusta o alinhamento
+          )}
+          onClick={handleAuthButtonClick}
+        >
+          {user ? (
+            <>
+              <LogOut className={cn(isCollapsed ? 'h-6 w-6' : 'mr-2 h-4 w-4')} />
+              {!isCollapsed && "Sair"} {/* Mostra o texto apenas se não estiver recolhido */}
+              {isCollapsed && <span className="sr-only">Sair</span>} {/* Acessibilidade para ícone */}
+            </>
+          ) : (
+            <>
+              <CheckCircle className={cn(isCollapsed ? 'h-6 w-6' : 'mr-2 h-4 w-4')} />
+              {!isCollapsed && "Login / Cadastro"} {/* Mostra o texto apenas se não estiver recolhido */}
+              {isCollapsed && <span className="sr-only">Login / Cadastro</span>} {/* Acessibilidade para ícone */}
+            </>
+          )}
+        </Button>
       </div>
     </div>
   );

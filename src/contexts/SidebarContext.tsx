@@ -17,8 +17,9 @@ export const SidebarProvider: React.FC<{ children: React.ReactNode }> = ({ child
   };
 
   // Define as classes de largura e margem com base no estado do sidebar
-  const sidebarWidthClass = useMemo(() => (isSidebarOpen ? 'w-64' : 'w-16'), [isSidebarOpen]);
-  const mainContentMarginClass = useMemo(() => (isSidebarOpen ? 'ml-64' : 'ml-16'), [isSidebarOpen]);
+  // Ajustado para 'w-32' quando recolhido para acomodar o texto do botão de login/logout
+  const sidebarWidthClass = useMemo(() => (isSidebarOpen ? 'w-64' : 'w-32'), [isSidebarOpen]);
+  const mainContentMarginClass = useMemo(() => (isSidebarOpen ? 'ml-64' : 'ml-32'), [isSidebarOpen]);
 
   const value = {
     isSidebarOpen,
