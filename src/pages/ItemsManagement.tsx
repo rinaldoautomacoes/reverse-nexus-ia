@@ -19,10 +19,9 @@ type ItemInsert = TablesInsert<'items'>;
 type ItemUpdate = TablesUpdate<'items'>;
 
 const itemStatusOptions = [
-  { value: 'pendente', label: 'Pendente' },
-  { value: 'coletado', label: 'Coletado' },
-  { value: 'processado', label: 'Processado' },
-  { value: 'descartado', label: 'Descartado' },
+  { value: 'pendente', label: 'Pendentes' },
+  { value: 'coletado', label: 'Em Trânsito' },
+  { value: 'processado', label: 'Entregues' },
 ];
 
 const ItemForm = ({ initialData, onSave, onCancel }: { initialData?: Item, onSave: (data: ItemInsert | ItemUpdate) => void, onCancel: () => void }) => {
