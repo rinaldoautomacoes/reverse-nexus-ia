@@ -16,6 +16,8 @@ import {
   ChevronRight,
   Menu,
   User as UserIcon,
+  Truck, // Adicionado Truck para o novo item
+  Warehouse, // Adicionado Warehouse para o novo item
 } from 'lucide-react';
 import { useAuth } from '@/hooks/use-auth';
 import { supabase } from '@/integrations/supabase/client';
@@ -28,6 +30,7 @@ export const SidebarNav = () => {
   const navigate = useNavigate();
   const { user, profile } = useAuth();
   const isAdmin = profile?.role === 'admin';
+
   const isMobile = useIsMobile();
   const [isSheetOpen, setIsSheetOpen] = React.useState(false);
   const { isSidebarOpen, toggleSidebar, sidebarWidthClass } = useSidebar();
@@ -55,6 +58,12 @@ export const SidebarNav = () => {
       label: 'Consultar Coletas',
       icon: ListChecks,
       path: '/coletas',
+      roles: ['standard', 'admin'],
+    },
+    {
+      label: 'Situação da Coleta', // Novo item
+      icon: Truck, // Ícone para Situação da Coleta
+      path: '/collection-status',
       roles: ['standard', 'admin'],
     },
     {
