@@ -7,7 +7,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"; // Importado DropdownMenu components
-import { ArrowLeft, Package, MapPin, Calendar, Search, Filter, Eye, Edit, Trash2, MessageSquareText, Mail, RefreshCcw, Clock, CheckCircle } from "lucide-react"; // Adicionado RefreshCcw, Clock, CheckCircle
+import { ArrowLeft, Package, MapPin, Calendar, Search, Filter, Eye, Edit, Trash2, MessageSquareText, Mail, RefreshCcw, Clock, CheckCircle, ListChecks } from "lucide-react"; // Adicionado ListChecks
 import { useNavigate } from "react-router-dom";
 import { useState } from "react";
 import { useToast } from "@/hooks/use-toast";
@@ -17,6 +17,7 @@ import type { Tables, TablesInsert, TablesUpdate } from "@/integrations/supabase
 import { useAuth } from "@/hooks/use-auth";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
+import { CollectionItemsStatusDialog } from "@/components/CollectionItemsStatusDialog"; // Importar o novo componente
 
 type Coleta = Tables<'coletas'>;
 type ColetaInsert = TablesInsert<'coletas'>;
@@ -175,6 +176,8 @@ const Coletas = () => {
   const [editingColeta, setEditingColeta] = useState<Coleta | null>(null);
   const [isViewDetailsDialogOpen, setIsViewDetailsDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const [isCollectionItemsStatusDialogOpen, setIsCollectionItemsStatusDialogOpen] = useState(false); // Novo estado
+  const [selectedCollectionForItems, setSelectedCollectionForItems] = useState<{ id: string, name: string } | null>(null); // Novo estado
 
   const { data: coletas, isLoading, error } = useQuery<Coleta[], Error>({
     queryKey: ['coletas', user?.id, statusFilter],
@@ -245,8 +248,13 @@ const Coletas = () => {
     }
   };
 
-  const handleStatusChange = (coletaId: string, newStatus: 'pendente' | 'concluida') => {
+  const handleStatusChange = (coletaId: string, newStatus: 'pendente' | 'concluida' | 'agendada') => {
     updateColetaMutation.mutate({ id: coletaId, status_coleta: newStatus });
+  };
+
+  const handleOpenCollectionItemsStatus = (coleta: Coleta) => {
+    setSelectedCollectionForItems({ id: coleta.id, name: coleta.parceiro || 'Coleta' });
+    setIsCollectionItemsStatusDialogOpen(true);
   };
 
   const getStatusColor = (status: string | null) => {
@@ -273,54 +281,6 @@ const Coletas = () => {
       default:
         return status || 'Desconhecido';
     }
-  };
-
-  const handleSendWhatsApp = (coleta: Coleta) => {
-    if (!coleta.telefone) {
-      toast({
-        title: "Telefone não disponível",
-        description: "Não há um número de telefone cadastrado para esta coleta.",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    const clientName = coleta.contato || coleta.parceiro || 'cliente';
-    const formattedDate = coleta.previsao_coleta ? format(new Date(coleta.previsao_coleta), "dd/MM/yyyy", { locale: ptBR }) : 'N/A';
-    const message = encodeURIComponent(
-      `Prezado(a) ${clientName}, Venho informar que a coleta foi agendada para o dia ${formattedDate}. Desde já agradecemos.`
-    );
-    const whatsappUrl = `https://wa.me/${coleta.telefone.replace(/\D/g, '')}?text=${message}`;
-    
-    window.open(whatsappUrl, '_blank');
-  };
-
-  const handleSendEmail = (coleta: Coleta) => {
-    if (!coleta.email) {
-      toast({
-        title: "Email não disponível",
-        description: "Não há um endereço de email cadastrado para esta coleta.",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    const clientName = coleta.contato || coleta.parceiro || 'cliente';
-    const formattedDate = coleta.previsao_coleta ? format(new Date(coleta.previsao_coleta), "dd/MM/yyyy", { locale: ptBR }) : 'N/A';
-    const subject = encodeURIComponent(`Confirmação de Coleta Agendada - LogiReverseIA - ${coleta.parceiro || 'N/A'}`);
-    const body = encodeURIComponent(
-      `Prezado(a) ${clientName},\n\nVenho informar que a coleta foi agendada para o dia ${formattedDate}.` +
-      `\n\nDetalhes da Coleta:\n` +
-      `Cliente: ${coleta.parceiro || 'N/A'}\n` +
-      `Endereço: ${coleta.endereco || 'N/A'}\n` +
-      `Quantidade de Aparelhos: ${coleta.qtd_aparelhos_solicitado || 0}\n` +
-      `Tipo de Material: ${coleta.modelo_aparelho || 'N/A'}\n` +
-      `Status: ${getStatusText(coleta.status_coleta)}\n` +
-      `\nDesde já agradecemos.`
-    );
-    const mailtoUrl = `mailto:${coleta.email}?subject=${subject}&body=${body}`;
-    
-    window.open(mailtoUrl, '_blank');
   };
 
   const filteredColetas = coletas?.filter(coleta => {
@@ -546,11 +506,24 @@ const Coletas = () => {
                           <DropdownMenuItem onClick={() => handleStatusChange(coleta.id, 'pendente')}>
                               <Clock className="mr-2 h-3 w-3 text-neural" /> Marcar como Pendente
                           </DropdownMenuItem>
+                          <DropdownMenuItem onClick={() => handleStatusChange(coleta.id, 'agendada')}>
+                              <Calendar className="mr-2 h-3 w-3 text-accent" /> Marcar como Agendada
+                          </DropdownMenuItem>
                           <DropdownMenuItem onClick={() => handleStatusChange(coleta.id, 'concluida')}>
                               <CheckCircle className="mr-2 h-3 w-3 text-primary" /> Marcar como Concluída
                           </DropdownMenuItem>
                         </DropdownMenuContent>
                       </DropdownMenu>
+
+                      <Button 
+                        size="sm" 
+                        variant="outline" 
+                        className="border-primary text-primary hover:bg-primary/10"
+                        onClick={() => handleOpenCollectionItemsStatus(coleta)} // Novo botão
+                      >
+                        <ListChecks className="mr-1 h-3 w-3" />
+                        Situação dos Itens
+                      </Button>
 
                       {coleta.status_coleta === 'agendada' && (
                         <Dialog open={isEditDialogOpen && editingColeta?.id === coleta.id} onOpenChange={setIsEditDialogOpen}>
@@ -614,6 +587,14 @@ const Coletas = () => {
           )}
         </div>
       </div>
+      {selectedCollectionForItems && (
+        <CollectionItemsStatusDialog
+          collectionId={selectedCollectionForItems.id}
+          collectionName={selectedCollectionForItems.name}
+          isOpen={isCollectionItemsStatusDialogOpen}
+          onClose={() => setIsCollectionItemsStatusDialogOpen(false)}
+        />
+      )}
     </div>
   );
 };
