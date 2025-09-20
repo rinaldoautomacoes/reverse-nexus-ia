@@ -2,72 +2,202 @@ import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { ArrowLeft, TrendingUp, BarChart3, Download, FileText, Calendar, Filter } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { ArrowLeft, TrendingUp, BarChart3, Download, FileText, Calendar, Filter, Edit, Trash2 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
-import { NewReportDialog, generateReportPDF } from "@/components/NewReportDialog";
+import { generateReportPDF } from "@/components/CreateReportDialog"; // Importar a função de geração de PDF
+import { CreateReportDialog } from "@/components/CreateReportDialog"; // Importar o novo componente de diálogo
+import { ReportForm } from "@/components/ReportForm"; // Importar o formulário reutilizável
 import { useToast } from "@/hooks/use-toast";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
+import type { Tables, TablesInsert, TablesUpdate } from "@/integrations/supabase/types";
+import { useAuth } from "@/hooks/use-auth";
+
+type Coleta = Tables<'coletas'>;
+type Item = Tables<'items'>;
+type Report = Tables<'reports'>;
+type ReportInsert = TablesInsert<'reports'>;
+type ReportUpdate = TablesUpdate<'reports'>;
 
 export const Relatorios = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
-  const [relatorios, setRelatorios] = useState([
-    {
-      id: 1,
-      titulo: "Relatório Mensal",
-      periodo: "Janeiro 2024",
-      tipo: "Completo",
-      status: "Pronto",
-      formato: "PDF",
-      descricao: "Análise completa das operações do mês"
+  const { user } = useAuth();
+  const queryClient = useQueryClient();
+
+  const [searchTerm, setSearchTerm] = useState("");
+  const [statusFilter, setStatusFilter] = useState("todos");
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const [editingReport, setEditingReport] = useState<Report | null>(null);
+
+  // --- Fetching Metrics ---
+  const { data: coletasData, isLoading: isLoadingColetas, error: coletasError } = useQuery<Coleta[], Error>({
+    queryKey: ['coletasForReports', user?.id],
+    queryFn: async () => {
+      if (!user?.id) return [];
+      const { data, error } = await supabase
+        .from('coletas')
+        .select('id, status_coleta')
+        .eq('user_id', user.id);
+      if (error) throw new Error(error.message);
+      return data;
     },
-    {
-      id: 2,
-      titulo: "Análise de Performance",
-      periodo: "Últimos 7 dias", 
-      tipo: "Operacional",
-      status: "Gerando",
-      formato: "Excel",
-      descricao: "Performance operacional semanal"
+    enabled: !!user?.id,
+  });
+
+  const { data: itemsData, isLoading: isLoadingItems, error: itemsError } = useQuery<Item[], Error>({
+    queryKey: ['itemsForReports', user?.id],
+    queryFn: async () => {
+      if (!user?.id) return [];
+      const { data, error } = await supabase
+        .from('items')
+        .select('quantity, status')
+        .eq('user_id', user.id);
+      if (error) throw new Error(error.message);
+      return data;
     },
-    {
-      id: 3,
-      titulo: "Eficiência de Rotas",
-      periodo: "Dezembro 2023",
-      tipo: "IA Insights",
-      status: "Pronto", 
-      formato: "PDF",
-      descricao: "Análise de eficiência com insights de IA"
+    enabled: !!user?.id,
+  });
+
+  const calculateMetrics = (coletas: Coleta[] | undefined, items: Item[] | undefined) => {
+    if (!user?.id || (!coletas && !items)) {
+      return [
+        { titulo: "Coletas Finalizadas", valor: "0", unidade: "", variacao: "0%" },
+        { titulo: "Itens Entregues", valor: "0", unidade: "itens", variacao: "0%" },
+        { titulo: "Total Geral Itens", valor: "0", unidade: "itens", variacao: "0%" },
+        { titulo: "Eficiência IA", valor: "94.2%", unidade: "", variacao: "+8%" }, // Placeholder
+      ];
     }
-  ]);
 
-  const metricas = [
-    { titulo: "Total Coletado", valor: "2.847", unidade: "itens", variacao: "+12%" },
-    { titulo: "Eficiência IA", valor: "94.2%", unidade: "", variacao: "+8%" },
-    { titulo: "Economia Combustível", valor: "R$ 3.240", unidade: "", variacao: "+22%" },
-    { titulo: "Tempo Médio", valor: "2.4h", unidade: "por rota", variacao: "-15%" }
-  ];
+    const totalColetasFinalizadas = coletas?.filter(c => c.status_coleta === 'concluida').length || 0;
+    const totalItensEntregues = items?.filter(item => item.status === 'processado').reduce((sum, item) => sum + item.quantity, 0) || 0;
+    const totalGeralItens = items?.reduce((sum, item) => sum + item.quantity, 0) || 0;
 
-  const handleNewReport = (newReport: any) => {
-    setRelatorios(prev => [newReport, ...prev]);
+    return [
+      { titulo: "Coletas Finalizadas", valor: totalColetasFinalizadas.toString(), unidade: "", variacao: "+12%" }, // Placeholder de variação
+      { titulo: "Itens Entregues", valor: totalItensEntregues.toString(), unidade: "itens", variacao: "+15%" }, // Placeholder de variação
+      { titulo: "Total Geral Itens", valor: totalGeralItens.toString(), unidade: "itens", variacao: "+10%" }, // Placeholder de variação
+      { titulo: "Eficiência IA", valor: "94.2%", unidade: "", variacao: "+8%" }, // Placeholder
+    ];
   };
 
-  const handleDownload = async (relatorio: any) => {
-    if (relatorio.status !== 'Pronto') return;
+  const dashboardMetrics = calculateMetrics(coletasData, itemsData);
 
-    try {
-      await generateReportPDF(relatorio);
-      toast({
-        title: "Download Concluído!",
-        description: `${relatorio.titulo} foi baixado com sucesso.`,
-      });
-    } catch (error) {
-      toast({
-        title: "Erro no Download",
-        description: "Falha ao gerar o PDF. Tente novamente.",
-        variant: "destructive"
-      });
+  // --- Fetching Reports ---
+  const { data: reports, isLoading: isLoadingReports, error: reportsError } = useQuery<Report[], Error>({
+    queryKey: ['reports', user?.id, statusFilter],
+    queryFn: async () => {
+      if (!user?.id) return [];
+      let query = supabase
+        .from('reports')
+        .select('*')
+        .eq('user_id', user.id);
+      
+      if (statusFilter !== "todos") {
+        query = query.eq('status', statusFilter);
+      }
+
+      const { data, error } = await query;
+      if (error) throw new Error(error.message);
+      return data;
+    },
+    enabled: !!user?.id,
+  });
+
+  // --- Mutations for Reports ---
+  const updateReportMutation = useMutation({
+    mutationFn: async (updatedReport: ReportUpdate) => {
+      const { data, error } = await supabase
+        .from('reports')
+        .update(updatedReport)
+        .eq('id', updatedReport.id as string)
+        .select()
+        .single();
+      if (error) throw new Error(error.message);
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['reports', user?.id] });
+      toast({ title: "Relatório atualizado!", description: "As informações do relatório foram atualizadas com sucesso." });
+      setIsEditDialogOpen(false);
+      setEditingReport(null);
+    },
+    onError: (err) => {
+      toast({ title: "Erro ao atualizar relatório", description: err.message, variant: "destructive" });
+    },
+  });
+
+  const deleteReportMutation = useMutation({
+    mutationFn: async (reportId: string) => {
+      const { error } = await supabase
+        .from('reports')
+        .delete()
+        .eq('id', reportId);
+      if (error) throw new Error(error.message);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['reports', user?.id] });
+      toast({ title: "Relatório excluído!", description: "O relatório foi removido com sucesso." });
+    },
+    onError: (err) => {
+      toast({ title: "Erro ao excluir relatório", description: err.message, variant: "destructive" });
+    },
+  });
+
+  const handleUpdateReport = (data: ReportUpdate) => {
+    updateReportMutation.mutate(data);
+  };
+
+  const handleDeleteReport = (id: string) => {
+    if (window.confirm("Tem certeza que deseja excluir este relatório?")) {
+      deleteReportMutation.mutate(id);
     }
   };
+
+  const getStatusColor = (status: string | null) => {
+    switch (status) {
+      case 'Pronto':
+        return 'bg-primary/20 text-primary';
+      case 'Gerando':
+        return 'bg-accent/20 text-accent';
+      case 'Falha':
+        return 'bg-destructive/20 text-destructive';
+      default:
+        return 'bg-muted/20 text-muted-foreground';
+    }
+  };
+
+  const filteredReports = reports?.filter(report => {
+    const matchesSearch = (report.title?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                           report.description?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                           report.period?.toLowerCase().includes(searchTerm.toLowerCase()));
+    const matchesStatus = statusFilter === "todos" || report.status === statusFilter;
+    return matchesSearch && matchesStatus;
+  }) || [];
+
+  if (isLoadingColetas || isLoadingItems || isLoadingReports) {
+    return (
+      <div className="min-h-screen bg-background ai-pattern p-6 flex items-center justify-center">
+        <div className="text-center">
+          <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin mx-auto mb-2" />
+          <p className="text-sm text-muted-foreground">Carregando dados de relatórios...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (coletasError || itemsError || reportsError) {
+    return (
+      <div className="min-h-screen bg-background ai-pattern p-6">
+        <div className="max-w-6xl mx-auto text-center text-destructive">
+          <p>Erro ao carregar dados: {coletasError?.message || itemsError?.message || reportsError?.message}</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-background ai-pattern p-6">
@@ -93,7 +223,7 @@ export const Relatorios = () => {
 
           {/* Métricas Rápidas */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-            {metricas.map((metrica, index) => (
+            {dashboardMetrics.map((metrica, index) => (
               <Card key={index} className="card-futuristic">
                 <CardContent className="p-4">
                   <div className="space-y-2">
@@ -144,47 +274,119 @@ export const Relatorios = () => {
                   Relatórios Disponíveis
                 </CardTitle>
                 <div className="flex gap-2">
-                  <Button variant="outline" size="sm" className="border-accent text-accent">
-                    <Filter className="mr-2 h-4 w-4" />
-                    Filtros
-                  </Button>
-                  <NewReportDialog onReportCreated={handleNewReport} />
+                  <div className="relative">
+                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
+                    <Input
+                      placeholder="Buscar relatório..."
+                      value={searchTerm}
+                      onChange={(e) => setSearchTerm(e.target.value)}
+                      className="pl-10 w-48"
+                    />
+                  </div>
+                  <Select value={statusFilter} onValueChange={setStatusFilter}>
+                    <SelectTrigger className="w-40">
+                      <Filter className="mr-2 h-4 w-4" />
+                      <SelectValue placeholder="Filtrar" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="todos">Todos</SelectItem>
+                      <SelectItem value="Pronto">Pronto</SelectItem>
+                      <SelectItem value="Gerando">Gerando</SelectItem>
+                      <SelectItem value="Falha">Falha</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <CreateReportDialog />
                 </div>
               </div>
             </CardHeader>
             <CardContent className="space-y-4">
-              {relatorios.map((relatorio, index) => (
-                <div key={index} className="flex items-center justify-between p-4 rounded-lg border border-primary/10 bg-slate-darker/10">
-                  <div className="flex flex-col gap-1">
-                    <h3 className="font-semibold">{relatorio.titulo}</h3>
-                    <div className="flex items-center gap-4 text-sm text-muted-foreground">
-                      <span>{relatorio.periodo}</span>
-                      <Badge variant="secondary" className="text-xs">
-                        {relatorio.tipo}
+              {filteredReports.length > 0 ? (
+                filteredReports.map((report, index) => (
+                  <div key={report.id} className="flex items-center justify-between p-4 rounded-lg border border-primary/10 bg-slate-darker/10">
+                    <div className="flex flex-col gap-1">
+                      <h3 className="font-semibold">{report.title}</h3>
+                      <div className="flex items-center gap-4 text-sm text-muted-foreground">
+                        <span>{report.period}</span>
+                        <Badge variant="secondary" className="text-xs">
+                          {report.type}
+                        </Badge>
+                        <span>{report.format}</span>
+                      </div>
+                    </div>
+                    
+                    <div className="flex items-center gap-3">
+                      <Badge 
+                        variant={report.status === 'Pronto' ? 'default' : 'secondary'}
+                        className={getStatusColor(report.status)}
+                      >
+                        {report.status}
                       </Badge>
-                      <span>{relatorio.formato}</span>
+                      <Button 
+                        size="sm" 
+                        disabled={report.status !== 'Pronto'}
+                        className="bg-gradient-primary hover:bg-gradient-primary/80 glow-effect"
+                        onClick={() => handleDownload(report)}
+                      >
+                        <Download className="mr-2 h-4 w-4" />
+                        Download
+                      </Button>
+                      <Dialog open={isEditDialogOpen && editingReport?.id === report.id} onOpenChange={setIsEditDialogOpen}>
+                        <DialogTrigger asChild>
+                          <Button 
+                            size="sm" 
+                            variant="outline" 
+                            className="border-accent text-accent hover:bg-accent/10"
+                            onClick={() => {
+                              setEditingReport(report);
+                              setIsEditDialogOpen(true);
+                            }}
+                          >
+                            <Edit className="mr-1 h-3 w-3" />
+                            Editar
+                          </Button>
+                        </DialogTrigger>
+                        <DialogContent className="sm:max-w-[500px] bg-card border-primary/20">
+                          <DialogHeader>
+                            <DialogTitle className="flex items-center gap-2 gradient-text">
+                              <FileText className="h-5 w-5" />
+                              Editar Relatório
+                            </DialogTitle>
+                          </DialogHeader>
+                          {editingReport && editingReport.id === report.id && (
+                            <ReportForm 
+                              initialData={editingReport}
+                              onSave={handleUpdateReport}
+                              onCancel={() => {
+                                setIsEditDialogOpen(false);
+                                setEditingReport(null);
+                              }}
+                              isPending={updateReportMutation.isPending}
+                            />
+                          )}
+                        </DialogContent>
+                      </Dialog>
+                      <Button 
+                        size="sm" 
+                        variant="outline" 
+                        className="border-destructive text-destructive hover:bg-destructive/10"
+                        onClick={() => handleDeleteReport(report.id)}
+                        disabled={deleteReportMutation.isPending}
+                      >
+                        <Trash2 className="mr-1 h-3 w-3" />
+                        Excluir
+                      </Button>
                     </div>
                   </div>
-                  
-                  <div className="flex items-center gap-3">
-                    <Badge 
-                      variant={relatorio.status === 'Pronto' ? 'default' : 'secondary'}
-                      className={relatorio.status === 'Pronto' ? 'bg-primary/20 text-primary' : ''}
-                    >
-                      {relatorio.status}
-                    </Badge>
-                    <Button 
-                      size="sm" 
-                      disabled={relatorio.status !== 'Pronto'}
-                      className="bg-gradient-primary hover:bg-gradient-primary/80 glow-effect"
-                      onClick={() => handleDownload(relatorio)}
-                    >
-                      <Download className="mr-2 h-4 w-4" />
-                      Download
-                    </Button>
-                  </div>
+                ))
+              ) : (
+                <div className="p-12 text-center text-muted-foreground">
+                  <FileText className="h-12 w-12 mx-auto mb-4" />
+                  <h3 className="text-lg font-semibold mb-2">Nenhum relatório encontrado</h3>
+                  <p className="text-muted-foreground">
+                    Crie seu primeiro relatório para começar.
+                  </p>
                 </div>
-              ))}
+              )}
             </CardContent>
           </Card>
         </div>

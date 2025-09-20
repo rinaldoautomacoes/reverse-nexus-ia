@@ -296,6 +296,50 @@ export type Database = {
           },
         ]
       }
+      reports: {
+        Row: {
+          id: string
+          user_id: string
+          created_at: string
+          title: string
+          period: string
+          type: string
+          format: string
+          status: string
+          description: string | null
+        }
+        Insert: {
+          id?: string
+          user_id: string
+          created_at?: string
+          title: string
+          period: string
+          type: string
+          format?: string
+          status?: string
+          description?: string | null
+        }
+        Update: {
+          id?: string
+          user_id?: string
+          created_at?: string
+          title?: string
+          period?: string
+          type?: string
+          format?: string
+          status?: string
+          description?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "reports_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
