@@ -6,7 +6,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { ArrowLeft, PlusCircle, Edit, Trash2, Package, Search, Filter } from "lucide-react";
+import { ArrowLeft, PlusCircle, Edit, Trash2, Package, Search, Filter, Upload, Image as ImageIcon } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -30,11 +30,77 @@ const ItemForm = ({ initialData, onSave, onCancel }: { initialData?: Item, onSav
     quantity: 1,
     status: 'pendente',
     description: '',
+    model: '', // Novo campo
+    image_url: '', // Novo campo
     user_id: '' // Will be set by the mutation
   });
+  const [imageFile, setImageFile] = useState<File | null>(null);
+  const [isUploading, setIsUploading] = useState(false);
+  const { toast } = useToast();
+  const { user } = useAuth();
 
-  const handleInputChange = (field: keyof (ItemInsert | ItemUpdate), value: string | number) => {
+  const handleInputChange = (field: keyof (ItemInsert | ItemUpdate), value: string | number | null) => {
     setFormData(prev => ({ ...prev, [field]: value }));
+  };
+
+  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files[0]) {
+      setImageFile(e.target.files[0]);
+    } else {
+      setImageFile(null);
+    }
+  };
+
+  const handleUploadImage = async () => {
+    if (!imageFile || !user?.id) {
+      toast({
+        title: "Erro no upload",
+        description: "Nenhum arquivo selecionado ou usuário não autenticado.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setIsUploading(true);
+    const fileExtension = imageFile.name.split('.').pop();
+    const filePath = `${user.id}/${Date.now()}.${fileExtension}`;
+
+    try {
+      const { data, error } = await supabase.storage
+        .from('item-images') // Nome do bucket que você criará
+        .upload(filePath, imageFile, {
+          cacheControl: '3600',
+          upsert: false,
+        });
+
+      if (error) {
+        throw error;
+      }
+
+      const { data: publicUrlData } = supabase.storage
+        .from('item-images')
+        .getPublicUrl(filePath);
+
+      if (publicUrlData.publicUrl) {
+        setFormData(prev => ({ ...prev, image_url: publicUrlData.publicUrl }));
+        toast({
+          title: "Upload de imagem",
+          description: "Imagem enviada com sucesso!",
+        });
+      } else {
+        throw new Error("Não foi possível obter a URL pública da imagem.");
+      }
+
+    } catch (error: any) {
+      console.error("Erro ao fazer upload da imagem:", error);
+      toast({
+        title: "Erro no upload",
+        description: error.message || "Falha ao enviar a imagem. Tente novamente.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsUploading(false);
+    }
   };
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -53,6 +119,14 @@ const ItemForm = ({ initialData, onSave, onCancel }: { initialData?: Item, onSav
           required
         />
       </div>
+      <div className="space-y-2">
+        <Label htmlFor="model">Modelo</Label> {/* Novo campo */}
+        <Input
+          id="model"
+          value={formData.model || ''}
+          onChange={(e) => handleInputChange("model", e.target.value)}
+        />
+      </div>
       <div className="grid grid-cols-2 gap-4">
         <div className="space-y-2">
           <Label htmlFor="quantity">Quantidade</Label>
@@ -60,7 +134,7 @@ const ItemForm = ({ initialData, onSave, onCancel }: { initialData?: Item, onSav
             id="quantity"
             type="number"
             value={formData.quantity}
-            onChange={(e) => handleInputChange("quantity", parseInt(e.target.value))}
+            onChange={(e) => handleInputChange("quantity", parseInt(e.target.value) || 0)}
             required
             min={1}
           />
@@ -88,6 +162,40 @@ const ItemForm = ({ initialData, onSave, onCancel }: { initialData?: Item, onSav
           rows={3}
         />
       </div>
+      
+      {/* Campo de upload de imagem */}
+      <div className="space-y-2">
+        <Label htmlFor="image">Foto do Produto</Label>
+        <div className="flex items-center gap-2">
+          <Input
+            id="image"
+            type="file"
+            accept="image/*"
+            onChange={handleImageChange}
+            className="flex-1"
+          />
+          <Button 
+            type="button" 
+            onClick={handleUploadImage} 
+            disabled={!imageFile || isUploading}
+            className="bg-gradient-secondary hover:bg-gradient-secondary/80"
+          >
+            {isUploading ? (
+              <div className="w-4 h-4 border-2 border-primary-foreground border-t-transparent rounded-full animate-spin mr-2" />
+            ) : (
+              <Upload className="mr-2 h-4 w-4" />
+            )}
+            Upload
+          </Button>
+        </div>
+        {formData.image_url && (
+          <div className="mt-2">
+            <p className="text-sm text-muted-foreground mb-1">Imagem atual:</p>
+            <img src={formData.image_url} alt="Pré-visualização do produto" className="w-32 h-32 object-cover rounded-md border border-border" />
+          </div>
+        )}
+      </div>
+
       <div className="flex gap-2 justify-end pt-4">
         <Button type="button" variant="outline" onClick={onCancel}>
           Cancelar
@@ -250,7 +358,8 @@ export const ItemsManagement = () => {
 
   const filteredItems = items?.filter(item =>
     item.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    item.description?.toLowerCase().includes(searchTerm.toLowerCase())
+    item.description?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    item.model?.toLowerCase().includes(searchTerm.toLowerCase()) // Filtrar por modelo
   ) || [];
 
   if (isLoadingItems) {
@@ -302,7 +411,7 @@ export const ItemsManagement = () => {
                 <div className="flex-1 relative">
                   <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
                   <Input
-                    placeholder="Buscar por nome ou descrição do item..."
+                    placeholder="Buscar por nome, modelo ou descrição do item..."
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
                     className="pl-10"
@@ -359,13 +468,17 @@ export const ItemsManagement = () => {
                     style={{ animationDelay: `${index * 100}ms` }}
                   >
                     <div className="flex items-center gap-3">
-                      <div className={`p-2 rounded-lg ${getStatusColor(item.status)}`}>
-                        <Package className="h-4 w-4 text-white" />
-                      </div>
+                      {item.image_url ? (
+                        <img src={item.image_url} alt={item.name} className="w-12 h-12 object-cover rounded-md" />
+                      ) : (
+                        <div className={`p-2 rounded-lg ${getStatusColor(item.status)}`}>
+                          <ImageIcon className="h-4 w-4 text-white" />
+                        </div>
+                      )}
                       <div>
                         <h3 className="font-semibold">{item.name}</h3>
                         <p className="text-sm text-muted-foreground">
-                          Quantidade: {item.quantity} | Status: {item.status}
+                          Quantidade: {item.quantity} | Modelo: {item.model || 'N/A'} | Status: {item.status}
                         </p>
                         {item.description && (
                           <p className="text-xs text-muted-foreground italic mt-1">

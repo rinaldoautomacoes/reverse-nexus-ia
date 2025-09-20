@@ -214,6 +214,8 @@ export type Database = {
           quantity: number
           status: string
           description: string | null
+          model: string | null // NOVA COLUNA
+          image_url: string | null // NOVA COLUNA
         }
         Insert: {
           id?: string
@@ -224,6 +226,8 @@ export type Database = {
           quantity: number
           status?: string
           description?: string | null
+          model?: string | null // NOVA COLUNA
+          image_url?: string | null // NOVA COLUNA
         }
         Update: {
           id?: string
@@ -234,6 +238,8 @@ export type Database = {
           quantity?: number
           status?: string
           description?: string | null
+          model?: string | null // NOVA COLUNA
+          image_url?: string | null // NOVA COLUNA
         }
         Relationships: [
           {
