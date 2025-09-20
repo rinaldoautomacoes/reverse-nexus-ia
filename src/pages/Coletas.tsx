@@ -261,6 +261,35 @@ const Coletas = () => {
     setIsCollectionStatusUpdateDialogOpen(true);
   };
 
+  // --- Funções para WhatsApp e Email ---
+  const handleSendWhatsApp = (coleta: Coleta) => {
+    if (coleta.telefone) {
+      const message = encodeURIComponent(`Olá ${coleta.contato || coleta.parceiro}, sobre a coleta agendada para ${coleta.previsao_coleta ? format(new Date(coleta.previsao_coleta), "dd/MM/yyyy", { locale: ptBR }) : 'N/A'} no endereço ${coleta.endereco}.`);
+      window.open(`https://wa.me/${coleta.telefone.replace(/\D/g, '')}?text=${message}`, '_blank');
+    } else {
+      toast({
+        title: "Telefone não disponível",
+        description: "Não há um número de telefone cadastrado para esta coleta.",
+        variant: "destructive"
+      });
+    }
+  };
+
+  const handleSendEmail = (coleta: Coleta) => {
+    if (coleta.email) {
+      const subject = encodeURIComponent(`Informações sobre a Coleta - ${coleta.parceiro}`);
+      const body = encodeURIComponent(`Prezado(a) ${coleta.contato || coleta.parceiro},\n\nEste é um email referente à coleta agendada para ${coleta.previsao_coleta ? format(new Date(coleta.previsao_coleta), "dd/MM/yyyy", { locale: ptBR }) : 'N/A'} no endereço ${coleta.endereco}.\n\nAtenciosamente,\nEquipe LogiReverseIA`);
+      window.open(`mailto:${coleta.email}?subject=${subject}&body=${body}`, '_blank');
+    } else {
+      toast({
+        title: "Email não disponível",
+        description: "Não há um endereço de email cadastrado para esta coleta.",
+        variant: "destructive"
+      });
+    }
+  };
+  // --- Fim das Funções para WhatsApp e Email ---
+
   const getStatusColor = (status: string | null) => {
     switch (status) {
       case 'concluida':
