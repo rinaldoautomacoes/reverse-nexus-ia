@@ -522,7 +522,7 @@ const Coletas = () => {
                         onClick={() => handleOpenCollectionItemsStatus(coleta)} // Novo botão
                       >
                         <ListChecks className="mr-1 h-3 w-3" />
-                        Situação dos Itens
+                        Situação da Coleta
                       </Button>
 
                       {coleta.status_coleta === 'agendada' && (
