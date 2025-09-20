@@ -17,6 +17,7 @@ import { useAuth } from "@/hooks/use-auth";
 type Item = Tables<'items'>;
 type ItemInsert = TablesInsert<'items'>;
 type ItemUpdate = TablesUpdate<'items'>;
+type Coleta = Tables<'coletas'>; // Importar tipo Coleta
 
 const itemStatusOptions = [
   { value: 'pendente', label: 'Pendentes' },
@@ -30,14 +31,29 @@ const ItemForm = ({ initialData, onSave, onCancel }: { initialData?: Item, onSav
     quantity: 1,
     status: 'pendente',
     description: '',
-    model: '', // Novo campo
-    image_url: '', // Novo campo
+    model: '',
+    image_url: '',
+    collection_id: null, // Adicionado collection_id
     user_id: '' // Will be set by the mutation
   });
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [isUploading, setIsUploading] = useState(false);
   const { toast } = useToast();
   const { user } = useAuth();
+
+  // Fetch available collections for the dropdown
+  const { data: coletas, isLoading: isLoadingColetas } = useQuery<Coleta[], Error>({
+    queryKey: ['allColetas', user?.id],
+    queryFn: async () => {
+      if (!user?.id) return [];
+      const { data, error } = await supabase
+        .from('coletas')
+        .select('id, parceiro, previsao_coleta'); // Selecionar campos relevantes
+      if (error) throw new Error(error.message);
+      return data;
+    },
+    enabled: !!user?.id,
+  });
 
   const handleInputChange = (field: keyof (ItemInsert | ItemUpdate), value: string | number | null) => {
     setFormData(prev => ({ ...prev, [field]: value }));
@@ -120,7 +136,7 @@ const ItemForm = ({ initialData, onSave, onCancel }: { initialData?: Item, onSav
         />
       </div>
       <div className="space-y-2">
-        <Label htmlFor="model">Modelo</Label> {/* Novo campo */}
+        <Label htmlFor="model">Modelo</Label>
         <Input
           id="model"
           value={formData.model || ''}
@@ -153,6 +169,29 @@ const ItemForm = ({ initialData, onSave, onCancel }: { initialData?: Item, onSav
           </Select>
         </div>
       </div>
+      
+      {/* NOVO CAMPO: Seleção de Coleta */}
+      <div className="space-y-2">
+        <Label htmlFor="collection_id">Associar à Coleta (Opcional)</Label>
+        <Select 
+          value={formData.collection_id || ''} 
+          onValueChange={(value) => handleInputChange("collection_id", value === "" ? null : value)}
+          disabled={isLoadingColetas}
+        >
+          <SelectTrigger>
+            <SelectValue placeholder={isLoadingColetas ? "Carregando coletas..." : "Nenhuma coleta selecionada"} />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="">Nenhuma Coleta</SelectItem>
+            {coletas?.map(coleta => (
+              <SelectItem key={coleta.id} value={coleta.id}>
+                {coleta.parceiro} ({coleta.previsao_coleta})
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </div>
+
       <div className="space-y-2">
         <Label htmlFor="description">Descrição (Opcional)</Label>
         <Textarea
