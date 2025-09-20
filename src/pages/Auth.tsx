@@ -26,8 +26,19 @@ export const Auth = () => {
   useEffect(() => {
     // Load recent emails from localStorage
     const storedEmails = localStorage.getItem(RECENT_EMAILS_KEY);
-    if (storedEmails) {
-      setRecentEmails(JSON.parse(storedEmails));
+    try {
+      if (storedEmails) {
+        const parsedEmails = JSON.parse(storedEmails);
+        if (Array.isArray(parsedEmails)) {
+          setRecentEmails(parsedEmails);
+        } else {
+          console.warn("Stored recent emails are not an array:", parsedEmails);
+          setRecentEmails([]); // Fallback to empty array
+        }
+      }
+    } catch (e) {
+      console.error("Error parsing recent emails from localStorage:", e);
+      setRecentEmails([]); // Fallback to empty array on parse error
     }
 
     // Set up auth state listener FIRST
