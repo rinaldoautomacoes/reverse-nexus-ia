@@ -270,123 +270,121 @@ export const AgendarColeta = () => {
           </div>
 
           <Card className="card-futuristic">
-            <CardHeader>
+            <CardHeader className="flex flex-row items-center justify-between"> {/* Adicionado flexbox para alinhamento */}
               <CardTitle className="flex items-center gap-2">
                 <Package className="h-5 w-5 text-primary" />
                 Dados da Coleta
               </CardTitle>
+              <Dialog open={isClientDialogOpen} onOpenChange={setIsClientDialogOpen}>
+                <DialogTrigger asChild>
+                  <Button 
+                    type="button" 
+                    variant="outline" 
+                    size="sm"
+                    className="border-neon-cyan text-neon-cyan hover:bg-neon-cyan/10 glow-effect rounded-full"
+                  >
+                    <UserPlus className="mr-1 h-3 w-3" />
+                    Novo Cliente
+                  </Button>
+                </DialogTrigger>
+                <DialogContent className="sm:max-w-[500px]">
+                  <DialogHeader>
+                    <DialogTitle className="flex items-center gap-2">
+                      <UserPlus className="h-5 w-5 text-primary" />
+                      Cadastrar Novo Cliente
+                    </DialogTitle>
+                  </DialogHeader>
+                  <div className="space-y-4 py-4">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="client-name">Nome *</Label>
+                        <Input 
+                          id="client-name"
+                          placeholder="Nome do cliente"
+                          value={clientData.name || ''}
+                          onChange={(e) => handleClientInputChange("name", e.target.value)}
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="client-phone">Telefone *</Label>
+                        <Input 
+                          id="client-phone"
+                          placeholder="(11) 99999-9999"
+                          value={clientData.phone || ''}
+                          onChange={(e) => handleClientInputChange("phone", e.target.value)}
+                        />
+                      </div>
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="client-email">Email</Label>
+                      <Input 
+                        id="client-email"
+                        type="email"
+                        placeholder="cliente@email.com"
+                        value={clientData.email || ''}
+                        onChange={(e) => handleClientInputChange("email", e.target.value)}
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="client-address">Endereço</Label>
+                      <Input 
+                        id="client-address"
+                        placeholder="Endereço completo"
+                        value={clientData.address || ''}
+                        onChange={(e) => handleClientInputChange("address", e.target.value)}
+                      />
+                    </div>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="client-cnpj">CNPJ</Label>
+                        <Input 
+                          id="client-cnpj"
+                          placeholder="00.000.000/0000-00"
+                          value={clientData.cnpj || ''}
+                          onChange={(e) => handleClientInputChange("cnpj", e.target.value)}
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="client-contact_person">Contato</Label>
+                        <Input 
+                          id="client-contact_person"
+                          placeholder="Pessoa de contato"
+                          value={clientData.contact_person || ''}
+                          onChange={(e) => handleClientInputChange("contact_person", e.target.value)}
+                        />
+                      </div>
+                    </div>
+                    <div className="flex gap-3 pt-4">
+                      <Button 
+                        onClick={handleSaveClient}
+                        className="flex-1 bg-gradient-primary hover:bg-gradient-primary/80"
+                        disabled={addClientMutation.isPending}
+                      >
+                        {addClientMutation.isPending ? (
+                          <div className="w-4 h-4 border-2 border-primary-foreground border-t-transparent rounded-full animate-spin mr-2" />
+                        ) : (
+                          <UserPlus className="mr-2 h-4 w-4" />
+                        )}
+                        Cadastrar Cliente
+                      </Button>
+                      <Button 
+                        type="button" 
+                        variant="outline" 
+                        onClick={() => setIsClientDialogOpen(false)}
+                        className="border-accent text-accent hover:bg-accent/10"
+                      >
+                        Cancelar
+                      </Button>
+                    </div>
+                  </div>
+                </DialogContent>
+              </Dialog>
             </CardHeader>
             <CardContent className="space-y-6">
               <form onSubmit={handleSubmit}>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
                   <div className="space-y-2">
-                    <div className="flex items-center justify-between">
-                      <Label htmlFor="parceiro">Cliente *</Label>
-                      <Dialog open={isClientDialogOpen} onOpenChange={setIsClientDialogOpen}>
-                        <DialogTrigger asChild>
-                          <Button 
-                            type="button" 
-                            variant="outline" 
-                            size="sm"
-                            className="border-neon-cyan text-neon-cyan hover:bg-neon-cyan/10 glow-effect rounded-full" // Estilo atualizado aqui
-                          >
-                            <UserPlus className="mr-1 h-3 w-3" />
-                            Novo Cliente
-                          </Button>
-                        </DialogTrigger>
-                        <DialogContent className="sm:max-w-[500px]">
-                          <DialogHeader>
-                            <DialogTitle className="flex items-center gap-2">
-                              <UserPlus className="h-5 w-5 text-primary" />
-                              Cadastrar Novo Cliente
-                            </DialogTitle>
-                          </DialogHeader>
-                          <div className="space-y-4 py-4">
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                              <div className="space-y-2">
-                                <Label htmlFor="client-name">Nome *</Label>
-                                <Input 
-                                  id="client-name"
-                                  placeholder="Nome do cliente"
-                                  value={clientData.name || ''}
-                                  onChange={(e) => handleClientInputChange("name", e.target.value)}
-                                />
-                              </div>
-                              <div className="space-y-2">
-                                <Label htmlFor="client-phone">Telefone *</Label>
-                                <Input 
-                                  id="client-phone"
-                                  placeholder="(11) 99999-9999"
-                                  value={clientData.phone || ''}
-                                  onChange={(e) => handleClientInputChange("phone", e.target.value)}
-                                />
-                              </div>
-                            </div>
-                            <div className="space-y-2">
-                              <Label htmlFor="client-email">Email</Label>
-                              <Input 
-                                id="client-email"
-                                type="email"
-                                placeholder="cliente@email.com"
-                                value={clientData.email || ''}
-                                onChange={(e) => handleClientInputChange("email", e.target.value)}
-                              />
-                            </div>
-                            <div className="space-y-2">
-                              <Label htmlFor="client-address">Endereço</Label>
-                              <Input 
-                                id="client-address"
-                                placeholder="Endereço completo"
-                                value={clientData.address || ''}
-                                onChange={(e) => handleClientInputChange("address", e.target.value)}
-                              />
-                            </div>
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                              <div className="space-y-2">
-                                <Label htmlFor="client-cnpj">CNPJ</Label>
-                                <Input 
-                                  id="client-cnpj"
-                                  placeholder="00.000.000/0000-00"
-                                  value={clientData.cnpj || ''}
-                                  onChange={(e) => handleClientInputChange("cnpj", e.target.value)}
-                                />
-                              </div>
-                              <div className="space-y-2">
-                                <Label htmlFor="client-contact_person">Contato</Label>
-                                <Input 
-                                  id="client-contact_person"
-                                  placeholder="Pessoa de contato"
-                                  value={clientData.contact_person || ''}
-                                  onChange={(e) => handleClientInputChange("contact_person", e.target.value)}
-                                />
-                              </div>
-                            </div>
-                            <div className="flex gap-3 pt-4">
-                              <Button 
-                                onClick={handleSaveClient}
-                                className="flex-1 bg-gradient-primary hover:bg-gradient-primary/80"
-                                disabled={addClientMutation.isPending}
-                              >
-                                {addClientMutation.isPending ? (
-                                  <div className="w-4 h-4 border-2 border-primary-foreground border-t-transparent rounded-full animate-spin mr-2" />
-                                ) : (
-                                  <UserPlus className="mr-2 h-4 w-4" />
-                                )}
-                                Cadastrar Cliente
-                              </Button>
-                              <Button 
-                                type="button" 
-                                variant="outline" 
-                                onClick={() => setIsClientDialogOpen(false)}
-                                className="border-accent text-accent hover:bg-accent/10"
-                              >
-                                Cancelar
-                              </Button>
-                            </div>
-                          </div>
-                        </DialogContent>
-                      </Dialog>
-                    </div>
+                    <Label htmlFor="parceiro">Cliente</Label>
                     <ClientCombobox
                       value={formData.parceiro || ''}
                       onValueChange={(name) => handleInputChange("parceiro", name)}
@@ -394,7 +392,7 @@ export const AgendarColeta = () => {
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="telefone">Telefone *</Label>
+                    <Label htmlFor="telefone">Telefone</Label>
                     <Input 
                       id="telefone" 
                       placeholder="(11) 99999-9999"
