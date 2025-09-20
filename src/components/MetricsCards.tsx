@@ -112,7 +112,7 @@ export const MetricsCards = () => {
         value: emTransito.toString(),
         change: '+8%', // Placeholder
         trend: 'up',
-        icon_name: 'Truck', // Alterado para Truck
+        icon_name: 'CheckCircle', // Usando CheckCircle para 'Em Trânsito' conforme imagem
         color: 'text-warning-yellow',
         bg_color: 'bg-warning-yellow/10',
         description: 'Em transporte' // Adicionado para corresponder à imagem
@@ -123,7 +123,7 @@ export const MetricsCards = () => {
         value: aparelhosEntregues.toString(),
         change: '+15%', // Placeholder
         trend: 'up',
-        icon_name: 'Package', // Alterado para Package
+        icon_name: 'CheckCircle',
         color: 'text-primary',
         bg_color: 'bg-primary/10',
         description: 'Processamento completo' // Adicionado para corresponder à imagem
