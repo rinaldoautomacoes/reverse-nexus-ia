@@ -7,7 +7,7 @@ import { ptBR } from "date-fns/locale";
 import * as XLSX from 'xlsx'; // Importar a biblioteca XLSX
 
 type Coleta = Tables<'coletas'>;
-// Removido: type Item = Tables<'items'>;
+type Item = Tables<'items'>;
 
 interface ReportData {
   id?: string;
@@ -33,30 +33,28 @@ const fetchReportData = async (reportData: ReportData, userId: string) => {
   const { data: coletas, error: coletasError } = await coletasQuery;
   if (coletasError) throw coletasError;
 
-  // Removido: Busca de itens
-  // const { data: items, error: itemsError } = await supabase
-  //   .from('items')
-  //   .select('name, description, quantity, status, model, collection_id')
-  //   .eq('user_id', userId);
-  // if (itemsError) throw itemsError;
+  const { data: items, error: itemsError } = await supabase
+    .from('items')
+    .select('name, description, quantity, status, model, collection_id')
+    .eq('user_id', userId);
+  if (itemsError) throw itemsError;
 
-  // Removido: Mapeamento de itens por coleta
-  // const itemsByCollection = new Map<string, Item[]>();
-  // items?.forEach(item => {
-  //   if (item.collection_id) {
-  //     if (!itemsByCollection.has(item.collection_id)) {
-  //       itemsByCollection.set(item.collection_id, []);
-  //     }
-  //     itemsByCollection.get(item.collection_id)?.push(item);
-  //   }
-  // });
+  const itemsByCollection = new Map<string, Item[]>();
+  items?.forEach(item => {
+    if (item.collection_id) {
+      if (!itemsByCollection.has(item.collection_id)) {
+        itemsByCollection.set(item.collection_id, []);
+      }
+      itemsByCollection.get(item.collection_id)?.push(item);
+    }
+  });
 
-  return { coletas /*, itemsByCollection */ }; // Retorna apenas coletas
+  return { coletas, itemsByCollection };
 };
 
 // --- PDF Report Generation ---
 const generatePdfReport = async (reportData: ReportData, userId: string) => {
-  const { coletas /*, itemsByCollection */ } = await fetchReportData(reportData, userId);
+  const { coletas, itemsByCollection } = await fetchReportData(reportData, userId);
 
   const pdf = new jsPDF();
   let currentY = 30;
@@ -128,28 +126,27 @@ const generatePdfReport = async (reportData: ReportData, userId: string) => {
         currentY += (splitColetaObs.length * 5);
       }
 
-      // Removido: Lógica de itens associados
-      // const associatedItems = itemsByCollection.get(coleta.id);
-      // if (associatedItems && associatedItems.length > 0) {
-      //   pdf.setFontSize(11);
-      //   pdf.setTextColor(50, 50, 50);
-      //   pdf.text('  Itens da Coleta:', 30, currentY + 4);
-      //   currentY += 10;
-      //   pdf.setFontSize(9);
-      //   associatedItems.forEach((item) => {
-      //     if (currentY > 260) {
-      //       pdf.addPage();
-      //       currentY = 30;
-      //     }
-      //     pdf.text(`  - Nome: ${item.name} (Qtd: ${item.quantity}, Status: ${item.status})`, 35, currentY);
-      //     currentY += 5;
-      //     if (item.description) {
-      //       const splitItemDesc = pdf.splitTextToSize(`    Descrição: ${item.description}`, 150);
-      //       pdf.text(splitItemDesc, 40, currentY);
-      //       currentY += (splitItemDesc.length * 4);
-      //     }
-      //   });
-      // }
+      const associatedItems = itemsByCollection.get(coleta.id);
+      if (associatedItems && associatedItems.length > 0) {
+        pdf.setFontSize(11);
+        pdf.setTextColor(50, 50, 50);
+        pdf.text('  Itens da Coleta:', 30, currentY + 4);
+        currentY += 10;
+        pdf.setFontSize(9);
+        associatedItems.forEach((item) => {
+          if (currentY > 260) {
+            pdf.addPage();
+            currentY = 30;
+          }
+          pdf.text(`  - Nome: ${item.name} (Qtd: ${item.quantity}, Status: ${item.status})`, 35, currentY);
+          currentY += 5;
+          if (item.description) {
+            const splitItemDesc = pdf.splitTextToSize(`    Descrição: ${item.description}`, 150);
+            pdf.text(splitItemDesc, 40, currentY);
+            currentY += (splitItemDesc.length * 4);
+          }
+        });
+      }
       currentY += 10;
     });
   } else {
@@ -175,7 +172,7 @@ const generatePdfReport = async (reportData: ReportData, userId: string) => {
 
 // --- Excel Report Generation ---
 const generateExcelReport = async (reportData: ReportData, userId: string) => {
-  const { coletas /*, itemsByCollection */ } = await fetchReportData(reportData, userId);
+  const { coletas, itemsByCollection } = await fetchReportData(reportData, userId);
 
   const data: any[][] = [];
 
@@ -206,21 +203,20 @@ const generateExcelReport = async (reportData: ReportData, userId: string) => {
         data.push(['Observação:', coleta.observacao]);
       }
 
-      // Removido: Lógica de itens associados
-      // const associatedItems = itemsByCollection.get(coleta.id);
-      // if (associatedItems && associatedItems.length > 0) {
-      //   data.push(['', 'Itens da Coleta:']);
-      //   data.push(['', 'Nome do Item', 'Quantidade', 'Status do Item', 'Descrição do Item']);
-      //   associatedItems.forEach((item) => {
-      //     data.push([
-      //       '',
-      //       item.name,
-      //       item.quantity,
-      //       item.status,
-      //       item.description || 'N/A'
-      //     ]);
-      //   });
-      // }
+      const associatedItems = itemsByCollection.get(coleta.id);
+      if (associatedItems && associatedItems.length > 0) {
+        data.push(['', 'Itens da Coleta:']);
+        data.push(['', 'Nome do Item', 'Quantidade', 'Status do Item', 'Descrição do Item']);
+        associatedItems.forEach((item) => {
+          data.push([
+            '',
+            item.name,
+            item.quantity,
+            item.status,
+            item.description || 'N/A'
+          ]);
+        });
+      }
       data.push([]); // Space between collections
     });
   } else {
@@ -237,7 +233,7 @@ const generateExcelReport = async (reportData: ReportData, userId: string) => {
 
 // --- Word (HTML-based) Report Generation ---
 const generateWordReport = async (reportData: ReportData, userId: string) => {
-  const { coletas /*, itemsByCollection */ } = await fetchReportData(reportData, userId);
+  const { coletas, itemsByCollection } = await fetchReportData(reportData, userId);
 
   let htmlContent = `
     <!DOCTYPE html>
@@ -290,37 +286,36 @@ const generateWordReport = async (reportData: ReportData, userId: string) => {
         htmlContent += `<p><strong>Observação:</strong> ${coleta.observacao}</p>`;
       }
 
-      // Removido: Lógica de itens associados
-      // const associatedItems = itemsByCollection.get(coleta.id);
-      // if (associatedItems && associatedItems.length > 0) {
-      //   htmlContent += `
-      //     <h4>Itens da Coleta:</h4>
-      //     <table>
-      //       <thead>
-      //         <tr>
-      //           <th>Nome do Item</th>
-      //           <th>Quantidade</th>
-      //           <th>Status do Item</th>
-      //           <th>Descrição do Item</th>
-      //         </tr>
-      //       </thead>
-      //       <tbody>
-      //   `;
-      //   associatedItems.forEach((item) => {
-      //     htmlContent += `
-      //       <tr>
-      //         <td>${item.name}</td>
-      //         <td>${item.quantity}</td>
-      //         <td>${item.status}</td>
-      //         <td>${item.description || 'N/A'}</td>
-      //       </tr>
-      //     `;
-      //   });
-      //   htmlContent += `
-      //       </tbody>
-      //     </table>
-      //   `;
-      // }
+      const associatedItems = itemsByCollection.get(coleta.id);
+      if (associatedItems && associatedItems.length > 0) {
+        htmlContent += `
+          <h4>Itens da Coleta:</h4>
+          <table>
+            <thead>
+              <tr>
+                <th>Nome do Item</th>
+                <th>Quantidade</th>
+                <th>Status do Item</th>
+                <th>Descrição do Item</th>
+              </tr>
+            </thead>
+            <tbody>
+        `;
+        associatedItems.forEach((item) => {
+          htmlContent += `
+            <tr>
+              <td>${item.name}</td>
+              <td>${item.quantity}</td>
+              <td>${item.status}</td>
+              <td>${item.description || 'N/A'}</td>
+            </tr>
+          `;
+        });
+        htmlContent += `
+            </tbody>
+          </table>
+        `;
+      }
       htmlContent += `<br>`; // Space between collections
     });
   } else {

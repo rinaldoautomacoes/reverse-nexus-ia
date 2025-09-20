@@ -10,7 +10,7 @@ import { Relatorios } from "./pages/Relatorios";
 import { Coletas } from "./pages/Coletas";
 import { Auth } from "./pages/Auth";
 import { MetricsManagement } from "./pages/MetricsManagement";
-// import { ItemsManagement } from "./pages/ItemsManagement"; // Removido
+import { ItemsManagement } from "./pages/ItemsManagement";
 import { UserManagement } from "./pages/UserManagement";
 import { ClientManagement } from "./pages/ClientManagement";
 // import { CollectionStatus } from "./pages/CollectionStatus"; // Importar a nova página
@@ -68,7 +68,7 @@ const AppLayout = () => {
 
           <Route element={<ProtectedRoute allowedRoles={['admin']} />}>
             <Route path="/metrics-management" element={<MetricsManagement />} />
-            {/* <Route path="/items-management" element={<ItemsManagement />} /> */} {/* Removido */}
+            <Route path="/items-management" element={<ItemsManagement />} />
             <Route path="/user-management" element={<UserManagement />} />
             <Route path="/client-management" element={<ClientManagement />} />
           </Route>

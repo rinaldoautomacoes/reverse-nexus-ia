@@ -204,60 +204,60 @@ export type Database = {
           },
         ]
       }
-      // items: { // Removido
-      //   Row: {
-      //     id: string
-      //     user_id: string
-      //     collection_id: string | null // Alterado para ser anulável
-      //     created_at: string
-      //     name: string
-      //     quantity: number
-      //     status: string
-      //     description: string | null
-      //     model: string | null // NOVA COLUNA
-      //     image_url: string | null // NOVA COLUNA
-      //   }
-      //   Insert: {
-      //     id?: string
-      //     user_id: string
-      //     collection_id?: string | null // Alterado para ser anulável
-      //     created_at?: string
-      //     name: string
-      //     quantity: number
-      //     status?: string
-      //     description?: string | null
-      //     model?: string | null // NOVA COLUNA
-      //     image_url?: string | null // NOVA COLUNA
-      //   }
-      //   Update: {
-      //     id?: string
-      //     user_id?: string
-      //     collection_id?: string | null // Alterado para ser anulável
-      //     created_at?: string
-      //     name?: string
-      //     quantity?: number
-      //     status?: string
-      //     description?: string | null
-      //     model?: string | null // NOVA COLUNA
-      //     image_url?: string | null // NOVA COLUNA
-      //   }
-      //   Relationships: [
-      //     {
-      //       foreignKeyName: "items_collection_id_fkey"
-      //       columns: ["collection_id"]
-      //       isOneToOne: false
-      //       referencedRelation: "coletas"
-      //       referencedColumns: ["id"]
-      //     },
-      //     {
-      //       foreignKeyName: "items_user_id_fkey"
-      //       columns: ["user_id"]
-      //       isOneToOne: false
-      //       referencedRelation: "users"
-      //       referencedColumns: ["id"]
-      //     },
-      //   ]
-      // }
+      items: {
+        Row: {
+          id: string
+          user_id: string
+          collection_id: string | null // Alterado para ser anulável
+          created_at: string
+          name: string
+          quantity: number
+          status: string
+          description: string | null
+          model: string | null // NOVA COLUNA
+          image_url: string | null // NOVA COLUNA
+        }
+        Insert: {
+          id?: string
+          user_id: string
+          collection_id?: string | null // Alterado para ser anulável
+          created_at?: string
+          name: string
+          quantity: number
+          status?: string
+          description?: string | null
+          model?: string | null // NOVA COLUNA
+          image_url?: string | null // NOVA COLUNA
+        }
+        Update: {
+          id?: string
+          user_id?: string
+          collection_id?: string | null // Alterado para ser anulável
+          created_at?: string
+          name?: string
+          quantity?: number
+          status?: string
+          description?: string | null
+          model?: string | null // NOVA COLUNA
+          image_url?: string | null // NOVA COLUNA
+        }
+        Relationships: [
+          {
+            foreignKeyName: "items_collection_id_fkey"
+            columns: ["collection_id"]
+            isOneToOne: false
+            referencedRelation: "coletas"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "items_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           id: string
