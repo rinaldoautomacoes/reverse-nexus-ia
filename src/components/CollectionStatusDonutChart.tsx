@@ -12,6 +12,7 @@ type Coleta = Tables<'coletas'>;
 
 const COLORS = {
   pendente: 'hsl(var(--neural-blue))', // Cor neon para pendente
+  agendada: 'hsl(var(--warning-yellow))', // Nova cor para 'Em Trânsito'
   concluida: 'hsl(var(--primary))',    // Cor primária para concluída
 };
 
@@ -60,24 +61,27 @@ export const CollectionStatusDonutChart: React.FC = () => {
       return {
         total: 0,
         pendente: 0,
+        agendada: 0, // Adicionado
         concluida: 0,
         chartData: [],
       };
     }
 
     const pendenteCount = coletasData.filter(c => c.status_coleta === 'pendente').length;
+    const agendadaCount = coletasData.filter(c => c.status_coleta === 'agendada').length; // Contagem de 'agendada'
     const concluidaCount = coletasData.filter(c => c.status_coleta === 'concluida').length;
-    const total = pendenteCount + concluidaCount;
+    const total = pendenteCount + agendadaCount + concluidaCount; // Total atualizado
 
     const chartData = [
       { name: 'Coletas Pendentes', value: pendenteCount, color: COLORS.pendente },
+      { name: 'Coletas Em Trânsito', value: agendadaCount, color: COLORS.agendada }, // Nova entrada
       { name: 'Coletas Finalizadas', value: concluidaCount, color: COLORS.concluida },
-    ];
+    ].filter(entry => entry.value > 0); // Filtra entradas com valor 0 para não aparecer no gráfico
 
-    return { total, pendente: pendenteCount, concluida: concluidaCount, chartData };
+    return { total, pendente: pendenteCount, agendada: agendadaCount, concluida: concluidaCount, chartData };
   };
 
-  const { total, pendente, concluida, chartData } = calculateStatusData(coletas);
+  const { total, pendente, agendada, concluida, chartData } = calculateStatusData(coletas);
 
   if (isLoading) {
     return (
