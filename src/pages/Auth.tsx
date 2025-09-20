@@ -5,10 +5,13 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Brain, Mail, Lock, Truck, Zap, CheckCircle, ArrowLeft } from "lucide-react";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Brain, Mail, Lock, Truck, Zap, CheckCircle, ArrowLeft, History, XCircle } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import type { User, Session } from '@supabase/supabase-js';
+
+const RECENT_EMAILS_KEY = 'logireverseia_recent_emails';
 
 export const Auth = () => {
   const [user, setUser] = useState<User | null>(null);
@@ -16,10 +19,17 @@ export const Auth = () => {
   const [loading, setLoading] = useState(false);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [recentEmails, setRecentEmails] = useState<string[]>([]);
   const navigate = useNavigate();
   const { toast } = useToast();
 
   useEffect(() => {
+    // Load recent emails from localStorage
+    const storedEmails = localStorage.getItem(RECENT_EMAILS_KEY);
+    if (storedEmails) {
+      setRecentEmails(JSON.parse(storedEmails));
+    }
+
     // Set up auth state listener FIRST
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (event, session) => {
@@ -46,6 +56,24 @@ export const Auth = () => {
 
     return () => subscription.unsubscribe();
   }, [navigate]);
+
+  const addEmailToRecent = (newEmail: string) => {
+    setRecentEmails(prevEmails => {
+      const updatedEmails = [newEmail, ...prevEmails.filter(e => e !== newEmail)].slice(0, 5); // Keep last 5 emails
+      localStorage.setItem(RECENT_EMAILS_KEY, JSON.stringify(updatedEmails));
+      return updatedEmails;
+    });
+  };
+
+  const clearRecentEmails = () => {
+    localStorage.removeItem(RECENT_EMAILS_KEY);
+    setRecentEmails([]);
+    setEmail(""); // Clear current email if it was from recent list
+    toast({
+      title: "Histórico Limpo",
+      description: "O histórico de e-mails recentes foi removido.",
+    });
+  };
 
   const handleSignUp = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -77,6 +105,7 @@ export const Auth = () => {
           });
         }
       } else {
+        addEmailToRecent(email); // Add email to recent list on successful signup
         toast({
           title: "Cadastro realizado!",
           description: "Verifique seu email para confirmar a conta e fazer login.",
@@ -110,6 +139,7 @@ export const Auth = () => {
           variant: "destructive"
         });
       } else {
+        addEmailToRecent(email); // Add email to recent list on successful signin
         toast({
           title: "Login realizado!",
           description: "Bem-vindo ao LogiReverseIA.",
@@ -168,9 +198,8 @@ export const Auth = () => {
             </CardHeader>
             <CardContent>
               <Tabs defaultValue="signin" className="w-full">
-                <TabsList className="grid w-full grid-cols-1 mb-6"> {/* Alterado para 1 coluna */}
+                <TabsList className="grid w-full grid-cols-1 mb-6">
                   <TabsTrigger value="signin">Entrar</TabsTrigger>
-                  {/* Aba de cadastro removida */}
                 </TabsList>
 
                 <TabsContent value="signin">
@@ -178,16 +207,41 @@ export const Auth = () => {
                     <div className="space-y-2">
                       <Label htmlFor="signin-email">Email</Label>
                       <div className="relative">
-                        <Mail className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                        <Input
-                          id="signin-email"
-                          type="email"
-                          placeholder="seu@email.com"
-                          className="pl-10"
-                          value={email}
-                          onChange={(e) => setEmail(e.target.value)}
-                          required
-                        />
+                        <Mail className="absolute left-3 top-3 h-4 w-4 text-muted-foreground z-10" />
+                        <Select value={email} onValueChange={setEmail}>
+                          <SelectTrigger id="signin-email" className="pl-10">
+                            <SelectValue placeholder="seu@email.com" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {recentEmails.length > 0 ? (
+                              <>
+                                {recentEmails.map((recEmail, index) => (
+                                  <SelectItem key={index} value={recEmail}>
+                                    {recEmail}
+                                  </SelectItem>
+                                ))}
+                                <Button 
+                                  variant="ghost" 
+                                  onClick={clearRecentEmails} 
+                                  className="w-full text-destructive hover:bg-destructive/10 mt-2"
+                                >
+                                  <XCircle className="mr-2 h-4 w-4" />
+                                  Limpar Histórico
+                                </Button>
+                              </>
+                            ) : (
+                              <SelectItem value="" disabled>Nenhum e-mail recente</SelectItem>
+                            )}
+                            <Input
+                              type="email"
+                              placeholder="Digite um novo e-mail..."
+                              className="mt-2"
+                              value={email}
+                              onChange={(e) => setEmail(e.target.value)}
+                              onClick={(e) => e.stopPropagation()} // Prevent closing select when typing
+                            />
+                          </SelectContent>
+                        </Select>
                       </div>
                     </div>
                     <div className="space-y-2">
@@ -219,8 +273,6 @@ export const Auth = () => {
                     </Button>
                   </form>
                 </TabsContent>
-
-                {/* Conteúdo da aba de cadastro removido */}
               </Tabs>
             </CardContent>
           </Card>
