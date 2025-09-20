@@ -109,6 +109,7 @@ export type Database = {
         Row: {
           id: string
           user_id: string
+          client_id: string | null // Adicionado client_id
           created_at: string
           localidade: string | null
           modelo_aparelho: string | null
@@ -135,6 +136,7 @@ export type Database = {
         Insert: {
           id?: string
           user_id: string
+          client_id?: string | null // Adicionado client_id
           created_at?: string
           localidade?: string | null
           modelo_aparelho?: string | null
@@ -161,6 +163,7 @@ export type Database = {
         Update: {
           id?: string
           user_id?: string
+          client_id?: string | null // Adicionado client_id
           created_at?: string
           localidade?: string | null
           modelo_aparelho?: string | null
@@ -185,6 +188,13 @@ export type Database = {
           responsavel?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "coletas_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "coletas_user_id_fkey"
             columns: ["user_id"]
