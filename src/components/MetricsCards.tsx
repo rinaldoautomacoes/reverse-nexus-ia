@@ -6,7 +6,8 @@ import {
   TrendingUp,
   CheckCircle,
   AlertTriangle,
-  Gauge // Ícone para 'Total de Aparelhos'
+  Gauge, // Ícone para 'Total de Aparelhos'
+  ListChecks // Novo ícone para 'Total de Coletas'
 } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -23,25 +24,26 @@ const iconMap: { [key: string]: React.ElementType } = {
   CheckCircle,
   TrendingUp,
   AlertTriangle,
-  Gauge
+  Gauge,
+  ListChecks // Adicionado ListChecks
 };
 
-type Item = Tables<'items'>;
+type Coleta = Tables<'coletas'>; // Alterado para Coleta
 
 export const MetricsCards = () => {
   const { toast } = useToast();
   const { user } = useAuth();
 
-  const { data: items, isLoading, error } = useQuery<Array<{quantity: number, status: string}>, Error>({
-    queryKey: ['dashboardItemsMetrics', user?.id],
+  const { data: coletas, isLoading, error } = useQuery<Array<{status_coleta: string}>, Error>({
+    queryKey: ['dashboardColetasMetrics', user?.id], // Alterado queryKey
     queryFn: async () => {
       if (!user?.id) {
         // Se não houver usuário logado, retornar um array vazio
         return [];
       }
       const { data, error } = await supabase
-        .from('items')
-        .select('quantity, status')
+        .from('coletas') // Buscar da tabela 'coletas'
+        .select('status_coleta') // Selecionar apenas o status da coleta
         .eq('user_id', user.id);
       
       if (error) {
@@ -55,83 +57,72 @@ export const MetricsCards = () => {
   useEffect(() => {
     if (error) {
       toast({
-        title: "Erro ao carregar dados dos itens",
+        title: "Erro ao carregar dados das coletas",
         description: error.message,
         variant: "destructive",
       });
     }
   }, [error, toast]);
 
-  const calculateMetrics = (itemsData: Array<{quantity: number, status: string}> | undefined) => {
-    if (!itemsData || itemsData.length === 0) {
+  const calculateCollectionMetrics = (coletasData: Array<{status_coleta: string}> | undefined) => {
+    if (!coletasData || coletasData.length === 0) {
       return [];
     }
 
-    let totalAparelhos = 0;
-    let pendentes = 0;
-    let emTransito = 0; // Mapeado para 'coletado'
-    let aparelhosEntregues = 0; // Mapeado para 'processado'
-
-    itemsData.forEach(item => {
-      totalAparelhos += item.quantity;
-      if (item.status === 'pendente') {
-        pendentes += item.quantity;
-      } else if (item.status === 'coletado') {
-        emTransito += item.quantity;
-      } else if (item.status === 'processado') {
-        aparelhosEntregues += item.quantity;
-      }
-    });
+    const totalColetas = coletasData.length;
+    const pendenteCount = coletasData.filter(c => c.status_coleta === 'pendente').length;
+    const agendadaCount = coletasData.filter(c => c.status_coleta === 'agendada').length; // Mapeado para 'Em Trânsito'
+    const concluidaCount = coletasData.filter(c => c.status_coleta === 'concluida').length; // Mapeado para 'Entregues'
 
     return [
       {
-        id: 'total-aparelhos',
-        title: 'Total de Aparelhos',
-        value: totalAparelhos.toString(),
+        id: 'total-coletas',
+        title: 'Total de Coletas',
+        value: totalColetas.toString(),
         change: '+12%', // Placeholder
         trend: 'up',
-        icon_name: 'Gauge',
+        icon_name: 'ListChecks', // Ícone para total de coletas
         color: 'text-ai',
         bg_color: 'bg-ai/10',
-        description: 'Aparelhos AVAYA' // Adicionado para corresponder à imagem
+        description: 'Total de coletas registradas'
       },
       {
-        id: 'pendentes',
-        title: 'Pendentes',
-        value: pendentes.toString(),
+        id: 'coletas-pendentes',
+        title: 'Coletas Pendentes',
+        value: pendenteCount.toString(),
         change: '-5%', // Placeholder
         trend: 'down',
         icon_name: 'Clock',
         color: 'text-destructive',
         bg_color: 'bg-destructive/10',
-        description: 'Aguardando coleta' // Adicionado para corresponder à imagem
+        description: 'Aguardando agendamento ou início'
       },
       {
-        id: 'em-transito',
-        title: 'Em Trânsito',
-        value: emTransito.toString(),
+        id: 'coletas-em-transito',
+        title: 'Coletas Em Trânsito',
+        value: agendadaCount.toString(),
         change: '+8%', // Placeholder
         trend: 'up',
-        icon_name: 'CheckCircle', // Usando CheckCircle para 'Em Trânsito' conforme imagem
+        icon_name: 'Truck', // Ícone para 'Em Trânsito'
         color: 'text-warning-yellow',
         bg_color: 'bg-warning-yellow/10',
-        description: 'Em transporte' // Adicionado para corresponder à imagem
+        description: 'Coletas agendadas e em andamento'
       },
       {
-        id: 'aparelhos-entregues',
-        title: 'Aparelhos Entregues',
-        value: aparelhosEntregues.toString(),
+        id: 'coletas-entregues',
+        title: 'Coletas Entregues',
+        value: concluidaCount.toString(),
         change: '+15%', // Placeholder
         trend: 'up',
         icon_name: 'CheckCircle',
         color: 'text-primary',
         bg_color: 'bg-primary/10',
-        description: 'Processamento completo' // Adicionado para corresponder à imagem
+        description: 'Coletas finalizadas e processadas'
       },
     ];
   };
 
-  const dashboardMetrics = calculateMetrics(items);
+  const dashboardMetrics = calculateCollectionMetrics(coletas); // Usar a nova função de cálculo
 
   if (isLoading) {
     return (
@@ -156,7 +147,7 @@ export const MetricsCards = () => {
     return (
       <Card className="card-futuristic border-0">
         <CardContent className="p-6 text-center text-muted-foreground">
-          Nenhuma métrica encontrada. Cadastre itens para ver os dados.
+          Nenhuma métrica de coleta encontrada. Agende coletas para ver os dados.
         </CardContent>
       </Card>
     );
