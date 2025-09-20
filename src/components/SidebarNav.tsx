@@ -1,5 +1,5 @@
 import React from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate } => 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import {
   Package,
@@ -92,6 +92,12 @@ export const SidebarNav = () => {
       icon: UserIcon,
       path: '/client-management',
       roles: ['admin'],
+    },
+    {
+      label: 'Gerenciar Produtos', // NOVO ITEM DE MENU
+      icon: Package, // Usando o ícone Package para produtos
+      path: '/product-management',
+      roles: ['standard', 'admin'], // Acesso para todos os usuários autenticados
     },
     {
       label: 'Gerenciar Usuários',

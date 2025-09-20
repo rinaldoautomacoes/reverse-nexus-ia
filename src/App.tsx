@@ -13,6 +13,7 @@ import { MetricsManagement } from "./pages/MetricsManagement";
 // import { ItemsManagement } from "./pages/ItemsManagement"; // Removido
 import { UserManagement } from "./pages/UserManagement";
 import { ClientManagement } from "./pages/ClientManagement";
+import { ProductManagement } from "./pages/ProductManagement"; // Importar a nova página
 // import { CollectionStatus } from "./pages/CollectionStatus"; // Importar a nova página
 import { Debug } from "./pages/Debug";
 import { AuthProvider } from "./hooks/use-auth";
@@ -64,6 +65,7 @@ const AppLayout = () => {
             {/* <Route path="/ia-insights" element={<IAInsights />} /> */}
             <Route path="/coletas" element={<Coletas />} />
             {/* <Route path="/collection-status" element={<CollectionStatus />} /> */} {/* Nova rota */}
+            <Route path="/product-management" element={<ProductManagement />} /> {/* NOVA ROTA */}
           </Route>
 
           <Route element={<ProtectedRoute allowedRoles={['admin']} />}>

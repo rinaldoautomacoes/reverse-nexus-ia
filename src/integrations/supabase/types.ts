@@ -258,6 +258,47 @@ export type Database = {
           },
         ]
       }
+      products: {
+        Row: {
+          id: string
+          user_id: string
+          created_at: string
+          code: string
+          description: string | null
+          model: string | null
+          serial_number: string | null
+          image_url: string | null
+        }
+        Insert: {
+          id?: string
+          user_id: string
+          created_at?: string
+          code: string
+          description?: string | null
+          model?: string | null
+          serial_number?: string | null
+          image_url?: string | null
+        }
+        Update: {
+          id?: string
+          user_id?: string
+          created_at?: string
+          code?: string
+          description?: string | null
+          model?: string | null
+          serial_number?: string | null
+          image_url?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "products_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           id: string
