@@ -1,6 +1,6 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { TrendingUp, BarChart3, Package, User } from "lucide-react"; // Added Package and User icons
+import { TrendingUp, BarChart3, Package, User } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import type { Tables } from "@/integrations/supabase/types";
@@ -14,7 +14,7 @@ import {
   Tooltip,
   Legend,
   ResponsiveContainer,
-  LabelList,
+  LabelList, // Mantido para referência, mas não será usado nas barras
 } from "recharts";
 import { format, parseISO, startOfMonth, endOfMonth, isSameMonth } from "date-fns";
 import { ptBR } from "date-fns/locale";
@@ -22,23 +22,23 @@ import React from "react";
 
 type Coleta = Tables<'coletas'>;
 
-// Custom Tooltip for Recharts
-const CustomTooltip = ({ active, payload, label }: any) => {
-  if (active && payload && payload.length) {
-    const data = payload[0].payload; // Access the full data object for the month
-    return (
-      <div className="bg-card p-3 rounded-md border border-border shadow-lg text-sm">
-        <p className="font-semibold text-primary mb-1">{label}</p>
-        <p className="text-muted-foreground">Coletas Totais: <span className="text-foreground">{data.totalCollections}</span></p>
-        <p className="text-muted-foreground">Coletas Processadas: <span className="text-foreground">{data.processedCollections}</span></p>
-        <p className="text-muted-foreground">Total de Produtos: <span className="text-foreground">{data.totalProducts}</span></p>
-        <p className="text-muted-foreground">Clientes Únicos: <span className="text-foreground">{data.uniqueClients}</span></p>
-        {data.efficiency && <p className="text-muted-foreground">Eficiência: <span className="text-foreground">{data.efficiency.toFixed(1)}%</span></p>}
-      </div>
-    );
-  }
-  return null;
-};
+// Removendo o CustomTooltip e usando o padrão do Recharts
+// const CustomTooltip = ({ active, payload, label }: any) => {
+//   if (active && payload && payload.length) {
+//     const data = payload[0].payload;
+//     return (
+//       <div className="bg-card p-3 rounded-md border border-border shadow-lg text-sm">
+//         <p className="font-semibold text-primary mb-1">{label}</p>
+//         <p className="text-muted-foreground">Coletas Totais: <span className="text-foreground">{data.totalCollections}</span></p>
+//         <p className="text-muted-foreground">Coletas Processadas: <span className="text-foreground">{data.processedCollections}</span></p>
+//         <p className="text-muted-foreground">Total de Produtos: <span className="text-foreground">{data.totalProducts}</span></p>
+//         <p className="text-muted-foreground">Clientes Únicos: <span className="text-foreground">{data.uniqueClients}</span></p>
+//         {data.efficiency && <p className="text-muted-foreground">Eficiência: <span className="text-foreground">{data.efficiency.toFixed(1)}%</span></p>}
+//       </div>
+//     );
+//   }
+//   return null;
+// };
 
 export const PerformanceChart = () => {
   const { user } = useAuth();
@@ -205,17 +205,20 @@ export const PerformanceChart = () => {
                 }}
               >
                 <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border)/0.2)" />
-                <XAxis dataKey="month" stroke="hsl(var(--muted-foreground))" />
+                <XAxis 
+                  dataKey="month" 
+                  stroke="hsl(var(--muted-foreground))"
+                  // Adiciona um formatador para exibir "0 itens" se não houver produtos
+                  tickFormatter={(value, index) => {
+                    const dataEntry = aggregatedChartData[index];
+                    return dataEntry && dataEntry.totalProducts === 0 ? '0 itens' : value;
+                  }}
+                />
                 <YAxis stroke="hsl(var(--muted-foreground))" />
-                <Tooltip content={<CustomTooltip />} />
+                <Tooltip /> {/* Usando o Tooltip padrão */}
                 <Legend />
                 <Bar dataKey="totalCollections" name="Coletas Totais" fill="hsl(var(--neon-cyan))" radius={[4, 4, 0, 0]}>
-                  <LabelList
-                    dataKey="totalProducts"
-                    position="top"
-                    formatter={(value: number) => `${value} itens`} // Show total products as label
-                    className="text-xs fill-foreground"
-                  />
+                  {/* Removido LabelList para corresponder à imagem */}
                 </Bar>
                 <Bar dataKey="processedCollections" name="Coletas Processadas" fill="hsl(var(--accent))" radius={[4, 4, 0, 0]} />
               </BarChart>
