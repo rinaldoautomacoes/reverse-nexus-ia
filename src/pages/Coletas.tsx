@@ -282,7 +282,7 @@ const Coletas = () => {
 
     const clientName = coleta.contato || coleta.parceiro || 'cliente';
     const message = encodeURIComponent(
-      `Prezado(a) ${clientName},%0A%0AVenho informar que a coleta foi agendada. Desde já agradecemos.%0A%0ADetalhes da Coleta:%0A- Cliente: ${coleta.parceiro || 'N/A'}%0A- Endereço: ${coleta.endereco || 'N/A'}%0A- Data Prevista: ${coleta.previsao_coleta ? format(new Date(coleta.previsao_coleta), "dd/MM/yyyy", { locale: ptBR }) : 'N/A'}%0A- Quantidade de Aparelhos: ${coleta.qtd_aparelhos_solicitado || 0}%0A- Tipo de Material: ${coleta.modelo_aparelho || 'N/A'}%0A- Status: ${getStatusText(coleta.status_coleta)}%0A%0AAtenciosamente,%0AEquipe LogiReverseIA`
+      `Prezado(a) ${clientName},%0A%0AVenho informar que a coleta foi agendada. Desde já agradecemos.`
     );
     const whatsappUrl = `https://wa.me/${coleta.telefone.replace(/\D/g, '')}?text=${message}`;
     
@@ -303,7 +303,7 @@ const Coletas = () => {
     const formattedDate = coleta.previsao_coleta ? format(new Date(coleta.previsao_coleta), "dd/MM/yyyy", { locale: ptBR }) : 'N/A';
     const subject = encodeURIComponent(`Confirmação de Coleta Agendada - LogiReverseIA - ${coleta.parceiro || 'N/A'}`);
     const body = encodeURIComponent(
-      `Prezado(a) ${clientName},%0A%0AVenho informar que a coleta foi agendada. Desde já agradecemos.%0A%0ADetalhes da Coleta:%0A- Cliente: ${coleta.parceiro || 'N/A'}%0A- Endereço: ${coleta.endereco || 'N/A'}%0A- Data Prevista: ${formattedDate}%0A- Quantidade de Aparelhos: ${coleta.qtd_aparelhos_solicitado || 0}%0A- Tipo de Material: ${coleta.modelo_aparelho || 'N/A'}%0A- Status: ${getStatusText(coleta.status_coleta)}%0A%0APor favor, certifique-se de que os itens estejam prontos para a coleta na data e local indicados.%0A%0AAtenciosamente,%0AEquipe LogiReverseIA`
+      `Prezado(a) ${clientName},%0A%0AVenho informar que a coleta foi agendada. Desde já agradecemos.`
     );
     const mailtoUrl = `mailto:${coleta.email}?subject=${subject}&body=${body}`;
     
@@ -460,7 +460,7 @@ const Coletas = () => {
                                 </div>
                                 <div>
                                   <Label className="text-sm font-medium">Pessoa de Contato</Label>
-                                  <p className="text-sm text-muted-foreground">{selectedColeta.contato || 'N/A'}</p>
+                                  <p className className="text-sm text-muted-foreground">{selectedColeta.contato || 'N/A'}</p>
                                 </div>
                                 <div>
                                   <Label className="text-sm font-medium">Telefone</Label>
