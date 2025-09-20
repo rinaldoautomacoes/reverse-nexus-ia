@@ -6,7 +6,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { ArrowLeft, Package, MapPin, Calendar, Search, Filter, Eye, Edit, Trash2, MessageSquareText, Mail } from "lucide-react";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"; // Importado DropdownMenu components
+import { ArrowLeft, Package, MapPin, Calendar, Search, Filter, Eye, Edit, Trash2, MessageSquareText, Mail, RefreshCcw, Clock, CheckCircle } from "lucide-react"; // Adicionado RefreshCcw, Clock, CheckCircle
 import { useNavigate } from "react-router-dom";
 import { useState } from "react";
 import { useToast } from "@/hooks/use-toast";
@@ -242,6 +243,10 @@ const Coletas = () => {
     if (window.confirm("Tem certeza que deseja excluir esta coleta?")) {
       deleteColetaMutation.mutate(coletaId);
     }
+  };
+
+  const handleStatusChange = (coletaId: string, newStatus: 'pendente' | 'concluida') => {
+    updateColetaMutation.mutate({ id: coletaId, status_coleta: newStatus });
   };
 
   const getStatusColor = (status: string | null) => {
@@ -529,6 +534,23 @@ const Coletas = () => {
                         <Mail className="mr-1 h-3 w-3" />
                         Email
                       </Button>
+
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button variant="outline" size="sm" className="border-neural text-neural hover:bg-neural/10">
+                              <RefreshCcw className="mr-1 h-3 w-3" />
+                              Mudar Status
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end" className="bg-card border-primary/20">
+                          <DropdownMenuItem onClick={() => handleStatusChange(coleta.id, 'pendente')}>
+                              <Clock className="mr-2 h-3 w-3 text-neural" /> Marcar como Pendente
+                          </DropdownMenuItem>
+                          <DropdownMenuItem onClick={() => handleStatusChange(coleta.id, 'concluida')}>
+                              <CheckCircle className="mr-2 h-3 w-3 text-primary" /> Marcar como Concluída
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
 
                       {coleta.status_coleta === 'agendada' && (
                         <Dialog open={isEditDialogOpen && editingColeta?.id === coleta.id} onOpenChange={setIsEditDialogOpen}>
