@@ -20,7 +20,7 @@ export const UserManagement = () => {
     password: "",
     first_name: "",
     last_name: "",
-    username: "", // Novo campo
+    username: "", // Mantido no estado para ser enviado ao user_metadata, mas sem input visível
     role: "standard",
   });
 
@@ -58,7 +58,7 @@ export const UserManagement = () => {
 
       toast({
         title: "Usuário criado!",
-        description: `O usuário ${formData.username} (${formData.email}) foi criado com sucesso.`,
+        description: `O usuário ${formData.email} foi criado com sucesso.`,
       });
 
       // Reset form
@@ -145,8 +145,9 @@ export const UserManagement = () => {
                   </div>
                 </div>
 
-                <div className="space-y-2">
-                  <Label htmlFor="username">Nome de Usuário</Label> {/* Novo campo */}
+                {/* O campo de username foi removido da UI, mas ainda é enviado no metadata */}
+                {/* <div className="space-y-2">
+                  <Label htmlFor="username">Nome de Usuário</Label>
                   <div className="relative">
                     <User className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
                     <Input
@@ -158,7 +159,7 @@ export const UserManagement = () => {
                       required
                     />
                   </div>
-                </div>
+                </div> */}
 
                 <div className="space-y-2">
                   <Label htmlFor="email">Email</Label>

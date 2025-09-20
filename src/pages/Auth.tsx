@@ -14,7 +14,7 @@ export const Auth = () => {
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(false);
-  const [loginIdentifier, setLoginIdentifier] = useState(""); // Pode ser username ou email
+  const [loginEmail, setLoginEmail] = useState(""); // Agora é email
   const [loginPassword, setLoginPassword] = useState("");
   const [signupEmail, setSignupEmail] = useState("");
   const [signupPassword, setSignupPassword] = useState("");
@@ -121,37 +121,31 @@ export const Auth = () => {
     setLoading(true);
 
     try {
-      // Call the Edge Function for username-based login
-      const { data: sessionData, error: edgeFunctionError } = await supabase.functions.invoke('username-login', {
-        body: JSON.stringify({ username: loginIdentifier, password: loginPassword }),
-        headers: {
-          'Content-Type': 'application/json',
-        },
+      const { error } = await supabase.auth.signInWithPassword({
+        email: loginEmail,
+        password: loginPassword,
       });
 
-      if (edgeFunctionError) {
-        throw new Error(edgeFunctionError.message);
+      if (error) {
+        toast({
+          title: "Erro no login",
+          description: error.message || "E-mail ou senha incorretos. Verifique suas credenciais.",
+          variant: "destructive"
+        });
+      } else {
+        toast({
+          title: "Login realizado!",
+          description: "Bem-vindo ao LogiReverseIA.",
+        });
+        // Clear login form
+        setLoginEmail("");
+        setLoginPassword("");
       }
-
-      // The Edge Function returns the session directly, so we need to set it manually
-      // Supabase client will automatically pick up the session from localStorage/cookies
-      // after the Edge Function successfully returns it.
-      // For immediate UI update, we can try to set the session if the structure matches.
-      // However, the onAuthStateChange listener should handle this.
-      
-      toast({
-        title: "Login realizado!",
-        description: "Bem-vindo ao LogiReverseIA.",
-      });
-      // Clear login form
-      setLoginIdentifier("");
-      setLoginPassword("");
-
-    } catch (error: any) {
+    } catch (error) {
       console.error("Erro no login:", error);
       toast({
-        title: "Erro no login",
-        description: error.message || "Nome de usuário ou senha incorretos. Verifique suas credenciais.",
+        title: "Erro inesperado",
+        description: "Tente novamente em alguns momentos.",
         variant: "destructive"
       });
     } finally {
@@ -209,15 +203,16 @@ export const Auth = () => {
                 <TabsContent value="signin">
                   <form onSubmit={handleSignIn} className="space-y-4">
                     <div className="space-y-2">
-                      <Label htmlFor="login-identifier">Nome de Usuário</Label>
+                      <Label htmlFor="login-email">Email</Label>
                       <div className="relative">
-                        <UserIcon className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                        <Mail className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
                         <Input
-                          id="login-identifier"
-                          placeholder="Seu nome de usuário"
+                          id="login-email"
+                          type="email"
+                          placeholder="seu@email.com"
                           className="pl-10"
-                          value={loginIdentifier}
-                          onChange={(e) => setLoginIdentifier(e.target.value)}
+                          value={loginEmail}
+                          onChange={(e) => setLoginEmail(e.target.value)}
                           required
                         />
                       </div>

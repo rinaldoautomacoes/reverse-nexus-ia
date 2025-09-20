@@ -266,7 +266,7 @@ export type Database = {
           avatar_url: string | null
           role: string // Adicionado o campo role
           updated_at: string | null
-          username: string | null // NOVA COLUNA
+          // username: string | null // REMOVIDA COLUNA
         }
         Insert: {
           id: string
@@ -275,7 +275,7 @@ export type Database = {
           avatar_url?: string | null
           role?: string // Adicionado o campo role
           updated_at?: string | null
-          username?: string | null // NOVA COLUNA
+          // username?: string | null // REMOVIDA COLUNA
         }
         Update: {
           id?: string
@@ -284,7 +284,7 @@ export type Database = {
           avatar_url?: string | null
           role?: string // Adicionado o campo role
           updated_at?: string | null
-          username?: string | null // NOVA COLUNA
+          // username?: string | null // REMOVIDA COLUNA
         }
         Relationships: [
           {
