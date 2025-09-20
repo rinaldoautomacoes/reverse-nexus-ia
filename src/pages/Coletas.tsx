@@ -139,7 +139,7 @@ const Coletas = () => {
   const { user } = useAuth();
 
   const [searchTerm, setSearchTerm] = useState("");
-  const [statusFilter, setStatusFilter] = useState("todos");
+  const [statusFilter, setStatusFilter] = useState("todos"); // Alterado para 'todos' por padrão
   const [selectedColeta, setSelectedColeta] = useState<Coleta | null>(null);
   const [editingColeta, setEditingColeta] = useState<Coleta | null>(null);
   const [isViewDetailsDialogOpen, setIsViewDetailsDialogOpen] = useState(false);
