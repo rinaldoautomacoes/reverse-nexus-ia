@@ -51,6 +51,29 @@ export const Dashboard = () => {
         style={{ backgroundImage: `url(${heroBackground})` }}
       >
         <div className="absolute inset-0 bg-gradient-to-r from-slate-darker/90 to-transparent" />
+        
+        {/* Botão de Login/Sair no canto superior direito */}
+        <div className="absolute top-6 right-6 z-20">
+          <Button 
+            size="default" // Ajustado para um tamanho padrão para o canto
+            variant="outline" 
+            className="border-neural text-neural hover:bg-neural/10 hover-scale"
+            onClick={handleAuthButtonClick}
+          >
+            {user ? (
+              <>
+                <LogOut className="mr-2 h-4 w-4" />
+                Sair
+              </>
+            ) : (
+              <>
+                <CheckCircle className="mr-2 h-4 w-4" />
+                Login / Cadastro
+              </>
+            )}
+          </Button>
+        </div>
+
         <div className="relative z-10 flex flex-col justify-center h-full px-6 lg:px-8">
           <div className="max-w-4xl">
             <h1 className="text-5xl lg:text-7xl font-bold font-orbitron gradient-text mb-4 animate-slide-up">
@@ -76,24 +99,6 @@ export const Dashboard = () => {
               >
                 <Brain className="mr-2 h-5 w-5" />
                 Dashboard IA
-              </Button>
-              <Button 
-                size="lg" 
-                variant="outline" 
-                className="border-neural text-neural hover:bg-neural/10 hover-scale"
-                onClick={handleAuthButtonClick} // Usar a nova função
-              >
-                {user ? ( // Renderização condicional do botão
-                  <>
-                    <LogOut className="mr-2 h-5 w-5" />
-                    Sair
-                  </>
-                ) : (
-                  <>
-                    <CheckCircle className="mr-2 h-5 w-5" />
-                    Login / Cadastro
-                  </>
-                )}
               </Button>
             </div>
           </div>
