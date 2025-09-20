@@ -2,7 +2,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"; // Corrigido de '=>' para 'from'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
@@ -551,10 +551,7 @@ export const AgendarColeta = () => {
                     <CalendarIcon className="mr-2 h-4 w-4" />
                     {isLoading || addColetaMutation.isPending ? "Agendando..." : "Agendar Coleta"}
                   </Button>
-                  <Button type="button" variant="outline" className="border-accent text-accent hover:bg-accent/10">
-                    <Truck className="mr-2 h-4 w-4" />
-                    Rota IA
-                  </Button>
+                  {/* Removido o botão "Rota IA" */}
                 </div>
               </form>
             </CardContent>

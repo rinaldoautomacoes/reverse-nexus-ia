@@ -14,18 +14,18 @@ import {
   Gauge,
   ListChecks,
   Users,
-  CheckCircle, // Adicionado CheckCircle aqui
+  CheckCircle,
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import heroBackground from "@/assets/hero-background.jpg";
 import { MetricsCards } from "./MetricsCards";
-import { RouteMap } from "./RouteMap";
+// import { RouteMap } from "./RouteMap"; // Removido
 import { AIAssistant } from "./AIAssistant";
 import { RecentActivity } from "./RecentActivity";
 import { PerformanceChart } from "./PerformanceChart";
 import { useAuth } from "@/hooks/use-auth";
 import { supabase } from "@/integrations/supabase/client";
-import { AuthButton } from "./AuthButton"; // Importar o novo AuthButton
+import { AuthButton } from "./AuthButton";
 
 export const Dashboard = () => {
   const navigate = useNavigate();
@@ -43,23 +43,8 @@ export const Dashboard = () => {
         
         {/* Botões "Iniciar Rota IA" e "Dashboard IA" no canto superior esquerdo */}
         <div className="absolute top-6 left-6 z-20 flex flex-wrap gap-4 animate-slide-up animation-delay-400">
-          <Button 
-            size="lg" 
-            className="glow-effect bg-gradient-primary hover:bg-gradient-primary/80 hover-scale"
-            onClick={() => navigate('/rota-inteligente')}
-          >
-            <Zap className="mr-2 h-5 w-5" />
-            Iniciar Rota IA
-          </Button>
-          <Button 
-            size="lg" 
-            variant="outline" 
-            className="border-primary text-primary hover:bg-primary/10 hover-scale"
-            onClick={() => navigate('/ia-insights')}
-          >
-            <Brain className="mr-2 h-5 w-5" />
-            Dashboard IA
-          </Button>
+          {/* Removido o botão "Iniciar Rota IA" */}
+          {/* Removido o botão "Dashboard IA" */}
         </div>
 
         {/* Botão de Login/Cadastro no canto superior direito */}
@@ -107,7 +92,7 @@ export const Dashboard = () => {
           {/* Left Column - Charts */}
           <div className="lg:col-span-2 space-y-8">
             <PerformanceChart />
-            <RouteMap />
+            {/* <RouteMap /> */} {/* Removido */}
           </div>
 
           {/* Right Column - Sidebar */}
