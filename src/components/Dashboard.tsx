@@ -97,8 +97,8 @@ export const Dashboard = () => {
 
         <div className="relative z-10 flex flex-col justify-center h-full px-6 lg:px-8">
           <div className="max-w-4xl">
-            <h1 className="text-5xl lg:text-7xl font-bold font-orbitron gradient-text mb-4 animate-slide-up">
-              LogiReverseIA
+            <h1 className="text-5xl lg:text-7xl font-bold font-orbitron gradient-text mb-4 animate-slide-up animate-text-pulse-fade">
+              LogiReversa
             </h1>
             <p className="text-xl lg:text-2xl text-muted-foreground mb-8 animate-slide-up animation-delay-200">
               Plataforma Inteligente de Logística Reversa
