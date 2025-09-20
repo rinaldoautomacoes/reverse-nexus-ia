@@ -7,14 +7,14 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { ArrowLeft, TrendingUp, BarChart3, Download, FileText, Calendar, Filter, Edit, Trash2, Search } from "lucide-react";
 import { useNavigate } from "react-router-dom";
-import { CreateReportDialog } from "@/components/CreateReportDialog"; // Importar o novo componente de diálogo
-import { ReportForm } from "@/components/ReportForm"; // Importar o formulário reutilizável
+import { CreateReportDialog } from "@/components/CreateReportDialog";
+import { ReportForm } from "@/components/ReportForm";
 import { useToast } from "@/hooks/use-toast";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import type { Tables, TablesInsert, TablesUpdate } from "@/integrations/supabase/types";
 import { useAuth } from "@/hooks/use-auth";
-import { generateReportPDF } from "@/lib/report-utils"; // Importar a função de geração de PDF do utilitário
+import { generateReportPDF } from "@/lib/report-utils";
 
 type Coleta = Tables<'coletas'>;
 type Item = Tables<'items'>;
@@ -147,6 +147,26 @@ export const Relatorios = () => {
     },
   });
 
+  // Nova mutação para atualizar o status do relatório após o download
+  const updateReportStatusMutation = useMutation({
+    mutationFn: async ({ reportId, newStatus }: { reportId: string; newStatus: string }) => {
+      const { data, error } = await supabase
+        .from('reports')
+        .update({ status: newStatus })
+        .eq('id', reportId)
+        .select()
+        .single();
+      if (error) throw new Error(error.message);
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['reports', user?.id] });
+    },
+    onError: (err) => {
+      toast({ title: "Erro ao atualizar status do relatório", description: err.message, variant: "destructive" });
+    },
+  });
+
   const handleUpdateReport = (data: ReportUpdate) => {
     updateReportMutation.mutate(data);
   };
@@ -166,8 +186,16 @@ export const Relatorios = () => {
       });
       return;
     }
+
     try {
+      // Gerar o PDF
       await generateReportPDF(report, user.id);
+
+      // Se a geração do PDF for bem-sucedida e o status não for 'Pronto', atualizá-lo
+      if (report.status !== 'Pronto') {
+        await updateReportStatusMutation.mutateAsync({ reportId: report.id, newStatus: 'Pronto' });
+      }
+
       toast({
         title: "Download Iniciado",
         description: `O download do relatório "${report.title}" foi iniciado.`,
@@ -178,6 +206,10 @@ export const Relatorios = () => {
         description: error.message || "Não foi possível gerar o PDF. Tente novamente.",
         variant: "destructive",
       });
+      // Opcionalmente, atualiza o status para 'Falha' se a geração falhar
+      if (report.status !== 'Falha') {
+        updateReportStatusMutation.mutate({ reportId: report.id, newStatus: 'Falha' });
+      }
     }
   };
 
@@ -352,11 +384,16 @@ export const Relatorios = () => {
                       </Badge>
                       <Button 
                         size="sm" 
-                        disabled={report.status !== 'Pronto'}
+                        // O botão estará habilitado se o status for 'Gerando' ou 'Pronto', e desabilitado se for 'Falha' ou se a mutação estiver pendente
+                        disabled={report.status === 'Falha' || (updateReportStatusMutation.isPending && updateReportStatusMutation.variables?.reportId === report.id)}
                         className="bg-gradient-primary hover:bg-gradient-primary/80 glow-effect"
                         onClick={() => handleDownload(report)}
                       >
-                        <Download className="mr-2 h-4 w-4" />
+                        {updateReportStatusMutation.isPending && updateReportStatusMutation.variables?.reportId === report.id ? (
+                          <div className="w-4 h-4 border-2 border-primary-foreground border-t-transparent rounded-full animate-spin mr-2" />
+                        ) : (
+                          <Download className="mr-2 h-4 w-4" />
+                        )}
                         Download
                       </Button>
                       <Dialog open={isEditDialogOpen && editingReport?.id === report.id} onOpenChange={setIsEditDialogOpen}>
