@@ -6,14 +6,14 @@ import { supabase } from "@/integrations/supabase/client";
 import type { Tables } from "@/integrations/supabase/types";
 import { useAuth } from "@/hooks/use-auth";
 import {
-  AreaChart, // Alterado para AreaChart
-  Area,       // Alterado para Area
+  AreaChart,
+  Area,
   XAxis,
   YAxis,
   CartesianGrid,
   Tooltip,
   ResponsiveContainer,
-  Legend,     // Adicionado Legend
+  Legend,
 } from "recharts";
 import { format, parseISO } from "date-fns";
 import { ptBR } from "date-fns/locale";
@@ -42,6 +42,18 @@ export const PerformanceChart = () => {
   const aggregatedChartData = React.useMemo(() => {
     if (!coletas) return [];
 
+    const today = new Date();
+    const currentYear = today.getFullYear();
+    const currentMonthIndex = today.getMonth(); // 0-11 (Jan=0, Sep=8)
+
+    const septemberMonthIndex = 8; // September (0-indexed)
+
+    const monthsToDisplay: string[] = [];
+    for (let i = septemberMonthIndex; i <= currentMonthIndex; i++) {
+      const date = new Date(currentYear, i, 1);
+      monthsToDisplay.push(format(date, 'MMM', { locale: ptBR }));
+    }
+
     const monthlyDataMap = new Map<string, {
       month: string;
       totalCollections: number;
@@ -51,39 +63,36 @@ export const PerformanceChart = () => {
       efficiency: number;
     }>();
 
-    const months = Array.from({ length: 6 }).map((_, i) => {
-      const date = new Date();
-      date.setMonth(date.getMonth() - (5 - i));
-      return format(date, 'MMM', { locale: ptBR });
-    });
-
     coletas.forEach(coleta => {
       const createdAtDate = parseISO(coleta.created_at);
       const monthKey = format(createdAtDate, 'MMM', { locale: ptBR });
 
-      if (!monthlyDataMap.has(monthKey)) {
-        monthlyDataMap.set(monthKey, {
-          month: monthKey,
-          totalCollections: 0,
-          processedCollections: 0,
-          totalProducts: 0,
-          uniqueClients: new Set<string>(),
-          efficiency: 0,
-        });
-      }
+      // Only consider data for months that are in our display range (September onwards of current year)
+      if (monthsToDisplay.includes(monthKey)) {
+        if (!monthlyDataMap.has(monthKey)) {
+          monthlyDataMap.set(monthKey, {
+            month: monthKey,
+            totalCollections: 0,
+            processedCollections: 0,
+            totalProducts: 0,
+            uniqueClients: new Set<string>(),
+            efficiency: 0,
+          });
+        }
 
-      const entry = monthlyDataMap.get(monthKey)!;
-      entry.totalCollections += 1;
-      entry.totalProducts += (coleta.qtd_aparelhos_solicitado || 0);
-      if (coleta.parceiro) {
-        entry.uniqueClients.add(coleta.parceiro);
-      }
-      if (coleta.status_coleta === 'concluida') {
-        entry.processedCollections += 1;
+        const entry = monthlyDataMap.get(monthKey)!;
+        entry.totalCollections += 1;
+        entry.totalProducts += (coleta.qtd_aparelhos_solicitado || 0);
+        if (coleta.parceiro) {
+          entry.uniqueClients.add(coleta.parceiro);
+        }
+        if (coleta.status_coleta === 'concluida') {
+          entry.processedCollections += 1;
+        }
       }
     });
 
-    const finalChartData = months.map(month => {
+    const finalChartData = monthsToDisplay.map(month => {
       const data = monthlyDataMap.get(month) || {
         month,
         totalCollections: 0,
@@ -133,7 +142,7 @@ export const PerformanceChart = () => {
             <CardTitle className="text-xl font-orbitron gradient-text">
               Performance de Recolhimentos
             </CardTitle>
-            <p className="text-sm text-muted-foreground">Últimos 6 meses</p>
+            <p className="text-sm text-muted-foreground">A partir de Setembro</p> {/* Texto atualizado */}
           </div>
           <div className="flex gap-2">
             <Badge variant="secondary" className="bg-primary/20 text-primary">
@@ -151,7 +160,7 @@ export const PerformanceChart = () => {
           {/* Chart Visualization */}
           <div className="h-64 relative">
             <ResponsiveContainer width="100%" height="100%">
-              <AreaChart // Alterado para AreaChart
+              <AreaChart
                 data={aggregatedChartData}
                 margin={{
                   top: 20,
@@ -177,14 +186,14 @@ export const PerformanceChart = () => {
                 />
                 <YAxis
                   stroke="hsl(var(--muted-foreground))"
-                  tickFormatter={(value: number) => value.toLocaleString()} // Formata como número
+                  tickFormatter={(value: number) => value.toLocaleString()}
                 />
                 <Tooltip
                   contentStyle={{ backgroundColor: 'hsl(var(--card))', border: '1px solid hsl(var(--border))', borderRadius: '0.5rem' }}
                   itemStyle={{ color: 'hsl(var(--foreground))' }}
                   labelFormatter={(label: string) => `Mês: ${label}`}
                 />
-                <Legend // Adicionado Legend
+                <Legend
                   wrapperStyle={{ paddingTop: '10px' }}
                   formatter={(value, entry) => (
                     <span className="text-sm flex items-center gap-2">
@@ -193,7 +202,7 @@ export const PerformanceChart = () => {
                     </span>
                   )}
                 />
-                <Area // Área para Totais de Coletas
+                <Area
                   type="monotone"
                   dataKey="totalCollections"
                   name="Totais de Coletas"
@@ -202,7 +211,7 @@ export const PerformanceChart = () => {
                   strokeWidth={2}
                   activeDot={{ r: 6, fill: 'hsl(var(--neon-cyan))', stroke: 'hsl(var(--background))', strokeWidth: 2 }}
                 />
-                <Area // Área para Totais de Produtos
+                <Area
                   type="monotone"
                   dataKey="totalProducts"
                   name="Totais de Produtos"
@@ -214,25 +223,6 @@ export const PerformanceChart = () => {
               </AreaChart>
             </ResponsiveContainer>
           </div>
-
-          {/* Custom Legend (matching the image) - REMOVIDO */}
-          {/* <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div className="flex items-center gap-3 p-3 bg-secondary/10 rounded-lg">
-              <div className="w-4 h-4 rounded" style={{ backgroundColor: 'hsl(var(--neon-cyan))' }} />
-              <div>
-                <p className="text-sm font-medium">Coletas Totais</p>
-                <p className="text-xs text-muted-foreground">Agendadas + Realizadas</p>
-              </div>
-            </div>
-            
-            <div className="flex items-center gap-3 p-3 bg-secondary/10 rounded-lg">
-              <div className="w-4 h-4 rounded" style={{ backgroundColor: 'hsl(var(--neon-cyan))' }} />
-              <div>
-                <p className="text-sm font-medium">Processadas</p>
-                <p className="text-xs text-muted-foreground">Finalizadas com sucesso</p>
-              </div>
-            </div>
-          </div> */}
         </div>
       </CardContent>
     </Card>
