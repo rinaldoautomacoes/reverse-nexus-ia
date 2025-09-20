@@ -155,60 +155,60 @@ export const generateReportPDF = async (reportData: ReportData, userId: string) 
       currentY += 10;
     }
 
-    // --- Métricas Principais Section ---
-    if (currentY > 250) { // Ensure metrics start on a new page if needed
-      pdf.addPage();
-      currentY = 30;
-    } else {
-      currentY += 10; // Add some space if continuing on the same page
-    }
+    // --- Métricas Principais Section (REMOVIDA) ---
+    // if (currentY > 250) {
+    //   pdf.addPage();
+    //   currentY = 30;
+    // } else {
+    //   currentY += 10;
+    // }
 
-    const totalColetasFinalizadas = coletas?.filter(c => c.status_coleta === 'concluida').length || 0;
-    const totalItensEntregues = items?.filter(item => item.status === 'processado').reduce((sum, item) => sum + item.quantity, 0) || 0;
-    const totalGeralItens = items?.reduce((sum, item) => sum + item.quantity, 0) || 0;
+    // const totalColetasFinalizadas = coletas?.filter(c => c.status_coleta === 'concluida').length || 0;
+    // const totalItensEntregues = items?.filter(item => item.status === 'processado').reduce((sum, item) => sum + item.quantity, 0) || 0;
+    // const totalGeralItens = items?.reduce((sum, item) => sum + item.quantity, 0) || 0;
 
-    pdf.setFontSize(14);
-    pdf.setTextColor(0, 0, 0);
-    pdf.text('Métricas Principais:', 20, currentY);
-    currentY += 10;
+    // pdf.setFontSize(14);
+    // pdf.setTextColor(0, 0, 0);
+    // pdf.text('Métricas Principais:', 20, currentY);
+    // currentY += 10;
     
-    const metricas = [
-      { titulo: "Coletas Finalizadas", valor: `${totalColetasFinalizadas}`, unidade: "" },
-      { titulo: "Itens Entregues", valor: `${totalItensEntregues}`, unidade: "itens" },
-      { titulo: "Total Geral Itens", valor: `${totalGeralItens}`, unidade: "itens" },
-      { titulo: "Eficiência IA", valor: "94.2%", unidade: "" }, // Placeholder, pois não temos dados para calcular isso dinamicamente aqui
-    ];
+    // const metricas = [
+    //   { titulo: "Coletas Finalizadas", valor: `${totalColetasFinalizadas}`, unidade: "" },
+    //   { titulo: "Itens Entregues", valor: `${totalItensEntregues}`, unidade: "itens" },
+    //   { titulo: "Total Geral Itens", valor: `${totalGeralItens}`, unidade: "itens" },
+    //   { titulo: "Eficiência IA", valor: "94.2%", unidade: "" },
+    // ];
     
-    pdf.setFontSize(10);
-    metricas.forEach((metrica) => {
-      pdf.text(`${metrica.titulo}: ${metrica.valor} ${metrica.unidade}`, 20, currentY);
-      currentY += 8;
-    });
-    currentY += 10;
+    // pdf.setFontSize(10);
+    // metricas.forEach((metrica) => {
+    //   pdf.text(`${metrica.titulo}: ${metrica.valor} ${metrica.unidade}`, 20, currentY);
+    //   currentY += 8;
+    // });
+    // currentY += 10;
 
-    // --- Análise IA Section ---
-    if (currentY > 250) { // Ensure analysis starts on a new page if needed
-      pdf.addPage();
-      currentY = 30;
-    }
-    pdf.setFontSize(14);
-    pdf.setTextColor(0, 0, 0);
-    pdf.text('Análise IA:', 20, currentY);
-    currentY += 10;
+    // --- Análise IA Section (REMOVIDA) ---
+    // if (currentY > 250) {
+    //   pdf.addPage();
+    //   currentY = 30;
+    // }
+    // pdf.setFontSize(14);
+    // pdf.setTextColor(0, 0, 0);
+    // pdf.text('Análise IA:', 20, currentY);
+    // currentY += 10;
     
-    pdf.setFontSize(10);
-    const analise = [
-      '• Rotas otimizadas resultaram em 22% de economia de combustível',
-      '• Algoritmo de IA identificou padrões de eficiência em horários específicos',
-      '• Recomendação: Implementar coletas matinais para máxima eficiência',
-      '• Previsão de crescimento: +15% na próxima temporada'
-    ];
+    // pdf.setFontSize(10);
+    // const analise = [
+    //   '• Rotas otimizadas resultaram em 22% de economia de combustível',
+    //   '• Algoritmo de IA identificou padrões de eficiência em horários específicos',
+    //   '• Recomendação: Implementar coletas matinais para máxima eficiência',
+    //   '• Previsão de crescimento: +15% na próxima temporada'
+    // ];
     
-    analise.forEach((item) => {
-      pdf.text(item, 20, currentY);
-      currentY += 8;
-    });
-    currentY += 10;
+    // analise.forEach((item) => {
+    //   pdf.text(item, 20, currentY);
+    //   currentY += 8;
+    // });
+    // currentY += 10;
     
     // Footer
     if (currentY > 270) { // Ensure footer is on a new page if needed
