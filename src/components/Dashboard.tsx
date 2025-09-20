@@ -13,7 +13,8 @@ import {
   AlertTriangle,
   Gauge,
   ListChecks,
-  Users, 
+  Users,
+  CheckCircle, // Adicionado CheckCircle aqui
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import heroBackground from "@/assets/hero-background.jpg";
