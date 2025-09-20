@@ -14,7 +14,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import type { Tables, TablesInsert, TablesUpdate } from "@/integrations/supabase/types";
 import { useAuth } from "@/hooks/use-auth";
-import { generateReportPDF } from "@/lib/report-utils";
+import { generateReport } from "@/lib/report-utils"; // Importar a nova função generateReport
 
 type Coleta = Tables<'coletas'>;
 type Item = Tables<'items'>;
@@ -188,10 +188,10 @@ export const Relatorios = () => {
     }
 
     try {
-      // Gerar o PDF
-      await generateReportPDF(report, user.id);
+      // Gerar o relatório usando a nova função e o formato do relatório
+      await generateReport(report, user.id);
 
-      // Se a geração do PDF for bem-sucedida e o status não for 'Pronto', atualizá-lo
+      // Se a geração do relatório for bem-sucedida e o status não for 'Pronto', atualizá-lo
       if (report.status !== 'Pronto') {
         await updateReportStatusMutation.mutateAsync({ reportId: report.id, newStatus: 'Pronto' });
       }
@@ -202,8 +202,8 @@ export const Relatorios = () => {
       });
     } catch (error: any) {
       toast({
-        title: "Erro ao gerar PDF",
-        description: error.message || "Não foi possível gerar o PDF. Tente novamente.",
+        title: "Erro ao gerar relatório",
+        description: error.message || "Não foi possível gerar o relatório. Tente novamente.",
         variant: "destructive",
       });
       // Opcionalmente, atualiza o status para 'Falha' se a geração falhar
