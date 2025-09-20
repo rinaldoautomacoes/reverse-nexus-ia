@@ -9,77 +9,75 @@ import { Textarea } from "@/components/ui/textarea";
 import { ArrowLeft, Package, MapPin, Calendar, Search, Filter, Eye, Edit, Trash2 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useState } from "react";
-import { toast } from "@/hooks/use-toast";
+import { useToast } from "@/hooks/use-toast";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
+import type { Tables, TablesInsert, TablesUpdate } from "@/integrations/supabase/types";
+import { useAuth } from "@/hooks/use-auth";
 
-const EditColetaForm = ({ coleta, onUpdate, onCancel }: { coleta: any, onUpdate: (coleta: any) => void, onCancel: () => void }) => {
-  const [formData, setFormData] = useState({
-    cliente: coleta.cliente,
-    endereco: coleta.endereco,
-    data: coleta.data,
-    periodo: coleta.periodo,
-    produtos: coleta.produtos,
-    tipo: coleta.tipo,
-    observacoes: coleta.observacoes
+type Coleta = Tables<'coletas'>;
+type ColetaInsert = TablesInsert<'coletas'>;
+type ColetaUpdate = TablesUpdate<'coletas'>;
+
+const EditColetaForm = ({ coleta, onUpdate, onCancel }: { coleta: Coleta, onUpdate: (coleta: ColetaUpdate) => void, onCancel: () => void }) => {
+  const [formData, setFormData] = useState<ColetaUpdate>({
+    id: coleta.id,
+    parceiro: coleta.parceiro || '',
+    endereco: coleta.endereco || '',
+    previsao_coleta: coleta.previsao_coleta || '',
+    qtd_aparelhos_solicitado: coleta.qtd_aparelhos_solicitado || 0,
+    modelo_aparelho: coleta.modelo_aparelho || '',
+    status_coleta: coleta.status_coleta || 'pendente',
+    observacao: coleta.observacao || ''
   });
+
+  const handleInputChange = (field: keyof ColetaUpdate, value: string | number | null) => {
+    setFormData(prev => ({ ...prev, [field]: value }));
+  };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    onUpdate({
-      ...coleta,
-      ...formData
-    });
+    onUpdate(formData);
   };
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
-      <div className="grid grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div>
-          <Label htmlFor="cliente">Cliente</Label>
+          <Label htmlFor="parceiro">Cliente</Label>
           <Input 
-            id="cliente"
-            value={formData.cliente}
-            onChange={(e) => setFormData({ ...formData, cliente: e.target.value })}
+            id="parceiro"
+            value={formData.parceiro || ''}
+            onChange={(e) => handleInputChange("parceiro", e.target.value)}
             required
           />
         </div>
         <div>
-          <Label htmlFor="data">Data</Label>
+          <Label htmlFor="previsao_coleta">Data</Label>
           <Input 
-            id="data"
+            id="previsao_coleta"
             type="date"
-            value={formData.data}
-            onChange={(e) => setFormData({ ...formData, data: e.target.value })}
+            value={formData.previsao_coleta || ''}
+            onChange={(e) => handleInputChange("previsao_coleta", e.target.value)}
             required
           />
         </div>
         <div>
-          <Label htmlFor="periodo">Período</Label>
-          <Select value={formData.periodo} onValueChange={(value) => setFormData({ ...formData, periodo: value })}>
-            <SelectTrigger>
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="Manhã (08h - 12h)">Manhã (08h - 12h)</SelectItem>
-              <SelectItem value="Tarde (13h - 17h)">Tarde (13h - 17h)</SelectItem>
-              <SelectItem value="Integral (08h - 17h)">Integral (08h - 17h)</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
-        <div>
-          <Label htmlFor="produtos">Quantidade de Produtos</Label>
+          <Label htmlFor="qtd_aparelhos_solicitado">Quantidade de Aparelhos</Label>
           <Input 
-            id="produtos"
+            id="qtd_aparelhos_solicitado"
             type="number"
-            value={formData.produtos}
-            onChange={(e) => setFormData({ ...formData, produtos: parseInt(e.target.value) })}
+            value={formData.qtd_aparelhos_solicitado || 0}
+            onChange={(e) => handleInputChange("qtd_aparelhos_solicitado", parseInt(e.target.value) || 0)}
             required
+            min={0}
           />
         </div>
         <div>
-          <Label htmlFor="tipo">Tipo</Label>
-          <Select value={formData.tipo} onValueChange={(value) => setFormData({ ...formData, tipo: value })}>
+          <Label htmlFor="modelo_aparelho">Tipo de Aparelho</Label>
+          <Select value={formData.modelo_aparelho || ''} onValueChange={(value) => handleInputChange("modelo_aparelho", value)}>
             <SelectTrigger>
-              <SelectValue />
+              <SelectValue placeholder="Selecionar tipo" />
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="Eletrônicos">Eletrônicos</SelectItem>
@@ -90,22 +88,35 @@ const EditColetaForm = ({ coleta, onUpdate, onCancel }: { coleta: any, onUpdate:
             </SelectContent>
           </Select>
         </div>
+        <div>
+          <Label htmlFor="status_coleta">Status</Label>
+          <Select value={formData.status_coleta || 'pendente'} onValueChange={(value) => handleInputChange("status_coleta", value)}>
+            <SelectTrigger>
+              <SelectValue placeholder="Selecionar status" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="agendada">Agendada</SelectItem>
+              <SelectItem value="concluida">Concluída</SelectItem>
+              <SelectItem value="pendente">Pendente</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
       </div>
       <div>
         <Label htmlFor="endereco">Endereço</Label>
         <Input 
           id="endereco"
-          value={formData.endereco}
-          onChange={(e) => setFormData({ ...formData, endereco: e.target.value })}
+          value={formData.endereco || ''}
+          onChange={(e) => handleInputChange("endereco", e.target.value)}
           required
         />
       </div>
       <div>
-        <Label htmlFor="observacoes">Observações</Label>
+        <Label htmlFor="observacao">Observações</Label>
         <Textarea 
-          id="observacoes"
-          value={formData.observacoes}
-          onChange={(e) => setFormData({ ...formData, observacoes: e.target.value })}
+          id="observacao"
+          value={formData.observacao || ''}
+          onChange={(e) => handleInputChange("observacao", e.target.value)}
           rows={3}
         />
       </div>
@@ -123,90 +134,87 @@ const EditColetaForm = ({ coleta, onUpdate, onCancel }: { coleta: any, onUpdate:
 
 const Coletas = () => {
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
+  const { user } = useAuth();
+
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("todos");
-  const [selectedColeta, setSelectedColeta] = useState<any>(null);
-  const [editingColeta, setEditingColeta] = useState<any>(null);
-  const [coletasData, setColetasData] = useState([
-    {
-      id: 1,
-      cliente: "TechCorp",
-      endereco: "Av. Paulista, 1000 - Zona Norte",
-      data: "2024-08-15",
-      periodo: "Manhã (08h - 12h)",
-      produtos: 50,
-      tipo: "Eletrônicos",
-      status: "agendada",
-      observacoes: "Cliente preferencial"
+  const [selectedColeta, setSelectedColeta] = useState<Coleta | null>(null);
+  const [editingColeta, setEditingColeta] = useState<Coleta | null>(null);
+  const [isViewDetailsDialogOpen, setIsViewDetailsDialogOpen] = useState(false);
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+
+  const { data: coletas, isLoading, error } = useQuery<Coleta[], Error>({
+    queryKey: ['coletas', user?.id, statusFilter],
+    queryFn: async () => {
+      if (!user?.id) return [];
+      let query = supabase
+        .from('coletas')
+        .select('*')
+        .eq('user_id', user.id);
+      
+      if (statusFilter !== "todos") {
+        query = query.eq('status_coleta', statusFilter);
+      }
+
+      const { data, error } = await query;
+      if (error) throw new Error(error.message);
+      return data;
     },
-    {
-      id: 2,
-      cliente: "EcoSolutions",
-      endereco: "Rua Verde, 250 - Zona Sul",
-      data: "2024-08-14",
-      periodo: "Tarde (13h - 17h)",
-      produtos: 120,
-      tipo: "Eletrodomésticos",
-      status: "concluida",
-      observacoes: "Coleta realizada com sucesso"
+    enabled: !!user?.id,
+  });
+
+  const updateColetaMutation = useMutation({
+    mutationFn: async (updatedColeta: ColetaUpdate) => {
+      const { data, error } = await supabase
+        .from('coletas')
+        .update(updatedColeta)
+        .eq('id', updatedColeta.id as string)
+        .select()
+        .single();
+      if (error) throw new Error(error.message);
+      return data;
     },
-    {
-      id: 3,
-      cliente: "GreenTech",
-      endereco: "Rua Sustentável, 500 - Zona Oeste",
-      data: "2024-08-16",
-      periodo: "Integral (08h - 17h)",
-      produtos: 80,
-      tipo: "Móveis",
-      status: "pendente",
-      observacoes: "Prioridade alta"
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['coletas', user?.id] });
+      toast({ title: "Coleta atualizada!", description: "As informações da coleta foram atualizadas com sucesso." });
+      setIsEditDialogOpen(false);
+      setEditingColeta(null);
     },
-    {
-      id: 4,
-      cliente: "SustainableCorp",
-      endereco: "Av. Ambiental, 750 - Centro",
-      data: "2024-08-13",
-      periodo: "Manhã (08h - 12h)",
-      produtos: 200,
-      tipo: "Vestuário",
-      status: "concluida",
-      observacoes: "Coleta mensal"
+    onError: (err) => {
+      toast({ title: "Erro ao atualizar coleta", description: err.message, variant: "destructive" });
     },
-    {
-      id: 5,
-      cliente: "RecyclePro",
-      endereco: "Rua Circular, 300 - Zona Norte",
-      data: "2024-08-17",
-      periodo: "Tarde (13h - 17h)",
-      produtos: 95,
-      tipo: "Eletrônicos",
-      status: "agendada",
-      observacoes: "Novo cliente"
+  });
+
+  const deleteColetaMutation = useMutation({
+    mutationFn: async (coletaId: string) => {
+      const { error } = await supabase
+        .from('coletas')
+        .delete()
+        .eq('id', coletaId);
+      if (error) throw new Error(error.message);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['coletas', user?.id] });
+      toast({ title: "Coleta excluída!", description: "A coleta foi removida com sucesso." });
+    },
+    onError: (err) => {
+      toast({ title: "Erro ao excluir coleta", description: err.message, variant: "destructive" });
+    },
+  });
+
+  const handleUpdateColeta = (updatedColeta: ColetaUpdate) => {
+    updateColetaMutation.mutate(updatedColeta);
+  };
+
+  const handleDeleteColeta = (coletaId: string) => {
+    if (window.confirm("Tem certeza que deseja excluir esta coleta?")) {
+      deleteColetaMutation.mutate(coletaId);
     }
-  ]);
-
-  const handleUpdateColeta = (updatedColeta: any) => {
-    setColetasData(coletas => 
-      coletas.map(coleta => 
-        coleta.id === updatedColeta.id ? updatedColeta : coleta
-      )
-    );
-    setEditingColeta(null);
-    toast({
-      title: "Coleta atualizada!",
-      description: "As informações da coleta foram atualizadas com sucesso.",
-    });
   };
 
-  const handleDeleteColeta = (coletaId: number) => {
-    setColetasData(coletas => coletas.filter(coleta => coleta.id !== coletaId));
-    toast({
-      title: "Coleta excluída!",
-      description: "A coleta foi removida com sucesso.",
-    });
-  };
-
-  const getStatusColor = (status: string) => {
+  const getStatusColor = (status: string | null) => {
     switch (status) {
       case 'concluida':
         return 'bg-primary/20 text-primary';
@@ -219,7 +227,7 @@ const Coletas = () => {
     }
   };
 
-  const getStatusText = (status: string) => {
+  const getStatusText = (status: string | null) => {
     switch (status) {
       case 'concluida':
         return 'Concluída';
@@ -228,16 +236,37 @@ const Coletas = () => {
       case 'pendente':
         return 'Pendente';
       default:
-        return status;
+        return status || 'Desconhecido';
     }
   };
 
-  const filteredColetas = coletasData.filter(coleta => {
-    const matchesSearch = coleta.cliente.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         coleta.endereco.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesStatus = statusFilter === "todos" || coleta.status === statusFilter;
+  const filteredColetas = coletas?.filter(coleta => {
+    const matchesSearch = (coleta.parceiro?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                           coleta.endereco?.toLowerCase().includes(searchTerm.toLowerCase()));
+    const matchesStatus = statusFilter === "todos" || coleta.status_coleta === statusFilter;
     return matchesSearch && matchesStatus;
-  });
+  }) || [];
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-background ai-pattern p-6 flex items-center justify-center">
+        <div className="text-center">
+          <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin mx-auto mb-2" />
+          <p className="text-sm text-muted-foreground">Carregando coletas...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="min-h-screen bg-background ai-pattern p-6">
+        <div className="max-w-6xl mx-auto text-center text-destructive">
+          <p>Erro ao carregar coletas: {error.message}</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-background ai-pattern p-6">
@@ -278,7 +307,7 @@ const Coletas = () => {
                   <Select value={statusFilter} onValueChange={setStatusFilter}>
                     <SelectTrigger>
                       <Filter className="mr-2 h-4 w-4" />
-                      <SelectValue />
+                      <SelectValue placeholder="Filtrar por Status" />
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="todos">Todos os Status</SelectItem>
@@ -305,9 +334,9 @@ const Coletas = () => {
                     <div className="flex-1">
                       <div className="flex items-center gap-3 mb-2">
                         <Package className="h-5 w-5 text-primary" />
-                        <h3 className="text-lg font-semibold">{coleta.cliente}</h3>
-                        <Badge className={getStatusColor(coleta.status)}>
-                          {getStatusText(coleta.status)}
+                        <h3 className="text-lg font-semibold">{coleta.parceiro}</h3>
+                        <Badge className={getStatusColor(coleta.status_coleta)}>
+                          {getStatusText(coleta.status_coleta)}
                         </Badge>
                       </div>
                       
@@ -318,24 +347,33 @@ const Coletas = () => {
                         </div>
                         <div className="flex items-center gap-2">
                           <Calendar className="h-4 w-4" />
-                          {new Date(coleta.data).toLocaleDateString()} - {coleta.periodo}
+                          {coleta.previsao_coleta ? new Date(coleta.previsao_coleta).toLocaleDateString() : 'N/A'}
+                          {/* O campo 'periodo' não está no DB, então não será exibido aqui diretamente */}
                         </div>
                         <div>
-                          <strong>{coleta.produtos}</strong> produtos - {coleta.tipo}
+                          <strong>{coleta.qtd_aparelhos_solicitado || 0}</strong> produtos - {coleta.modelo_aparelho || 'N/A'}
                         </div>
                       </div>
                       
-                      {coleta.observacoes && (
+                      {coleta.observacao && (
                         <p className="text-sm text-muted-foreground mt-2 italic">
-                          {coleta.observacoes}
+                          {coleta.observacao}
                         </p>
                       )}
                     </div>
                     
                     <div className="flex gap-2">
-                      <Dialog>
+                      <Dialog open={isViewDetailsDialogOpen && selectedColeta?.id === coleta.id} onOpenChange={setIsViewDetailsDialogOpen}>
                         <DialogTrigger asChild>
-                          <Button variant="outline" size="sm" className="border-accent text-accent hover:bg-accent/10" onClick={() => setSelectedColeta(coleta)}>
+                          <Button 
+                            variant="outline" 
+                            size="sm" 
+                            className="border-accent text-accent hover:bg-accent/10" 
+                            onClick={() => {
+                              setSelectedColeta(coleta);
+                              setIsViewDetailsDialogOpen(true);
+                            }}
+                          >
                             <Eye className="mr-1 h-3 w-3" />
                             Ver Detalhes
                           </Button>
@@ -349,29 +387,25 @@ const Coletas = () => {
                               <div className="grid grid-cols-2 gap-4">
                                 <div>
                                   <Label className="text-sm font-medium">Cliente</Label>
-                                  <p className="text-sm text-muted-foreground">{selectedColeta.cliente}</p>
+                                  <p className="text-sm text-muted-foreground">{selectedColeta.parceiro}</p>
                                 </div>
                                 <div>
                                   <Label className="text-sm font-medium">Status</Label>
-                                  <Badge className={getStatusColor(selectedColeta.status)}>
-                                    {getStatusText(selectedColeta.status)}
+                                  <Badge className={getStatusColor(selectedColeta.status_coleta)}>
+                                    {getStatusText(selectedColeta.status_coleta)}
                                   </Badge>
                                 </div>
                                 <div>
                                   <Label className="text-sm font-medium">Data</Label>
-                                  <p className="text-sm text-muted-foreground">{new Date(selectedColeta.data).toLocaleDateString()}</p>
+                                  <p className="text-sm text-muted-foreground">{selectedColeta.previsao_coleta ? new Date(selectedColeta.previsao_coleta).toLocaleDateString() : 'N/A'}</p>
                                 </div>
                                 <div>
-                                  <Label className="text-sm font-medium">Período</Label>
-                                  <p className="text-sm text-muted-foreground">{selectedColeta.periodo}</p>
+                                  <Label className="text-sm font-medium">Quantidade de Aparelhos</Label>
+                                  <p className="text-sm text-muted-foreground">{selectedColeta.qtd_aparelhos_solicitado || 0} produtos</p>
                                 </div>
                                 <div>
-                                  <Label className="text-sm font-medium">Quantidade de Produtos</Label>
-                                  <p className="text-sm text-muted-foreground">{selectedColeta.produtos} produtos</p>
-                                </div>
-                                <div>
-                                  <Label className="text-sm font-medium">Tipo</Label>
-                                  <p className="text-sm text-muted-foreground">{selectedColeta.tipo}</p>
+                                  <Label className="text-sm font-medium">Tipo de Aparelho</Label>
+                                  <p className="text-sm text-muted-foreground">{selectedColeta.modelo_aparelho || 'N/A'}</p>
                                 </div>
                               </div>
                               <div>
@@ -380,17 +414,24 @@ const Coletas = () => {
                               </div>
                               <div>
                                 <Label className="text-sm font-medium">Observações</Label>
-                                <p className="text-sm text-muted-foreground">{selectedColeta.observacoes || "Nenhuma observação"}</p>
+                                <p className="text-sm text-muted-foreground">{selectedColeta.observacao || "Nenhuma observação"}</p>
                               </div>
                             </div>
                           )}
                         </DialogContent>
                       </Dialog>
                       
-                      {coleta.status === 'agendada' && (
-                        <Dialog>
+                      {coleta.status_coleta === 'agendada' && (
+                        <Dialog open={isEditDialogOpen && editingColeta?.id === coleta.id} onOpenChange={setIsEditDialogOpen}>
                           <DialogTrigger asChild>
-                            <Button size="sm" className="bg-gradient-primary hover:bg-gradient-primary/80" onClick={() => setEditingColeta({...coleta})}>
+                            <Button 
+                              size="sm" 
+                              className="bg-gradient-primary hover:bg-gradient-primary/80" 
+                              onClick={() => {
+                                setEditingColeta(coleta);
+                                setIsEditDialogOpen(true);
+                              }}
+                            >
                               <Edit className="mr-1 h-3 w-3" />
                               Editar
                             </Button>
@@ -399,11 +440,14 @@ const Coletas = () => {
                             <DialogHeader>
                               <DialogTitle>Editar Coleta</DialogTitle>
                             </DialogHeader>
-                            {editingColeta && (
+                            {editingColeta && editingColeta.id === coleta.id && (
                               <EditColetaForm 
                                 coleta={editingColeta} 
                                 onUpdate={handleUpdateColeta}
-                                onCancel={() => setEditingColeta(null)}
+                                onCancel={() => {
+                                  setIsEditDialogOpen(false);
+                                  setEditingColeta(null);
+                                }}
                               />
                             )}
                           </DialogContent>
