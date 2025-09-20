@@ -5,11 +5,11 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Brain, Mail, Lock, Truck, Zap, CheckCircle, ArrowLeft, History, XCircle } from "lucide-react";
+import { Brain, Mail, Lock, Truck, Zap, ArrowLeft, XCircle } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import type { User, Session } from '@supabase/supabase-js';
+import { EmailCombobox } from "@/components/EmailCombobox"; // Importar o novo componente
 
 const RECENT_EMAILS_KEY = 'logireverseia_recent_emails';
 
@@ -206,43 +206,12 @@ export const Auth = () => {
                   <form onSubmit={handleSignIn} className="space-y-4">
                     <div className="space-y-2">
                       <Label htmlFor="signin-email">Email</Label>
-                      <div className="relative">
-                        <Mail className="absolute left-3 top-3 h-4 w-4 text-muted-foreground z-10" />
-                        <Select value={email} onValueChange={setEmail}>
-                          <SelectTrigger id="signin-email" className="pl-10">
-                            <SelectValue placeholder="seu@email.com" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {recentEmails.length > 0 ? (
-                              <>
-                                {recentEmails.map((recEmail, index) => (
-                                  <SelectItem key={index} value={recEmail}>
-                                    {recEmail}
-                                  </SelectItem>
-                                ))}
-                                <Button 
-                                  variant="ghost" 
-                                  onClick={clearRecentEmails} 
-                                  className="w-full text-destructive hover:bg-destructive/10 mt-2"
-                                >
-                                  <XCircle className="mr-2 h-4 w-4" />
-                                  Limpar Histórico
-                                </Button>
-                              </>
-                            ) : (
-                              <SelectItem value="" disabled>Nenhum e-mail recente</SelectItem>
-                            )}
-                            <Input
-                              type="email"
-                              placeholder="Digite um novo e-mail..."
-                              className="mt-2"
-                              value={email}
-                              onChange={(e) => setEmail(e.target.value)}
-                              onClick={(e) => e.stopPropagation()} // Prevent closing select when typing
-                            />
-                          </SelectContent>
-                        </Select>
-                      </div>
+                      <EmailCombobox
+                        value={email}
+                        onValueChange={setEmail}
+                        recentEmails={recentEmails}
+                        onClearRecentEmails={clearRecentEmails}
+                      />
                     </div>
                     <div className="space-y-2">
                       <Label htmlFor="signin-password">Senha</Label>
