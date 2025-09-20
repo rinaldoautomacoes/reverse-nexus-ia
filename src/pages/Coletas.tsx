@@ -281,8 +281,9 @@ const Coletas = () => {
     }
 
     const clientName = coleta.contato || coleta.parceiro || 'cliente';
+    const formattedDate = coleta.previsao_coleta ? format(new Date(coleta.previsao_coleta), "dd/MM/yyyy", { locale: ptBR }) : 'N/A';
     const message = encodeURIComponent(
-      `Prezado(a) ${clientName}, Venho informar que a coleta foi agendada. Desde já agradecemos.`
+      `Prezado(a) ${clientName}, Venho informar que a coleta foi agendada para o dia ${formattedDate}. Desde já agradecemos.`
     );
     const whatsappUrl = `https://wa.me/${coleta.telefone.replace(/\D/g, '')}?text=${message}`;
     
@@ -300,9 +301,17 @@ const Coletas = () => {
     }
 
     const clientName = coleta.contato || coleta.parceiro || 'cliente';
+    const formattedDate = coleta.previsao_coleta ? format(new Date(coleta.previsao_coleta), "dd/MM/yyyy", { locale: ptBR }) : 'N/A';
     const subject = encodeURIComponent(`Confirmação de Coleta Agendada - LogiReverseIA - ${coleta.parceiro || 'N/A'}`);
     const body = encodeURIComponent(
-      `Prezado(a) ${clientName}, Venho informar que a coleta foi agendada. Desde já agradecemos.`
+      `Prezado(a) ${clientName},\n\nVenho informar que a coleta foi agendada para o dia ${formattedDate}.` +
+      `\n\nDetalhes da Coleta:\n` +
+      `Cliente: ${coleta.parceiro || 'N/A'}\n` +
+      `Endereço: ${coleta.endereco || 'N/A'}\n` +
+      `Quantidade de Aparelhos: ${coleta.qtd_aparelhos_solicitado || 0}\n` +
+      `Tipo de Material: ${coleta.modelo_aparelho || 'N/A'}\n` +
+      `Status: ${getStatusText(coleta.status_coleta)}\n` +
+      `\nDesde já agradecemos.`
     );
     const mailtoUrl = `mailto:${coleta.email}?subject=${subject}&body=${body}`;
     
