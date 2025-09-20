@@ -6,14 +6,14 @@ import { supabase } from "@/integrations/supabase/client";
 import type { Tables } from "@/integrations/supabase/types";
 import { useAuth } from "@/hooks/use-auth";
 import {
-  BarChart,
-  Bar,
+  LineChart, // Alterado para LineChart
+  Line,       // Alterado para Line
   XAxis,
   YAxis,
   CartesianGrid,
-  Tooltip, // Mantido para o caso de querer reativar, mas não será usado
+  Tooltip,
   ResponsiveContainer,
-  LabelList,
+  LabelList, // Removido, pois não é comum em gráficos de linha para cada ponto
 } from "recharts";
 import { format, parseISO } from "date-fns";
 import { ptBR } from "date-fns/locale";
@@ -151,8 +151,7 @@ export const PerformanceChart = () => {
           {/* Chart Visualization */}
           <div className="h-64 relative">
             <ResponsiveContainer width="100%" height="100%">
-              <BarChart
-                layout="vertical" // Alterado para layout vertical
+              <LineChart // Alterado para LineChart
                 data={aggregatedChartData}
                 margin={{
                   top: 20,
@@ -163,48 +162,40 @@ export const PerformanceChart = () => {
               >
                 <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border)/0.2)" />
                 <XAxis
-                  type="number" // Eixo X agora é numérico
+                  dataKey="month"
+                  stroke="hsl(var(--muted-foreground))"
+                />
+                <YAxis
                   stroke="hsl(var(--muted-foreground))"
                   domain={[0, 100]}
                   tickFormatter={(value: number) => `${value}%`}
                 />
-                <YAxis
-                  dataKey="month" // Eixo Y agora é categórico (meses)
-                  type="category"
-                  stroke="hsl(var(--muted-foreground))"
+                <Tooltip
+                  contentStyle={{ backgroundColor: 'hsl(var(--card))', border: '1px solid hsl(var(--border))', borderRadius: '0.5rem' }}
+                  itemStyle={{ color: 'hsl(var(--foreground))' }}
+                  formatter={(value: number) => `${value.toFixed(1)}%`}
+                  labelFormatter={(label: string) => `Mês: ${label}`}
                 />
-                {/* Tooltip removido para corresponder à imagem */}
-                <Bar dataKey="efficiency" name="Eficiência IA" fill="hsl(var(--neon-cyan))" radius={[0, 4, 4, 0]}> {/* Raio ajustado para barras horizontais */}
-                  <LabelList
-                    dataKey="efficiency"
-                    position="right" // Posição do rótulo ajustada para barras horizontais
-                    formatter={(value: number) => `${value.toFixed(1)}%`}
-                    className="text-sm fill-foreground"
-                  />
-                </Bar>
-              </BarChart>
+                <Line // Alterado para Line
+                  type="monotone" // Linha suave
+                  dataKey="efficiency"
+                  name="Eficiência IA"
+                  stroke="hsl(var(--neon-cyan))"
+                  strokeWidth={3}
+                  dot={false} // Sem pontos estáticos na linha
+                  activeDot={{ r: 6, fill: 'hsl(var(--neon-cyan))', stroke: 'hsl(var(--background))', strokeWidth: 2 }} // Ponto ativo ao passar o mouse
+                />
+              </LineChart>
             </ResponsiveContainer>
           </div>
 
-          {/* Custom Legend (matching the image) */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div className="flex items-center gap-3 p-3 bg-secondary/10 rounded-lg">
-              <div className="w-4 h-4 rounded" style={{ backgroundColor: 'hsl(var(--neon-cyan))' }} />
-              <div>
-                <p className="text-sm font-medium">Coletas Totais</p>
-                <p className="text-xs text-muted-foreground">Agendadas + Realizadas</p>
-              </div>
+          {/* Custom Legend */}
+          <div className="flex items-center gap-3 p-3 bg-secondary/10 rounded-lg">
+            <div className="w-4 h-4 rounded" style={{ backgroundColor: 'hsl(var(--neon-cyan))' }} />
+            <div>
+              <p className="text-sm font-medium">Eficiência IA</p>
+              <p className="text-xs text-muted-foreground">Taxa de otimização</p>
             </div>
-            
-            <div className="flex items-center gap-3 p-3 bg-secondary/10 rounded-lg">
-              <div className="w-4 h-4 rounded" style={{ backgroundColor: 'hsl(var(--neon-cyan))' }} />
-              <div>
-                <p className="text-sm font-medium">Processadas</p>
-                <p className="text-xs text-muted-foreground">Finalizadas com sucesso</p>
-              </div>
-            </div>
-            
-            {/* Removido o item 'Eficiência IA' da legenda */}
           </div>
         </div>
       </CardContent>
