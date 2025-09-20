@@ -152,6 +152,7 @@ export const PerformanceChart = () => {
           <div className="h-64 relative">
             <ResponsiveContainer width="100%" height="100%">
               <BarChart
+                layout="vertical" // Alterado para layout vertical
                 data={aggregatedChartData}
                 margin={{
                   top: 20,
@@ -162,19 +163,21 @@ export const PerformanceChart = () => {
               >
                 <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border)/0.2)" />
                 <XAxis
-                  dataKey="month"
-                  stroke="hsl(var(--muted-foreground))"
-                />
-                <YAxis
+                  type="number" // Eixo X agora é numérico
                   stroke="hsl(var(--muted-foreground))"
                   domain={[0, 100]}
                   tickFormatter={(value: number) => `${value}%`}
                 />
+                <YAxis
+                  dataKey="month" // Eixo Y agora é categórico (meses)
+                  type="category"
+                  stroke="hsl(var(--muted-foreground))"
+                />
                 {/* Tooltip removido para corresponder à imagem */}
-                <Bar dataKey="efficiency" name="Eficiência IA" fill="hsl(var(--neon-cyan))" radius={[4, 4, 0, 0]}>
+                <Bar dataKey="efficiency" name="Eficiência IA" fill="hsl(var(--neon-cyan))" radius={[0, 4, 4, 0]}> {/* Raio ajustado para barras horizontais */}
                   <LabelList
                     dataKey="efficiency"
-                    position="top"
+                    position="right" // Posição do rótulo ajustada para barras horizontais
                     formatter={(value: number) => `${value.toFixed(1)}%`}
                     className="text-sm fill-foreground"
                   />
