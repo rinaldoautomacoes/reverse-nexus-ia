@@ -55,7 +55,7 @@ export const Dashboard = () => {
         {/* Botão de Login/Sair no canto superior direito */}
         <div className="absolute top-6 right-6 z-20">
           <Button 
-            size="default" // Ajustado para um tamanho padrão para o canto
+            size="default" 
             variant="outline" 
             className="border-neural text-neural hover:bg-neural/10 hover-scale"
             onClick={handleAuthButtonClick}
@@ -74,6 +74,27 @@ export const Dashboard = () => {
           </Button>
         </div>
 
+        {/* Botões "Iniciar Rota IA" e "Dashboard IA" no canto superior esquerdo */}
+        <div className="absolute top-6 left-6 z-20 flex flex-wrap gap-4 animate-slide-up animation-delay-400">
+          <Button 
+            size="lg" 
+            className="glow-effect bg-gradient-primary hover:bg-gradient-primary/80 hover-scale"
+            onClick={() => navigate('/rota-inteligente')}
+          >
+            <Zap className="mr-2 h-5 w-5" />
+            Iniciar Rota IA
+          </Button>
+          <Button 
+            size="lg" 
+            variant="outline" 
+            className="border-primary text-primary hover:bg-primary/10 hover-scale"
+            onClick={() => navigate('/ia-insights')}
+          >
+            <Brain className="mr-2 h-5 w-5" />
+            Dashboard IA
+          </Button>
+        </div>
+
         <div className="relative z-10 flex flex-col justify-center h-full px-6 lg:px-8">
           <div className="max-w-4xl">
             <h1 className="text-5xl lg:text-7xl font-bold font-orbitron gradient-text mb-4 animate-slide-up">
@@ -82,25 +103,7 @@ export const Dashboard = () => {
             <p className="text-xl lg:text-2xl text-muted-foreground mb-8 animate-slide-up animation-delay-200">
               Plataforma Inteligente de Logística Reversa
             </p>
-            <div className="flex flex-wrap gap-4 animate-slide-up animation-delay-400">
-              <Button 
-                size="lg" 
-                className="glow-effect bg-gradient-primary hover:bg-gradient-primary/80 hover-scale"
-                onClick={() => navigate('/rota-inteligente')}
-              >
-                <Zap className="mr-2 h-5 w-5" />
-                Iniciar Rota IA
-              </Button>
-              <Button 
-                size="lg" 
-                variant="outline" 
-                className="border-primary text-primary hover:bg-primary/10 hover-scale"
-                onClick={() => navigate('/ia-insights')}
-              >
-                <Brain className="mr-2 h-5 w-5" />
-                Dashboard IA
-              </Button>
-            </div>
+            {/* Os botões foram movidos para o novo div acima, então não estão mais aqui */}
           </div>
         </div>
       </div>
