@@ -32,15 +32,7 @@ export const SidebarNav = () => {
   const [isSheetOpen, setIsSheetOpen] = React.useState(false); // Para o sheet mobile
   const { isSidebarOpen, toggleSidebar, sidebarWidthClass } = useSidebar(); // Usa o contexto para o sidebar desktop
 
-  const handleAuthButtonClick = async () => {
-    if (user) {
-      await supabase.auth.signOut();
-      navigate('/auth');
-    } else {
-      navigate('/auth');
-    }
-    if (isMobile) setIsSheetOpen(false); // Fecha o sheet em mobile após a ação
-  };
+  // handleAuthButtonClick e o botão de login/logout foram movidos para o AuthButton.tsx
 
   const navItems = [
     {
@@ -140,30 +132,9 @@ export const SidebarNav = () => {
           })}
         </nav>
       </div>
+      {/* O botão de autenticação foi movido para o Dashboard.tsx */}
       <div className="border-t border-border/30 pt-4">
-        {/* O botão de autenticação agora sempre exibe o texto, ajustando o layout */}
-        <Button
-          variant="outline"
-          className={cn(
-            "w-full border-neural text-neural hover:bg-neural/10",
-            isCollapsed ? "justify-center px-0" : "justify-start" // Ajusta o alinhamento
-          )}
-          onClick={handleAuthButtonClick}
-        >
-          {user ? (
-            <>
-              <LogOut className={cn(isCollapsed ? 'h-6 w-6' : 'mr-2 h-4 w-4')} />
-              {!isCollapsed && "Sair"} {/* Mostra o texto apenas se não estiver recolhido */}
-              {isCollapsed && <span className="sr-only">Sair</span>} {/* Acessibilidade para ícone */}
-            </>
-          ) : (
-            <>
-              <CheckCircle className={cn(isCollapsed ? 'h-6 w-6' : 'mr-2 h-4 w-4')} />
-              {!isCollapsed && "Login / Cadastro"} {/* Mostra o texto apenas se não estiver recolhido */}
-              {isCollapsed && <span className="sr-only">Login / Cadastro</span>} {/* Acessibilidade para ícone */}
-            </>
-          )}
-        </Button>
+        {/* Conteúdo do rodapé, se houver */}
       </div>
     </div>
   );

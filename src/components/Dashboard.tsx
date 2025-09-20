@@ -25,13 +25,12 @@ import { RecentActivity } from "./RecentActivity";
 import { PerformanceChart } from "./PerformanceChart";
 import { useAuth } from "@/hooks/use-auth";
 import { supabase } from "@/integrations/supabase/client";
+import { AuthButton } from "./AuthButton"; // Importar o novo AuthButton
 
 export const Dashboard = () => {
   const navigate = useNavigate();
   const { user, profile } = useAuth();
   const isAdmin = profile?.role === 'admin';
-
-  // handleAuthButtonClick e o botão de login/logout foram movidos para SidebarNav
 
   return (
     <div className="min-h-screen bg-background ai-pattern">
@@ -61,6 +60,11 @@ export const Dashboard = () => {
             <Brain className="mr-2 h-5 w-5" />
             Dashboard IA
           </Button>
+        </div>
+
+        {/* Botão de Login/Cadastro no canto superior direito */}
+        <div className="absolute top-6 right-6 z-20 animate-slide-up animation-delay-400">
+          <AuthButton />
         </div>
 
         <div className="relative z-10 flex flex-col justify-start pt-24 h-full px-6 lg:px-8">
