@@ -271,47 +271,42 @@ const Coletas = () => {
   };
 
   const handleSendWhatsApp = (coleta: Coleta) => {
-    console.log("Attempting to send WhatsApp message for coleta:", coleta);
     if (!coleta.telefone) {
       toast({
         title: "Telefone não disponível",
         description: "Não há um número de telefone cadastrado para esta coleta.",
         variant: "destructive",
       });
-      console.warn("WhatsApp: Telefone não disponível.");
       return;
     }
 
-    const formattedDate = coleta.previsao_coleta ? format(new Date(coleta.previsao_coleta), "dd/MM/yyyy", { locale: ptBR }) : 'N/A';
+    const clientName = coleta.contato || coleta.parceiro || 'cliente';
     const message = encodeURIComponent(
-      `Olá ${coleta.contato || coleta.parceiro || 'cliente'},%0A%0AGostaríamos de confirmar sua coleta agendada com a LogiReverseIA.%0A%0ADetalhes da Coleta:%0A- Cliente: ${coleta.parceiro || 'N/A'}%0A- Endereço: ${coleta.endereco || 'N/A'}%0A- Data Prevista: ${formattedDate}%0A- Quantidade de Aparelhos: ${coleta.qtd_aparelhos_solicitado || 0}%0A- Tipo de Material: ${coleta.modelo_aparelho || 'N/A'}%0A- Status: ${getStatusText(coleta.status_coleta)}%0A%0AAguardamos a sua coleta!%0A%0AAtenciosamente,%0AEquipe LogiReverseIA`
+      `Prezado(a) ${clientName},%0A%0AVenho informar que a coleta foi agendada. Desde já agradecemos.%0A%0ADetalhes da Coleta:%0A- Cliente: ${coleta.parceiro || 'N/A'}%0A- Endereço: ${coleta.endereco || 'N/A'}%0A- Data Prevista: ${coleta.previsao_coleta ? format(new Date(coleta.previsao_coleta), "dd/MM/yyyy", { locale: ptBR }) : 'N/A'}%0A- Quantidade de Aparelhos: ${coleta.qtd_aparelhos_solicitado || 0}%0A- Tipo de Material: ${coleta.modelo_aparelho || 'N/A'}%0A- Status: ${getStatusText(coleta.status_coleta)}%0A%0AAtenciosamente,%0AEquipe LogiReverseIA`
     );
     const whatsappUrl = `https://wa.me/${coleta.telefone.replace(/\D/g, '')}?text=${message}`;
     
-    console.log("WhatsApp URL:", whatsappUrl);
     window.open(whatsappUrl, '_blank');
   };
 
   const handleSendEmail = (coleta: Coleta) => {
-    console.log("Attempting to send Email for coleta:", coleta);
     if (!coleta.email) {
       toast({
         title: "Email não disponível",
         description: "Não há um endereço de email cadastrado para esta coleta.",
         variant: "destructive",
       });
-      console.warn("Email: Email não disponível.");
       return;
     }
 
+    const clientName = coleta.contato || coleta.parceiro || 'cliente';
     const formattedDate = coleta.previsao_coleta ? format(new Date(coleta.previsao_coleta), "dd/MM/yyyy", { locale: ptBR }) : 'N/A';
-    const subject = encodeURIComponent(`Confirmação de Coleta - LogiReverseIA - ${coleta.parceiro || 'N/A'} - ${formattedDate}`);
+    const subject = encodeURIComponent(`Confirmação de Coleta Agendada - LogiReverseIA - ${coleta.parceiro || 'N/A'}`);
     const body = encodeURIComponent(
-      `Prezado(a) ${coleta.contato || coleta.parceiro || 'cliente'},%0A%0AGostaríamos de confirmar os detalhes da sua coleta agendada com a LogiReverseIA.%0A%0ADetalhes da Coleta:%0A- Cliente: ${coleta.parceiro || 'N/A'}%0A- Endereço: ${coleta.endereco || 'N/A'}%0A- Data Prevista: ${formattedDate}%0A- Quantidade de Aparelhos: ${coleta.qtd_aparelhos_solicitado || 0}%0A- Tipo de Material: ${coleta.modelo_aparelho || 'N/A'}%0A- Status: ${getStatusText(coleta.status_coleta)}%0A%0APor favor, certifique-se de que os itens estejam prontos para a coleta na data e local indicados.%0A%0AEm caso de dúvidas ou necessidade de reagendamento, por favor, entre em contato conosco.%0A%0AAtenciosamente,%0AEquipe LogiReverseIA`
+      `Prezado(a) ${clientName},%0A%0AVenho informar que a coleta foi agendada. Desde já agradecemos.%0A%0ADetalhes da Coleta:%0A- Cliente: ${coleta.parceiro || 'N/A'}%0A- Endereço: ${coleta.endereco || 'N/A'}%0A- Data Prevista: ${formattedDate}%0A- Quantidade de Aparelhos: ${coleta.qtd_aparelhos_solicitado || 0}%0A- Tipo de Material: ${coleta.modelo_aparelho || 'N/A'}%0A- Status: ${getStatusText(coleta.status_coleta)}%0A%0APor favor, certifique-se de que os itens estejam prontos para a coleta na data e local indicados.%0A%0AAtenciosamente,%0AEquipe LogiReverseIA`
     );
     const mailtoUrl = `mailto:${coleta.email}?subject=${subject}&body=${body}`;
     
-    console.log("Mailto URL:", mailtoUrl);
     window.open(mailtoUrl, '_blank');
   };
 
