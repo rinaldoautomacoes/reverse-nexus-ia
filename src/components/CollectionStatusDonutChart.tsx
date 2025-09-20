@@ -140,7 +140,7 @@ export const CollectionStatusDonutChart: React.FC = () => {
                 formatter={(value, entry) => (
                   <span className="text-sm flex items-center gap-2">
                     <span className="inline-block w-3 h-3 rounded-full" style={{ backgroundColor: entry.color }} />
-                    <span className="font-semibold text-foreground">{value}:</span> <span className="text-muted-foreground">{entry.payload.value}</span>
+                    <span className="font-semibold text-foreground">{value}</span>
                   </span>
                 )}
               />
@@ -156,16 +156,7 @@ export const CollectionStatusDonutChart: React.FC = () => {
         {total > 0 && (
           <div className="mt-4 text-center">
             <p className="text-sm text-muted-foreground">Total de Coletas: <span className="font-semibold text-foreground">{total}</span></p>
-            <div className="flex justify-center gap-4 mt-2">
-              <div className="flex items-center gap-1 text-sm">
-                <Clock className="h-4 w-4 text-neural" />
-                <span className="text-muted-foreground">Coletas Pendentes: <span className="font-semibold text-foreground">{pendente}</span></span>
-              </div>
-              <div className="flex items-center gap-1 text-sm">
-                <CheckCircle className="h-4 w-4 text-primary" />
-                <span className="text-muted-foreground">Coletas Finalizadas: <span className="font-semibold text-foreground">{concluida}</span></span>
-              </div>
-            </div>
+            {/* Removido o bloco que exibia as contagens de pendentes e concluídas separadamente */}
           </div>
         )}
       </CardContent>
