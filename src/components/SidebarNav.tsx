@@ -112,7 +112,7 @@ export const SidebarNav = () => {
       <div>
         {!isCollapsed && (
           <h2 className="text-xl font-bold font-orbitron gradient-text mb-6 text-center">
-            LogiReverseIA
+            Gestão Logística
           </h2>
         )}
         <nav className="space-y-2">
