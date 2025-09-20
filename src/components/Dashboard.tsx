@@ -21,7 +21,7 @@ import heroBackground from "@/assets/hero-background.jpg";
 import { MetricsCards } from "./MetricsCards";
 // import { RouteMap } from "./RouteMap"; // Removido
 // import { AIAssistant } from "./AIAssistant"; // Removido
-import { RecentActivity } from "./RecentActivity";
+// import { RecentActivity } from "./RecentActivity"; // Removido
 import { PerformanceChart } from "./PerformanceChart";
 import { useAuth } from "@/hooks/use-auth";
 import { supabase } from "@/integrations/supabase/client";
@@ -98,7 +98,7 @@ export const Dashboard = () => {
           {/* Right Column - Sidebar */}
           <div className="space-y-8">
             {/* <AIAssistant /> */} {/* Removido */}
-            <RecentActivity />
+            {/* <RecentActivity /> */} {/* Removido */}
           </div>
         </div>
 
