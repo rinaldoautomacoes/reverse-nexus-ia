@@ -5,42 +5,26 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Brain, Mail, Lock, Truck, Zap, ArrowLeft, XCircle } from "lucide-react";
+import { Brain, Mail, Lock, Truck, Zap, ArrowLeft, User as UserIcon } from "lucide-react"; // Renomeado User para UserIcon
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import type { User, Session } from '@supabase/supabase-js';
-import { EmailCombobox } from "@/components/EmailCombobox"; // Importar o novo componente
-
-const RECENT_EMAILS_KEY = 'logireverseia_recent_emails';
 
 export const Auth = () => {
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(false);
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [recentEmails, setRecentEmails] = useState<string[]>([]);
+  const [loginIdentifier, setLoginIdentifier] = useState(""); // Pode ser username ou email
+  const [loginPassword, setLoginPassword] = useState("");
+  const [signupEmail, setSignupEmail] = useState("");
+  const [signupPassword, setSignupPassword] = useState("");
+  const [signupUsername, setSignupUsername] = useState("");
+  const [signupFirstName, setSignupFirstName] = useState("");
+  const [signupLastName, setSignupLastName] = useState("");
   const navigate = useNavigate();
   const { toast } = useToast();
 
   useEffect(() => {
-    // Load recent emails from localStorage
-    const storedEmails = localStorage.getItem(RECENT_EMAILS_KEY);
-    try {
-      if (storedEmails) {
-        const parsedEmails = JSON.parse(storedEmails);
-        if (Array.isArray(parsedEmails)) {
-          setRecentEmails(parsedEmails);
-        } else {
-          console.warn("Stored recent emails are not an array:", parsedEmails);
-          setRecentEmails([]); // Fallback to empty array
-        }
-      }
-    } catch (e) {
-      console.error("Error parsing recent emails from localStorage:", e);
-      setRecentEmails([]); // Fallback to empty array on parse error
-    }
-
     // Set up auth state listener FIRST
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (event, session) => {
@@ -68,24 +52,6 @@ export const Auth = () => {
     return () => subscription.unsubscribe();
   }, [navigate]);
 
-  const addEmailToRecent = (newEmail: string) => {
-    setRecentEmails(prevEmails => {
-      const updatedEmails = [newEmail, ...prevEmails.filter(e => e !== newEmail)].slice(0, 5); // Keep last 5 emails
-      localStorage.setItem(RECENT_EMAILS_KEY, JSON.stringify(updatedEmails));
-      return updatedEmails;
-    });
-  };
-
-  const clearRecentEmails = () => {
-    localStorage.removeItem(RECENT_EMAILS_KEY);
-    setRecentEmails([]);
-    setEmail(""); // Clear current email if it was from recent list
-    toast({
-      title: "Histórico Limpo",
-      description: "O histórico de e-mails recentes foi removido.",
-    });
-  };
-
   const handleSignUp = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
@@ -94,10 +60,16 @@ export const Auth = () => {
       const redirectUrl = `${window.location.origin}/`;
       
       const { error } = await supabase.auth.signUp({
-        email,
-        password,
+        email: signupEmail,
+        password: signupPassword,
         options: {
-          emailRedirectTo: redirectUrl
+          emailRedirectTo: redirectUrl,
+          data: {
+            username: signupUsername,
+            first_name: signupFirstName,
+            last_name: signupLastName,
+            role: 'standard', // Define o papel padrão no cadastro
+          }
         }
       });
 
@@ -108,6 +80,12 @@ export const Auth = () => {
             description: "Este email já está registrado. Tente fazer login ou use outro email.",
             variant: "destructive"
           });
+        } else if (error.message.includes("profiles_username_key")) {
+          toast({
+            title: "Nome de usuário já existe",
+            description: "Este nome de usuário já está em uso. Por favor, escolha outro.",
+            variant: "destructive"
+          });
         } else {
           toast({
             title: "Erro no cadastro",
@@ -116,11 +94,16 @@ export const Auth = () => {
           });
         }
       } else {
-        addEmailToRecent(email); // Add email to recent list on successful signup
         toast({
           title: "Cadastro realizado!",
           description: "Verifique seu email para confirmar a conta e fazer login.",
         });
+        // Clear signup form
+        setSignupEmail("");
+        setSignupPassword("");
+        setSignupUsername("");
+        setSignupFirstName("");
+        setSignupLastName("");
       }
     } catch (error) {
       toast({
@@ -138,28 +121,37 @@ export const Auth = () => {
     setLoading(true);
 
     try {
-      const { error } = await supabase.auth.signInWithPassword({
-        email,
-        password
+      // Call the Edge Function for username-based login
+      const { data: sessionData, error: edgeFunctionError } = await supabase.functions.invoke('username-login', {
+        body: JSON.stringify({ username: loginIdentifier, password: loginPassword }),
+        headers: {
+          'Content-Type': 'application/json',
+        },
       });
 
-      if (error) {
-        toast({
-          title: "Erro no login",
-          description: "Email ou senha incorretos. Verifique suas credenciais.",
-          variant: "destructive"
-        });
-      } else {
-        addEmailToRecent(email); // Add email to recent list on successful signin
-        toast({
-          title: "Login realizado!",
-          description: "Bem-vindo ao LogiReverseIA.",
-        });
+      if (edgeFunctionError) {
+        throw new Error(edgeFunctionError.message);
       }
-    } catch (error) {
+
+      // The Edge Function returns the session directly, so we need to set it manually
+      // Supabase client will automatically pick up the session from localStorage/cookies
+      // after the Edge Function successfully returns it.
+      // For immediate UI update, we can try to set the session if the structure matches.
+      // However, the onAuthStateChange listener should handle this.
+      
       toast({
-        title: "Erro inesperado",
-        description: "Tente novamente em alguns momentos.",
+        title: "Login realizado!",
+        description: "Bem-vindo ao LogiReverseIA.",
+      });
+      // Clear login form
+      setLoginIdentifier("");
+      setLoginPassword("");
+
+    } catch (error: any) {
+      console.error("Erro no login:", error);
+      toast({
+        title: "Erro no login",
+        description: error.message || "Nome de usuário ou senha incorretos. Verifique suas credenciais.",
         variant: "destructive"
       });
     } finally {
@@ -204,37 +196,43 @@ export const Auth = () => {
             <CardHeader className="text-center">
               <CardTitle className="text-2xl font-semibold">Acesso à Plataforma</CardTitle>
               <CardDescription>
-                Entre na sua conta para começar
+                Entre na sua conta ou crie uma nova
               </CardDescription>
             </CardHeader>
             <CardContent>
               <Tabs defaultValue="signin" className="w-full">
-                <TabsList className="grid w-full grid-cols-1 mb-6">
+                <TabsList className="grid w-full grid-cols-2 mb-6">
                   <TabsTrigger value="signin">Entrar</TabsTrigger>
+                  <TabsTrigger value="signup">Cadastrar</TabsTrigger>
                 </TabsList>
 
                 <TabsContent value="signin">
                   <form onSubmit={handleSignIn} className="space-y-4">
                     <div className="space-y-2">
-                      <Label htmlFor="signin-email">Email</Label>
-                      <EmailCombobox
-                        value={email}
-                        onValueChange={setEmail}
-                        recentEmails={recentEmails}
-                        onClearRecentEmails={clearRecentEmails}
-                      />
+                      <Label htmlFor="login-identifier">Nome de Usuário</Label>
+                      <div className="relative">
+                        <UserIcon className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                        <Input
+                          id="login-identifier"
+                          placeholder="Seu nome de usuário"
+                          className="pl-10"
+                          value={loginIdentifier}
+                          onChange={(e) => setLoginIdentifier(e.target.value)}
+                          required
+                        />
+                      </div>
                     </div>
                     <div className="space-y-2">
-                      <Label htmlFor="signin-password">Senha</Label>
+                      <Label htmlFor="login-password">Senha</Label>
                       <div className="relative">
                         <Lock className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
                         <Input
-                          id="signin-password"
+                          id="login-password"
                           type="password"
                           placeholder="••••••••"
                           className="pl-10"
-                          value={password}
-                          onChange={(e) => setPassword(e.target.value)}
+                          value={loginPassword}
+                          onChange={(e) => setLoginPassword(e.target.value)}
                           required
                         />
                       </div>
@@ -250,6 +248,93 @@ export const Auth = () => {
                         <Zap className="w-4 h-4 mr-2" />
                       )}
                       Entrar
+                    </Button>
+                  </form>
+                </TabsContent>
+
+                <TabsContent value="signup">
+                  <form onSubmit={handleSignUp} className="space-y-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="signup-email">Email</Label>
+                      <div className="relative">
+                        <Mail className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                        <Input
+                          id="signup-email"
+                          type="email"
+                          placeholder="seu@email.com"
+                          className="pl-10"
+                          value={signupEmail}
+                          onChange={(e) => setSignupEmail(e.target.value)}
+                          required
+                        />
+                      </div>
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="signup-username">Nome de Usuário</Label>
+                      <div className="relative">
+                        <UserIcon className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                        <Input
+                          id="signup-username"
+                          placeholder="Escolha um nome de usuário"
+                          className="pl-10"
+                          value={signupUsername}
+                          onChange={(e) => setSignupUsername(e.target.value)}
+                          required
+                        />
+                      </div>
+                    </div>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="signup-first-name">Primeiro Nome</Label>
+                        <Input
+                          id="signup-first-name"
+                          placeholder="Seu primeiro nome"
+                          value={signupFirstName}
+                          onChange={(e) => setSignupFirstName(e.target.value)}
+                          required
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="signup-last-name">Sobrenome</Label>
+                        <Input
+                          id="signup-last-name"
+                          placeholder="Seu sobrenome"
+                          value={signupLastName}
+                          onChange={(e) => setSignupLastName(e.target.value)}
+                          required
+                        />
+                      </div>
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="signup-password">Senha</Label>
+                      <div className="relative">
+                        <Lock className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                        <Input
+                          id="signup-password"
+                          type="password"
+                          placeholder="••••••••"
+                          className="pl-10"
+                          value={signupPassword}
+                          onChange={(e) => setSignupPassword(e.target.value)}
+                          required
+                          minLength={6}
+                        />
+                      </div>
+                      <p className="text-xs text-muted-foreground">
+                        Mínimo de 6 caracteres
+                      </p>
+                    </div>
+                    <Button
+                      type="submit"
+                      className="w-full bg-gradient-secondary hover:bg-gradient-secondary/80 glow-effect"
+                      disabled={loading}
+                    >
+                      {loading ? (
+                        <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin mr-2" />
+                      ) : (
+                        <Zap className="w-4 h-4 mr-2" />
+                      )}
+                      Cadastrar
                     </Button>
                   </form>
                 </TabsContent>
