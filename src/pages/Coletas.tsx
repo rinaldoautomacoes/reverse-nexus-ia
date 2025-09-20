@@ -6,7 +6,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { ArrowLeft, Package, MapPin, Calendar, Search, Filter, Eye, Edit, Trash2 } from "lucide-react";
+import { ArrowLeft, Package, MapPin, Calendar, Search, Filter, Eye, Edit, Trash2, MessageSquareText, Mail } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useState } from "react";
 import { useToast } from "@/hooks/use-toast";
@@ -14,6 +14,8 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import type { Tables, TablesInsert, TablesUpdate } from "@/integrations/supabase/types";
 import { useAuth } from "@/hooks/use-auth";
+import { format } from "date-fns";
+import { ptBR } from "date-fns/locale";
 
 type Coleta = Tables<'coletas'>;
 type ColetaInsert = TablesInsert<'coletas'>;
@@ -28,7 +30,10 @@ const EditColetaForm = ({ coleta, onUpdate, onCancel }: { coleta: Coleta, onUpda
     qtd_aparelhos_solicitado: coleta.qtd_aparelhos_solicitado || 0,
     modelo_aparelho: coleta.modelo_aparelho || '',
     status_coleta: coleta.status_coleta || 'pendente',
-    observacao: coleta.observacao || ''
+    observacao: coleta.observacao || '',
+    telefone: coleta.telefone || '', // Adicionado telefone
+    email: coleta.email || '', // Adicionado email
+    contato: coleta.contato || '', // Adicionado contato
   });
 
   const handleInputChange = (field: keyof ColetaUpdate, value: string | number | null) => {
@@ -50,6 +55,31 @@ const EditColetaForm = ({ coleta, onUpdate, onCancel }: { coleta: Coleta, onUpda
             value={formData.parceiro || ''}
             onChange={(e) => handleInputChange("parceiro", e.target.value)}
             required
+          />
+        </div>
+        <div>
+          <Label htmlFor="contato">Pessoa de Contato</Label>
+          <Input 
+            id="contato"
+            value={formData.contato || ''}
+            onChange={(e) => handleInputChange("contato", e.target.value)}
+          />
+        </div>
+        <div>
+          <Label htmlFor="telefone">Telefone</Label>
+          <Input 
+            id="telefone"
+            value={formData.telefone || ''}
+            onChange={(e) => handleInputChange("telefone", e.target.value)}
+          />
+        </div>
+        <div>
+          <Label htmlFor="email">Email</Label>
+          <Input 
+            id="email"
+            type="email"
+            value={formData.email || ''}
+            onChange={(e) => handleInputChange("email", e.target.value)}
           />
         </div>
         <div>
@@ -139,7 +169,7 @@ const Coletas = () => {
   const { user } = useAuth();
 
   const [searchTerm, setSearchTerm] = useState("");
-  const [statusFilter, setStatusFilter] = useState("todos"); // Alterado para 'todos' por padrão
+  const [statusFilter, setStatusFilter] = useState("todos");
   const [selectedColeta, setSelectedColeta] = useState<Coleta | null>(null);
   const [editingColeta, setEditingColeta] = useState<Coleta | null>(null);
   const [isViewDetailsDialogOpen, setIsViewDetailsDialogOpen] = useState(false);
@@ -238,6 +268,43 @@ const Coletas = () => {
       default:
         return status || 'Desconhecido';
     }
+  };
+
+  const handleSendWhatsApp = (coleta: Coleta) => {
+    if (!coleta.telefone) {
+      toast({
+        title: "Telefone não disponível",
+        description: "Não há um número de telefone cadastrado para esta coleta.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    const formattedDate = coleta.previsao_coleta ? format(new Date(coleta.previsao_coleta), "dd/MM/yyyy", { locale: ptBR }) : 'N/A';
+    const message = encodeURIComponent(
+      `Olá ${coleta.contato || coleta.parceiro || 'cliente'},%0A%0AGostaríamos de confirmar sua coleta agendada com a LogiReverseIA.%0A%0ADetalhes da Coleta:%0A- Cliente: ${coleta.parceiro || 'N/A'}%0A- Endereço: ${coleta.endereco || 'N/A'}%0A- Data Prevista: ${formattedDate}%0A- Quantidade de Aparelhos: ${coleta.qtd_aparelhos_solicitado || 0}%0A- Tipo de Material: ${coleta.modelo_aparelho || 'N/A'}%0A- Status: ${getStatusText(coleta.status_coleta)}%0A%0AAguardamos a sua coleta!%0A%0AAtenciosamente,%0AEquipe LogiReverseIA`
+    );
+    const whatsappUrl = `https://wa.me/${coleta.telefone.replace(/\D/g, '')}?text=${message}`;
+    window.open(whatsappUrl, '_blank');
+  };
+
+  const handleSendEmail = (coleta: Coleta) => {
+    if (!coleta.email) {
+      toast({
+        title: "Email não disponível",
+        description: "Não há um endereço de email cadastrado para esta coleta.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    const formattedDate = coleta.previsao_coleta ? format(new Date(coleta.previsao_coleta), "dd/MM/yyyy", { locale: ptBR }) : 'N/A';
+    const subject = encodeURIComponent(`Confirmação de Coleta - LogiReverseIA - ${coleta.parceiro || 'N/A'} - ${formattedDate}`);
+    const body = encodeURIComponent(
+      `Prezado(a) ${coleta.contato || coleta.parceiro || 'cliente'},%0A%0AGostaríamos de confirmar os detalhes da sua coleta agendada com a LogiReverseIA.%0A%0ADetalhes da Coleta:%0A- Cliente: ${coleta.parceiro || 'N/A'}%0A- Endereço: ${coleta.endereco || 'N/A'}%0A- Data Prevista: ${formattedDate}%0A- Quantidade de Aparelhos: ${coleta.qtd_aparelhos_solicitado || 0}%0A- Tipo de Material: ${coleta.modelo_aparelho || 'N/A'}%0A- Status: ${getStatusText(coleta.status_coleta)}%0A%0APor favor, certifique-se de que os itens estejam prontos para a coleta na data e local indicados.%0A%0AEm caso de dúvidas ou necessidade de reagendamento, por favor, entre em contato conosco.%0A%0AAtenciosamente,%0AEquipe LogiReverseIA`
+    );
+    const mailtoUrl = `mailto:${coleta.email}?subject=${subject}&body=${body}`;
+    window.open(mailtoUrl, '_blank');
   };
 
   const filteredColetas = coletas?.filter(coleta => {
@@ -347,8 +414,7 @@ const Coletas = () => {
                         </div>
                         <div className="flex items-center gap-2">
                           <Calendar className="h-4 w-4" />
-                          {coleta.previsao_coleta ? new Date(coleta.previsao_coleta).toLocaleDateString() : 'N/A'}
-                          {/* O campo 'periodo' não está no DB, então não será exibido aqui diretamente */}
+                          {coleta.previsao_coleta ? format(new Date(coleta.previsao_coleta), "dd/MM/yyyy", { locale: ptBR }) : 'N/A'}
                         </div>
                         <div>
                           <strong>{coleta.qtd_aparelhos_solicitado || 0}</strong> produtos - {coleta.modelo_aparelho || 'N/A'}
@@ -362,7 +428,7 @@ const Coletas = () => {
                       )}
                     </div>
                     
-                    <div className="flex gap-2">
+                    <div className="flex gap-2 flex-wrap justify-end">
                       <Dialog open={isViewDetailsDialogOpen && selectedColeta?.id === coleta.id} onOpenChange={setIsViewDetailsDialogOpen}>
                         <DialogTrigger asChild>
                           <Button 
@@ -390,6 +456,18 @@ const Coletas = () => {
                                   <p className="text-sm text-muted-foreground">{selectedColeta.parceiro}</p>
                                 </div>
                                 <div>
+                                  <Label className="text-sm font-medium">Pessoa de Contato</Label>
+                                  <p className="text-sm text-muted-foreground">{selectedColeta.contato || 'N/A'}</p>
+                                </div>
+                                <div>
+                                  <Label className="text-sm font-medium">Telefone</Label>
+                                  <p className="text-sm text-muted-foreground">{selectedColeta.telefone || 'N/A'}</p>
+                                </div>
+                                <div>
+                                  <Label className="text-sm font-medium">Email</Label>
+                                  <p className="text-sm text-muted-foreground">{selectedColeta.email || 'N/A'}</p>
+                                </div>
+                                <div>
                                   <Label className="text-sm font-medium">Status</Label>
                                   <Badge className={getStatusColor(selectedColeta.status_coleta)}>
                                     {getStatusText(selectedColeta.status_coleta)}
@@ -397,7 +475,7 @@ const Coletas = () => {
                                 </div>
                                 <div>
                                   <Label className="text-sm font-medium">Data</Label>
-                                  <p className="text-sm text-muted-foreground">{selectedColeta.previsao_coleta ? new Date(selectedColeta.previsao_coleta).toLocaleDateString() : 'N/A'}</p>
+                                  <p className="text-sm text-muted-foreground">{selectedColeta.previsao_coleta ? format(new Date(selectedColeta.previsao_coleta), "dd/MM/yyyy", { locale: ptBR }) : 'N/A'}</p>
                                 </div>
                                 <div>
                                   <Label className="text-sm font-medium">Quantidade de Aparelhos</Label>
@@ -421,6 +499,26 @@ const Coletas = () => {
                         </DialogContent>
                       </Dialog>
                       
+                      <Button 
+                        size="sm" 
+                        className="bg-gradient-secondary hover:bg-gradient-secondary/80"
+                        onClick={() => handleSendWhatsApp(coleta)}
+                        disabled={!coleta.telefone}
+                      >
+                        <MessageSquareText className="mr-1 h-3 w-3" />
+                        WhatsApp
+                      </Button>
+
+                      <Button 
+                        size="sm" 
+                        className="bg-gradient-primary hover:bg-gradient-primary/80"
+                        onClick={() => handleSendEmail(coleta)}
+                        disabled={!coleta.email}
+                      >
+                        <Mail className="mr-1 h-3 w-3" />
+                        Email
+                      </Button>
+
                       {coleta.status_coleta === 'agendada' && (
                         <Dialog open={isEditDialogOpen && editingColeta?.id === coleta.id} onOpenChange={setIsEditDialogOpen}>
                           <DialogTrigger asChild>
