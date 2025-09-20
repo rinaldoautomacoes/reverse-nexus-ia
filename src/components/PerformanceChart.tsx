@@ -6,14 +6,14 @@ import { supabase } from "@/integrations/supabase/client";
 import type { Tables } from "@/integrations/supabase/types";
 import { useAuth } from "@/hooks/use-auth";
 import {
-  LineChart, // Alterado para LineChart
-  Line,       // Alterado para Line
+  AreaChart, // Alterado para AreaChart
+  Area,       // Alterado para Area
   XAxis,
   YAxis,
   CartesianGrid,
   Tooltip,
   ResponsiveContainer,
-  LabelList, // Removido, pois não é comum em gráficos de linha para cada ponto
+  Legend,     // Adicionado Legend
 } from "recharts";
 import { format, parseISO } from "date-fns";
 import { ptBR } from "date-fns/locale";
@@ -151,7 +151,7 @@ export const PerformanceChart = () => {
           {/* Chart Visualization */}
           <div className="h-64 relative">
             <ResponsiveContainer width="100%" height="100%">
-              <LineChart // Alterado para LineChart
+              <AreaChart // Alterado para AreaChart
                 data={aggregatedChartData}
                 margin={{
                   top: 20,
@@ -160,6 +160,16 @@ export const PerformanceChart = () => {
                   bottom: 5,
                 }}
               >
+                <defs>
+                  <linearGradient id="colorTotalCollections" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor="hsl(var(--neon-cyan))" stopOpacity={0.8}/>
+                    <stop offset="95%" stopColor="hsl(var(--neon-cyan))" stopOpacity={0.1}/>
+                  </linearGradient>
+                  <linearGradient id="colorTotalProducts" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor="hsl(var(--ai-purple))" stopOpacity={0.8}/>
+                    <stop offset="95%" stopColor="hsl(var(--ai-purple))" stopOpacity={0.1}/>
+                  </linearGradient>
+                </defs>
                 <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border)/0.2)" />
                 <XAxis
                   dataKey="month"
@@ -167,36 +177,62 @@ export const PerformanceChart = () => {
                 />
                 <YAxis
                   stroke="hsl(var(--muted-foreground))"
-                  domain={[0, 100]}
-                  tickFormatter={(value: number) => `${value}%`}
+                  tickFormatter={(value: number) => value.toLocaleString()} // Formata como número
                 />
                 <Tooltip
                   contentStyle={{ backgroundColor: 'hsl(var(--card))', border: '1px solid hsl(var(--border))', borderRadius: '0.5rem' }}
                   itemStyle={{ color: 'hsl(var(--foreground))' }}
-                  formatter={(value: number) => `${value.toFixed(1)}%`}
                   labelFormatter={(label: string) => `Mês: ${label}`}
                 />
-                <Line // Alterado para Line
-                  type="monotone" // Linha suave
-                  dataKey="efficiency"
-                  name="Eficiência IA"
-                  stroke="hsl(var(--neon-cyan))"
-                  strokeWidth={3}
-                  dot={false} // Sem pontos estáticos na linha
-                  activeDot={{ r: 6, fill: 'hsl(var(--neon-cyan))', stroke: 'hsl(var(--background))', strokeWidth: 2 }} // Ponto ativo ao passar o mouse
+                <Legend // Adicionado Legend
+                  wrapperStyle={{ paddingTop: '10px' }}
+                  formatter={(value, entry) => (
+                    <span className="text-sm flex items-center gap-2">
+                      <span className="inline-block w-3 h-3 rounded-full" style={{ backgroundColor: entry.color }} />
+                      <span className="font-semibold text-foreground">{value}</span>
+                    </span>
+                  )}
                 />
-              </LineChart>
+                <Area // Área para Totais de Coletas
+                  type="monotone"
+                  dataKey="totalCollections"
+                  name="Totais de Coletas"
+                  stroke="hsl(var(--neon-cyan))"
+                  fill="url(#colorTotalCollections)"
+                  strokeWidth={2}
+                  activeDot={{ r: 6, fill: 'hsl(var(--neon-cyan))', stroke: 'hsl(var(--background))', strokeWidth: 2 }}
+                />
+                <Area // Área para Totais de Produtos
+                  type="monotone"
+                  dataKey="totalProducts"
+                  name="Totais de Produtos"
+                  stroke="hsl(var(--ai-purple))"
+                  fill="url(#colorTotalProducts)"
+                  strokeWidth={2}
+                  activeDot={{ r: 6, fill: 'hsl(var(--ai-purple))', stroke: 'hsl(var(--background))', strokeWidth: 2 }}
+                />
+              </AreaChart>
             </ResponsiveContainer>
           </div>
 
-          {/* Custom Legend */}
-          <div className="flex items-center gap-3 p-3 bg-secondary/10 rounded-lg">
-            <div className="w-4 h-4 rounded" style={{ backgroundColor: 'hsl(var(--neon-cyan))' }} />
-            <div>
-              <p className="text-sm font-medium">Eficiência IA</p>
-              <p className="text-xs text-muted-foreground">Taxa de otimização</p>
+          {/* Custom Legend (matching the image) - REMOVIDO */}
+          {/* <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="flex items-center gap-3 p-3 bg-secondary/10 rounded-lg">
+              <div className="w-4 h-4 rounded" style={{ backgroundColor: 'hsl(var(--neon-cyan))' }} />
+              <div>
+                <p className="text-sm font-medium">Coletas Totais</p>
+                <p className="text-xs text-muted-foreground">Agendadas + Realizadas</p>
+              </div>
             </div>
-          </div>
+            
+            <div className="flex items-center gap-3 p-3 bg-secondary/10 rounded-lg">
+              <div className="w-4 h-4 rounded" style={{ backgroundColor: 'hsl(var(--neon-cyan))' }} />
+              <div>
+                <p className="text-sm font-medium">Processadas</p>
+                <p className="text-xs text-muted-foreground">Finalizadas com sucesso</p>
+              </div>
+            </div>
+          </div> */}
         </div>
       </CardContent>
     </Card>
