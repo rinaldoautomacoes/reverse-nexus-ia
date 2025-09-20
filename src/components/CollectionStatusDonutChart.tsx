@@ -1,6 +1,7 @@
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, Legend } from 'recharts';
+import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, Legend }
+ from 'recharts';
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import type { Tables } from "@/integrations/supabase/types";
@@ -155,7 +156,7 @@ export const CollectionStatusDonutChart: React.FC = () => {
         )}
         {total > 0 && (
           <div className="mt-4 text-center">
-            <p className="text-sm text-muted-foreground">Total de Coletas: <span className="font-semibold text-foreground">{total}</span></p>
+            {/* Removido: <p className="text-sm text-muted-foreground">Total de Coletas: <span className="font-semibold text-foreground">{total}</span></p> */}
             <div className="flex justify-center gap-4 mt-2">
               <div className="flex items-center gap-1 text-sm">
                 <Clock className="h-4 w-4 text-neural" />
