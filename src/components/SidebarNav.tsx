@@ -15,6 +15,7 @@ import {
   ChevronLeft, // Novo ícone
   ChevronRight, // Novo ícone
   Menu,
+  User as UserIcon, // Renomeado para evitar conflito com o componente User
 } from 'lucide-react';
 import { useAuth } from '@/hooks/use-auth';
 import { supabase } from '@/integrations/supabase/client';
@@ -88,6 +89,12 @@ export const SidebarNav = () => {
       label: 'Gerenciar Itens',
       icon: Package,
       path: '/items-management',
+      roles: ['admin'],
+    },
+    {
+      label: 'Gerenciar Clientes', // Novo item de navegação
+      icon: UserIcon, // Usando UserIcon para clientes
+      path: '/client-management',
       roles: ['admin'],
     },
     {

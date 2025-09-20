@@ -14,6 +14,7 @@ import { Auth } from "./pages/Auth";
 import { MetricsManagement } from "./pages/MetricsManagement";
 import { ItemsManagement } from "./pages/ItemsManagement";
 import { UserManagement } from "./pages/UserManagement";
+import { ClientManagement } from "./pages/ClientManagement"; // Importar a nova página
 import { Debug } from "./pages/Debug";
 import { AuthProvider } from "./hooks/use-auth";
 import { ProtectedRoute } from "./components/ProtectedRoute";
@@ -74,6 +75,7 @@ const AppLayout = () => {
             <Route path="/metrics-management" element={<MetricsManagement />} />
             <Route path="/items-management" element={<ItemsManagement />} />
             <Route path="/user-management" element={<UserManagement />} />
+            <Route path="/client-management" element={<ClientManagement />} /> {/* Nova rota */}
           </Route>
           
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
