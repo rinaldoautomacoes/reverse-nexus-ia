@@ -307,6 +307,7 @@ export type Database = {
           format: string
           status: string
           description: string | null
+          collection_status_filter: string | null // NOVA COLUNA
         }
         Insert: {
           id?: string
@@ -318,6 +319,7 @@ export type Database = {
           format?: string
           status?: string
           description?: string | null
+          collection_status_filter?: string | null // NOVA COLUNA
         }
         Update: {
           id?: string
@@ -329,6 +331,7 @@ export type Database = {
           format?: string
           status?: string
           description?: string | null
+          collection_status_filter?: string | null // NOVA COLUNA
         }
         Relationships: [
           {

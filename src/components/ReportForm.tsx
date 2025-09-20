@@ -25,6 +25,7 @@ export const ReportForm: React.FC<ReportFormProps> = ({ initialData, onSave, onC
     format: "PDF",
     description: "",
     status: "Gerando", // Default status for new reports
+    collection_status_filter: "todos", // NOVA COLUNA: Default para 'todas'
     user_id: "", // Will be set by the mutation
   });
 
@@ -107,7 +108,7 @@ export const ReportForm: React.FC<ReportFormProps> = ({ initialData, onSave, onC
           </Select>
         </div>
         <div className="space-y-2">
-          <Label htmlFor="status">Status</Label>
+          <Label htmlFor="status">Status do Relatório</Label> {/* Renomeado para clareza */}
           <Select 
             value={formData.status || 'Gerando'} 
             onValueChange={(value) => handleInputChange("status", value)}
@@ -122,6 +123,25 @@ export const ReportForm: React.FC<ReportFormProps> = ({ initialData, onSave, onC
             </SelectContent>
           </Select>
         </div>
+      </div>
+
+      {/* NOVO CAMPO: Status da Coleta para Filtragem */}
+      <div className="space-y-2">
+        <Label htmlFor="collection_status_filter">Filtrar Coletas por Status</Label>
+        <Select 
+          value={formData.collection_status_filter || 'todos'} 
+          onValueChange={(value) => handleInputChange("collection_status_filter", value)}
+        >
+          <SelectTrigger>
+            <SelectValue placeholder="Todas as Coletas" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="todos">Todas as Coletas</SelectItem>
+            <SelectItem value="agendada">Agendadas</SelectItem>
+            <SelectItem value="pendente">Pendentes</SelectItem>
+            <SelectItem value="concluida">Concluídas</SelectItem>
+          </SelectContent>
+        </Select>
       </div>
 
       <div className="space-y-2">

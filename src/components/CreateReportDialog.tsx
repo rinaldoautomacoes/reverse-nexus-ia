@@ -3,13 +3,12 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Button } from "@/components/ui/button";
 import { FileText } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import jsPDF from 'jspdf';
-import html2canvas from 'html2canvas'; // Mantido caso a geração de PDF precise de HTML
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import type { TablesInsert } from "@/integrations/supabase/types";
 import { useAuth } from "@/hooks/use-auth";
 import { ReportForm } from "./ReportForm"; // Importar o novo ReportForm
+import { generateReportPDF } from "@/lib/report-utils"; // Importar a função de geração de PDF do utilitário
 
 type ReportInsert = TablesInsert<'reports'>;
 
@@ -80,86 +79,4 @@ export const CreateReportDialog = () => {
       </DialogContent>
     </Dialog>
   );
-};
-
-// A função generateReportPDF permanece a mesma, pois é uma utilidade de PDF
-export const generateReportPDF = async (reportData: any) => {
-  try {
-    const pdf = new jsPDF();
-    
-    // Header
-    pdf.setFontSize(20);
-    pdf.setTextColor(0, 245, 255); // Primary color
-    pdf.text('LogiReverseIA - Relatório', 20, 30);
-    
-    // Report title
-    pdf.setFontSize(16);
-    pdf.setTextColor(0, 0, 0);
-    pdf.text(reportData.title, 20, 50); // Usar reportData.title
-    
-    // Report info
-    pdf.setFontSize(12);
-    pdf.text(`Período: ${reportData.period}`, 20, 70); // Usar reportData.period
-    pdf.text(`Tipo: ${reportData.type}`, 20, 80); // Usar reportData.type
-    pdf.text(`Data de Geração: ${new Date().toLocaleDateString('pt-BR')}`, 20, 90);
-    
-    // Description
-    if (reportData.description) { // Usar reportData.description
-      pdf.text('Descrição:', 20, 110);
-      const splitText = pdf.splitTextToSize(reportData.description, 170);
-      pdf.text(splitText, 20, 120);
-    }
-    
-    // Metrics section (these are hardcoded for PDF generation, not dynamic from DB)
-    pdf.setFontSize(14);
-    pdf.text('Métricas Principais:', 20, 160);
-    
-    const metricas = [
-      { titulo: "Total Coletado", valor: "2.847 itens", variacao: "+12%" },
-      { titulo: "Eficiência IA", valor: "94.2%", variacao: "+8%" },
-      { titulo: "Economia Combustível", valor: "R$ 3.240", variacao: "+22%" },
-      { titulo: "Tempo Médio", valor: "2.4h por rota", variacao: "-15%" }
-    ];
-    
-    let yPosition = 180;
-    pdf.setFontSize(10);
-    
-    metricas.forEach((metrica) => {
-      pdf.text(`${metrica.titulo}: ${metrica.valor} (${metrica.variacao})`, 20, yPosition);
-      yPosition += 10;
-    });
-    
-    // Analysis section
-    pdf.setFontSize(14);
-    pdf.text('Análise IA:', 20, 230);
-    
-    pdf.setFontSize(10);
-    const analise = [
-      '• Rotas otimizadas resultaram em 22% de economia de combustível',
-      '• Algoritmo de IA identificou padrões de eficiência em horários específicos',
-      '• Recomendação: Implementar coletas matinais para máxima eficiência',
-      '• Previsão de crescimento: +15% na próxima temporada'
-    ];
-    
-    yPosition = 250;
-    analise.forEach((item) => {
-      pdf.text(item, 20, yPosition);
-      yPosition += 8;
-    });
-    
-    // Footer
-    pdf.setFontSize(8);
-    pdf.setTextColor(128, 128, 128);
-    pdf.text('Gerado automaticamente por LogiReverseIA', 20, 280);
-    pdf.text(`ID do Relatório: LR-${reportData.id || Date.now()}`, 20, 285);
-    
-    // Save the PDF
-    const fileName = `${reportData.title.replace(/\s+/g, '_')}_${Date.now()}.pdf`;
-    pdf.save(fileName);
-    
-    return true;
-  } catch (error) {
-    console.error('Erro ao gerar PDF:', error);
-    throw error;
-  }
 };

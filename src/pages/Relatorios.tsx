@@ -7,7 +7,6 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { ArrowLeft, TrendingUp, BarChart3, Download, FileText, Calendar, Filter, Edit, Trash2, Search } from "lucide-react";
 import { useNavigate } from "react-router-dom";
-import { generateReportPDF } from "@/components/CreateReportDialog"; // Importar a função de geração de PDF
 import { CreateReportDialog } from "@/components/CreateReportDialog"; // Importar o novo componente de diálogo
 import { ReportForm } from "@/components/ReportForm"; // Importar o formulário reutilizável
 import { useToast } from "@/hooks/use-toast";
@@ -15,6 +14,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import type { Tables, TablesInsert, TablesUpdate } from "@/integrations/supabase/types";
 import { useAuth } from "@/hooks/use-auth";
+import { generateReportPDF } from "@/lib/report-utils"; // Importar a função de geração de PDF do utilitário
 
 type Coleta = Tables<'coletas'>;
 type Item = Tables<'items'>;
@@ -154,6 +154,30 @@ export const Relatorios = () => {
   const handleDeleteReport = (id: string) => {
     if (window.confirm("Tem certeza que deseja excluir este relatório?")) {
       deleteReportMutation.mutate(id);
+    }
+  };
+
+  const handleDownload = async (report: Report) => {
+    if (!user?.id) {
+      toast({
+        title: "Erro de autenticação",
+        description: "Você precisa estar logado para baixar relatórios.",
+        variant: "destructive"
+      });
+      return;
+    }
+    try {
+      await generateReportPDF(report, user.id);
+      toast({
+        title: "Download Iniciado",
+        description: `O download do relatório "${report.title}" foi iniciado.`,
+      });
+    } catch (error: any) {
+      toast({
+        title: "Erro ao gerar PDF",
+        description: error.message || "Não foi possível gerar o PDF. Tente novamente.",
+        variant: "destructive",
+      });
     }
   };
 
@@ -311,6 +335,11 @@ export const Relatorios = () => {
                           {report.type}
                         </Badge>
                         <span>{report.format}</span>
+                        {report.collection_status_filter && report.collection_status_filter !== 'todos' && (
+                          <Badge variant="secondary" className="text-xs bg-neural/20 text-neural">
+                            Coletas: {report.collection_status_filter}
+                          </Badge>
+                        )}
                       </div>
                     </div>
                     
