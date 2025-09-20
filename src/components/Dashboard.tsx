@@ -17,7 +17,7 @@ import {
   Users, // Novo ícone para gerenciamento de usuários
   LogOut // Ícone para logout
 } from "lucide-react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate } => "react-router-dom";
 import heroBackground from "@/assets/hero-background.jpg";
 import { MetricsCards } from "./MetricsCards";
 import { RouteMap } from "./RouteMap";
@@ -95,7 +95,7 @@ export const Dashboard = () => {
           </Button>
         </div>
 
-        <div className="relative z-10 flex flex-col justify-center h-full px-6 lg:px-8">
+        <div className="relative z-10 flex flex-col justify-start pt-24 h-full px-6 lg:px-8"> {/* Alterado justify-center para justify-start e adicionado pt-24 */}
           <div className="max-w-4xl">
             <h1 className="text-5xl lg:text-7xl font-bold font-orbitron gradient-text mb-4 animate-slide-up animate-text-pulse-fade">
               LogiReversa
