@@ -20,7 +20,7 @@ import { useNavigate } from "react-router-dom";
 import heroBackground from "@/assets/hero-background.jpg";
 import { MetricsCards } from "./MetricsCards";
 // import { RouteMap } from "./RouteMap"; // Removido
-import { AIAssistant } from "./AIAssistant";
+// import { AIAssistant } from "./AIAssistant"; // Removido
 import { RecentActivity } from "./RecentActivity";
 import { PerformanceChart } from "./PerformanceChart";
 import { useAuth } from "@/hooks/use-auth";
@@ -97,7 +97,7 @@ export const Dashboard = () => {
 
           {/* Right Column - Sidebar */}
           <div className="space-y-8">
-            <AIAssistant />
+            {/* <AIAssistant /> */} {/* Removido */}
             <RecentActivity />
           </div>
         </div>
