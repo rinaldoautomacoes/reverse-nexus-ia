@@ -2,11 +2,11 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } => "@/components/ui/select";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"; // Corrigido de '=>' para 'from'
 import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { Calendar as CalendarIcon, ArrowLeft, Package, MapPin, Truck, UserPlus } from "lucide-react"; // Removido 'Calendar' duplicado
+import { Calendar as CalendarIcon, ArrowLeft, Package, MapPin, Truck, UserPlus } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useState } from "react";
 import { useToast } from "@/hooks/use-toast";
@@ -15,7 +15,7 @@ import { supabase } from "@/integrations/supabase/client";
 import type { TablesInsert, Tables } from "@/integrations/supabase/types";
 import { useAuth } from "@/hooks/use-auth";
 import { ClientCombobox } from "@/components/ClientCombobox";
-import { Calendar } from "@/components/ui/calendar"; // Componente Calendar do shadcn/ui
+import { Calendar } from "@/components/ui/calendar";
 import { cn } from "@/lib/utils";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
