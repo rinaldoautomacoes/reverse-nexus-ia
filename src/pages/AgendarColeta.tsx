@@ -288,7 +288,7 @@ export const AgendarColeta = () => {
                             type="button" 
                             variant="outline" 
                             size="sm"
-                            className="border-primary text-primary hover:bg-primary/10"
+                            className="border-neon-cyan text-neon-cyan hover:bg-neon-cyan/10 glow-effect rounded-full" // Estilo atualizado aqui
                           >
                             <UserPlus className="mr-1 h-3 w-3" />
                             Novo Cliente
