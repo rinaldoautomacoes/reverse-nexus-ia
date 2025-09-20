@@ -17,7 +17,7 @@ import {
   Users, // Novo ícone para gerenciamento de usuários
   LogOut // Ícone para logout
 } from "lucide-react";
-import { useNavigate } => "react-router-dom";
+import { useNavigate } from "react-router-dom"; // Corrigido: de '=>' para 'from'
 import heroBackground from "@/assets/hero-background.jpg";
 import { MetricsCards } from "./MetricsCards";
 import { RouteMap } from "./RouteMap";
