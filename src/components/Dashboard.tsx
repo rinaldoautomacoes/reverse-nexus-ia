@@ -14,7 +14,8 @@ import {
   AlertTriangle,
   Gauge,
   ListChecks,
-  Users // Novo ícone para gerenciamento de usuários
+  Users, // Novo ícone para gerenciamento de usuários
+  LogOut // Ícone para logout
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import heroBackground from "@/assets/hero-background.jpg";
@@ -24,11 +25,23 @@ import { AIAssistant } from "./AIAssistant";
 import { RecentActivity } from "./RecentActivity";
 import { PerformanceChart } from "./PerformanceChart";
 import { useAuth } from "@/hooks/use-auth";
+import { supabase } from "@/integrations/supabase/client"; // Importar supabase
 
 export const Dashboard = () => {
   const navigate = useNavigate();
-  const { profile } = useAuth();
+  const { user, profile } = useAuth(); // Obter o usuário e o perfil
   const isAdmin = profile?.role === 'admin';
+
+  const handleAuthButtonClick = async () => {
+    if (user) {
+      // Se o usuário estiver logado, fazer logout
+      await supabase.auth.signOut();
+      navigate('/auth'); // Redirecionar para a página de login após o logout
+    } else {
+      // Se o usuário não estiver logado, ir para a página de autenticação
+      navigate('/auth');
+    }
+  };
 
   return (
     <div className="min-h-screen bg-background ai-pattern">
@@ -68,10 +81,19 @@ export const Dashboard = () => {
                 size="lg" 
                 variant="outline" 
                 className="border-neural text-neural hover:bg-neural/10 hover-scale"
-                onClick={() => navigate('/auth')}
+                onClick={handleAuthButtonClick} // Usar a nova função
               >
-                <CheckCircle className="mr-2 h-5 w-5" />
-                Login / Cadastro
+                {user ? ( // Renderização condicional do botão
+                  <>
+                    <LogOut className="mr-2 h-5 w-5" />
+                    Sair
+                  </>
+                ) : (
+                  <>
+                    <CheckCircle className="mr-2 h-5 w-5" />
+                    Login / Cadastro
+                  </>
+                )}
               </Button>
             </div>
           </div>
