@@ -14,6 +14,50 @@ export type Database = {
   }
   public: {
     Tables: {
+      clients: {
+        Row: {
+          id: string
+          user_id: string
+          created_at: string
+          name: string
+          phone: string | null
+          email: string | null
+          address: string | null
+          cnpj: string | null
+          contact_person: string | null
+        }
+        Insert: {
+          id?: string
+          user_id: string
+          created_at?: string
+          name: string
+          phone?: string | null
+          email?: string | null
+          address?: string | null
+          cnpj?: string | null
+          contact_person?: string | null
+        }
+        Update: {
+          id?: string
+          user_id?: string
+          created_at?: string
+          name?: string
+          phone?: string | null
+          email?: string | null
+          address?: string | null
+          cnpj?: string | null
+          contact_person?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "clients_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       metrics: {
         Row: {
           id: string
