@@ -15,6 +15,7 @@ import { supabase } from "@/integrations/supabase/client";
 import type { TablesInsert, Tables } from "@/integrations/supabase/types";
 import { useAuth } from "@/hooks/use-auth";
 import { ClientCombobox } from "@/components/ClientCombobox";
+import { ProductCombobox } from "@/components/ProductCombobox"; // Importar o novo ProductCombobox
 import { Calendar } from "@/components/ui/calendar";
 import { cn } from "@/lib/utils";
 import { format } from "date-fns";
@@ -23,6 +24,7 @@ import { ptBR } from "date-fns/locale";
 type ColetaInsert = TablesInsert<'coletas'>;
 type Client = Tables<'clients'>;
 type ClientInsert = TablesInsert<'clients'>;
+type Product = Tables<'products'>; // Importar o tipo Product
 
 export const AgendarColeta = () => {
   const navigate = useNavigate();
@@ -40,7 +42,7 @@ export const AgendarColeta = () => {
     cnpj: "",
     contato: "",
     previsao_coleta: "",
-    modelo_aparelho: "",
+    modelo_aparelho: "", // Agora armazenará o código do produto
     qtd_aparelhos_solicitado: 0,
     status_coleta: "agendada",
     observacao: "",
@@ -196,6 +198,20 @@ export const AgendarColeta = () => {
     }
   };
 
+  const handleProductComboboxSelect = (product: Product | null) => {
+    if (product) {
+      setFormData(prev => ({
+        ...prev,
+        modelo_aparelho: product.code, // Armazena o código do produto
+      }));
+    } else {
+      setFormData(prev => ({
+        ...prev,
+        modelo_aparelho: "", // Limpa o modelo se nada for selecionado
+      }));
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!user?.id) {
@@ -207,10 +223,10 @@ export const AgendarColeta = () => {
       return;
     }
 
-    if (!formData.parceiro || !formData.telefone || !formData.endereco || !formData.previsao_coleta || formData.qtd_aparelhos_solicitado === 0) {
+    if (!formData.parceiro || !formData.telefone || !formData.endereco || !formData.previsao_coleta || formData.qtd_aparelhos_solicitado === 0 || !formData.modelo_aparelho) {
       toast({
         title: "Campos obrigatórios",
-        description: "Preencha todos os campos obrigatórios (Cliente, Telefone, Endereço, Data e Quantidade de Aparelhos).",
+        description: "Preencha todos os campos obrigatórios (Cliente, Telefone, Endereço, Data, Quantidade de Aparelhos e Tipo de Material).",
         variant: "destructive"
       });
       return;
@@ -516,19 +532,12 @@ export const AgendarColeta = () => {
                 </div>
 
                 <div className="space-y-2 mb-4">
-                  <Label htmlFor="modelo_aparelho">Tipo de Material</Label>
-                  <Select value={formData.modelo_aparelho || ''} onValueChange={(value) => handleInputChange("modelo_aparelho", value)}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Selecionar tipo" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="Eletrônicos">Eletrônicos</SelectItem>
-                      <SelectItem value="Eletrodomésticos">Eletrodomésticos</SelectItem>
-                      <SelectItem value="Móveis">Móveis</SelectItem>
-                      <SelectItem value="Vestuário">Vestuário</SelectItem>
-                      <SelectItem value="Outros">Outros</SelectItem>
-                    </SelectContent>
-                  </Select>
+                  <Label htmlFor="modelo_aparelho">Tipo de Material *</Label>
+                  <ProductCombobox
+                    value={formData.modelo_aparelho || ''}
+                    onValueChange={(code) => handleInputChange("modelo_aparelho", code)}
+                    onProductSelect={handleProductComboboxSelect}
+                  />
                 </div>
 
                 <div className="space-y-2 mb-4">
