@@ -5,7 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { ArrowLeft, TrendingUp, BarChart3, Download, FileText, Calendar, Filter, Edit, Trash2 } from "lucide-react";
+import { ArrowLeft, TrendingUp, BarChart3, Download, FileText, Calendar, Filter, Edit, Trash2, Search } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { generateReportPDF } from "@/components/CreateReportDialog"; // Importar a função de geração de PDF
 import { CreateReportDialog } from "@/components/CreateReportDialog"; // Importar o novo componente de diálogo
