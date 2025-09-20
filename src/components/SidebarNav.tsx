@@ -6,7 +6,7 @@ import {
   Route,
   TrendingUp,
   Gauge,
-  ListChecks, // Usado para 'Consultar Coletas' e 'Situação da Coleta'
+  ListChecks, // Usado para 'Consultar Coletas'
   Users,
   Brain,
   Zap,
@@ -57,12 +57,12 @@ export const SidebarNav = () => {
       path: '/coletas',
       roles: ['standard', 'admin'],
     },
-    {
-      label: 'Situação da Coleta', // Novo item de menu
-      icon: ListChecks, // Reutilizando o ícone ListChecks
-      path: '/collection-status',
-      roles: ['standard', 'admin'],
-    },
+    // {
+    //   label: 'Situação da Coleta', // Novo item de menu
+    //   icon: ListChecks, // Reutilizando o ícone ListChecks
+    //   path: '/collection-status',
+    //   roles: ['standard', 'admin'],
+    // },
     {
       label: 'Relatórios',
       icon: TrendingUp,

@@ -13,7 +13,7 @@ import { MetricsManagement } from "./pages/MetricsManagement";
 import { ItemsManagement } from "./pages/ItemsManagement";
 import { UserManagement } from "./pages/UserManagement";
 import { ClientManagement } from "./pages/ClientManagement";
-import { CollectionStatus } from "./pages/CollectionStatus"; // Importar a nova página
+// import { CollectionStatus } from "./pages/CollectionStatus"; // Importar a nova página
 import { Debug } from "./pages/Debug";
 import { AuthProvider } from "./hooks/use-auth";
 import { ProtectedRoute } from "./components/ProtectedRoute";
@@ -63,7 +63,7 @@ const AppLayout = () => {
             <Route path="/relatorios" element={<Relatorios />} />
             {/* <Route path="/ia-insights" element={<IAInsights />} /> */}
             <Route path="/coletas" element={<Coletas />} />
-            <Route path="/collection-status" element={<CollectionStatus />} /> {/* Nova rota */}
+            {/* <Route path="/collection-status" element={<CollectionStatus />} /> */} {/* Nova rota */}
           </Route>
 
           <Route element={<ProtectedRoute allowedRoles={['admin']} />}>
