@@ -1,7 +1,6 @@
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, Legend }
- from 'recharts';
+import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, Legend } from 'recharts';
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import type { Tables } from "@/integrations/supabase/types";
@@ -71,8 +70,8 @@ export const CollectionStatusDonutChart: React.FC = () => {
     const total = pendenteCount + concluidaCount;
 
     const chartData = [
-      { name: 'Pendentes', value: pendenteCount, color: COLORS.pendente },
-      { name: 'Concluídas', value: concluidaCount, color: COLORS.concluida },
+      { name: 'Coletas Pendentes', value: pendenteCount, color: COLORS.pendente },
+      { name: 'Coletas Finalizadas', value: concluidaCount, color: COLORS.concluida },
     ];
 
     return { total, pendente: pendenteCount, concluida: concluidaCount, chartData };
@@ -86,7 +85,7 @@ export const CollectionStatusDonutChart: React.FC = () => {
         <CardHeader>
           <CardTitle className="h-6 w-48 bg-muted rounded" />
         </CardHeader>
-        <CardContent className="flex items-center justify-center h-80"> {/* Aumentado para h-80 */}
+        <CardContent className="flex items-center justify-center h-80">
           <div className="w-16 h-16 border-4 border-primary border-t-transparent rounded-full animate-spin" />
         </CardContent>
       </Card>
@@ -111,7 +110,7 @@ export const CollectionStatusDonutChart: React.FC = () => {
           Status das Coletas
         </CardTitle>
       </CardHeader>
-      <CardContent className="h-80 flex flex-col items-center justify-center"> {/* Aumentado para h-80 */}
+      <CardContent className="h-80 flex flex-col items-center justify-center">
         {total > 0 ? (
           <ResponsiveContainer width="100%" height="100%">
             <PieChart>
@@ -139,9 +138,9 @@ export const CollectionStatusDonutChart: React.FC = () => {
               <Legend 
                 wrapperStyle={{ paddingTop: '10px' }}
                 formatter={(value, entry) => (
-                  <span className="text-muted-foreground text-sm flex items-center gap-2">
+                  <span className="text-sm flex items-center gap-2">
                     <span className="inline-block w-3 h-3 rounded-full" style={{ backgroundColor: entry.color }} />
-                    {value}: <span className="font-semibold text-foreground">{entry.payload.value}</span>
+                    <span className="font-semibold text-foreground">{value}:</span> <span className="text-muted-foreground">{entry.payload.value}</span>
                   </span>
                 )}
               />
@@ -156,15 +155,15 @@ export const CollectionStatusDonutChart: React.FC = () => {
         )}
         {total > 0 && (
           <div className="mt-4 text-center">
-            {/* Removido: <p className="text-sm text-muted-foreground">Total de Coletas: <span className="font-semibold text-foreground">{total}</span></p> */}
+            <p className="text-sm text-muted-foreground">Total de Coletas: <span className="font-semibold text-foreground">{total}</span></p>
             <div className="flex justify-center gap-4 mt-2">
               <div className="flex items-center gap-1 text-sm">
                 <Clock className="h-4 w-4 text-neural" />
-                <span className="text-muted-foreground">Pendentes: <span className="font-semibold text-foreground">{pendente}</span></span>
+                <span className="text-muted-foreground">Coletas Pendentes: <span className="font-semibold text-foreground">{pendente}</span></span>
               </div>
               <div className="flex items-center gap-1 text-sm">
                 <CheckCircle className="h-4 w-4 text-primary" />
-                <span className="text-muted-foreground">Concluídas: <span className="font-semibold text-foreground">{concluida}</span></span>
+                <span className="text-muted-foreground">Coletas Finalizadas: <span className="font-semibold text-foreground">{concluida}</span></span>
               </div>
             </div>
           </div>
