@@ -81,12 +81,12 @@ export const SidebarNav = () => {
       path: '/metrics-management',
       roles: ['admin'],
     },
-    {
-      label: 'Gerenciar Itens',
-      icon: Package,
-      path: '/items-management',
-      roles: ['admin'],
-    },
+    // {
+    //   label: 'Gerenciar Itens', // Removido
+    //   icon: Package,
+    //   path: '/items-management',
+    //   roles: ['admin'],
+    // },
     {
       label: 'Gerenciar Clientes',
       icon: UserIcon,

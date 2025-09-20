@@ -7,7 +7,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"; // Importado DropdownMenu components
-import { ArrowLeft, Package, MapPin, Calendar, Search, Filter, Eye, Edit, Trash2, MessageSquareText, Mail, RefreshCcw, Clock, CheckCircle, ListChecks } from "lucide-react"; // Adicionado ListChecks
+import { ArrowLeft, Package, MapPin, Calendar, Search, Filter, Eye, Edit, Trash2, MessageSquareText, Mail, RefreshCcw, Clock, CheckCircle } from "lucide-react"; // Removido ListChecks
 import { useNavigate } from "react-router-dom";
 import { useState } from "react";
 import { useToast } from "@/hooks/use-toast";
@@ -17,7 +17,7 @@ import type { Tables, TablesInsert, TablesUpdate } from "@/integrations/supabase
 import { useAuth } from "@/hooks/use-auth";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import { CollectionItemsStatusDialog } from "@/components/CollectionItemsStatusDialog"; // Importar o novo componente
+// import { CollectionItemsStatusDialog } from "@/components/CollectionItemsStatusDialog"; // Removido
 
 type Coleta = Tables<'coletas'>;
 type ColetaInsert = TablesInsert<'coletas'>;
@@ -176,8 +176,8 @@ const Coletas = () => {
   const [editingColeta, setEditingColeta] = useState<Coleta | null>(null);
   const [isViewDetailsDialogOpen, setIsViewDetailsDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
-  const [isCollectionItemsStatusDialogOpen, setIsCollectionItemsStatusDialogOpen] = useState(false); // Novo estado
-  const [selectedCollectionForItems, setSelectedCollectionForItems] = useState<{ id: string, name: string } | null>(null); // Novo estado
+  // const [isCollectionItemsStatusDialogOpen, setIsCollectionItemsStatusDialogOpen] = useState(false); // Removido
+  // const [selectedCollectionForItems, setSelectedCollectionForItems] = useState<{ id: string, name: string } | null>(null); // Removido
 
   const { data: coletas, isLoading, error } = useQuery<Coleta[], Error>({
     queryKey: ['coletas', user?.id, statusFilter],
@@ -252,10 +252,10 @@ const Coletas = () => {
     updateColetaMutation.mutate({ id: coletaId, status_coleta: newStatus });
   };
 
-  const handleOpenCollectionItemsStatus = (coleta: Coleta) => {
-    setSelectedCollectionForItems({ id: coleta.id, name: coleta.parceiro || 'Coleta' });
-    setIsCollectionItemsStatusDialogOpen(true);
-  };
+  // const handleOpenCollectionItemsStatus = (coleta: Coleta) => { // Removido
+  //   setSelectedCollectionForItems({ id: coleta.id, name: coleta.parceiro || 'Coleta' });
+  //   setIsCollectionItemsStatusDialogOpen(true);
+  // };
 
   const getStatusColor = (status: string | null) => {
     switch (status) {
@@ -515,7 +515,8 @@ const Coletas = () => {
                         </DropdownMenuContent>
                       </DropdownMenu>
 
-                      <Button 
+                      {/* Removido o botão 'Situação da Coleta' */}
+                      {/* <Button 
                         size="sm" 
                         variant="outline" 
                         className="border-primary text-primary hover:bg-primary/10"
@@ -523,7 +524,7 @@ const Coletas = () => {
                       >
                         <ListChecks className="mr-1 h-3 w-3" />
                         Situação da Coleta
-                      </Button>
+                      </Button> */}
 
                       {coleta.status_coleta === 'agendada' && (
                         <Dialog open={isEditDialogOpen && editingColeta?.id === coleta.id} onOpenChange={setIsEditDialogOpen}>
@@ -587,14 +588,15 @@ const Coletas = () => {
           )}
         </div>
       </div>
-      {selectedCollectionForItems && (
+      {/* Removido o CollectionItemsStatusDialog */}
+      {/* {selectedCollectionForItems && (
         <CollectionItemsStatusDialog
           collectionId={selectedCollectionForItems.id}
           collectionName={selectedCollectionForItems.name}
           isOpen={isCollectionItemsStatusDialogOpen}
           onClose={() => setIsCollectionItemsStatusDialogOpen(false)}
         />
-      )}
+      )} */}
     </div>
   );
 };

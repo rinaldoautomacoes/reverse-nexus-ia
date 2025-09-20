@@ -26,7 +26,8 @@ import { PerformanceChart } from "./PerformanceChart";
 import { useAuth } from "@/hooks/use-auth";
 import { supabase } from "@/integrations/supabase/client";
 import { AuthButton } from "./AuthButton";
-import { CollectionStatusDonutChart } from "./CollectionStatusDonutChart"; // Importar o novo componente
+// import { CollectionStatusDonutChart } from "./CollectionStatusDonutChart"; // Removido
+// Importar o novo componente
 
 export const Dashboard = () => {
   const navigate = useNavigate();
@@ -98,7 +99,7 @@ export const Dashboard = () => {
 
           {/* Right Column - Sidebar */}
           <div className="space-y-8">
-            <CollectionStatusDonutChart /> {/* Novo gráfico de rosca */}
+            {/* <CollectionStatusDonutChart /> */} {/* Removido */}
           </div>
         </div>
 

@@ -26,112 +26,98 @@ const iconMap: { [key: string]: React.ElementType } = {
   Gauge
 };
 
-type Item = Tables<'items'>;
+// Removido: type Item = Tables<'items'>;
 
 export const MetricsCards = () => {
   const { toast } = useToast();
   const { user } = useAuth();
 
-  const { data: items, isLoading, error } = useQuery<Array<{quantity: number, status: string}>, Error>({
-    queryKey: ['dashboardItemsMetrics', user?.id],
-    queryFn: async () => {
-      if (!user?.id) {
-        // Se não houver usuário logado, retornar um array vazio
-        return [];
-      }
-      const { data, error } = await supabase
-        .from('items')
-        .select('quantity, status')
-        .eq('user_id', user.id);
+  // Removido: useQuery para 'items'
+  // const { data: items, isLoading, error } = useQuery<Array<{quantity: number, status: string}>, Error>({
+  //   queryKey: ['dashboardItemsMetrics', user?.id],
+  //   queryFn: async () => {
+  //     if (!user?.id) {
+  //       return [];
+  //     }
+  //     const { data, error } = await supabase
+  //       .from('items')
+  //       .select('quantity, status')
+  //       .eq('user_id', user.id);
       
-      if (error) {
-        throw new Error(error.message);
-      }
-      return data;
-    },
-    enabled: !!user?.id, // A query só será executada se houver um user.id
-  });
+  //     if (error) {
+  //       throw new Error(error.message);
+  //     }
+  //     return data;
+  //   },
+  //   enabled: !!user?.id,
+  // });
 
-  useEffect(() => {
-    if (error) {
-      toast({
-        title: "Erro ao carregar dados dos itens",
-        description: error.message,
-        variant: "destructive",
-      });
-    }
-  }, [error, toast]);
+  // Removido: useEffect para erros de itens
+  // useEffect(() => {
+  //   if (error) {
+  //     toast({
+  //       title: "Erro ao carregar dados dos itens",
+  //       description: error.message,
+  //       variant: "destructive",
+  //     });
+  //   }
+  // }, [error, toast]);
 
-  const calculateMetrics = (itemsData: Array<{quantity: number, status: string}> | undefined) => {
-    if (!itemsData || itemsData.length === 0) {
-      return [];
-    }
-
-    let totalAparelhos = 0;
-    let pendentes = 0;
-    let emTransito = 0; // Mapeado para 'coletado'
-    let aparelhosEntregues = 0; // Mapeado para 'processado'
-
-    itemsData.forEach(item => {
-      totalAparelhos += item.quantity;
-      if (item.status === 'pendente') {
-        pendentes += item.quantity;
-      } else if (item.status === 'coletado') {
-        emTransito += item.quantity;
-      } else if (item.status === 'processado') {
-        aparelhosEntregues += item.quantity;
-      }
-    });
-
+  // Ajustado para retornar métricas padrão ou vazias, já que não há mais itens
+  const calculateMetrics = () => {
+    // Retorna métricas de placeholder ou vazias, já que a tabela 'items' foi removida
     return [
       {
         id: 'total-aparelhos',
         title: 'Total de Aparelhos',
-        value: totalAparelhos.toString(),
-        change: '+12%', // Placeholder
-        trend: 'up',
+        value: 'N/A', // Valor padrão
+        change: '0%', 
+        trend: 'neutral',
         icon_name: 'Gauge',
         color: 'text-ai',
         bg_color: 'bg-ai/10',
-        description: 'Aparelhos AVAYA' // Adicionado para corresponder à imagem
+        description: 'Dados de itens indisponíveis'
       },
       {
         id: 'pendentes',
         title: 'Pendentes',
-        value: pendentes.toString(),
-        change: '-5%', // Placeholder
-        trend: 'down',
+        value: 'N/A', // Valor padrão
+        change: '0%', 
+        trend: 'neutral',
         icon_name: 'Clock',
         color: 'text-destructive',
         bg_color: 'bg-destructive/10',
-        description: 'Aguardando coleta' // Adicionado para corresponder à imagem
+        description: 'Dados de itens indisponíveis'
       },
       {
         id: 'em-transito',
         title: 'Em Trânsito',
-        value: emTransito.toString(),
-        change: '+8%', // Placeholder
-        trend: 'up',
-        icon_name: 'CheckCircle', // Usando CheckCircle para 'Em Trânsito' conforme imagem
+        value: 'N/A', // Valor padrão
+        change: '0%', 
+        trend: 'neutral',
+        icon_name: 'CheckCircle',
         color: 'text-warning-yellow',
         bg_color: 'bg-warning-yellow/10',
-        description: 'Em transporte' // Adicionado para corresponder à imagem
+        description: 'Dados de itens indisponíveis'
       },
       {
         id: 'aparelhos-entregues',
         title: 'Aparelhos Entregues',
-        value: aparelhosEntregues.toString(),
-        change: '+15%', // Placeholder
-        trend: 'up',
+        value: 'N/A', // Valor padrão
+        change: '0%', 
+        trend: 'neutral',
         icon_name: 'CheckCircle',
         color: 'text-primary',
         bg_color: 'bg-primary/10',
-        description: 'Processamento completo' // Adicionado para corresponder à imagem
+        description: 'Dados de itens indisponíveis'
       },
     ];
   };
 
-  const dashboardMetrics = calculateMetrics(items);
+  const dashboardMetrics = calculateMetrics();
+
+  // O estado de carregamento agora é sempre falso, pois não há consulta de itens
+  const isLoading = false; 
 
   if (isLoading) {
     return (
@@ -152,11 +138,12 @@ export const MetricsCards = () => {
     );
   }
 
+  // Se não houver métricas (o que não deve acontecer com os placeholders), exibe uma mensagem
   if (!dashboardMetrics || dashboardMetrics.length === 0) {
     return (
       <Card className="card-futuristic border-0">
         <CardContent className="p-6 text-center text-muted-foreground">
-          Nenhuma métrica encontrada. Cadastre itens para ver os dados.
+          Nenhuma métrica encontrada.
         </CardContent>
       </Card>
     );
