@@ -17,12 +17,12 @@ import {
   Users, // Novo ícone para gerenciamento de usuários
   LogOut // Ícone para logout
 } from "lucide-react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router-dom"; // Corrigido: de '=>' para 'from'
 import heroBackground from "@/assets/hero-background.jpg";
 import { MetricsCards } from "./MetricsCards";
 import { RouteMap } from "./RouteMap";
 import { AIAssistant } from "./AIAssistant";
-// import { RecentActivity } from "./RecentActivity"; // Removido
+import { RecentActivity } from "./RecentActivity";
 import { PerformanceChart } from "./PerformanceChart";
 import { useAuth } from "@/hooks/use-auth";
 import { supabase } from "@/integrations/supabase/client"; // Importar supabase
@@ -44,7 +44,7 @@ export const Dashboard = () => {
   };
 
   return (
-    <div className=""> {/* Removido min-h-screen bg-background ai-pattern */}
+    <div className="min-h-screen bg-background ai-pattern">
       {/* Hero Section */}
       <div 
         className="relative h-96 bg-cover bg-center bg-no-repeat"
@@ -95,7 +95,7 @@ export const Dashboard = () => {
           </Button>
         </div>
 
-        <div className="relative z-10 flex flex-col justify-start pt-24 h-full px-6 lg:px-8">
+        <div className="relative z-10 flex flex-col justify-start pt-24 h-full px-6 lg:px-8"> {/* Alterado justify-center para justify-start e adicionado pt-24 */}
           <div className="max-w-4xl">
             <h1 className="text-5xl lg:text-7xl font-bold font-orbitron gradient-text mb-4 animate-slide-up animate-text-pulse-fade">
               LogiReversa
@@ -103,6 +103,7 @@ export const Dashboard = () => {
             <p className="text-xl lg:text-2xl text-muted-foreground mb-8 animate-slide-up animation-delay-200">
               Plataforma Inteligente de Logística Reversa
             </p>
+            {/* Os botões foram movidos para o novo div acima, então não estão mais aqui */}
           </div>
         </div>
       </div>
@@ -131,17 +132,17 @@ export const Dashboard = () => {
         <MetricsCards />
 
         {/* Main Grid */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8"> {/* Ajustado para 2 colunas */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           {/* Left Column - Charts */}
-          <div className="lg:col-span-1 space-y-8"> {/* Ajustado para 1 coluna */}
+          <div className="lg:col-span-2 space-y-8">
             <PerformanceChart />
             <RouteMap />
           </div>
 
-          {/* Right Column - Sidebar (AIAssistant permanece aqui) */}
+          {/* Right Column - Sidebar */}
           <div className="space-y-8">
             <AIAssistant />
-            {/* RecentActivity removido */}
+            <RecentActivity />
           </div>
         </div>
 

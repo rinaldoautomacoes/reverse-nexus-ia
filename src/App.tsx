@@ -13,12 +13,11 @@ import { Coletas } from "./pages/Coletas";
 import { Auth } from "./pages/Auth";
 import { MetricsManagement } from "./pages/MetricsManagement";
 import { ItemsManagement } from "./pages/ItemsManagement";
-import { UserManagement } from "./pages/UserManagement";
+import { UserManagement } from "./pages/UserManagement"; // Importar UserManagement
 import { Debug } from "./pages/Debug";
 import { AuthProvider } from "./hooks/use-auth";
 import { ProtectedRoute } from "./components/ProtectedRoute";
 import { ErrorBoundary } from "./components/ErrorBoundary";
-import { MainLayout } from "./components/MainLayout"; // Novo import
 
 const queryClient = new QueryClient();
 
@@ -36,19 +35,19 @@ const App = () => (
             
             {/* Rotas acessíveis a todos os usuários autenticados (padrão e admin) */}
             <Route element={<ProtectedRoute allowedRoles={['standard', 'admin']} />}>
-              <Route element={<MainLayout />}> {/* Envolve as rotas protegidas com MainLayout */}
-                <Route path="/" element={<Index />} />
-                <Route path="/agendar-coleta" element={<AgendarColeta />} />
-                <Route path="/rota-inteligente" element={<RotaInteligente />} />
-                <Route path="/relatorios" element={<Relatorios />} />
-                <Route path="/ia-insights" element={<IAInsights />} />
-                <Route path="/coletas" element={<Coletas />} />
-              
-                {/* Rotas acessíveis SOMENTE a administradores */}
-                <Route path="/metrics-management" element={<MetricsManagement />} />
-                <Route path="/items-management" element={<ItemsManagement />} />
-                <Route path="/user-management" element={<UserManagement />} />
-              </Route>
+              <Route path="/" element={<Index />} />
+              <Route path="/agendar-coleta" element={<AgendarColeta />} />
+              <Route path="/rota-inteligente" element={<RotaInteligente />} />
+              <Route path="/relatorios" element={<Relatorios />} />
+              <Route path="/ia-insights" element={<IAInsights />} />
+              <Route path="/coletas" element={<Coletas />} />
+            </Route>
+
+            {/* Rotas acessíveis SOMENTE a administradores */}
+            <Route element={<ProtectedRoute allowedRoles={['admin']} />}>
+              <Route path="/metrics-management" element={<MetricsManagement />} />
+              <Route path="/items-management" element={<ItemsManagement />} />
+              <Route path="/user-management" element={<UserManagement />} /> {/* Nova rota para gerenciamento de usuários */}
             </Route>
             
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
