@@ -17,7 +17,7 @@ import type { Tables, TablesInsert, TablesUpdate } from "@/integrations/supabase
 import { useAuth } from "@/hooks/use-auth";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import { CollectionItemsStatusDialog } from "@/components/CollectionItemsStatusDialog"; // Importar o novo componente
+import { CollectionStatusUpdateDialog } from "@/components/CollectionStatusUpdateDialog"; // Importar o NOVO componente
 
 type Coleta = Tables<'coletas'>;
 type ColetaInsert = TablesInsert<'coletas'>;
@@ -176,8 +176,8 @@ const Coletas = () => {
   const [editingColeta, setEditingColeta] = useState<Coleta | null>(null);
   const [isViewDetailsDialogOpen, setIsViewDetailsDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
-  const [isCollectionItemsStatusDialogOpen, setIsCollectionItemsStatusDialogOpen] = useState(false); // Novo estado
-  const [selectedCollectionForItems, setSelectedCollectionForItems] = useState<{ id: string, name: string } | null>(null); // Novo estado
+  const [isCollectionStatusUpdateDialogOpen, setIsCollectionStatusUpdateDialogOpen] = useState(false); // NOVO estado
+  const [selectedCollectionForStatusUpdate, setSelectedCollectionForStatusUpdate] = useState<{ id: string, name: string, status: string } | null>(null); // NOVO estado
 
   const { data: coletas, isLoading, error } = useQuery<Coleta[], Error>({
     queryKey: ['coletas', user?.id, statusFilter],
@@ -252,9 +252,13 @@ const Coletas = () => {
     updateColetaMutation.mutate({ id: coletaId, status_coleta: newStatus });
   };
 
-  const handleOpenCollectionItemsStatus = (coleta: Coleta) => {
-    setSelectedCollectionForItems({ id: coleta.id, name: coleta.parceiro || 'Coleta' });
-    setIsCollectionItemsStatusDialogOpen(true);
+  const handleOpenCollectionStatusUpdateDialog = (coleta: Coleta) => {
+    setSelectedCollectionForStatusUpdate({ 
+      id: coleta.id, 
+      name: coleta.parceiro || 'Coleta',
+      status: coleta.status_coleta || 'pendente'
+    });
+    setIsCollectionStatusUpdateDialogOpen(true);
   };
 
   const getStatusColor = (status: string | null) => {
@@ -519,7 +523,7 @@ const Coletas = () => {
                         size="sm" 
                         variant="outline" 
                         className="border-primary text-primary hover:bg-primary/10"
-                        onClick={() => handleOpenCollectionItemsStatus(coleta)} // Novo botão
+                        onClick={() => handleOpenCollectionStatusUpdateDialog(coleta)} // NOVO botão
                       >
                         <ListChecks className="mr-1 h-3 w-3" />
                         Situação da Coleta
@@ -587,12 +591,13 @@ const Coletas = () => {
           )}
         </div>
       </div>
-      {selectedCollectionForItems && (
-        <CollectionItemsStatusDialog
-          collectionId={selectedCollectionForItems.id}
-          collectionName={selectedCollectionForItems.name}
-          isOpen={isCollectionItemsStatusDialogOpen}
-          onClose={() => setIsCollectionItemsStatusDialogOpen(false)}
+      {selectedCollectionForStatusUpdate && (
+        <CollectionStatusUpdateDialog
+          collectionId={selectedCollectionForStatusUpdate.id}
+          collectionName={selectedCollectionForStatusUpdate.name}
+          currentCollectionStatus={selectedCollectionForStatusUpdate.status}
+          isOpen={isCollectionStatusUpdateDialogOpen}
+          onClose={() => setIsCollectionStatusUpdateDialogOpen(false)}
         />
       )}
     </div>
