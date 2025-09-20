@@ -282,7 +282,7 @@ const Coletas = () => {
 
     const clientName = coleta.contato || coleta.parceiro || 'cliente';
     const message = encodeURIComponent(
-      `Prezado(a) ${clientName},%0A%0AVenho informar que a coleta foi agendada. Desde já agradecemos.`
+      `Prezado(a) ${clientName}, Venho informar que a coleta foi agendada. Desde já agradecemos.`
     );
     const whatsappUrl = `https://wa.me/${coleta.telefone.replace(/\D/g, '')}?text=${message}`;
     
@@ -300,10 +300,9 @@ const Coletas = () => {
     }
 
     const clientName = coleta.contato || coleta.parceiro || 'cliente';
-    const formattedDate = coleta.previsao_coleta ? format(new Date(coleta.previsao_coleta), "dd/MM/yyyy", { locale: ptBR }) : 'N/A';
     const subject = encodeURIComponent(`Confirmação de Coleta Agendada - LogiReverseIA - ${coleta.parceiro || 'N/A'}`);
     const body = encodeURIComponent(
-      `Prezado(a) ${clientName},%0A%0AVenho informar que a coleta foi agendada. Desde já agradecemos.`
+      `Prezado(a) ${clientName}, Venho informar que a coleta foi agendada. Desde já agradecemos.`
     );
     const mailtoUrl = `mailto:${coleta.email}?subject=${subject}&body=${body}`;
     
@@ -460,7 +459,7 @@ const Coletas = () => {
                                 </div>
                                 <div>
                                   <Label className="text-sm font-medium">Pessoa de Contato</Label>
-                                  <p className className="text-sm text-muted-foreground">{selectedColeta.contato || 'N/A'}</p>
+                                  <p className="text-sm text-muted-foreground">{selectedColeta.contato || 'N/A'}</p>
                                 </div>
                                 <div>
                                   <Label className="text-sm font-medium">Telefone</Label>
