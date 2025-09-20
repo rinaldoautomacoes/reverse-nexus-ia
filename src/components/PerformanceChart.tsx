@@ -131,7 +131,7 @@ export const PerformanceChart = () => {
         <div className="flex items-center justify-between">
           <div>
             <CardTitle className="text-xl font-orbitron gradient-text">
-              Performance do Sistema
+              Performance de Recolhimentos
             </CardTitle>
             <p className="text-sm text-muted-foreground">Últimos 6 meses</p>
           </div>
@@ -204,15 +204,8 @@ export const PerformanceChart = () => {
               </div>
             </div>
             
-            <div className="flex items-center gap-3 p-3 bg-secondary/10 rounded-lg">
-              <div className="w-4 h-4 rounded" style={{ backgroundColor: 'hsl(var(--neon-cyan))' }} />
-              <div>
-                <p className="text-sm font-medium">Eficiência IA</p>
-                <p className="text-xs text-muted-foreground">Taxa de otimização</p>
-              </div>
-            </div>
+            {/* Removido o item 'Eficiência IA' da legenda */}
           </div>
-          {/* Resumo de Produtos removido para corresponder à imagem */}
         </div>
       </CardContent>
     </Card>
