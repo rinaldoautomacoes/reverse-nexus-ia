@@ -5,7 +5,8 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { ArrowLeft, Package, MapPin, Calendar, Truck, UserPlus } from "lucide-react";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"; // Importar Popover
+import { Calendar as CalendarIcon, ArrowLeft, Package, MapPin, Calendar, Truck, UserPlus } from "lucide-react"; // Renomear Calendar para CalendarIcon
 import { useNavigate } from "react-router-dom";
 import { useState } from "react";
 import { useToast } from "@/hooks/use-toast";
@@ -13,7 +14,11 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import type { TablesInsert, Tables } from "@/integrations/supabase/types";
 import { useAuth } from "@/hooks/use-auth";
-import { ClientCombobox } from "@/components/ClientCombobox"; // Importar o novo componente
+import { ClientCombobox } from "@/components/ClientCombobox";
+import { Calendar } from "@/components/ui/calendar"; // Importar Calendar do shadcn/ui
+import { cn } from "@/lib/utils"; // Importar cn
+import { format } from "date-fns"; // Importar format do date-fns
+import { ptBR } from "date-fns/locale"; // Importar locale para português
 
 type ColetaInsert = TablesInsert<'coletas'>;
 type Client = Tables<'clients'>;
@@ -27,13 +32,13 @@ export const AgendarColeta = () => {
 
   const [isLoading, setIsLoading] = useState(false);
   const [isClientDialogOpen, setIsClientDialogOpen] = useState(false);
-  const [formData, setFormData] = useState<ColetaInsert & { client_id?: string }>({ // Adicionado client_id
+  const [formData, setFormData] = useState<ColetaInsert & { client_id?: string }>({
     parceiro: "",
     telefone: "",
-    email: "", // Adicionado email
+    email: "",
     endereco: "",
-    cnpj: "", // Adicionado cnpj
-    contato: "", // Adicionado contato
+    cnpj: "",
+    contato: "",
     previsao_coleta: "",
     modelo_aparelho: "",
     qtd_aparelhos_solicitado: 0,
@@ -41,7 +46,7 @@ export const AgendarColeta = () => {
     observacao: "",
     user_id: user?.id || '',
   });
-  const [clientData, setClientData] = useState<ClientInsert>({ // Usar ClientInsert
+  const [clientData, setClientData] = useState<ClientInsert>({
     name: "",
     phone: "",
     email: "",
@@ -66,7 +71,7 @@ export const AgendarColeta = () => {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['coletas', user?.id] });
-      queryClient.invalidateQueries({ queryKey: ['clients', user?.id] }); // Invalida a query de clientes também
+      queryClient.invalidateQueries({ queryKey: ['clients', user?.id] });
       toast({
         title: "Coleta agendada com sucesso!",
         description: `Coleta para ${formData.parceiro} agendada para ${new Date(formData.previsao_coleta || '').toLocaleDateString()}.`
@@ -75,17 +80,17 @@ export const AgendarColeta = () => {
       setFormData({
         parceiro: "",
         telefone: "",
-        email: "", // Reset email
+        email: "",
         endereco: "",
-        cnpj: "", // Reset cnpj
-        contato: "", // Reset contato
+        cnpj: "",
+        contato: "",
         previsao_coleta: "",
         modelo_aparelho: "",
         qtd_aparelhos_solicitado: 0,
         status_coleta: "agendada",
         observacao: "",
         user_id: user?.id || '',
-        client_id: undefined, // Limpa o client_id
+        client_id: undefined,
       });
       setIsLoading(false);
     },
@@ -123,10 +128,10 @@ export const AgendarColeta = () => {
         ...prev, 
         parceiro: newClient.name,
         telefone: newClient.phone || '',
-        email: newClient.email || '', // Preenche email
+        email: newClient.email || '',
         endereco: newClient.address || '',
-        cnpj: newClient.cnpj || '', // Preenche cnpj
-        contato: newClient.contact_person || '', // Preenche contato
+        cnpj: newClient.cnpj || '',
+        contato: newClient.contact_person || '',
         client_id: newClient.id,
       }));
       // Reset client form
@@ -170,22 +175,22 @@ export const AgendarColeta = () => {
         ...prev,
         parceiro: client.name,
         telefone: client.phone || '',
-        email: client.email || '', // Preenche email
+        email: client.email || '',
         endereco: client.address || '',
-        cnpj: client.cnpj || '', // Preenche cnpj
-        contato: client.contact_person || '', // Preenche contato
+        cnpj: client.cnpj || '',
+        contato: client.contact_person || '',
         client_id: client.id,
       }));
     } else {
       // Se o usuário digitou um novo nome ou limpou a seleção
       setFormData(prev => ({
         ...prev,
-        parceiro: formData.parceiro, // Mantém o que foi digitado
-        telefone: "", // Limpa telefone e endereço se não for um cliente existente
-        email: "", // Limpa email
+        parceiro: formData.parceiro,
+        telefone: "",
+        email: "",
         endereco: "",
-        cnpj: "", // Limpa cnpj
-        contato: "", // Limpa contato
+        cnpj: "",
+        contato: "",
         client_id: undefined,
       }));
     }
@@ -219,7 +224,7 @@ export const AgendarColeta = () => {
       // Tenta encontrar o cliente pelo nome digitado
       const { data: existingClients, error: searchError } = await supabase
         .from('clients')
-        .select('id, name, phone, email, address, cnpj, contact_person') // Seleciona todos os campos relevantes
+        .select('id, name, phone, email, address, cnpj, contact_person')
         .eq('user_id', user.id)
         .eq('name', formData.parceiro)
         .limit(1);
@@ -254,7 +259,7 @@ export const AgendarColeta = () => {
           return;
         }
         finalClientId = newClient.id;
-        queryClient.invalidateQueries({ queryKey: ['clients', user?.id] }); // Invalida a query de clientes
+        queryClient.invalidateQueries({ queryKey: ['clients', user?.id] });
       }
     }
 
@@ -469,12 +474,33 @@ export const AgendarColeta = () => {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
                   <div className="space-y-2">
                     <Label htmlFor="previsao_coleta">Data da Coleta *</Label>
-                    <Input 
-                      id="previsao_coleta" 
-                      type="date"
-                      value={formData.previsao_coleta || ''}
-                      onChange={(e) => handleInputChange("previsao_coleta", e.target.value)}
-                    />
+                    <Popover>
+                      <PopoverTrigger asChild>
+                        <Button
+                          variant={"outline"}
+                          className={cn(
+                            "w-full justify-start text-left font-normal",
+                            !formData.previsao_coleta && "text-muted-foreground"
+                          )}
+                        >
+                          <CalendarIcon className="mr-2 h-4 w-4" />
+                          {formData.previsao_coleta ? (
+                            format(new Date(formData.previsao_coleta), "dd/MM/yyyy", { locale: ptBR })
+                          ) : (
+                            <span>Selecione uma data</span>
+                          )}
+                        </Button>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-auto p-0">
+                        <Calendar
+                          mode="single"
+                          selected={formData.previsao_coleta ? new Date(formData.previsao_coleta) : undefined}
+                          onSelect={(date) => handleInputChange("previsao_coleta", date ? format(date, "yyyy-MM-dd") : "")}
+                          initialFocus
+                          locale={ptBR}
+                        />
+                      </PopoverContent>
+                    </Popover>
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="qtd_aparelhos_solicitado">Quantidade de Aparelhos *</Label>
@@ -522,7 +548,7 @@ export const AgendarColeta = () => {
                     className="flex-1 bg-gradient-primary hover:bg-gradient-primary/80 glow-effect"
                     disabled={isLoading || addColetaMutation.isPending}
                   >
-                    <Calendar className="mr-2 h-4 w-4" />
+                    <CalendarIcon className="mr-2 h-4 w-4" />
                     {isLoading || addColetaMutation.isPending ? "Agendando..." : "Agendar Coleta"}
                   </Button>
                   <Button type="button" variant="outline" className="border-accent text-accent hover:bg-accent/10">
