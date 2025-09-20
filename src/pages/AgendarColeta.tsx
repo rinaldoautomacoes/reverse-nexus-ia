@@ -30,7 +30,10 @@ export const AgendarColeta = () => {
   const [formData, setFormData] = useState<ColetaInsert & { client_id?: string }>({ // Adicionado client_id
     parceiro: "",
     telefone: "",
+    email: "", // Adicionado email
     endereco: "",
+    cnpj: "", // Adicionado cnpj
+    contato: "", // Adicionado contato
     previsao_coleta: "",
     modelo_aparelho: "",
     qtd_aparelhos_solicitado: 0,
@@ -72,7 +75,10 @@ export const AgendarColeta = () => {
       setFormData({
         parceiro: "",
         telefone: "",
+        email: "", // Reset email
         endereco: "",
+        cnpj: "", // Reset cnpj
+        contato: "", // Reset contato
         previsao_coleta: "",
         modelo_aparelho: "",
         qtd_aparelhos_solicitado: 0,
@@ -117,7 +123,10 @@ export const AgendarColeta = () => {
         ...prev, 
         parceiro: newClient.name,
         telefone: newClient.phone || '',
+        email: newClient.email || '', // Preenche email
         endereco: newClient.address || '',
+        cnpj: newClient.cnpj || '', // Preenche cnpj
+        contato: newClient.contact_person || '', // Preenche contato
         client_id: newClient.id,
       }));
       // Reset client form
@@ -161,7 +170,10 @@ export const AgendarColeta = () => {
         ...prev,
         parceiro: client.name,
         telefone: client.phone || '',
+        email: client.email || '', // Preenche email
         endereco: client.address || '',
+        cnpj: client.cnpj || '', // Preenche cnpj
+        contato: client.contact_person || '', // Preenche contato
         client_id: client.id,
       }));
     } else {
@@ -170,7 +182,10 @@ export const AgendarColeta = () => {
         ...prev,
         parceiro: formData.parceiro, // Mantém o que foi digitado
         telefone: "", // Limpa telefone e endereço se não for um cliente existente
+        email: "", // Limpa email
         endereco: "",
+        cnpj: "", // Limpa cnpj
+        contato: "", // Limpa contato
         client_id: undefined,
       }));
     }
@@ -204,7 +219,7 @@ export const AgendarColeta = () => {
       // Tenta encontrar o cliente pelo nome digitado
       const { data: existingClients, error: searchError } = await supabase
         .from('clients')
-        .select('id, name, phone, address')
+        .select('id, name, phone, email, address, cnpj, contact_person') // Seleciona todos os campos relevantes
         .eq('user_id', user.id)
         .eq('name', formData.parceiro)
         .limit(1);
@@ -225,10 +240,10 @@ export const AgendarColeta = () => {
             user_id: user.id,
             name: formData.parceiro,
             phone: formData.telefone,
-            email: formData.email || null, // Adicione email se disponível no formData
+            email: formData.email || null,
             address: formData.endereco,
-            cnpj: formData.cnpj || null, // Adicione cnpj se disponível no formData
-            contact_person: formData.contato || null, // Adicione contato se disponível no formData
+            cnpj: formData.cnpj || null,
+            contact_person: formData.contato || null,
           })
           .select()
           .single();
@@ -243,8 +258,15 @@ export const AgendarColeta = () => {
       }
     }
 
-    // Agora, agende a coleta com o client_id
-    addColetaMutation.mutate({ ...formData, user_id: user.id, client_id: finalClientId });
+    // Agora, agende a coleta com o client_id e os dados adicionais
+    addColetaMutation.mutate({ 
+      ...formData, 
+      user_id: user.id, 
+      client_id: finalClientId,
+      email: formData.email || null,
+      cnpj: formData.cnpj || null,
+      contato: formData.contato || null,
+    });
   };
 
   return (
@@ -270,7 +292,7 @@ export const AgendarColeta = () => {
           </div>
 
           <Card className="card-futuristic">
-            <CardHeader className="flex flex-row items-center justify-between"> {/* Adicionado flexbox para alinhamento */}
+            <CardHeader className="flex flex-row items-center justify-between">
               <CardTitle className="flex items-center gap-2">
                 <Package className="h-5 w-5 text-primary" />
                 Dados da Coleta
@@ -402,6 +424,28 @@ export const AgendarColeta = () => {
                   </div>
                 </div>
 
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="email">Email</Label>
+                    <Input 
+                      id="email" 
+                      type="email"
+                      placeholder="cliente@email.com"
+                      value={formData.email || ''}
+                      onChange={(e) => handleInputChange("email", e.target.value)}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="cnpj">CNPJ</Label>
+                    <Input 
+                      id="cnpj" 
+                      placeholder="00.000.000/0000-00"
+                      value={formData.cnpj || ''}
+                      onChange={(e) => handleInputChange("cnpj", e.target.value)}
+                    />
+                  </div>
+                </div>
+
                 <div className="space-y-2 mb-4">
                   <Label htmlFor="endereco">Endereço *</Label>
                   <Input 
@@ -409,6 +453,16 @@ export const AgendarColeta = () => {
                     placeholder="Endereço completo para coleta"
                     value={formData.endereco || ''}
                     onChange={(e) => handleInputChange("endereco", e.target.value)}
+                  />
+                </div>
+
+                <div className="space-y-2 mb-4">
+                  <Label htmlFor="contato">Pessoa de Contato</Label>
+                  <Input 
+                    id="contato" 
+                    placeholder="Nome da pessoa de contato"
+                    value={formData.contato || ''}
+                    onChange={(e) => handleInputChange("contato", e.target.value)}
                   />
                 </div>
 
