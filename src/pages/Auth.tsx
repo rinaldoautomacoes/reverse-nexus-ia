@@ -230,7 +230,8 @@ export const Auth = () => {
                                 </Button>
                               </>
                             ) : (
-                              <SelectItem value="" disabled>Nenhum e-mail recente</SelectItem>
+                              // Exibe uma mensagem simples quando não há e-mails recentes
+                              <div className="p-2 text-center text-muted-foreground text-sm">Nenhum e-mail recente</div>
                             )}
                             <Input
                               type="email"
