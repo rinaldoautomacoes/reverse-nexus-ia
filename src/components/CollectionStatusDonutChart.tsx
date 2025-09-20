@@ -28,12 +28,24 @@ interface CustomLabelProps {
 }
 
 const CustomLabel: React.FC<CustomLabelProps> = ({ cx, cy, midAngle, innerRadius, outerRadius, percent, name }) => {
+  // Só renderiza o rótulo se a fatia for grande o suficiente para evitar sobreposição
+  if (percent * 100 < 5) { // Limite de 5% para exibir o rótulo
+    return null;
+  }
+
   const radius = innerRadius + (outerRadius - innerRadius) * 0.5;
   const x = cx + radius * Math.cos(-midAngle * Math.PI / 180);
   const y = cy + radius * Math.sin(-midAngle * Math.PI / 180);
 
   return (
-    <text x={x} y={y} fill="hsl(0 0% 0%)" textAnchor={x > cx ? 'start' : 'end'} dominantBaseline="central" className="text-sm font-bold">
+    <text 
+      x={x} 
+      y={y} 
+      fill="hsl(var(--foreground))" // Usar a cor de foreground para melhor contraste
+      textAnchor={x > cx ? 'start' : 'end'} 
+      dominantBaseline="central" 
+      className="text-sm font-bold"
+    >
       {`${(percent * 100).toFixed(0)}%`}
     </text>
   );
