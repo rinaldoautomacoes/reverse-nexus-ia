@@ -178,7 +178,7 @@ export const Auth = () => {
               </div>
             </div>
             <h1 className="text-3xl font-bold font-orbitron gradient-text mb-2">
-              LogiReverseIA
+              Gestão Logística
             </h1>
             <p className="text-muted-foreground">
               Plataforma Inteligente de Logística Reversa
