@@ -32,7 +32,7 @@ const CustomLabel: React.FC<CustomLabelProps> = ({ cx, cy, midAngle, innerRadius
   const y = cy + radius * Math.sin(-midAngle * Math.PI / 180);
 
   return (
-    <text x={x} y={y} fill="white" textAnchor={x > cx ? 'start' : 'end'} dominantBaseline="central" className="text-xs font-semibold">
+    <text x={x} y={y} fill="hsl(var(--foreground))" textAnchor={x > cx ? 'start' : 'end'} dominantBaseline="central" className="text-sm font-bold">
       {`${(percent * 100).toFixed(0)}%`}
     </text>
   );
@@ -85,7 +85,7 @@ export const CollectionStatusDonutChart: React.FC = () => {
         <CardHeader>
           <CardTitle className="h-6 w-48 bg-muted rounded" />
         </CardHeader>
-        <CardContent className="flex items-center justify-center h-64">
+        <CardContent className="flex items-center justify-center h-80"> {/* Aumentado para h-80 */}
           <div className="w-16 h-16 border-4 border-primary border-t-transparent rounded-full animate-spin" />
         </CardContent>
       </Card>
@@ -110,7 +110,7 @@ export const CollectionStatusDonutChart: React.FC = () => {
           Status das Coletas
         </CardTitle>
       </CardHeader>
-      <CardContent className="h-72 flex flex-col items-center justify-center">
+      <CardContent className="h-80 flex flex-col items-center justify-center"> {/* Aumentado para h-80 */}
         {total > 0 ? (
           <ResponsiveContainer width="100%" height="100%">
             <PieChart>
