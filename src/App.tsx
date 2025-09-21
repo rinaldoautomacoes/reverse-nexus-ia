@@ -8,7 +8,7 @@ import NotFound from "./pages/NotFound";
 import { AgendarColeta } from "./pages/AgendarColeta";
 import { Relatorios } from "./pages/Relatorios";
 import { Coletas } from "./pages/Coletas";
-import { ColetasConcluidas } from "./pages/ColetasConcluidas"; // Importar a nova página
+import { ColetasConcluidas } from "./pages/ColetasConcluidas";
 import { Auth } from "./pages/Auth";
 import { MetricsManagement } from "./pages/MetricsManagement";
 import { UserManagement } from "./pages/UserManagement";
@@ -17,11 +17,11 @@ import { ProductManagement } from "./pages/ProductManagement";
 import { Debug } from "./pages/Debug";
 import { AuthProvider } from "./hooks/use-auth";
 import { ProtectedRoute } from "./components/ProtectedRoute";
-import { ErrorBoundary } from "./components/SidebarNav"; // Importar SidebarNav
+import { ErrorBoundary } from "./components/ErrorBoundary"; // Importação corrigida
 import { useIsMobile } from "./hooks/use-mobile";
 import { SidebarProvider, useSidebar } from "./contexts/SidebarContext";
 import { cn } from "./lib/utils";
-import { useState } from "react"; // Importar useState
+import { useState } from "react";
 
 const queryClient = new QueryClient();
 
@@ -46,11 +46,11 @@ const App = () => (
 const AppLayout = () => {
   const isMobile = useIsMobile();
   const { mainContentMarginClass } = useSidebar();
-  const [selectedYear, setSelectedYear] = useState<string>('2025'); // Estado para o ano selecionado
+  const [selectedYear, setSelectedYear] = useState<string>('2025');
 
   return (
     <div className="flex min-h-screen bg-background ai-pattern">
-      <ErrorBoundary selectedYear={selectedYear} setSelectedYear={setSelectedYear} /> {/* Passar props para SidebarNav */}
+      <SidebarNav selectedYear={selectedYear} setSelectedYear={setSelectedYear} /> {/* Passar props para SidebarNav */}
 
       <main className={cn("flex-1 transition-all duration-300 ease-in-out", isMobile ? 'ml-0' : mainContentMarginClass)}>
         <Routes>
@@ -58,10 +58,10 @@ const AppLayout = () => {
           <Route path="/debug" element={<Debug />} />
           
           <Route element={<ProtectedRoute allowedRoles={['standard', 'admin']} />}>
-            <Route path="/" element={<Index selectedYear={selectedYear} />} /> {/* Passar selectedYear para Index */}
+            <Route path="/" element={<Index selectedYear={selectedYear} />} />
             <Route path="/agendar-coleta" element={<AgendarColeta />} />
-            <Route path="/coletas-ativas" element={<Coletas />} /> {/* Rota para coletas ativas */}
-            <Route path="/coletas-concluidas" element={<ColetasConcluidas />} /> {/* NOVA ROTA */}
+            <Route path="/coletas-ativas" element={<Coletas />} />
+            <Route path="/coletas-concluidas" element={<ColetasConcluidas />} />
             <Route path="/relatorios" element={<Relatorios />} />
             <Route path="/product-management" element={<ProductManagement />} />
           </Route>
