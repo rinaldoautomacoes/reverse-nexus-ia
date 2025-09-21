@@ -190,7 +190,7 @@ const Coletas = () => {
         .eq('user_id', user.id);
       
       if (statusFilter !== "todos") {
-        query = query.eq('status_coleta', statusFilter);
+        query = query.eq('status_coleta', statusFilter === 'em_transito' ? 'agendada' : statusFilter); // Mapeia 'em_transito' de volta para 'agendada' para a query do banco
       }
 
       const { data, error } = await query;
@@ -325,7 +325,7 @@ const Coletas = () => {
       case 'concluida':
         return 'Concluída';
       case 'agendada':
-        return 'Agendada';
+        return 'Em Trânsito'; // Alterado de 'Agendada' para 'Em Trânsito'
       case 'pendente':
         return 'Pendente';
       default:
@@ -336,7 +336,10 @@ const Coletas = () => {
   const filteredColetas = coletas?.filter(coleta => {
     const matchesSearch = (coleta.parceiro?.toLowerCase().includes(searchTerm.toLowerCase()) ||
                            coleta.endereco?.toLowerCase().includes(searchTerm.toLowerCase()));
-    const matchesStatus = statusFilter === "todos" || coleta.status_coleta === statusFilter;
+    // Ajusta a lógica de filtro para 'em_transito'
+    const matchesStatus = statusFilter === "todos" || 
+                          (statusFilter === 'em_transito' && coleta.status_coleta === 'agendada') ||
+                          (statusFilter !== 'em_transito' && coleta.status_coleta === statusFilter);
     return matchesSearch && matchesStatus;
   }) || [];
 
@@ -404,7 +407,7 @@ const Coletas = () => {
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="todos">Todos os Status</SelectItem>
-                      <SelectItem value="agendada">Agendadas</SelectItem>
+                      <SelectItem value="em_transito">Em Trânsito</SelectItem> {/* Alterado de 'Agendadas' para 'Em Trânsito' */}
                       <SelectItem value="concluida">Concluídas</SelectItem>
                       <SelectItem value="pendente">Pendentes</SelectItem>
                     </SelectContent>
@@ -486,7 +489,7 @@ const Coletas = () => {
                                 </div>
                                 <div>
                                   <Label className="text-sm font-medium">Pessoa de Contato</Label>
-                                  <p className="text-sm text-muted-foreground">{selectedColeta.contato || 'N/A'}</p>
+                                  <p className className="text-sm text-muted-foreground">{selectedColeta.contato || 'N/A'}</p>
                                 </div>
                                 <div>
                                   <Label className="text-sm font-medium">Telefone</Label>
