@@ -1,8 +1,16 @@
 import jsPDF from 'jspdf'; // Importado como default
+
+// Garante que jsPDF.API exista antes que jspdf-autotable tente estendê-lo.
+// Esta é uma medida defensiva caso jsPDF não esteja populando .API como esperado em alguns ambientes.
+if (!(jsPDF as any).API) {
+  (jsPDF as any).API = {};
+}
+
 // Esta linha garante que jspdf-autotable possa encontrar jsPDF no escopo global,
 // como pode esperar para seu mecanismo de plugin.
 (window as any).jsPDF = jsPDF; 
-import 'jspdf-autotable'; // Esta importação agora será executada e encontrará window.jsPDF
+import 'jspdf-autotable'; // Esta importação agora será executada e encontrará window.jsPDF e seu API
+
 import { supabase } from "@/integrations/supabase/client";
 import type { Tables } from "@/integrations/supabase/types";
 import { format } from "date-fns";
