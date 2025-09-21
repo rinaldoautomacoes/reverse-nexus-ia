@@ -11,12 +11,12 @@ import { useEffect } from "react";
 import { useToast } from "@/hooks/use-toast";
 import {
   ResponsiveContainer,
-  BarChart,
+  AreaChart, // Alterado de BarChart para AreaChart
   XAxis,
   YAxis,
   CartesianGrid,
   Tooltip,
-  Bar,
+  Area, // Alterado de Bar para Area
   Legend,
   LabelList,
 } from 'recharts';
@@ -32,7 +32,7 @@ export const ProductStatusChart: React.FC<ProductStatusChartProps> = ({ selected
   const { toast } = useToast();
 
   const { data: coletas, isLoading, error } = useQuery<Coleta[], Error>({
-    queryKey: ['productStatusChart', user?.id, selectedYear], // Adicionado selectedYear ao queryKey
+    queryKey: ['productStatusChart', user?.id, selectedYear],
     queryFn: async () => {
       if (!user?.id) return [];
 
@@ -48,7 +48,7 @@ export const ProductStatusChart: React.FC<ProductStatusChartProps> = ({ selected
           previsao_coleta
         `)
         .eq('user_id', user.id)
-        .gte('previsao_coleta', startDate) // Filtrar por previsao_coleta dentro do ano selecionado
+        .gte('previsao_coleta', startDate)
         .lt('previsao_coleta', endDate)
         .order('created_at', { ascending: true });
       if (error) throw new Error(error.message);
@@ -144,10 +144,10 @@ export const ProductStatusChart: React.FC<ProductStatusChartProps> = ({ selected
 
   const { chartData, totalItems, totalPendente, totalEmTransito, totalEntregues } = processColetasData(coletas);
 
-  const BAR_COLORS = {
-    pendente: 'hsl(var(--destructive))',
-    em_transito: 'hsl(var(--warning-yellow))',
-    entregues: 'hsl(var(--success-green))',
+  const AREA_COLORS = {
+    pendente: 'hsl(var(--destructive))', // Deep Blue
+    em_transito: 'hsl(var(--warning-yellow))', // Neural Blue
+    entregues: 'hsl(var(--success-green))', // Neon Cyan
   };
 
   const percentageEntregues = totalItems > 0 ? ((totalEntregues / totalItems) * 100).toFixed(1) : '0.0';
@@ -191,7 +191,7 @@ export const ProductStatusChart: React.FC<ProductStatusChartProps> = ({ selected
         <div className="space-y-6">
           <div className="h-64 relative">
             <ResponsiveContainer width="100%" height="100%">
-              <BarChart
+              <AreaChart
                 data={chartData}
                 margin={{
                   top: 20,
@@ -222,22 +222,36 @@ export const ProductStatusChart: React.FC<ProductStatusChartProps> = ({ selected
                     </span>
                   )}
                 />
-                <Bar dataKey="pendente" stackId="a" fill={BAR_COLORS.pendente}>
-                  <LabelList dataKey="pendente" position="inside" fill="#fff" formatter={(value: number) => value > 0 ? value : ''} />
-                </Bar>
-                <Bar dataKey="em_transito" stackId="a" fill={BAR_COLORS.em_transito}>
-                  <LabelList dataKey="em_transito" position="inside" fill="#fff" formatter={(value: number) => value > 0 ? value : ''} />
-                </Bar>
-                <Bar dataKey="entregues" stackId="a" fill={BAR_COLORS.entregues}>
-                  <LabelList dataKey="entregues" position="inside" fill="#fff" formatter={(value: number) => value > 0 ? value : ''} />
-                </Bar>
-              </BarChart>
+                <defs>
+                  <linearGradient id="gradientPendente" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor="hsl(var(--destructive))" stopOpacity={0.8} />
+                    <stop offset="95%" stopColor="hsl(var(--destructive))" stopOpacity={0} />
+                  </linearGradient>
+                  <linearGradient id="gradientEmTransito" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor="hsl(var(--warning-yellow))" stopOpacity={0.8} />
+                    <stop offset="95%" stopColor="hsl(var(--warning-yellow))" stopOpacity={0} />
+                  </linearGradient>
+                  <linearGradient id="gradientEntregues" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor="hsl(var(--success-green))" stopOpacity={0.8} />
+                    <stop offset="95%" stopColor="hsl(var(--success-green))" stopOpacity={0} />
+                  </linearGradient>
+                </defs>
+                <Area dataKey="pendente" stackId="a" stroke={AREA_COLORS.pendente} fill="url(#gradientPendente)" strokeWidth={2} name="Pendentes">
+                  <LabelList dataKey="pendente" position="top" fill="#fff" formatter={(value: number) => value > 0 ? value : ''} />
+                </Area>
+                <Area dataKey="em_transito" stackId="a" stroke={AREA_COLORS.em_transito} fill="url(#gradientEmTransito)" strokeWidth={2} name="Em Trânsito">
+                  <LabelList dataKey="em_transito" position="top" fill="#fff" formatter={(value: number) => value > 0 ? value : ''} />
+                </Area>
+                <Area dataKey="entregues" stackId="a" stroke={AREA_COLORS.entregues} fill="url(#gradientEntregues)" strokeWidth={2} name="Entregues">
+                  <LabelList dataKey="entregues" position="top" fill="#fff" formatter={(value: number) => value > 0 ? value : ''} />
+                </Area>
+              </AreaChart>
             </ResponsiveContainer>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
             <div className="flex items-center gap-3 p-3 bg-secondary/10 rounded-lg">
-              <div className="w-4 h-4 rounded" style={{ backgroundColor: BAR_COLORS.pendente }} />
+              <div className="w-4 h-4 rounded" style={{ backgroundColor: AREA_COLORS.pendente }} />
               <div>
                 <p className="text-sm font-medium">Pendentes</p>
                 <p className="text-xs text-muted-foreground">{totalPendente} itens aguardando</p>
@@ -245,7 +259,7 @@ export const ProductStatusChart: React.FC<ProductStatusChartProps> = ({ selected
             </div>
             
             <div className="flex items-center gap-3 p-3 bg-secondary/10 rounded-lg">
-              <div className="w-4 h-4 rounded" style={{ backgroundColor: BAR_COLORS.em_transito }} />
+              <div className="w-4 h-4 rounded" style={{ backgroundColor: AREA_COLORS.em_transito }} />
               <div>
                 <p className="text-sm font-medium">Em Trânsito</p>
                 <p className="text-xs text-muted-foreground">{totalEmTransito} itens a caminho</p>
@@ -253,7 +267,7 @@ export const ProductStatusChart: React.FC<ProductStatusChartProps> = ({ selected
             </div>
             
             <div className="flex items-center gap-3 p-3 bg-secondary/10 rounded-lg">
-              <div className="w-4 h-4 rounded" style={{ backgroundColor: BAR_COLORS.entregues }} />
+              <div className="w-4 h-4 rounded" style={{ backgroundColor: AREA_COLORS.entregues }} />
               <div>
                 <p className="text-sm font-medium">Entregues</p>
                 <p className="text-xs text-muted-foreground">{totalEntregues} itens finalizados</p>
