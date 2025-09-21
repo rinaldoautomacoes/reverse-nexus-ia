@@ -1,6 +1,5 @@
-import jsPDF from 'jspdf';
-import 'jspdf-autotable'; // Importação necessária para pdf.autoTable
-import html2canvas from 'html2canvas';
+import * as jsPDFModule from 'jspdf'; // Importado como namespace para garantir a aplicação do plugin
+import 'jspdf-autotable'; // Este import estende o protótipo de jsPDFModule.default
 import { supabase } from "@/integrations/supabase/client";
 import type { Tables } from "@/integrations/supabase/types";
 import { format } from "date-fns";
@@ -63,7 +62,7 @@ const fetchReportData = async (reportData: ReportData, userId: string) => {
 const generatePdfReport = async (reportData: ReportData, userId: string, performanceChartData: MonthlyPerformanceData[]) => {
   const { coletas, itemsByCollection } = await fetchReportData(reportData, userId);
 
-  const pdf = new jsPDF();
+  const pdf = new jsPDFModule.default(); // Usando jsPDFModule.default para criar a instância
   let currentY = 30;
 
   pdf.setFontSize(20);
