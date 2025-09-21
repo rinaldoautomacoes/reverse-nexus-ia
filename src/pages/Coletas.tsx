@@ -24,6 +24,10 @@ type ColetaInsert = TablesInsert<'coletas'>;
 type ColetaUpdate = TablesUpdate<'coletas'>;
 type Produto = Tables<'items'>;
 
+interface ColetasProps {
+  selectedYear: string;
+}
+
 const EditColetaForm = ({ coleta, onUpdate, onCancel }: { coleta: Coleta, onUpdate: (coleta: ColetaUpdate) => void, onCancel: () => void }) => {
   const [formData, setFormData] = useState<ColetaUpdate>({
     id: coleta.id,
@@ -165,7 +169,7 @@ const EditColetaForm = ({ coleta, onUpdate, onCancel }: { coleta: Coleta, onUpda
   );
 };
 
-const Coletas = () => {
+const Coletas: React.FC<ColetasProps> = ({ selectedYear }) => {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const { toast } = useToast();
@@ -181,14 +185,20 @@ const Coletas = () => {
   const [selectedCollectionForStatusUpdate, setSelectedCollectionForStatusUpdate] = useState<{ id: string, name: string, status: string } | null>(null);
 
   const { data: coletas, isLoading, error } = useQuery<Coleta[], Error>({
-    queryKey: ['coletasAtivas', user?.id, statusFilter], // Alterado queryKey
+    queryKey: ['coletasAtivas', user?.id, statusFilter, selectedYear], // Adicionado selectedYear
     queryFn: async () => {
       if (!user?.id) return [];
+
+      const startDate = `${selectedYear}-01-01`;
+      const endDate = `${parseInt(selectedYear) + 1}-01-01`;
+
       let query = supabase
         .from('coletas')
         .select('*')
         .eq('user_id', user.id)
-        .neq('status_coleta', 'concluida'); // Filtra coletas que NÃO são concluídas
+        .neq('status_coleta', 'concluida') // Filtra coletas que NÃO são concluídas
+        .gte('previsao_coleta', startDate) // Filtrar por previsao_coleta dentro do ano selecionado
+        .lt('previsao_coleta', endDate);
       
       if (statusFilter !== "todos") {
         query = query.eq('status_coleta', statusFilter === 'em_transito' ? 'agendada' : statusFilter);
@@ -228,11 +238,11 @@ const Coletas = () => {
       return data;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['coletasAtivas', user?.id] }); // Invalida a lista de coletas ativas
-      queryClient.invalidateQueries({ queryKey: ['coletasConcluidas', user?.id] }); // Invalida a lista de coletas concluídas
-      queryClient.invalidateQueries({ queryKey: ['dashboardColetasMetrics', user?.id] }); // Invalida as métricas do dashboard
-      queryClient.invalidateQueries({ queryKey: ['productStatusChart', user?.id] }); // Invalida o gráfico de status de produtos
-      queryClient.invalidateQueries({ queryKey: ['collectionStatusChart', user?.id] }); // Invalida o gráfico de rosca
+      queryClient.invalidateQueries({ queryKey: ['coletasAtivas', user?.id, statusFilter, selectedYear] }); // Invalida a lista de coletas ativas
+      queryClient.invalidateQueries({ queryKey: ['coletasConcluidas', user?.id, selectedYear] }); // Invalida a lista de coletas concluídas
+      queryClient.invalidateQueries({ queryKey: ['dashboardColetasMetrics', user?.id, selectedYear] }); // Invalida as métricas do dashboard
+      queryClient.invalidateQueries({ queryKey: ['productStatusChart', user?.id, selectedYear] }); // Invalida o gráfico de status de produtos
+      queryClient.invalidateQueries({ queryKey: ['collectionStatusChart', user?.id, selectedYear] }); // Invalida o gráfico de rosca
       toast({ title: "Coleta atualizada!", description: "As informações da coleta foram atualizadas com sucesso." });
       setIsEditDialogOpen(false);
       setEditingColeta(null);
@@ -251,11 +261,11 @@ const Coletas = () => {
       if (error) throw new Error(error.message);
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['coletasAtivas', user?.id] }); // Invalida a lista de coletas ativas
-      queryClient.invalidateQueries({ queryKey: ['coletasConcluidas', user?.id] }); // Invalida a lista de coletas concluídas
-      queryClient.invalidateQueries({ queryKey: ['dashboardColetasMetrics', user?.id] }); // Invalida as métricas do dashboard
-      queryClient.invalidateQueries({ queryKey: ['productStatusChart', user?.id] }); // Invalida o gráfico de status de produtos
-      queryClient.invalidateQueries({ queryKey: ['collectionStatusChart', user?.id] }); // Invalida o gráfico de rosca
+      queryClient.invalidateQueries({ queryKey: ['coletasAtivas', user?.id, statusFilter, selectedYear] }); // Invalida a lista de coletas ativas
+      queryClient.invalidateQueries({ queryKey: ['coletasConcluidas', user?.id, selectedYear] }); // Invalida a lista de coletas concluídas
+      queryClient.invalidateQueries({ queryKey: ['dashboardColetasMetrics', user?.id, selectedYear] }); // Invalida as métricas do dashboard
+      queryClient.invalidateQueries({ queryKey: ['productStatusChart', user?.id, selectedYear] }); // Invalida o gráfico de status de produtos
+      queryClient.invalidateQueries({ queryKey: ['collectionStatusChart', user?.id, selectedYear] }); // Invalida o gráfico de rosca
       toast({ title: "Coleta excluída!", description: "A coleta foi removida com sucesso." });
     },
     onError: (err) => {
@@ -384,10 +394,10 @@ const Coletas = () => {
         <div className="space-y-6">
           <div className="text-center">
             <h1 className="text-4xl font-bold font-orbitron gradient-text mb-4">
-              Coletas Ativas
+              Coletas Ativas ({selectedYear})
             </h1>
             <p className="text-muted-foreground">
-              Visualize e gerencie coletas pendentes e em trânsito
+              Visualize e gerencie coletas pendentes e em trânsito no ano de {selectedYear}
             </p>
           </div>
 

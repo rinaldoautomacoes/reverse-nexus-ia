@@ -22,7 +22,7 @@ import { useIsMobile } from "./hooks/use-mobile";
 import { SidebarProvider, useSidebar } from "./contexts/SidebarContext";
 import { cn } from "./lib/utils";
 import { useState } from "react";
-import { SidebarNav } from "./components/SidebarNav"; // Importação adicionada
+import { SidebarNav } from "./components/SidebarNav";
 
 const queryClient = new QueryClient();
 
@@ -61,8 +61,8 @@ const AppLayout = () => {
           <Route element={<ProtectedRoute allowedRoles={['standard', 'admin']} />}>
             <Route path="/" element={<Index selectedYear={selectedYear} />} />
             <Route path="/agendar-coleta" element={<AgendarColeta />} />
-            <Route path="/coletas-ativas" element={<Coletas />} />
-            <Route path="/coletas-concluidas" element={<ColetasConcluidas />} />
+            <Route path="/coletas-ativas" element={<Coletas selectedYear={selectedYear} />} /> {/* Passando selectedYear */}
+            <Route path="/coletas-concluidas" element={<ColetasConcluidas selectedYear={selectedYear} />} /> {/* Passando selectedYear */}
             <Route path="/relatorios" element={<Relatorios />} />
             <Route path="/product-management" element={<ProductManagement />} />
           </Route>
