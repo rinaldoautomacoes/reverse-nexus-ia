@@ -27,13 +27,17 @@ import { useAuth } from "@/hooks/use-auth";
 import { supabase } from "@/integrations/supabase/client";
 // import { AuthButton } from "./AuthButton"; // Removido
 import { CollectionStatusDonutChart } from "./CollectionStatusDonutChart"; // Importar o novo componente
-import { useState } from "react"; // Importar useState
+// import { useState } from "react"; // Importar useState - REMOVIDO
 
-export const Dashboard = () => {
+interface DashboardProps {
+  selectedYear: string;
+}
+
+export const Dashboard: React.FC<DashboardProps> = ({ selectedYear }) => {
   const navigate = useNavigate();
   const { user, profile } = useAuth();
   const isAdmin = profile?.role === 'admin';
-  const [selectedYear, setSelectedYear] = useState<string>('2025'); // Estado para o ano selecionado
+  // const [selectedYear, setSelectedYear] = useState<string>('2025'); // Estado para o ano selecionado - REMOVIDO
 
   return (
     <div className="min-h-screen bg-background ai-pattern">
@@ -44,8 +48,8 @@ export const Dashboard = () => {
       >
         <div className="absolute inset-0 bg-gradient-to-r from-slate-darker/90 to-transparent" />
         
-        {/* Botões de seleção de ano */}
-        <div className="absolute top-6 left-6 z-20 flex flex-wrap gap-4 animate-slide-up animation-delay-400">
+        {/* Botões de seleção de ano - REMOVIDO */}
+        {/* <div className="absolute top-6 left-6 z-20 flex flex-wrap gap-4 animate-slide-up animation-delay-400">
           <Button 
             variant="outline" 
             className={`bg-gradient-primary text-primary-foreground hover:bg-gradient-primary/80 glow-effect ${selectedYear === '2025' ? 'border-2 border-neon-cyan' : 'border-transparent'}`}
@@ -60,7 +64,7 @@ export const Dashboard = () => {
           >
             Ano 2026
           </Button>
-        </div>
+        </div> */}
 
         <div className="relative z-10 flex flex-col justify-start pt-12 h-full px-6 lg:px-8">
           <div className="max-w-4xl">

@@ -17,11 +17,11 @@ import { ProductManagement } from "./pages/ProductManagement";
 import { Debug } from "./pages/Debug";
 import { AuthProvider } from "./hooks/use-auth";
 import { ProtectedRoute } from "./components/ProtectedRoute";
-import { ErrorBoundary } from "./components/ErrorBoundary";
-import { SidebarNav } from "./components/SidebarNav";
+import { ErrorBoundary } from "./components/SidebarNav"; // Importar SidebarNav
 import { useIsMobile } from "./hooks/use-mobile";
 import { SidebarProvider, useSidebar } from "./contexts/SidebarContext";
 import { cn } from "./lib/utils";
+import { useState } from "react"; // Importar useState
 
 const queryClient = new QueryClient();
 
@@ -46,10 +46,11 @@ const App = () => (
 const AppLayout = () => {
   const isMobile = useIsMobile();
   const { mainContentMarginClass } = useSidebar();
+  const [selectedYear, setSelectedYear] = useState<string>('2025'); // Estado para o ano selecionado
 
   return (
     <div className="flex min-h-screen bg-background ai-pattern">
-      <SidebarNav />
+      <ErrorBoundary selectedYear={selectedYear} setSelectedYear={setSelectedYear} /> {/* Passar props para SidebarNav */}
 
       <main className={cn("flex-1 transition-all duration-300 ease-in-out", isMobile ? 'ml-0' : mainContentMarginClass)}>
         <Routes>
@@ -57,7 +58,7 @@ const AppLayout = () => {
           <Route path="/debug" element={<Debug />} />
           
           <Route element={<ProtectedRoute allowedRoles={['standard', 'admin']} />}>
-            <Route path="/" element={<Index />} />
+            <Route path="/" element={<Index selectedYear={selectedYear} />} /> {/* Passar selectedYear para Index */}
             <Route path="/agendar-coleta" element={<AgendarColeta />} />
             <Route path="/coletas-ativas" element={<Coletas />} /> {/* Rota para coletas ativas */}
             <Route path="/coletas-concluidas" element={<ColetasConcluidas />} /> {/* NOVA ROTA */}

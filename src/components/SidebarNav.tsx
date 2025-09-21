@@ -24,7 +24,12 @@ import { useIsMobile } from '@/hooks/use-mobile';
 import { cn } from '@/lib/utils';
 import { useSidebar } from '@/contexts/SidebarContext';
 
-export const SidebarNav = () => {
+interface SidebarNavProps {
+  selectedYear: string;
+  setSelectedYear: (year: string) => void;
+}
+
+export const SidebarNav: React.FC<SidebarNavProps> = ({ selectedYear, setSelectedYear }) => {
   const navigate = useNavigate();
   const { user, profile } = useAuth();
   const isAdmin = profile?.role === 'admin';
@@ -129,6 +134,37 @@ export const SidebarNav = () => {
             );
           })}
         </nav>
+
+        {/* Botões de seleção de ano */}
+        {user && (
+          <div className={cn("mt-6 pt-4 border-t border-border/30 space-y-2", isCollapsed && "text-center")}>
+            {!isCollapsed && <p className="text-sm font-semibold text-muted-foreground mb-2">Visualizar Dados Por Ano:</p>}
+            <Button 
+              variant="outline" 
+              className={cn(
+                `w-full justify-start text-left h-10 text-base bg-gradient-primary text-primary-foreground hover:bg-gradient-primary/80 glow-effect`,
+                selectedYear === '2025' ? 'border-2 border-neon-cyan' : 'border-transparent',
+                isCollapsed && 'justify-center px-0'
+              )}
+              onClick={() => setSelectedYear('2025')}
+            >
+              {!isCollapsed && 'Ano Atual 2025'}
+              {isCollapsed && <span className="font-bold text-lg">25</span>}
+            </Button>
+            <Button 
+              variant="outline" 
+              className={cn(
+                `w-full justify-start text-left h-10 text-base bg-gradient-primary text-primary-foreground hover:bg-gradient-primary/80 glow-effect`,
+                selectedYear === '2026' ? 'border-2 border-neon-cyan' : 'border-transparent',
+                isCollapsed && 'justify-center px-0'
+              )}
+              onClick={() => setSelectedYear('2026')}
+            >
+              {!isCollapsed && 'Ano 2026'}
+              {isCollapsed && <span className="font-bold text-lg">26</span>}
+            </Button>
+          </div>
+        )}
       </div>
       <div className="border-t border-border/30 pt-4">
         {user ? (
