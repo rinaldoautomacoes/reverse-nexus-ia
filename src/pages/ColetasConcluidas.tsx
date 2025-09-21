@@ -165,14 +165,13 @@ const EditColetaForm = ({ coleta, onUpdate, onCancel }: { coleta: Coleta, onUpda
   );
 };
 
-const Coletas = () => {
+export const ColetasConcluidas = () => {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const { toast } = useToast();
   const { user } = useAuth();
 
   const [searchTerm, setSearchTerm] = useState("");
-  const [statusFilter, setStatusFilter] = useState("todos");
   const [selectedColeta, setSelectedColeta] = useState<Coleta | null>(null);
   const [editingColeta, setEditingColeta] = useState<Coleta | null>(null);
   const [isViewDetailsDialogOpen, setIsViewDetailsDialogOpen] = useState(false);
@@ -181,20 +180,15 @@ const Coletas = () => {
   const [selectedCollectionForStatusUpdate, setSelectedCollectionForStatusUpdate] = useState<{ id: string, name: string, status: string } | null>(null);
 
   const { data: coletas, isLoading, error } = useQuery<Coleta[], Error>({
-    queryKey: ['coletasAtivas', user?.id, statusFilter], // Alterado queryKey
+    queryKey: ['coletasConcluidas', user?.id],
     queryFn: async () => {
       if (!user?.id) return [];
-      let query = supabase
+      const { data, error } = await supabase
         .from('coletas')
         .select('*')
         .eq('user_id', user.id)
-        .neq('status_coleta', 'concluida'); // Filtra coletas que NÃO são concluídas
+        .eq('status_coleta', 'concluida'); // Filtra apenas coletas concluídas
       
-      if (statusFilter !== "todos") {
-        query = query.eq('status_coleta', statusFilter === 'em_transito' ? 'agendada' : statusFilter);
-      }
-
-      const { data, error } = await query;
       if (error) throw new Error(error.message);
       return data;
     },
@@ -228,8 +222,8 @@ const Coletas = () => {
       return data;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['coletasAtivas', user?.id] }); // Invalida a lista de coletas ativas
-      queryClient.invalidateQueries({ queryKey: ['coletasConcluidas', user?.id] }); // Invalida a lista de coletas concluídas
+      queryClient.invalidateQueries({ queryKey: ['coletasConcluidas', user?.id] });
+      queryClient.invalidateQueries({ queryKey: ['coletasAtivas', user?.id] }); // Invalida a lista de coletas ativas também
       queryClient.invalidateQueries({ queryKey: ['dashboardColetasMetrics', user?.id] }); // Invalida as métricas do dashboard
       queryClient.invalidateQueries({ queryKey: ['productStatusChart', user?.id] }); // Invalida o gráfico de status de produtos
       queryClient.invalidateQueries({ queryKey: ['collectionStatusChart', user?.id] }); // Invalida o gráfico de rosca
@@ -251,8 +245,8 @@ const Coletas = () => {
       if (error) throw new Error(error.message);
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['coletasAtivas', user?.id] }); // Invalida a lista de coletas ativas
-      queryClient.invalidateQueries({ queryKey: ['coletasConcluidas', user?.id] }); // Invalida a lista de coletas concluídas
+      queryClient.invalidateQueries({ queryKey: ['coletasConcluidas', user?.id] });
+      queryClient.invalidateQueries({ queryKey: ['coletasAtivas', user?.id] }); // Invalida a lista de coletas ativas também
       queryClient.invalidateQueries({ queryKey: ['dashboardColetasMetrics', user?.id] }); // Invalida as métricas do dashboard
       queryClient.invalidateQueries({ queryKey: ['productStatusChart', user?.id] }); // Invalida o gráfico de status de produtos
       queryClient.invalidateQueries({ queryKey: ['collectionStatusChart', user?.id] }); // Invalida o gráfico de rosca
@@ -342,10 +336,7 @@ const Coletas = () => {
   const filteredColetas = coletas?.filter(coleta => {
     const matchesSearch = (coleta.parceiro?.toLowerCase().includes(searchTerm.toLowerCase()) ||
                            coleta.endereco?.toLowerCase().includes(searchTerm.toLowerCase()));
-    const matchesStatus = statusFilter === "todos" || 
-                          (statusFilter === 'em_transito' && coleta.status_coleta === 'agendada') ||
-                          (statusFilter !== 'em_transito' && coleta.status_coleta === statusFilter);
-    return matchesSearch && matchesStatus;
+    return matchesSearch;
   }) || [];
 
   if (isLoading) {
@@ -353,7 +344,7 @@ const Coletas = () => {
       <div className="min-h-screen bg-background ai-pattern p-6 flex items-center justify-center">
         <div className="text-center">
           <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin mx-auto mb-2" />
-          <p className="text-sm text-muted-foreground">Carregando coletas ativas...</p>
+          <p className="text-sm text-muted-foreground">Carregando coletas concluídas...</p>
         </div>
       </div>
     );
@@ -363,7 +354,7 @@ const Coletas = () => {
     return (
       <div className="min-h-screen bg-background ai-pattern p-6">
         <div className="max-w-6xl mx-auto text-center text-destructive">
-          <p>Erro ao carregar coletas ativas: {error.message}</p>
+          <p>Erro ao carregar coletas concluídas: {error.message}</p>
         </div>
       </div>
     );
@@ -384,24 +375,24 @@ const Coletas = () => {
         <div className="space-y-6">
           <div className="text-center">
             <h1 className="text-4xl font-bold font-orbitron gradient-text mb-4">
-              Coletas Ativas
+              Coletas Concluídas
             </h1>
             <p className="text-muted-foreground">
-              Visualize e gerencie coletas pendentes e em trânsito
+              Visualize todas as coletas que foram finalizadas
             </p>
           </div>
 
           <Card className="card-futuristic bg-gradient-primary border-primary/20 text-primary-foreground">
             <CardContent className="p-6 flex items-center justify-between">
               <div className="flex items-center gap-4">
-                <ListChecks className="h-8 w-8" />
+                <CheckCircle className="h-8 w-8" />
                 <div>
-                  <p className="text-sm font-medium opacity-80">Total de Coletas Ativas</p>
+                  <p className="text-sm font-medium opacity-80">Total de Coletas Concluídas</p>
                   <p className="text-3xl font-bold font-orbitron">{coletas?.length || 0}</p>
                 </div>
               </div>
               <div className="text-right">
-                <p className="text-xs opacity-70">Coletas registradas</p>
+                <p className="text-xs opacity-70">Coletas finalizadas</p>
                 <p className="text-sm font-medium opacity-90">em sua base</p>
               </div>
             </CardContent>
@@ -418,19 +409,6 @@ const Coletas = () => {
                     onChange={(e) => setSearchTerm(e.target.value)}
                     className="pl-10"
                   />
-                </div>
-                <div className="w-full md:w-48">
-                  <Select value={statusFilter} onValueChange={setStatusFilter}>
-                    <SelectTrigger>
-                      <Filter className="mr-2 h-4 w-4" />
-                      <SelectValue placeholder="Filtrar por Status" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="todos">Todos os Status</SelectItem>
-                      <SelectItem value="em_transito">Em Trânsito</SelectItem>
-                      <SelectItem value="pendente">Pendentes</SelectItem>
-                    </SelectContent>
-                  </Select>
                 </div>
               </div>
             </CardContent>
@@ -656,8 +634,8 @@ const Coletas = () => {
                             size="sm" 
                             className="bg-gradient-primary hover:bg-gradient-primary/80" 
                             onClick={() => {
-                                setEditingColeta(coleta);
-                                setIsEditDialogOpen(true);
+                              setEditingColeta(coleta);
+                              setIsEditDialogOpen(true);
                             }}
                           >
                             <Edit className="mr-1 h-3 w-3" />
@@ -700,10 +678,10 @@ const Coletas = () => {
           {filteredColetas.length === 0 && (
             <Card className="card-futuristic">
               <CardContent className="p-12 text-center">
-                <Package className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-                <h3 className="text-lg font-semibold mb-2">Nenhuma coleta ativa encontrada</h3>
+                <CheckCircle className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                <h3 className="text-lg font-semibold mb-2">Nenhuma coleta concluída encontrada</h3>
                 <p className="text-muted-foreground">
-                  Tente ajustar os filtros ou realizar uma nova busca.
+                  As coletas finalizadas aparecerão aqui.
                 </p>
               </CardContent>
             </Card>
@@ -722,5 +700,3 @@ const Coletas = () => {
     </div>
   );
 };
-
-export { Coletas };

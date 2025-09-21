@@ -51,48 +51,30 @@ export const SidebarNav = () => {
       path: '/agendar-coleta',
       roles: ['standard', 'admin'],
     },
-    // {
-    //   label: 'Rota Inteligente',
-    //   icon: Route,
-    //   path: '/rota-inteligente',
-    //   roles: ['standard', 'admin'],
-    // },
     {
-      label: 'Consultar Coletas',
+      label: 'Coletas Ativas', // Nome atualizado
       icon: ListChecks,
-      path: '/coletas',
+      path: '/coletas-ativas', // Rota atualizada
       roles: ['standard', 'admin'],
     },
-    // {
-    //   label: 'Situação da Coleta', // Novo item de menu
-    //   icon: ListChecks, // Reutilizando o ícone ListChecks
-    //   path: '/collection-status',
-    //   roles: ['standard', 'admin'],
-    // },
+    {
+      label: 'Coletas Concluídas', // NOVO ITEM DE MENU
+      icon: CheckCircle, // Ícone para coletas concluídas
+      path: '/coletas-concluidas', // NOVA ROTA
+      roles: ['standard', 'admin'],
+    },
     {
       label: 'Relatórios',
       icon: TrendingUp,
       path: '/relatorios',
       roles: ['standard', 'admin'],
     },
-    // {
-    //   label: 'IA Insights',
-    //   icon: Zap,
-    //   path: '/ia-insights',
-    //   roles: ['standard', 'admin'],
-    // },
     {
       label: 'Gerenciar Métricas',
       icon: Gauge,
       path: '/metrics-management',
       roles: ['admin'],
     },
-    // {
-    //   label: 'Gerenciar Itens',
-    //   icon: Package,
-    //   path: '/items-management',
-    //   roles: ['admin'],
-    // },
     {
       label: 'Gerenciar Clientes',
       icon: UserIcon,
@@ -100,10 +82,10 @@ export const SidebarNav = () => {
       roles: ['admin'],
     },
     {
-      label: 'Gerenciar Produtos', // NOVO ITEM DE MENU
-      icon: Package, // Usando o ícone Package para produtos
+      label: 'Gerenciar Produtos',
+      icon: Package,
       path: '/product-management',
-      roles: ['standard', 'admin'], // Acesso para todos os usuários autenticados
+      roles: ['standard', 'admin'],
     },
     {
       label: 'Gerenciar Usuários',

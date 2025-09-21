@@ -8,13 +8,12 @@ import NotFound from "./pages/NotFound";
 import { AgendarColeta } from "./pages/AgendarColeta";
 import { Relatorios } from "./pages/Relatorios";
 import { Coletas } from "./pages/Coletas";
+import { ColetasConcluidas } from "./pages/ColetasConcluidas"; // Importar a nova página
 import { Auth } from "./pages/Auth";
 import { MetricsManagement } from "./pages/MetricsManagement";
-// import { ItemsManagement } from "./pages/ItemsManagement"; // Removido
 import { UserManagement } from "./pages/UserManagement";
 import { ClientManagement } from "./pages/ClientManagement";
-import { ProductManagement } from "./pages/ProductManagement"; // Importar a nova página
-// import { CollectionStatus } from "./pages/CollectionStatus"; // Importar a nova página
+import { ProductManagement } from "./pages/ProductManagement";
 import { Debug } from "./pages/Debug";
 import { AuthProvider } from "./hooks/use-auth";
 import { ProtectedRoute } from "./components/ProtectedRoute";
@@ -60,17 +59,14 @@ const AppLayout = () => {
           <Route element={<ProtectedRoute allowedRoles={['standard', 'admin']} />}>
             <Route path="/" element={<Index />} />
             <Route path="/agendar-coleta" element={<AgendarColeta />} />
-            {/* <Route path="/rota-inteligente" element={<RotaInteligente />} /> */}
+            <Route path="/coletas-ativas" element={<Coletas />} /> {/* Rota para coletas ativas */}
+            <Route path="/coletas-concluidas" element={<ColetasConcluidas />} /> {/* NOVA ROTA */}
             <Route path="/relatorios" element={<Relatorios />} />
-            {/* <Route path="/ia-insights" element={<IAInsights />} /> */}
-            <Route path="/coletas" element={<Coletas />} />
-            {/* <Route path="/collection-status" element={<CollectionStatus />} /> */} {/* Nova rota */}
-            <Route path="/product-management" element={<ProductManagement />} /> {/* NOVA ROTA */}
+            <Route path="/product-management" element={<ProductManagement />} />
           </Route>
 
           <Route element={<ProtectedRoute allowedRoles={['admin']} />}>
             <Route path="/metrics-management" element={<MetricsManagement />} />
-            {/* <Route path="/items-management" element={<ItemsManagement />} /> */} {/* Removido */}
             <Route path="/user-management" element={<UserManagement />} />
             <Route path="/client-management" element={<ClientManagement />} />
           </Route>
