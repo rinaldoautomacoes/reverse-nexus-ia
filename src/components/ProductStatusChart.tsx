@@ -11,12 +11,12 @@ import { useEffect } from "react";
 import { useToast } from "@/hooks/use-toast";
 import {
   ResponsiveContainer,
-  AreaChart, // Alterado de BarChart para AreaChart
+  AreaChart,
   XAxis,
   YAxis,
   CartesianGrid,
   Tooltip,
-  Area, // Alterado de Bar para Area
+  Area,
   Legend,
   LabelList,
 } from 'recharts';
@@ -68,7 +68,7 @@ export const ProductStatusChart: React.FC<ProductStatusChartProps> = ({ selected
   }, [error, toast]);
 
   const processColetasData = (coletasData: Coleta[] | undefined) => {
-    const monthlyDataMap = new Map<string, { pendente: number; em_transito: number; entregues: number }>();
+    const monthlyDataMap = new Map<string, { pendente: number; em_transito: number; entregues: number; total_month: number; pendente_plus_em_transito: number }>();
     const allMonths: string[] = [];
     const currentYear = parseInt(selectedYear);
     
@@ -76,7 +76,7 @@ export const ProductStatusChart: React.FC<ProductStatusChartProps> = ({ selected
       const month = startOfMonth(new Date(currentYear, i));
       const monthKey = format(month, 'MMM', { locale: ptBR });
       allMonths.push(monthKey);
-      monthlyDataMap.set(monthKey, { pendente: 0, em_transito: 0, entregues: 0 });
+      monthlyDataMap.set(monthKey, { pendente: 0, em_transito: 0, entregues: 0, total_month: 0, pendente_plus_em_transito: 0 });
     }
 
     let totalPendente = 0;
@@ -94,33 +94,21 @@ export const ProductStatusChart: React.FC<ProductStatusChartProps> = ({ selected
       const coletaMonthKey = format(startOfMonth(adjustedDateForLocalMonth), 'MMM', { locale: ptBR });
       const quantity = coleta.qtd_aparelhos_solicitado || 0;
 
-      let effectiveStatus: 'pendente' | 'agendada' | 'concluida' = 'pendente';
-
-      switch (coleta.status_coleta) {
-        case 'pendente':
-          effectiveStatus = 'pendente';
-          break;
-        case 'agendada':
-          effectiveStatus = 'agendada'; // Mapeado para 'em_transito' na exibição
-          break;
-        case 'concluida':
-          effectiveStatus = 'concluida'; // Mapeado para 'entregues' na exibição
-          break;
-        default:
-          effectiveStatus = 'pendente';
-      }
-
       if (monthlyDataMap.has(coletaMonthKey)) {
         const currentMonthData = monthlyDataMap.get(coletaMonthKey)!;
-        if (effectiveStatus === 'pendente') {
-          currentMonthData.pendente += quantity;
-          totalPendente += quantity;
-        } else if (effectiveStatus === 'agendada') {
-          currentMonthData.em_transito += quantity;
-          totalEmTransito += quantity;
-        } else if (effectiveStatus === 'concluida') {
-          currentMonthData.entregues += quantity;
-          totalEntregues += quantity;
+        switch (coleta.status_coleta) {
+          case 'pendente':
+            currentMonthData.pendente += quantity;
+            totalPendente += quantity;
+            break;
+          case 'agendada':
+            currentMonthData.em_transito += quantity;
+            totalEmTransito += quantity;
+            break;
+          case 'concluida':
+            currentMonthData.entregues += quantity;
+            totalEntregues += quantity;
+            break;
         }
         monthlyDataMap.set(coletaMonthKey, currentMonthData);
       }
@@ -128,12 +116,12 @@ export const ProductStatusChart: React.FC<ProductStatusChartProps> = ({ selected
 
     const chartData = allMonths.map(monthKey => {
       const data = monthlyDataMap.get(monthKey) || { pendente: 0, em_transito: 0, entregues: 0 };
+      const total_month = data.pendente + data.em_transito + data.entregues;
+      const pendente_plus_em_transito = data.pendente + data.em_transito;
       return {
         month: monthKey,
-        pendente: data.pendente,
-        em_transito: data.em_transito,
-        entregues: data.entregues,
-        total_month: data.pendente + data.em_transito + data.entregues,
+        total_month: total_month,
+        pendente_plus_em_transito: pendente_plus_em_transito,
       };
     });
 
@@ -145,9 +133,8 @@ export const ProductStatusChart: React.FC<ProductStatusChartProps> = ({ selected
   const { chartData, totalItems, totalPendente, totalEmTransito, totalEntregues } = processColetasData(coletas);
 
   const AREA_COLORS = {
-    pendente: 'hsl(var(--destructive))', // Deep Blue
-    em_transito: 'hsl(var(--warning-yellow))', // Neural Blue
-    entregues: 'hsl(var(--success-green))', // Neon Cyan
+    total_items_overall: 'hsl(var(--neon-cyan))',
+    items_in_process: 'hsl(var(--ai-purple))',
   };
 
   const percentageEntregues = totalItems > 0 ? ((totalEntregues / totalItems) * 100).toFixed(1) : '0.0';
@@ -217,33 +204,26 @@ export const ProductStatusChart: React.FC<ProductStatusChartProps> = ({ selected
                   formatter={(value) => (
                     <span className="text-sm flex items-center gap-2">
                       <span className="font-semibold text-foreground">
-                        {value === 'pendente' ? 'Pendentes' : value === 'em_transito' ? 'Em Trânsito' : 'Entregues'}
+                        {value === 'total_month' ? 'Total de Itens' : 'Itens em Processo'}
                       </span>
                     </span>
                   )}
                 />
                 <defs>
-                  <linearGradient id="gradientPendente" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="hsl(var(--destructive))" stopOpacity={0.8} />
-                    <stop offset="95%" stopColor="hsl(var(--destructive))" stopOpacity={0} />
+                  <linearGradient id="gradientTotalItems" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor="hsl(var(--neon-cyan))" stopOpacity={0.8} />
+                    <stop offset="95%" stopColor="hsl(var(--neon-cyan))" stopOpacity={0} />
                   </linearGradient>
-                  <linearGradient id="gradientEmTransito" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="hsl(var(--warning-yellow))" stopOpacity={0.8} />
-                    <stop offset="95%" stopColor="hsl(var(--warning-yellow))" stopOpacity={0} />
-                  </linearGradient>
-                  <linearGradient id="gradientEntregues" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="hsl(var(--success-green))" stopOpacity={0.8} />
-                    <stop offset="95%" stopColor="hsl(var(--success-green))" stopOpacity={0} />
+                  <linearGradient id="gradientItemsInProcess" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor="hsl(var(--ai-purple))" stopOpacity={0.8} />
+                    <stop offset="95%" stopColor="hsl(var(--ai-purple))" stopOpacity={0} />
                   </linearGradient>
                 </defs>
-                <Area dataKey="pendente" stackId="a" stroke={AREA_COLORS.pendente} fill="url(#gradientPendente)" strokeWidth={2} name="Pendentes">
-                  <LabelList dataKey="pendente" position="top" fill="#fff" formatter={(value: number) => value > 0 ? value : ''} />
+                <Area dataKey="total_month" stroke={AREA_COLORS.total_items_overall} fill="url(#gradientTotalItems)" strokeWidth={2} name="Total de Itens">
+                  <LabelList dataKey="total_month" position="top" fill="#fff" formatter={(value: number) => value > 0 ? value : ''} />
                 </Area>
-                <Area dataKey="em_transito" stackId="a" stroke={AREA_COLORS.em_transito} fill="url(#gradientEmTransito)" strokeWidth={2} name="Em Trânsito">
-                  <LabelList dataKey="em_transito" position="top" fill="#fff" formatter={(value: number) => value > 0 ? value : ''} />
-                </Area>
-                <Area dataKey="entregues" stackId="a" stroke={AREA_COLORS.entregues} fill="url(#gradientEntregues)" strokeWidth={2} name="Entregues">
-                  <LabelList dataKey="entregues" position="top" fill="#fff" formatter={(value: number) => value > 0 ? value : ''} />
+                <Area dataKey="pendente_plus_em_transito" stroke={AREA_COLORS.items_in_process} fill="url(#gradientItemsInProcess)" strokeWidth={2} name="Itens em Processo">
+                  <LabelList dataKey="pendente_plus_em_transito" position="top" fill="#fff" formatter={(value: number) => value > 0 ? value : ''} />
                 </Area>
               </AreaChart>
             </ResponsiveContainer>
@@ -251,34 +231,35 @@ export const ProductStatusChart: React.FC<ProductStatusChartProps> = ({ selected
 
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
             <div className="flex items-center gap-3 p-3 bg-secondary/10 rounded-lg">
-              <div className="w-4 h-4 rounded" style={{ backgroundColor: AREA_COLORS.pendente }} />
+              <div className="w-4 h-4 rounded" style={{ backgroundColor: AREA_COLORS.items_in_process }} />
+              <div>
+                <p className="text-sm font-medium">Itens em Processo</p>
+                <p className="text-xs text-muted-foreground">{totalPendente + totalEmTransito} itens aguardando/a caminho</p>
+              </div>
+            </div>
+            
+            <div className="flex items-center gap-3 p-3 bg-secondary/10 rounded-lg">
+              <div className="w-4 h-4 rounded" style={{ backgroundColor: AREA_COLORS.total_items_overall }} />
+              <div>
+                <p className="text-sm font-medium">Total Geral</p>
+                <p className="text-xs text-muted-foreground">{totalItems} itens no total</p>
+              </div>
+            </div>
+            
+            {/* Mantendo os cards de detalhe para Pendentes e Entregues, se ainda forem relevantes */}
+            <div className="flex items-center gap-3 p-3 bg-secondary/10 rounded-lg">
+              <div className="w-4 h-4 rounded" style={{ backgroundColor: 'hsl(var(--destructive))' }} />
               <div>
                 <p className="text-sm font-medium">Pendentes</p>
                 <p className="text-xs text-muted-foreground">{totalPendente} itens aguardando</p>
               </div>
             </div>
-            
+
             <div className="flex items-center gap-3 p-3 bg-secondary/10 rounded-lg">
-              <div className="w-4 h-4 rounded" style={{ backgroundColor: AREA_COLORS.em_transito }} />
-              <div>
-                <p className="text-sm font-medium">Em Trânsito</p>
-                <p className="text-xs text-muted-foreground">{totalEmTransito} itens a caminho</p>
-              </div>
-            </div>
-            
-            <div className="flex items-center gap-3 p-3 bg-secondary/10 rounded-lg">
-              <div className="w-4 h-4 rounded" style={{ backgroundColor: AREA_COLORS.entregues }} />
+              <div className="w-4 h-4 rounded" style={{ backgroundColor: 'hsl(var(--success-green))' }} />
               <div>
                 <p className="text-sm font-medium">Entregues</p>
                 <p className="text-xs text-muted-foreground">{totalEntregues} itens finalizados</p>
-              </div>
-            </div>
-
-            <div className="flex items-center gap-3 p-3 bg-secondary/10 rounded-lg">
-              <div className="w-4 h-4 bg-gradient-primary rounded" />
-              <div>
-                <p className="text-sm font-medium">Total Geral</p>
-                <p className="text-xs text-muted-foreground">{totalItems} itens no total</p>
               </div>
             </div>
           </div>
