@@ -14,11 +14,11 @@ import {
   AreaChart,
   XAxis,
   YAxis,
-  CartesianGrid,
+  // CartesianGrid, // Removido para um visual mais limpo
   Tooltip,
   Area,
-  Legend,
-  LabelList,
+  // Legend, // Removido para replicar a imagem
+  // LabelList, // Removido para replicar a imagem
 } from 'recharts';
 
 type Coleta = Tables<'coletas'>;
@@ -68,7 +68,7 @@ export const ProductStatusChart: React.FC<ProductStatusChartProps> = ({ selected
   }, [error, toast]);
 
   const processColetasData = (coletasData: Coleta[] | undefined) => {
-    const monthlyDataMap = new Map<string, { pendente: number; em_transito: number; entregues: number; total_month: number; pendente_plus_em_transito: number }>();
+    const monthlyDataMap = new Map<string, { pendente: number; em_transito: number; entregues: number; total_month: number }>();
     const allMonths: string[] = [];
     const currentYear = parseInt(selectedYear);
     
@@ -76,7 +76,7 @@ export const ProductStatusChart: React.FC<ProductStatusChartProps> = ({ selected
       const month = startOfMonth(new Date(currentYear, i));
       const monthKey = format(month, 'MMM', { locale: ptBR });
       allMonths.push(monthKey);
-      monthlyDataMap.set(monthKey, { pendente: 0, em_transito: 0, entregues: 0, total_month: 0, pendente_plus_em_transito: 0 });
+      monthlyDataMap.set(monthKey, { pendente: 0, em_transito: 0, entregues: 0, total_month: 0 });
     }
 
     let totalPendente = 0;
@@ -86,7 +86,7 @@ export const ProductStatusChart: React.FC<ProductStatusChartProps> = ({ selected
     coletasData?.forEach(coleta => {
       if (!coleta.previsao_coleta) return;
 
-      const coletaDate = parseISO(coleta.previsao_coleta); // CORRIGIDO: previsao_atleta para previsao_coleta
+      const coletaDate = parseISO(coleta.previsao_coleta);
       
       const timezoneOffsetMinutes = coletaDate.getTimezoneOffset();
       const adjustedDateForLocalMonth = new Date(coletaDate.getTime() - timezoneOffsetMinutes * 60 * 1000);
@@ -110,18 +110,16 @@ export const ProductStatusChart: React.FC<ProductStatusChartProps> = ({ selected
             totalEntregues += quantity;
             break;
         }
+        currentMonthData.total_month += quantity; // Adiciona ao total do mês
         monthlyDataMap.set(coletaMonthKey, currentMonthData);
       }
     });
 
     const chartData = allMonths.map(monthKey => {
-      const data = monthlyDataMap.get(monthKey) || { pendente: 0, em_transito: 0, entregues: 0 };
-      const total_month = data.pendente + data.em_transito + data.entregues;
-      const pendente_plus_em_transito = data.pendente + data.em_transito;
+      const data = monthlyDataMap.get(monthKey) || { pendente: 0, em_transito: 0, entregues: 0, total_month: 0 };
       return {
         month: monthKey,
-        total_month: total_month,
-        pendente_plus_em_transito: pendente_plus_em_transito,
+        total_month: data.total_month,
       };
     });
 
@@ -131,11 +129,6 @@ export const ProductStatusChart: React.FC<ProductStatusChartProps> = ({ selected
   };
 
   const { chartData, totalItems, totalPendente, totalEmTransito, totalEntregues } = processColetasData(coletas);
-
-  const AREA_COLORS = {
-    total_items_overall: 'hsl(var(--neon-cyan))',
-    items_in_process: 'hsl(var(--ai-purple))',
-  };
 
   const percentageEntregues = totalItems > 0 ? ((totalEntregues / totalItems) * 100).toFixed(1) : '0.0';
   const changePercentage = '+10%'; 
@@ -182,14 +175,27 @@ export const ProductStatusChart: React.FC<ProductStatusChartProps> = ({ selected
                 data={chartData}
                 margin={{
                   top: 20,
-                  right: 0, // Ajustado para 0
-                  left: 0,  // Ajustado para 0
-                  bottom: 0, // Ajustado para 0
+                  right: 0,
+                  left: 0,
+                  bottom: 0,
                 }}
               >
-                {/* Removido CartesianGrid */}
-                <XAxis dataKey="month" stroke="hsl(var(--muted-foreground))" axisLine={false} tickLine={false} /> {/* Eixo X sem linha */}
-                <YAxis stroke="hsl(var(--muted-foreground))" axisLine={false} tickLine={false} width={0} hide={true} /> {/* Eixo Y oculto */}
+                {/* CartesianGrid é removido para um visual mais limpo */}
+                <XAxis 
+                  dataKey="month" 
+                  stroke="hsl(var(--muted-foreground))" 
+                  axisLine={false} 
+                  tickLine={false} 
+                  tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 12 }} 
+                />
+                <YAxis 
+                  stroke="hsl(var(--muted-foreground))" 
+                  axisLine={false} 
+                  tickLine={false} 
+                  tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 12 }} 
+                  domain={[0, 'dataMax']} 
+                  tickFormatter={(value) => value.toFixed(0)} 
+                />
                 <Tooltip
                   contentStyle={{
                     backgroundColor: 'hsl(var(--card))',
@@ -199,39 +205,28 @@ export const ProductStatusChart: React.FC<ProductStatusChartProps> = ({ selected
                   itemStyle={{ color: 'hsl(var(--foreground))' }}
                   labelStyle={{ color: 'hsl(var(--primary))' }}
                 />
-                <Legend
-                  wrapperStyle={{ paddingTop: '10px' }}
-                  formatter={(value) => (
-                    <span className="text-sm flex items-center gap-2">
-                      <span className="font-semibold text-foreground">
-                        {value === 'total_month' ? 'Total de Itens' : 'Itens em Processo'}
-                      </span>
-                    </span>
-                  )}
-                />
+                {/* Legend e LabelList são removidos para replicar a imagem */}
                 <defs>
                   <linearGradient id="gradientTotalItems" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="hsl(var(--neon-cyan))" stopOpacity={0.8} />
-                    <stop offset="95%" stopColor="hsl(var(--neon-cyan))" stopOpacity={0} />
-                  </linearGradient>
-                  <linearGradient id="gradientItemsInProcess" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="hsl(var(--ai-purple))" stopOpacity={0.8} />
-                    <stop offset="95%" stopColor="hsl(var(--ai-purple))" stopOpacity={0} />
+                    <stop offset="0%" stopColor="hsl(var(--neon-cyan))" stopOpacity={0.4} /> {/* Topo do degradê, ciano mais claro */}
+                    <stop offset="95%" stopColor="hsl(var(--neon-cyan))" stopOpacity={0.15)} /> {/* Base do degradê, ciano mais escuro/transparente */}
                   </linearGradient>
                 </defs>
-                <Area dataKey="total_month" stroke={AREA_COLORS.total_items_overall} fill="url(#gradientTotalItems)" strokeWidth={2} name="Total de Itens">
-                  <LabelList dataKey="total_month" position="top" fill="#fff" formatter={(value: number) => value > 0 ? value : ''} />
-                </Area>
-                <Area dataKey="pendente_plus_em_transito" stroke={AREA_COLORS.items_in_process} fill="url(#gradientItemsInProcess)" strokeWidth={2} name="Itens em Processo">
-                  <LabelList dataKey="pendente_plus_em_transito" position="top" fill="#fff" formatter={(value: number) => value > 0 ? value : ''} />
-                </Area>
+                <Area 
+                  type="monotone" 
+                  dataKey="total_month" 
+                  stroke="hsl(var(--neon-cyan))" // Ciano neon brilhante para a linha
+                  fill="url(#gradientTotalItems)" 
+                  strokeWidth={2} 
+                  name="Total de Itens"
+                />
               </AreaChart>
             </ResponsiveContainer>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
             <div className="flex items-center gap-3 p-3 bg-secondary/10 rounded-lg">
-              <div className="w-4 h-4 rounded" style={{ backgroundColor: AREA_COLORS.items_in_process }} />
+              <div className="w-4 h-4 rounded" style={{ backgroundColor: 'hsl(var(--ai-purple))' }} /> 
               <div>
                 <p className="text-sm font-medium">Itens em Processo</p>
                 <p className="text-xs text-muted-foreground">{totalPendente + totalEmTransito} itens aguardando/a caminho</p>
@@ -239,14 +234,13 @@ export const ProductStatusChart: React.FC<ProductStatusChartProps> = ({ selected
             </div>
             
             <div className="flex items-center gap-3 p-3 bg-secondary/10 rounded-lg">
-              <div className="w-4 h-4 rounded" style={{ backgroundColor: AREA_COLORS.total_items_overall }} />
+              <div className="w-4 h-4 rounded" style={{ backgroundColor: 'hsl(var(--neon-cyan))' }} /> 
               <div>
                 <p className="text-sm font-medium">Total Geral</p>
                 <p className="text-xs text-muted-foreground">{totalItems} itens no total</p>
               </div>
             </div>
             
-            {/* Mantendo os cards de detalhe para Pendentes e Entregues, se ainda forem relevantes */}
             <div className="flex items-center gap-3 p-3 bg-secondary/10 rounded-lg">
               <div className="w-4 h-4 rounded" style={{ backgroundColor: 'hsl(var(--destructive))' }} />
               <div>
