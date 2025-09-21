@@ -115,8 +115,8 @@ export const MetricsCards = () => {
         change: '+15%', // Placeholder
         trend: 'up',
         icon_name: 'CheckCircle',
-        color: 'text-primary',
-        bg_color: 'bg-primary/10',
+        color: 'text-success-green', // Alterado para success-green
+        bg_color: 'bg-success-green/10', // Alterado para success-green/10
         description: 'Coletas finalizadas e processadas'
       },
     ];

@@ -131,7 +131,7 @@ export const ProductStatusChart = () => {
   const BAR_COLORS = {
     pendente: 'hsl(var(--destructive))', // Alterado para destructive
     em_transito: 'hsl(var(--warning-yellow))',
-    entregues: 'hsl(var(--primary))',
+    entregues: 'hsl(var(--success-green))', // Alterado para success-green
   };
 
   // Calcular a porcentagem de entregues em relação ao total

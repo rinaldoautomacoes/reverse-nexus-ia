@@ -13,7 +13,7 @@ type Coleta = Tables<'coletas'>;
 const COLORS = {
   pendente: 'hsl(var(--destructive))', // Alterado para destructive
   agendada: 'hsl(var(--warning-yellow))', // Nova cor para 'Em Trânsito'
-  concluida: 'hsl(var(--primary))',    // Cor primária para concluída
+  concluida: 'hsl(var(--success-green))',    // Alterado para success-green
 };
 
 interface CustomLabelProps {

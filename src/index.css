@@ -48,6 +48,7 @@ All colors MUST be HSL.
     --neural-blue: 220 100% 60%;
     --ai-purple: 270 80% 65%;
     --warning-yellow: 50 100% 60%; /* Nova cor */
+    --success-green: 145 63% 42%; /* NOVA COR: Verde para sucesso */
     
     /* Gradients */
     --gradient-primary: linear-gradient(135deg, hsl(var(--neon-cyan)) 0%, hsl(var(--neural-blue)) 100%);

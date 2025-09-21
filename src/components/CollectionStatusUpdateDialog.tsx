@@ -27,7 +27,7 @@ interface CollectionStatusUpdateDialogProps {
 const collectionStatusOptions = [
   { value: 'pendente', label: 'Coleta Pendente', icon: Clock, color: 'text-destructive', bgColor: 'bg-destructive/10' }, // Alterado para destructive
   { value: 'agendada', label: 'Coleta Em Trânsito', icon: Truck, color: 'text-warning-yellow', bgColor: 'bg-warning-yellow/10' },
-  { value: 'concluida', label: 'Coleta Entregue em nossa unidade', icon: CheckCircle, color: 'text-primary', bgColor: 'bg-primary/10' },
+  { value: 'concluida', label: 'Coleta Entregue em nossa unidade', icon: CheckCircle, color: 'text-success-green', bgColor: 'bg-success-green/10' }, // Alterado para success-green
 ];
 
 export const CollectionStatusUpdateDialog: React.FC<CollectionStatusUpdateDialogProps> = ({ collectionId, collectionName, currentCollectionStatus, isOpen, onClose }) => {

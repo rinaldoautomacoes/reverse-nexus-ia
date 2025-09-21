@@ -310,7 +310,7 @@ const Coletas = () => {
   const getStatusColor = (status: string | null) => {
     switch (status) {
       case 'concluida':
-        return 'bg-primary/20 text-primary';
+        return 'bg-success-green/20 text-success-green'; // Alterado para success-green
       case 'agendada':
         return 'bg-accent/20 text-accent';
       case 'pendente':
@@ -615,7 +615,7 @@ const Coletas = () => {
                               <Calendar className="mr-2 h-3 w-3 text-accent" /> Marcar como Agendada
                           </DropdownMenuItem>
                           <DropdownMenuItem onClick={() => handleStatusChange(coleta.id, 'concluida')}>
-                              <CheckCircle className="mr-2 h-3 w-3 text-primary" /> Marcar como Concluída
+                              <CheckCircle className="mr-2 h-3 w-3 text-success-green" /> Marcar como Concluída
                           </DropdownMenuItem>
                         </DropdownMenuContent>
                       </DropdownMenu>

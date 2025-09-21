@@ -74,7 +74,8 @@ export default {
 				ice: 'hsl(var(--ice-white))',
 				neural: 'hsl(var(--neural-blue))',
 				ai: 'hsl(var(--ai-purple))',
-				'warning-yellow': 'hsl(var(--warning-yellow))' // Nova cor
+				'warning-yellow': 'hsl(var(--warning-yellow))',
+				'success-green': 'hsl(var(--success-green))' // NOVA COR: Verde para sucesso
 			},
 			borderRadius: {
 				lg: 'var(--radius)',
