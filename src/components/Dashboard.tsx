@@ -54,7 +54,7 @@ export const Dashboard = () => {
         </div> */}
 
         <div className="relative z-10 flex flex-col justify-start pt-24 h-full px-6 lg:px-8">
-          <div className="max-w-4xl">
+          <div className="max-w-4xl"> {/* Removido text-center e mx-auto aqui */}
             <h1 className="text-5xl lg:text-7xl font-bold font-orbitron gradient-text mb-4 animate-slide-up animate-text-pulse-fade">
               LogiReversa
             </h1>
