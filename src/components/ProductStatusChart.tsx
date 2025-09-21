@@ -208,50 +208,52 @@ export const ProductStatusChart = () => {
                           {/* Entregues Bar (top) */}
                           {data.entregues > 0 && (
                             <div 
-                              className="absolute bottom-0 w-full rounded-t-md animate-slide-up"
+                              className="absolute bottom-0 w-full rounded-t-md animate-slide-up flex items-center justify-center"
                               style={{ 
                                 height: `${entreguesHeight}%`,
                                 backgroundColor: BAR_COLORS.entregues,
                                 animationDelay: `${index * 200 + 200}ms`
                               }}
-                            />
+                            >
+                              <span className="text-xs font-bold text-white">
+                                {data.entregues}
+                              </span>
+                            </div>
                           )}
                           {/* Em Trânsito Bar (middle) */}
                           {data.em_transito > 0 && (
                             <div 
-                              className="absolute w-full rounded-t-md animate-slide-up"
+                              className="absolute w-full rounded-t-md animate-slide-up flex items-center justify-center"
                               style={{ 
                                 height: `${emTransitoHeight}%`,
                                 bottom: `${entreguesHeight}%`, // Stack on top of entregues
                                 backgroundColor: BAR_COLORS.em_transito,
                                 animationDelay: `${index * 200 + 100}ms`
                               }}
-                            />
+                            >
+                              <span className="text-xs font-bold text-white">
+                                {data.em_transito}
+                              </span>
+                            </div>
                           )}
                           {/* Pendente Bar (bottom) */}
                           {data.pendente > 0 && (
                             <div 
-                              className="absolute w-full rounded-t-md animate-slide-up"
+                              className="absolute w-full rounded-t-md animate-slide-up flex items-center justify-center"
                               style={{ 
                                 height: `${pendenteHeight}%`,
                                 bottom: `${entreguesHeight + emTransitoHeight}%`, // Stack on top of em_transito
                                 backgroundColor: BAR_COLORS.pendente,
                                 animationDelay: `${index * 200}ms`
                               }}
-                            />
-                          )}
-                          
-                          {/* Total Items Indicator */}
-                          {data.total_month > 0 && (
-                            <div 
-                              className="absolute -top-6 left-1/2 transform -translate-x-1/2 text-xs"
-                              style={{ animationDelay: `${index * 200 + 300}ms` }}
                             >
-                              <span className="text-foreground font-medium">
-                                {data.total_month}
+                              <span className="text-xs font-bold text-white">
+                                {data.pendente}
                               </span>
                             </div>
                           )}
+                          
+                          {/* Removido o Total Items Indicator para evitar redundância */}
                         </div>
                         
                         {/* Month Label */}
