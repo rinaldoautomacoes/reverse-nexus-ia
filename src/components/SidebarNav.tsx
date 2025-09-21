@@ -32,6 +32,12 @@ export const SidebarNav = () => {
   const [isSheetOpen, setIsSheetOpen] = React.useState(false);
   const { isSidebarOpen, toggleSidebar, sidebarWidthClass } = useSidebar();
 
+  const handleLogout = async () => {
+    await supabase.auth.signOut();
+    navigate('/auth');
+    if (isMobile) setIsSheetOpen(false);
+  };
+
   const navItems = [
     {
       label: 'Dashboard',
@@ -130,10 +136,10 @@ export const SidebarNav = () => {
                   navigate.pathname === item.path && 'bg-primary/10 text-primary font-semibold',
                   isCollapsed && 'justify-center px-0'
                 )}
-                onClick={() => {
+                onClick={item.action || (() => {
                   navigate(item.path);
                   if (isMobile) setIsSheetOpen(false);
-                }}
+                })}
               >
                 <Icon className={cn(isCollapsed ? 'h-6 w-6' : 'mr-3 h-5 w-5')} />
                 {!isCollapsed && item.label}
@@ -143,6 +149,34 @@ export const SidebarNav = () => {
         </nav>
       </div>
       <div className="border-t border-border/30 pt-4">
+        {user ? (
+          <Button
+            variant="outline"
+            className={cn(
+              "w-full justify-start text-left h-12 text-base border-destructive text-destructive hover:bg-destructive/10",
+              isCollapsed && 'justify-center px-0'
+            )}
+            onClick={handleLogout}
+          >
+            <LogOut className={cn(isCollapsed ? 'h-6 w-6' : 'mr-3 h-5 w-5')} />
+            {!isCollapsed && 'Sair'}
+          </Button>
+        ) : (
+          <Button
+            variant="outline"
+            className={cn(
+              "w-full justify-start text-left h-12 text-base border-neural text-neural hover:bg-neural/10",
+              isCollapsed && 'justify-center px-0'
+            )}
+            onClick={() => {
+              navigate('/auth');
+              if (isMobile) setIsSheetOpen(false);
+            }}
+          >
+            <CheckCircle className={cn(isCollapsed ? 'h-6 w-6' : 'mr-3 h-5 w-5')} />
+            {!isCollapsed && 'Login / Cadastro'}
+          </Button>
+        )}
       </div>
     </div>
   );
