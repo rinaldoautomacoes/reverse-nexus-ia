@@ -109,7 +109,7 @@ export const CollectionStatusDonutChart: React.FC = () => {
   return (
     <Card className="card-futuristic border-0">
       <CardHeader>
-        <CardTitle className="flex items-center gap-2 font-orbitron gradient-text">
+        <CardTitle className="flex items-center gap-2 font-orbitron gradient-text text-lg">
           <Package className="h-5 w-5 text-primary" />
           Status das Coletas
         </CardTitle>
