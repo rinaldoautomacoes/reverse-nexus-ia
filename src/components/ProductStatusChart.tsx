@@ -86,7 +86,7 @@ export const ProductStatusChart: React.FC<ProductStatusChartProps> = ({ selected
     coletasData?.forEach(coleta => {
       if (!coleta.previsao_coleta) return;
 
-      const coletaDate = parseISO(coleta.previsao_atleta);
+      const coletaDate = parseISO(coleta.previsao_coleta); // CORRIGIDO: previsao_atleta para previsao_coleta
       
       const timezoneOffsetMinutes = coletaDate.getTimezoneOffset();
       const adjustedDateForLocalMonth = new Date(coletaDate.getTime() - timezoneOffsetMinutes * 60 * 1000);
