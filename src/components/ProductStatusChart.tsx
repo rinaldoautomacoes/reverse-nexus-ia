@@ -6,7 +6,7 @@ import { supabase } from "@/integrations/supabase/client";
 import type { Tables } from "@/integrations/supabase/types";
 import { useAuth } from "@/hooks/use-auth";
 import { format, parseISO, startOfMonth } from "date-fns";
-import { ptBR } from "date-fns/locale";
+import { ptBR } => {
 import { useEffect } from "react";
 import { useToast } from "@/hooks/use-toast";
 
@@ -56,12 +56,11 @@ export const ProductStatusChart = () => {
     const monthlyDataMap = new Map<string, { pendente: number; em_transito: number; entregues: number }>();
     const allMonths: string[] = [];
 
-    // Gerar meses de janeiro do ano atual até o mês corrente
+    // Gerar todos os meses de janeiro a dezembro do ano atual
     const today = new Date();
     const currentYear = today.getFullYear();
-    const currentMonthIndex = today.getMonth(); // 0 para janeiro, 11 para dezembro
-
-    for (let i = 0; i <= currentMonthIndex; i++) {
+    
+    for (let i = 0; i < 12; i++) { // Loop de 0 (janeiro) a 11 (dezembro)
       const month = startOfMonth(new Date(currentYear, i));
       const monthKey = format(month, 'MMM', { locale: ptBR });
       allMonths.push(monthKey);
