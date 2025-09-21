@@ -7,7 +7,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"; // Importado DropdownMenu components
-import { ArrowLeft, Package, MapPin, Calendar, Search, Filter, Eye, Edit, Trash2, MessageSquareText, Mail, RefreshCcw, Clock, CheckCircle, ListChecks } from "lucide-react"; // Adicionado ListChecks
+import { ArrowLeft, Package, MapPin, Calendar, Search, Filter, Eye, Edit, Trash2, MessageSquareText, Mail, RefreshCcw, Clock, CheckCircle, ListChecks, Tag, Box } from "lucide-react"; // Adicionado ListChecks, Tag, Box
 import { useNavigate } from "react-router-dom";
 import { useState } from "react";
 import { useToast } from "@/hooks/use-toast";
@@ -22,6 +22,7 @@ import { CollectionStatusUpdateDialog } from "@/components/CollectionStatusUpdat
 type Coleta = Tables<'coletas'>;
 type ColetaInsert = TablesInsert<'coletas'>;
 type ColetaUpdate = TablesUpdate<'coletas'>;
+type Item = Tables<'items'>; // Importar o tipo Item
 
 const EditColetaForm = ({ coleta, onUpdate, onCancel }: { coleta: Coleta, onUpdate: (coleta: ColetaUpdate) => void, onCancel: () => void }) => {
   const [formData, setFormData] = useState<ColetaUpdate>({
@@ -197,6 +198,22 @@ const Coletas = () => {
       return data;
     },
     enabled: !!user?.id,
+  });
+
+  // Nova query para buscar os itens de uma coleta específica
+  const { data: itemsForSelectedColeta, isLoading: isLoadingItemsForColeta, error: itemsForColetaError } = useQuery<Item[], Error>({
+    queryKey: ['itemsForCollection', selectedColeta?.id],
+    queryFn: async () => {
+      if (!selectedColeta?.id || !user?.id) return [];
+      const { data, error } = await supabase
+        .from('items')
+        .select('name, description, quantity, model') // Incluindo 'model' para o código
+        .eq('collection_id', selectedColeta.id)
+        .eq('user_id', user.id); // Garantir RLS
+      if (error) throw new Error(error.message);
+      return data;
+    },
+    enabled: !!selectedColeta?.id && !!user?.id,
   });
 
   const updateColetaMutation = useMutation({
@@ -453,13 +470,16 @@ const Coletas = () => {
                             Ver Detalhes
                           </Button>
                         </DialogTrigger>
-                        <DialogContent className="max-w-2xl">
+                        <DialogContent className="max-w-3xl bg-card border-primary/20"> {/* Aumentado o max-w */}
                           <DialogHeader>
-                            <DialogTitle>Detalhes da Coleta</DialogTitle>
+                            <DialogTitle className="flex items-center gap-2 gradient-text">
+                              <ListChecks className="h-5 w-5" />
+                              Detalhes da Coleta
+                            </DialogTitle>
                           </DialogHeader>
                           {selectedColeta && (
-                            <div className="space-y-4">
-                              <div className="grid grid-cols-2 gap-4">
+                            <div className="space-y-6 py-4">
+                              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                 <div>
                                   <Label className="text-sm font-medium">Cliente</Label>
                                   <p className="text-sm text-muted-foreground">{selectedColeta.parceiro}</p>
@@ -487,11 +507,11 @@ const Coletas = () => {
                                   <p className="text-sm text-muted-foreground">{selectedColeta.previsao_coleta ? format(new Date(selectedColeta.previsao_coleta), "dd/MM/yyyy", { locale: ptBR }) : 'N/A'}</p>
                                 </div>
                                 <div>
-                                  <Label className="text-sm font-medium">Quantidade de Aparelhos</Label>
+                                  <Label className="text-sm font-medium">Quantidade de Aparelhos Solicitada</Label>
                                   <p className="text-sm text-muted-foreground">{selectedColeta.qtd_aparelhos_solicitado || 0} produtos</p>
                                 </div>
                                 <div>
-                                  <Label className="text-sm font-medium">Tipo de Aparelho</Label>
+                                  <Label className="text-sm font-medium">Tipo de Aparelho (Geral)</Label>
                                   <p className="text-sm text-muted-foreground">{selectedColeta.modelo_aparelho || 'N/A'}</p>
                                 </div>
                               </div>
@@ -502,6 +522,58 @@ const Coletas = () => {
                               <div>
                                 <Label className="text-sm font-medium">Observações</Label>
                                 <p className="text-sm text-muted-foreground">{selectedColeta.observacao || "Nenhuma observação"}</p>
+                              </div>
+
+                              {/* Seção de Itens da Coleta */}
+                              <div className="space-y-4 mt-6">
+                                <h3 className="text-lg font-semibold flex items-center gap-2 gradient-text">
+                                  <Package className="h-5 w-5" />
+                                  Itens da Coleta
+                                </h3>
+                                {isLoadingItemsForColeta ? (
+                                  <div className="text-center text-muted-foreground">
+                                    <div className="w-6 h-6 border-2 border-primary border-t-transparent rounded-full animate-spin mx-auto mb-2" />
+                                    <p>Carregando itens...</p>
+                                  </div>
+                                ) : itemsForColetaError ? (
+                                  <div className="text-center text-destructive">
+                                    <p>Erro ao carregar itens: {itemsForColetaError.message}</p>
+                                  </div>
+                                ) : itemsForSelectedColeta && itemsForSelectedColeta.length > 0 ? (
+                                  <div className="space-y-3">
+                                    {itemsForSelectedColeta.map((item, itemIndex) => (
+                                      <Card key={item.id} className="bg-slate-darker/10 border-primary/10 p-3">
+                                        <CardContent className="p-0">
+                                          <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-sm">
+                                            <div className="flex items-center gap-2">
+                                              <Tag className="h-4 w-4 text-muted-foreground" />
+                                              <span className="font-medium">Código:</span> {item.name}
+                                            </div>
+                                            <div className="flex items-center gap-2">
+                                              <Box className="h-4 w-4 text-muted-foreground" />
+                                              <span className="font-medium">Modelo:</span> {item.model || 'N/A'}
+                                            </div>
+                                            <div className="flex items-center gap-2 col-span-full">
+                                              <ListChecks className="h-4 w-4 text-muted-foreground" />
+                                              <span className="font-medium">Quantidade:</span> {item.quantity}
+                                            </div>
+                                            {item.description && (
+                                              <div className="flex items-start gap-2 col-span-full">
+                                                <MessageSquareText className="h-4 w-4 text-muted-foreground mt-1" />
+                                                <span className="font-medium">Descrição:</span> {item.description}
+                                              </div>
+                                            )}
+                                          </div>
+                                        </CardContent>
+                                      </Card>
+                                    ))}
+                                  </div>
+                                ) : (
+                                  <div className="text-center text-muted-foreground">
+                                    <Package className="h-10 w-10 mx-auto mb-2" />
+                                    <p>Nenhum item associado a esta coleta.</p>
+                                  </div>
+                                )}
                               </div>
                             </div>
                           )}
