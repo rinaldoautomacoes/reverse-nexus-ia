@@ -86,7 +86,7 @@ export const ProductStatusChart: React.FC<ProductStatusChartProps> = ({ selected
     coletasData?.forEach(coleta => {
       if (!coleta.previsao_coleta) return;
 
-      const coletaDate = parseISO(coleta.previsao_coleta);
+      const coletaDate = parseISO(coleta.previsao_atleta);
       
       const timezoneOffsetMinutes = coletaDate.getTimezoneOffset();
       const adjustedDateForLocalMonth = new Date(coletaDate.getTime() - timezoneOffsetMinutes * 60 * 1000);
@@ -182,14 +182,14 @@ export const ProductStatusChart: React.FC<ProductStatusChartProps> = ({ selected
                 data={chartData}
                 margin={{
                   top: 20,
-                  right: 30,
-                  left: 20,
-                  bottom: 5,
+                  right: 0, // Ajustado para 0
+                  left: 0,  // Ajustado para 0
+                  bottom: 0, // Ajustado para 0
                 }}
               >
-                <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" opacity={0.5} />
-                <XAxis dataKey="month" stroke="hsl(var(--muted-foreground))" />
-                <YAxis stroke="hsl(var(--muted-foreground))" />
+                {/* Removido CartesianGrid */}
+                <XAxis dataKey="month" stroke="hsl(var(--muted-foreground))" axisLine={false} tickLine={false} /> {/* Eixo X sem linha */}
+                <YAxis stroke="hsl(var(--muted-foreground))" axisLine={false} tickLine={false} width={0} hide={true} /> {/* Eixo Y oculto */}
                 <Tooltip
                   contentStyle={{
                     backgroundColor: 'hsl(var(--card))',
