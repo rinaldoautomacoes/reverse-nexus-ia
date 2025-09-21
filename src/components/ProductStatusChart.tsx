@@ -209,7 +209,7 @@ export const ProductStatusChart: React.FC<ProductStatusChartProps> = ({ selected
                 <defs>
                   <linearGradient id="gradientTotalItems" x1="0" y1="0" x2="0" y2="1">
                     <stop offset="0%" stopColor="hsl(var(--neon-cyan))" stopOpacity={0.4} /> {/* Topo do degradê, ciano mais claro */}
-                    <stop offset="95%" stopColor="hsl(var(--neon-cyan))" stopOpacity={0.15)} /> {/* Base do degradê, ciano mais escuro/transparente */}
+                    <stop offset="95%" stopColor="hsl(var(--neon-cyan))" stopOpacity={0.15} /> {/* Base do degradê, ciano mais escuro/transparente */}
                   </linearGradient>
                 </defs>
                 <Area 
