@@ -386,6 +386,23 @@ const Coletas = () => {
             </p>
           </div>
 
+          {/* Card de Total Geral de Coletas */}
+          <Card className="card-futuristic bg-gradient-primary border-primary/20 text-primary-foreground">
+            <CardContent className="p-6 flex items-center justify-between">
+              <div className="flex items-center gap-4">
+                <ListChecks className="h-8 w-8" />
+                <div>
+                  <p className="text-sm font-medium opacity-80">Total Geral de Coletas</p>
+                  <p className="text-3xl font-bold font-orbitron">{coletas?.length || 0}</p>
+                </div>
+              </div>
+              <div className="text-right">
+                <p className="text-xs opacity-70">Coletas registradas</p>
+                <p className="text-sm font-medium opacity-90">em sua base</p>
+              </div>
+            </CardContent>
+          </Card>
+
           {/* Filtros */}
           <Card className="card-futuristic">
             <CardContent className="p-6">
