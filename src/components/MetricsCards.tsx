@@ -158,7 +158,7 @@ export const MetricsCards = () => {
         return (
           <Card 
             key={metric.id} 
-            className="card-futuristic border-0 animate-slide-up hover:bg-gradient-primary hover:border-primary/50 transition-all duration-300 ease-in-out" 
+            className="card-futuristic border-0 animate-slide-up transition-all duration-300 ease-in-out" 
             style={{ animationDelay: `${index * 100}ms` }}
           >
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
@@ -176,7 +176,6 @@ export const MetricsCards = () => {
               {metric.description && (
                 <p className="text-sm text-muted-foreground mb-1">{metric.description}</p>
               )}
-              {/* Removido o bloco de porcentagem */}
             </CardContent>
           </Card>
         );
