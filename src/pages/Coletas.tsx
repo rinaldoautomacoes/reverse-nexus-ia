@@ -310,11 +310,11 @@ const Coletas = () => {
   const getStatusColor = (status: string | null) => {
     switch (status) {
       case 'concluida':
-        return 'bg-success-green/20 text-success-green';
-      case 'agendada': // Alterado para usar warning-yellow
-        return 'bg-warning-yellow/20 text-warning-yellow';
+        return 'bg-success-green/20 text-success-green'; // Agora será neon-cyan
+      case 'agendada':
+        return 'bg-warning-yellow/20 text-warning-yellow'; // Agora será amarelo
       case 'pendente':
-        return 'bg-destructive/20 text-destructive';
+        return 'bg-destructive/20 text-destructive'; // Agora será ai-purple
       default:
         return 'bg-muted/20 text-muted-foreground';
     }

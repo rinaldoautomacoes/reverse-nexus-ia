@@ -93,8 +93,8 @@ export const MetricsCards = () => {
         change: '-5%', // Placeholder
         trend: 'down',
         icon_name: 'Clock',
-        color: 'text-destructive', // Alterado para destructive
-        bg_color: 'bg-destructive/10', // Alterado para destructive/10
+        color: 'text-destructive', // Agora será ai-purple
+        bg_color: 'bg-destructive/10', // Agora será ai-purple/10
         description: 'Aguardando agendamento ou início'
       },
       {
@@ -104,8 +104,8 @@ export const MetricsCards = () => {
         change: '+8%', // Placeholder
         trend: 'up',
         icon_name: 'Truck', // Ícone para 'Em Trânsito'
-        color: 'text-warning-yellow',
-        bg_color: 'bg-warning-yellow/10',
+        color: 'text-warning-yellow', // Já é amarelo
+        bg_color: 'bg-warning-yellow/10', // Já é amarelo/10
         description: 'Coletas agendadas e em andamento'
       },
       {
@@ -115,8 +115,8 @@ export const MetricsCards = () => {
         change: '+15%', // Placeholder
         trend: 'up',
         icon_name: 'CheckCircle',
-        color: 'text-success-green', // Alterado para success-green
-        bg_color: 'bg-success-green/10', // Alterado para success-green/10
+        color: 'text-success-green', // Agora será neon-cyan
+        bg_color: 'bg-success-green/10', // Agora será neon-cyan/10
         description: 'Coletas finalizadas e processadas'
       },
     ];

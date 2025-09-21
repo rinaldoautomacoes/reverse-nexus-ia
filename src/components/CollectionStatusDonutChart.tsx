@@ -11,9 +11,9 @@ import { cn } from "@/lib/utils";
 type Coleta = Tables<'coletas'>;
 
 const COLORS = {
-  pendente: 'hsl(var(--destructive))', // Alterado para destructive
-  agendada: 'hsl(var(--warning-yellow))', // Nova cor para 'Em Trânsito'
-  concluida: 'hsl(var(--success-green))',    // Alterado para success-green
+  pendente: 'hsl(var(--destructive))', // Agora será ai-purple
+  agendada: 'hsl(var(--warning-yellow))', // Já é amarelo
+  concluida: 'hsl(var(--success-green))',    // Agora será neon-cyan
 };
 
 interface CustomLabelProps {

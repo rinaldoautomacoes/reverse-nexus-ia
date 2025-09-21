@@ -33,7 +33,7 @@ export default {
 					foreground: 'hsl(var(--secondary-foreground))'
 				},
 				destructive: {
-					DEFAULT: 'hsl(var(--destructive))',
+					DEFAULT: 'hsl(var(--destructive))', // Agora será ai-purple
 					foreground: 'hsl(var(--destructive-foreground))'
 				},
 				muted: {
@@ -75,7 +75,7 @@ export default {
 				neural: 'hsl(var(--neural-blue))',
 				ai: 'hsl(var(--ai-purple))',
 				'warning-yellow': 'hsl(var(--warning-yellow))',
-				'success-green': 'hsl(var(--success-green))' // NOVA COR: Verde para sucesso
+				'success-green': 'hsl(var(--success-green))' // Agora será neon-cyan
 			},
 			borderRadius: {
 				lg: 'var(--radius)',
