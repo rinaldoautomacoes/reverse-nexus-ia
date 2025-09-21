@@ -11,22 +11,34 @@ import { useEffect } from "react";
 import { useToast } from "@/hooks/use-toast";
 
 type Item = Tables<'items'>;
+type Coleta = Tables<'coletas'>; // Importar o tipo Coleta
+
+// Definir um tipo para o item com o status da coleta aninhado
+type ItemWithColetaStatus = Item & {
+  coletas: Pick<Coleta, 'status_coleta'> | null;
+};
 
 export const ProductStatusChart = () => {
   const { user } = useAuth();
   const { toast } = useToast();
 
-  const { data: items, isLoading, error } = useQuery<Item[], Error>({
+  const { data: items, isLoading, error } = useQuery<ItemWithColetaStatus[], Error>({
     queryKey: ['productStatusChart', user?.id],
     queryFn: async () => {
       if (!user?.id) return [];
       const { data, error } = await supabase
         .from('items')
-        .select('created_at, quantity, status')
+        .select(`
+          created_at,
+          quantity,
+          status,
+          collection_id,
+          coletas (status_coleta)
+        `)
         .eq('user_id', user.id)
         .order('created_at', { ascending: true });
       if (error) throw new Error(error.message);
-      return data;
+      return data as ItemWithColetaStatus[];
     },
     enabled: !!user?.id,
   });
@@ -41,12 +53,12 @@ export const ProductStatusChart = () => {
     }
   }, [error, toast]);
 
-  const processItemsData = (itemsData: Item[] | undefined) => {
+  const processItemsData = (itemsData: ItemWithColetaStatus[] | undefined) => {
     if (!itemsData || itemsData.length === 0) {
       return { chartData: [], totalItems: 0, totalPendente: 0, totalEmTransito: 0, totalEntregues: 0 };
     }
 
-    const monthlyDataMap = new Map<string, { pendente: number; agendada: number; processado: number }>();
+    const monthlyDataMap = new Map<string, { pendente: number; em_transito: number; entregues: number }>();
     const allMonths: string[] = [];
 
     // Get the last 6 months
@@ -55,40 +67,78 @@ export const ProductStatusChart = () => {
       const month = startOfMonth(new Date(today.getFullYear(), today.getMonth() - i));
       const monthKey = format(month, 'MMM', { locale: ptBR });
       allMonths.push(monthKey);
-      monthlyDataMap.set(monthKey, { pendente: 0, agendada: 0, processado: 0 });
+      monthlyDataMap.set(monthKey, { pendente: 0, em_transito: 0, entregues: 0 });
     }
+
+    let totalPendente = 0;
+    let totalEmTransito = 0;
+    let totalEntregues = 0;
 
     itemsData.forEach(item => {
       const itemDate = parseISO(item.created_at);
       const itemMonthKey = format(startOfMonth(itemDate), 'MMM', { locale: ptBR });
 
+      let effectiveStatus: 'pendente' | 'em_transito' | 'entregues' = 'pendente'; // Default
+
+      // Prioriza o status da coleta se o item estiver associado a uma coleta
+      if (item.collection_id && item.coletas?.status_coleta) {
+        switch (item.coletas.status_coleta) {
+          case 'pendente':
+            effectiveStatus = 'pendente';
+            break;
+          case 'agendada': // Coleta 'agendada' significa produto 'em_transito'
+            effectiveStatus = 'em_transito';
+            break;
+          case 'concluida': // Coleta 'concluida' significa produto 'entregues'
+            effectiveStatus = 'entregues';
+            break;
+          default:
+            effectiveStatus = 'pendente'; // Fallback
+        }
+      } else {
+        // Se não houver coleta associada ou status da coleta, usa o status do próprio item
+        switch (item.status) {
+          case 'pendente':
+            effectiveStatus = 'pendente';
+            break;
+          case 'agendada': // Status 'agendada' do item também significa 'em_transito'
+            effectiveStatus = 'em_transito';
+            break;
+          case 'processado': // Status 'processado' do item significa 'entregues'
+            effectiveStatus = 'entregues';
+            break;
+          default:
+            effectiveStatus = 'pendente'; // Fallback
+        }
+      }
+
       if (monthlyDataMap.has(itemMonthKey)) {
         const currentMonthData = monthlyDataMap.get(itemMonthKey)!;
-        if (item.status === 'pendente') {
+        if (effectiveStatus === 'pendente') {
           currentMonthData.pendente += item.quantity;
-        } else if (item.status === 'agendada') { // Mapeado para 'Em Trânsito'
-          currentMonthData.agendada += item.quantity;
-        } else if (item.status === 'processado') { // Mapeado para 'Entregues'
-          currentMonthData.processado += item.quantity;
+          totalPendente += item.quantity;
+        } else if (effectiveStatus === 'em_transito') {
+          currentMonthData.em_transito += item.quantity;
+          totalEmTransito += item.quantity;
+        } else if (effectiveStatus === 'entregues') {
+          currentMonthData.entregues += item.quantity;
+          totalEntregues += item.quantity;
         }
         monthlyDataMap.set(itemMonthKey, currentMonthData);
       }
     });
 
     const chartData = allMonths.map(monthKey => {
-      const data = monthlyDataMap.get(monthKey) || { pendente: 0, agendada: 0, processado: 0 };
+      const data = monthlyDataMap.get(monthKey) || { pendente: 0, em_transito: 0, entregues: 0 };
       return {
         month: monthKey,
         pendente: data.pendente,
-        em_transito: data.agendada,
-        entregues: data.processado,
-        total_month: data.pendente + data.agendada + data.processado,
+        em_transito: data.em_transito,
+        entregues: data.entregues,
+        total_month: data.pendente + data.em_transito + data.entregues,
       };
     });
 
-    const totalPendente = itemsData.filter(item => item.status === 'pendente').reduce((sum, item) => sum + item.quantity, 0);
-    const totalEmTransito = itemsData.filter(item => item.status === 'agendada').reduce((sum, item) => sum + item.quantity, 0);
-    const totalEntregues = itemsData.filter(item => item.status === 'processado').reduce((sum, item) => sum + item.quantity, 0);
     const totalItems = totalPendente + totalEmTransito + totalEntregues;
 
     return { chartData, totalItems, totalPendente, totalEmTransito, totalEntregues };
