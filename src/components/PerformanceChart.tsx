@@ -1,6 +1,6 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { TrendingUp, BarChart3, Package } from "lucide-react";
+import { TrendingUp, BarChart3, Package, User } from "lucide-react"; // Added Package and User icons
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import type { Tables } from "@/integrations/supabase/types";
@@ -11,15 +11,34 @@ import {
   XAxis,
   YAxis,
   CartesianGrid,
-  Tooltip, // Mantido para o caso de querer reativar, mas não será usado
+  Tooltip,
+  Legend,
   ResponsiveContainer,
   LabelList,
 } from "recharts";
-import { format, parseISO } from "date-fns";
+import { format, parseISO, startOfMonth, endOfMonth, isSameMonth } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import React from "react";
 
 type Coleta = Tables<'coletas'>;
+
+// Custom Tooltip for Recharts
+const CustomTooltip = ({ active, payload, label }: any) => {
+  if (active && payload && payload.length) {
+    const data = payload[0].payload; // Access the full data object for the month
+    return (
+      <div className="bg-card p-3 rounded-md border border-border shadow-lg text-sm">
+        <p className="font-semibold text-primary mb-1">{label}</p>
+        <p className="text-muted-foreground">Coletas Totais: <span className="text-foreground">{data.totalCollections}</span></p>
+        <p className="text-muted-foreground">Coletas Processadas: <span className="text-foreground">{data.processedCollections}</span></p>
+        <p className="text-muted-foreground">Total de Produtos: <span className="text-foreground">{data.totalProducts}</span></p>
+        <p className="text-muted-foreground">Clientes Únicos: <span className="text-foreground">{data.uniqueClients}</span></p>
+        {data.efficiency && <p className="text-muted-foreground">Eficiência: <span className="text-foreground">{data.efficiency.toFixed(1)}%</span></p>}
+      </div>
+    );
+  }
+  return null;
+};
 
 export const PerformanceChart = () => {
   const { user } = useAuth();
@@ -39,6 +58,7 @@ export const PerformanceChart = () => {
     enabled: !!user?.id,
   });
 
+  // Aggregate data for the chart
   const aggregatedChartData = React.useMemo(() => {
     if (!coletas) return [];
 
@@ -53,7 +73,7 @@ export const PerformanceChart = () => {
 
     const months = Array.from({ length: 6 }).map((_, i) => {
       const date = new Date();
-      date.setMonth(date.getMonth() - (5 - i));
+      date.setMonth(date.getMonth() - (5 - i)); // Go back 5, 4, 3, 2, 1, 0 months
       return format(date, 'MMM', { locale: ptBR });
     });
 
@@ -83,6 +103,7 @@ export const PerformanceChart = () => {
       }
     });
 
+    // Fill in missing months and calculate efficiency
     const finalChartData = months.map(month => {
       const data = monthlyDataMap.get(month) || {
         month,
@@ -95,11 +116,33 @@ export const PerformanceChart = () => {
       data.efficiency = data.totalCollections > 0 ? (data.processedCollections / data.totalCollections) * 100 : 0;
       return {
         ...data,
-        uniqueClients: data.uniqueClients.size,
+        uniqueClients: data.uniqueClients.size, // Convert Set to size for display
       };
     });
 
     return finalChartData;
+  }, [coletas]);
+
+  // Calculate summary metrics for below the chart
+  const summaryMetrics = React.useMemo(() => {
+    if (!coletas) return {
+      totalProducts: 0,
+      pendingProducts: 0,
+      inTransitProducts: 0,
+      deliveredProducts: 0,
+    };
+
+    const totalProducts = coletas.reduce((sum, c) => sum + (c.qtd_aparelhos_solicitado || 0), 0);
+    const pendingProducts = coletas.filter(c => c.status_coleta === 'pendente').reduce((sum, c) => sum + (c.qtd_aparelhos_solicitado || 0), 0);
+    const inTransitProducts = coletas.filter(c => c.status_coleta === 'agendada').reduce((sum, c) => sum + (c.qtd_aparelhos_solicitado || 0), 0);
+    const deliveredProducts = coletas.filter(c => c.status_coleta === 'concluida').reduce((sum, c) => sum + (c.qtd_aparelhos_solicitado || 0), 0);
+
+    return {
+      totalProducts,
+      pendingProducts,
+      inTransitProducts,
+      deliveredProducts,
+    };
   }, [coletas]);
 
   if (isLoading) {
@@ -136,11 +179,12 @@ export const PerformanceChart = () => {
             <p className="text-sm text-muted-foreground">Últimos 6 meses</p>
           </div>
           <div className="flex gap-2">
+            {/* Placeholder for overall trend, can be calculated from aggregatedChartData */}
             <Badge variant="secondary" className="bg-primary/20 text-primary">
               <TrendingUp className="w-3 h-3 mr-1" />
               +24%
             </Badge>
-            <Badge variant="secondary" className="bg-neon-cyan/20 text-neon-cyan">
+            <Badge variant="secondary" className="bg-neural/20 text-neural">
               {aggregatedChartData.length > 0 ? aggregatedChartData[aggregatedChartData.length - 1].efficiency.toFixed(1) : '0.0'}% Eficiência
             </Badge>
           </div>
@@ -152,7 +196,6 @@ export const PerformanceChart = () => {
           <div className="h-64 relative">
             <ResponsiveContainer width="100%" height="100%">
               <BarChart
-                layout="vertical" // Alterado para layout vertical
                 data={aggregatedChartData}
                 margin={{
                   top: 20,
@@ -162,34 +205,27 @@ export const PerformanceChart = () => {
                 }}
               >
                 <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border)/0.2)" />
-                <XAxis
-                  type="number" // Eixo X agora é numérico
-                  stroke="hsl(var(--muted-foreground))"
-                  domain={[0, 100]}
-                  tickFormatter={(value: number) => `${value}%`}
-                />
-                <YAxis
-                  dataKey="month" // Eixo Y agora é categórico (meses)
-                  type="category"
-                  stroke="hsl(var(--muted-foreground))"
-                />
-                {/* Tooltip removido para corresponder à imagem */}
-                <Bar dataKey="efficiency" name="Eficiência IA" fill="hsl(var(--neon-cyan))" radius={[0, 4, 4, 0]}> {/* Raio ajustado para barras horizontais */}
+                <XAxis dataKey="month" stroke="hsl(var(--muted-foreground))" />
+                <YAxis stroke="hsl(var(--muted-foreground))" />
+                <Tooltip content={<CustomTooltip />} />
+                <Legend />
+                <Bar dataKey="totalCollections" name="Coletas Totais" fill="hsl(var(--neon-cyan))" radius={[4, 4, 0, 0]}>
                   <LabelList
-                    dataKey="efficiency"
-                    position="right" // Posição do rótulo ajustada para barras horizontais
-                    formatter={(value: number) => `${value.toFixed(1)}%`}
-                    className="text-sm fill-foreground"
+                    dataKey="totalProducts"
+                    position="top"
+                    formatter={(value: number) => `${value} itens`} // Show total products as label
+                    className="text-xs fill-foreground"
                   />
                 </Bar>
+                <Bar dataKey="processedCollections" name="Coletas Processadas" fill="hsl(var(--accent))" radius={[4, 4, 0, 0]} />
               </BarChart>
             </ResponsiveContainer>
           </div>
 
-          {/* Custom Legend (matching the image) */}
+          {/* Legend and Stats */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div className="flex items-center gap-3 p-3 bg-secondary/10 rounded-lg">
-              <div className="w-4 h-4 rounded" style={{ backgroundColor: 'hsl(var(--neon-cyan))' }} />
+              <div className="w-4 h-4 bg-gradient-primary rounded" />
               <div>
                 <p className="text-sm font-medium">Coletas Totais</p>
                 <p className="text-xs text-muted-foreground">Agendadas + Realizadas</p>
@@ -197,7 +233,7 @@ export const PerformanceChart = () => {
             </div>
             
             <div className="flex items-center gap-3 p-3 bg-secondary/10 rounded-lg">
-              <div className="w-4 h-4 rounded" style={{ backgroundColor: 'hsl(var(--neon-cyan))' }} />
+              <div className="w-4 h-4 bg-accent rounded" />
               <div>
                 <p className="text-sm font-medium">Processadas</p>
                 <p className="text-xs text-muted-foreground">Finalizadas com sucesso</p>
@@ -205,14 +241,39 @@ export const PerformanceChart = () => {
             </div>
             
             <div className="flex items-center gap-3 p-3 bg-secondary/10 rounded-lg">
-              <div className="w-4 h-4 rounded" style={{ backgroundColor: 'hsl(var(--neon-cyan))' }} />
+              <div className="w-4 h-4 bg-neural rounded" />
               <div>
                 <p className="text-sm font-medium">Eficiência IA</p>
                 <p className="text-xs text-muted-foreground">Taxa de otimização</p>
               </div>
             </div>
           </div>
-          {/* Resumo de Produtos removido para corresponder à imagem */}
+
+          {/* Summary of Products */}
+          <div className="border-t border-border/30 pt-4 mt-6 space-y-2">
+            <h3 className="text-lg font-semibold gradient-text flex items-center gap-2">
+              <Package className="h-5 w-5" />
+              Resumo de Produtos
+            </h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 text-sm">
+              <div className="p-3 bg-secondary/10 rounded-lg flex items-center gap-2">
+                <span className="font-medium">Total Geral:</span>
+                <span className="text-foreground font-bold">{summaryMetrics.totalProducts} itens</span>
+              </div>
+              <div className="p-3 bg-neural/10 rounded-lg flex items-center gap-2">
+                <span className="font-medium">Pendentes:</span>
+                <span className="text-neural font-bold">{summaryMetrics.pendingProducts} itens</span>
+              </div>
+              <div className="p-3 bg-warning-yellow/10 rounded-lg flex items-center gap-2">
+                <span className="font-medium">Em Trânsito:</span>
+                <span className="text-warning-yellow font-bold">{summaryMetrics.inTransitProducts} itens</span>
+              </div>
+              <div className="p-3 bg-primary/10 rounded-lg flex items-center gap-2">
+                <span className="font-medium">Entregues:</span>
+                <span className="text-primary font-bold">{summaryMetrics.deliveredProducts} itens</span>
+              </div>
+            </div>
+          </div>
         </div>
       </CardContent>
     </Card>
