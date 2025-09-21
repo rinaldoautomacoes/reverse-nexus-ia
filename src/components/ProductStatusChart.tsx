@@ -70,8 +70,15 @@ export const ProductStatusChart = () => {
     let totalEntregues = 0;
 
     coletasData.forEach(coleta => { // Iterando sobre as coletas
-      const coletaDate = parseISO(coleta.created_at);
-      const coletaMonthKey = format(startOfMonth(coletaDate), 'MMM', { locale: ptBR });
+      const coletaDateUTC = parseISO(coleta.created_at); // Data da coleta em UTC
+      
+      // Ajusta a data UTC para o fuso horário local para o cálculo do mês
+      // Obtém o offset do fuso horário em minutos para o ambiente atual
+      const timezoneOffsetMinutes = coletaDateUTC.getTimezoneOffset();
+      // Subtrai o offset para obter uma data que, quando tratada como UTC, corresponde ao horário local de criação
+      const adjustedDateForLocalMonth = new Date(coletaDateUTC.getTime() - timezoneOffsetMinutes * 60 * 1000);
+
+      const coletaMonthKey = format(startOfMonth(adjustedDateForLocalMonth), 'MMM', { locale: ptBR });
       const quantity = coleta.qtd_aparelhos_solicitado || 0; // Usando a quantidade da coleta
 
       let effectiveStatus: 'pendente' | 'em_transito' | 'entregues' = 'pendente'; // Padrão
