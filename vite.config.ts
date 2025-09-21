@@ -19,7 +19,4 @@ export default defineConfig(({ mode }) => ({
       "@": path.resolve(__dirname, "./src"),
     },
   },
-  optimizeDeps: { // Removendo jspdf da otimização de dependências
-    include: [], 
-  },
 }));

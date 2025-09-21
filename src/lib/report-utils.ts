@@ -1,15 +1,5 @@
-import { jsPDF } from 'jspdf'; // Importado como named export
-
-// Cria uma instância temporária de jsPDF para garantir que o objeto API seja inicializado.
-// Esta é uma solução comum para plugins que dependem de jsPDF.API.
-new jsPDF(); 
-
-// Garante que jsPDF esteja disponível globalmente para jspdf-autotable.
-// Isso deve acontecer ANTES da importação de 'jspdf-autotable'.
-(window as any).jsPDF = jsPDF; 
-
-import 'jspdf-autotable'; // Esta importação agora será executada e encontrará window.jsPDF com seu API populado.
-
+import jsPDF from 'jspdf';
+import html2canvas from 'html2canvas';
 import { supabase } from "@/integrations/supabase/client";
 import type { Tables } from "@/integrations/supabase/types";
 import { format } from "date-fns";
@@ -72,7 +62,7 @@ const fetchReportData = async (reportData: ReportData, userId: string) => {
 const generatePdfReport = async (reportData: ReportData, userId: string, performanceChartData: MonthlyPerformanceData[]) => {
   const { coletas, itemsByCollection } = await fetchReportData(reportData, userId);
 
-  const pdf = new jsPDF(); // Usando a instância padrão do jsPDF
+  const pdf = new jsPDF();
   let currentY = 30;
 
   pdf.setFontSize(20);
@@ -120,7 +110,7 @@ const generatePdfReport = async (reportData: ReportData, userId: string, perform
     const headers = [['Mês', 'Total Coletas', 'Total Itens']];
     const tableData = performanceChartData.map(d => [d.month, d.totalColetas.toString(), d.totalItems.toString()]);
     
-    (pdf as any).autoTable({ // Usar 'as any' para acessar autoTable
+    pdf.autoTable({
       startY: currentY,
       head: headers,
       body: tableData,
@@ -128,7 +118,7 @@ const generatePdfReport = async (reportData: ReportData, userId: string, perform
       styles: { fontSize: 10, cellPadding: 2, overflow: 'linebreak' },
       headStyles: { fillColor: [0, 245, 255], textColor: [0, 0, 0] },
       margin: { left: 20, right: 20 },
-      didDrawPage: function (data: any) { // Adicionar tipo para 'data'
+      didDrawPage: function (data) {
         currentY = data.cursor?.y || currentY;
       }
     });
