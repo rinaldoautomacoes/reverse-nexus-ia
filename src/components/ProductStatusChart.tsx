@@ -10,24 +10,23 @@ import { ptBR } from "date-fns/locale";
 import { useEffect } from "react";
 import { useToast } from "@/hooks/use-toast";
 
-// Removido o tipo Item, pois agora usaremos Coleta diretamente
 type Coleta = Tables<'coletas'>;
 
 export const ProductStatusChart = () => {
   const { user } = useAuth();
   const { toast } = useToast();
 
-  // Alterado a query para buscar dados da tabela 'coletas'
   const { data: coletas, isLoading, error } = useQuery<Coleta[], Error>({
     queryKey: ['productStatusChart', user?.id],
     queryFn: async () => {
       if (!user?.id) return [];
       const { data, error } = await supabase
-        .from('coletas') // Buscando da tabela 'coletas'
+        .from('coletas')
         .select(`
           created_at,
           qtd_aparelhos_solicitado,
-          status_coleta
+          status_coleta,
+          previsao_coleta
         `)
         .eq('user_id', user.id)
         .order('created_at', { ascending: true });
@@ -47,7 +46,6 @@ export const ProductStatusChart = () => {
     }
   }, [error, toast]);
 
-  // Renomeado e ajustado a função de processamento para trabalhar com Coleta[]
   const processColetasData = (coletasData: Coleta[] | undefined) => {
     if (!coletasData || coletasData.length === 0) {
       return { chartData: [], totalItems: 0, totalPendente: 0, totalEmTransito: 0, totalEntregues: 0 };
@@ -56,11 +54,10 @@ export const ProductStatusChart = () => {
     const monthlyDataMap = new Map<string, { pendente: number; em_transito: number; entregues: number }>();
     const allMonths: string[] = [];
 
-    // Gerar todos os meses de janeiro a dezembro do ano atual
     const today = new Date();
     const currentYear = today.getFullYear();
     
-    for (let i = 0; i < 12; i++) { // Loop de 0 (janeiro) a 11 (dezembro)
+    for (let i = 0; i < 12; i++) {
       const month = startOfMonth(new Date(currentYear, i));
       const monthKey = format(month, 'MMM', { locale: ptBR });
       allMonths.push(monthKey);
@@ -71,21 +68,19 @@ export const ProductStatusChart = () => {
     let totalEmTransito = 0;
     let totalEntregues = 0;
 
-    coletasData.forEach(coleta => { // Iterando sobre as coletas
-      const coletaDateUTC = parseISO(coleta.created_at); // Data da coleta em UTC
+    coletasData.forEach(coleta => {
+      if (!coleta.previsao_coleta) return; // Ignora coletas sem data prevista
+
+      const coletaDate = parseISO(coleta.previsao_coleta); // Usa previsao_coleta
       
-      // Ajusta a data UTC para o fuso horário local para o cálculo do mês
-      // Obtém o offset do fuso horário em minutos para o ambiente atual
-      const timezoneOffsetMinutes = coletaDateUTC.getTimezoneOffset();
-      // Subtrai o offset para obter uma data que, quando tratada como UTC, corresponde ao horário local de criação
-      const adjustedDateForLocalMonth = new Date(coletaDateUTC.getTime() - timezoneOffsetMinutes * 60 * 1000);
+      const timezoneOffsetMinutes = coletaDate.getTimezoneOffset();
+      const adjustedDateForLocalMonth = new Date(coletaDate.getTime() - timezoneOffsetMinutes * 60 * 1000);
 
       const coletaMonthKey = format(startOfMonth(adjustedDateForLocalMonth), 'MMM', { locale: ptBR });
-      const quantity = coleta.qtd_aparelhos_solicitado || 0; // Usando a quantidade da coleta
+      const quantity = coleta.qtd_aparelhos_solicitado || 0;
 
-      let effectiveStatus: 'pendente' | 'em_transito' | 'entregues' = 'pendente'; // Padrão
+      let effectiveStatus: 'pendente' | 'em_transito' | 'entregues' = 'pendente';
 
-      // Determina o status efetivo com base no status_coleta
       switch (coleta.status_coleta) {
         case 'pendente':
           effectiveStatus = 'pendente';
@@ -97,7 +92,7 @@ export const ProductStatusChart = () => {
           effectiveStatus = 'entregues';
           break;
         default:
-          effectiveStatus = 'pendente'; // Fallback
+          effectiveStatus = 'pendente';
       }
 
       if (monthlyDataMap.has(coletaMonthKey)) {
@@ -136,16 +131,13 @@ export const ProductStatusChart = () => {
 
   const maxTotalItemsPerMonth = Math.max(...chartData.map(d => d.total_month));
 
-  // Cores para os status dos produtos
   const BAR_COLORS = {
-    pendente: 'hsl(var(--destructive))', // Agora será ai-purple
-    em_transito: 'hsl(var(--warning-yellow))', // Já é amarelo
-    entregues: 'hsl(var(--success-green))', // Agora será neon-cyan
+    pendente: 'hsl(var(--destructive))',
+    em_transito: 'hsl(var(--warning-yellow))',
+    entregues: 'hsl(var(--success-green))',
   };
 
-  // Calcular a porcentagem de entregues em relação ao total
   const percentageEntregues = totalItems > 0 ? ((totalEntregues / totalItems) * 100).toFixed(1) : '0.0';
-  // Placeholder para variação, pode ser calculado com dados históricos se disponível
   const changePercentage = '+10%'; 
 
   if (isLoading) {
@@ -184,12 +176,9 @@ export const ProductStatusChart = () => {
       </CardHeader>
       <CardContent>
         <div className="space-y-6">
-          {/* Chart Visualization */}
           <div className="h-64 relative">
             <div className="absolute inset-0 bg-gradient-dark rounded-lg border border-border/50 p-4">
-              {/* Chart Grid */}
               <div className="h-full relative">
-                {/* Grid Lines */}
                 <div className="absolute inset-0">
                   {[0, 25, 50, 75, 100].map((percentage) => (
                     <div 
@@ -200,21 +189,17 @@ export const ProductStatusChart = () => {
                   ))}
                 </div>
                 
-                {/* Chart Bars */}
                 <div className="h-full flex items-end justify-between gap-2 relative z-10">
                   {chartData.map((data, index) => {
                     const totalMonthHeight = maxTotalItemsPerMonth > 0 ? (data.total_month / maxTotalItemsPerMonth) * 100 : 0;
                     
-                    // Calculate heights for stacked segments
                     const entreguesHeight = data.total_month > 0 ? (data.entregues / data.total_month) * totalMonthHeight : 0;
                     const emTransitoHeight = data.total_month > 0 ? (data.em_transito / data.total_month) * totalMonthHeight : 0;
                     const pendenteHeight = data.total_month > 0 ? (data.pendente / data.total_month) * totalMonthHeight : 0;
                     
                     return (
                       <div key={data.month} className="flex-1 flex flex-col items-center">
-                        {/* Bar Container */}
                         <div className="relative w-full mb-2" style={{ height: '180px' }}>
-                          {/* Entregues Bar (top) */}
                           {data.entregues > 0 && (
                             <div 
                               className="absolute bottom-0 w-full rounded-t-md animate-slide-up flex items-center justify-center"
@@ -229,13 +214,12 @@ export const ProductStatusChart = () => {
                               </span>
                             </div>
                           )}
-                          {/* Em Trânsito Bar (middle) */}
                           {data.em_transito > 0 && (
                             <div 
                               className="absolute w-full rounded-t-md animate-slide-up flex items-center justify-center"
                               style={{ 
                                 height: `${emTransitoHeight}%`,
-                                bottom: `${entreguesHeight}%`, // Stack on top of entregues
+                                bottom: `${entreguesHeight}%`,
                                 backgroundColor: BAR_COLORS.em_transito,
                                 animationDelay: `${index * 200 + 100}ms`
                               }}
@@ -245,13 +229,12 @@ export const ProductStatusChart = () => {
                               </span>
                             </div>
                           )}
-                          {/* Pendente Bar (bottom) */}
                           {data.pendente > 0 && (
                             <div 
                               className="absolute w-full rounded-t-md animate-slide-up flex items-center justify-center"
                               style={{ 
                                 height: `${pendenteHeight}%`,
-                                bottom: `${entreguesHeight + emTransitoHeight}%`, // Stack on top of em_transito
+                                bottom: `${entreguesHeight + emTransitoHeight}%`,
                                 backgroundColor: BAR_COLORS.pendente,
                                 animationDelay: `${index * 200}ms`
                               }}
@@ -261,11 +244,8 @@ export const ProductStatusChart = () => {
                               </span>
                             </div>
                           )}
-                          
-                          {/* Removido o Total Items Indicator para evitar redundância */}
                         </div>
                         
-                        {/* Month Label */}
                         <span className="text-xs text-muted-foreground font-medium">
                           {data.month}
                         </span>
@@ -277,7 +257,6 @@ export const ProductStatusChart = () => {
             </div>
           </div>
 
-          {/* Legend and Stats */}
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
             <div className="flex items-center gap-3 p-3 bg-secondary/10 rounded-lg">
               <div className="w-4 h-4 rounded" style={{ backgroundColor: BAR_COLORS.pendente }} />
