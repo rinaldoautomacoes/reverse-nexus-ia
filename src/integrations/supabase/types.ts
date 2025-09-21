@@ -109,7 +109,7 @@ export type Database = {
         Row: {
           id: string
           user_id: string
-          client_id: string | null // Adicionado client_id
+          client_id: string | null
           created_at: string
           localidade: string | null
           modelo_aparelho: string | null
@@ -132,11 +132,12 @@ export type Database = {
           status_unidade: string | null
           observacao: string | null
           responsavel: string | null
+          responsible_user_id: string | null // NOVA COLUNA
         }
         Insert: {
           id?: string
           user_id: string
-          client_id?: string | null // Adicionado client_id
+          client_id?: string | null
           created_at?: string
           localidade?: string | null
           modelo_aparelho?: string | null
@@ -159,11 +160,12 @@ export type Database = {
           status_unidade?: string | null
           observacao?: string | null
           responsavel?: string | null
+          responsible_user_id?: string | null // NOVA COLUNA
         }
         Update: {
           id?: string
           user_id?: string
-          client_id?: string | null // Adicionado client_id
+          client_id?: string | null
           created_at?: string
           localidade?: string | null
           modelo_aparelho?: string | null
@@ -186,6 +188,7 @@ export type Database = {
           status_unidade?: string | null
           observacao?: string | null
           responsavel?: string | null
+          responsible_user_id?: string | null // NOVA COLUNA
         }
         Relationships: [
           {
@@ -202,44 +205,51 @@ export type Database = {
             referencedRelation: "users"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "coletas_responsible_user_id_fkey"
+            columns: ["responsible_user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
         ]
       }
       items: {
         Row: {
           id: string
           user_id: string
-          collection_id: string | null // Alterado para ser anulável
+          collection_id: string | null
           created_at: string
           name: string
           quantity: number
           status: string
           description: string | null
-          model: string | null // NOVA COLUNA
-          image_url: string | null // NOVA COLUNA
+          model: string | null
+          image_url: string | null
         }
         Insert: {
           id?: string
           user_id: string
-          collection_id?: string | null // Alterado para ser anulável
+          collection_id?: string | null
           created_at?: string
           name: string
           quantity: number
           status?: string
           description?: string | null
-          model?: string | null // NOVA COLUNA
-          image_url?: string | null // NOVA COLUNA
+          model?: string | null
+          image_url?: string | null
         }
         Update: {
           id?: string
           user_id?: string
-          collection_id?: string | null // Alterado para ser anulável
+          collection_id?: string | null
           created_at?: string
           name?: string
           quantity?: number
           status?: string
           description?: string | null
-          model?: string | null // NOVA COLUNA
-          image_url?: string | null // NOVA COLUNA
+          model?: string | null
+          image_url?: string | null
         }
         Relationships: [
           {
@@ -305,27 +315,24 @@ export type Database = {
           first_name: string | null
           last_name: string | null
           avatar_url: string | null
-          role: string // Adicionado o campo role
+          role: string
           updated_at: string | null
-          // username: string | null // REMOVIDA COLUNA
         }
         Insert: {
           id: string
           first_name?: string | null
           last_name?: string | null
           avatar_url?: string | null
-          role?: string // Adicionado o campo role
+          role?: string
           updated_at?: string | null
-          // username?: string | null // REMOVIDA COLUNA
         }
         Update: {
           id?: string
           first_name?: string | null
           last_name?: string | null
           avatar_url?: string | null
-          role?: string // Adicionado o campo role
+          role?: string
           updated_at?: string | null
-          // username?: string | null // REMOVIDA COLUNA
         }
         Relationships: [
           {
@@ -348,7 +355,7 @@ export type Database = {
           format: string
           status: string
           description: string | null
-          collection_status_filter: string | null // NOVA COLUNA
+          collection_status_filter: string | null
         }
         Insert: {
           id?: string
@@ -360,7 +367,7 @@ export type Database = {
           format?: string
           status?: string
           description?: string | null
-          collection_status_filter?: string | null // NOVA COLUNA
+          collection_status_filter?: string | null
         }
         Update: {
           id?: string
@@ -372,7 +379,7 @@ export type Database = {
           format?: string
           status?: string
           description?: string | null
-          collection_status_filter?: string | null // NOVA COLUNA
+          collection_status_filter?: string | null
         }
         Relationships: [
           {

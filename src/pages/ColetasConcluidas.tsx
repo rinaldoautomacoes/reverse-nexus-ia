@@ -7,7 +7,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { ArrowLeft, Package, MapPin, Calendar, Search, Filter, Eye, Edit, Trash2, MessageSquareText, Mail, RefreshCcw, Clock, CheckCircle, ListChecks, Tag, Box } from "lucide-react";
+import { ArrowLeft, Package, MapPin, Calendar, Search, Filter, Eye, Edit, Trash2, MessageSquareText, Mail, RefreshCcw, Clock, CheckCircle, ListChecks, Tag, Box, User as UserIcon } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useState } from "react";
 import { useToast } from "@/hooks/use-toast";
@@ -18,11 +18,14 @@ import { useAuth } from "@/hooks/use-auth";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { CollectionStatusUpdateDialog } from "@/components/CollectionStatusUpdateDialog";
+import { EditResponsibleDialog } from "@/components/EditResponsibleDialog"; // Importar o novo diálogo
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"; // Importar Avatar
 
 type Coleta = Tables<'coletas'>;
 type ColetaInsert = TablesInsert<'coletas'>;
 type ColetaUpdate = TablesUpdate<'coletas'>;
-type Produto = Tables<'items'>;
+type Item = Tables<'items'>; // Renomeado Produto para Item para consistência com types.ts
+type Profile = Tables<'profiles'>; // Importar o tipo Profile
 
 interface ColetasConcluidasProps {
   selectedYear: string;
@@ -41,6 +44,8 @@ const EditColetaForm = ({ coleta, onUpdate, onCancel }: { coleta: Coleta, onUpda
     telefone: coleta.telefone || '',
     email: coleta.email || '',
     contato: coleta.contato || '',
+    responsavel: coleta.responsavel || '', // Manter este campo para compatibilidade
+    responsible_user_id: coleta.responsible_user_id || null,
   });
 
   const handleInputChange = (field: keyof ColetaUpdate, value: string | number | null) => {
@@ -182,9 +187,11 @@ export const ColetasConcluidas: React.FC<ColetasConcluidasProps> = ({ selectedYe
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [isCollectionStatusUpdateDialogOpen, setIsCollectionStatusUpdateDialogOpen] = useState(false);
   const [selectedCollectionForStatusUpdate, setSelectedCollectionForStatusUpdate] = useState<{ id: string, name: string, status: string } | null>(null);
+  const [isEditResponsibleDialogOpen, setIsEditResponsibleDialogOpen] = useState(false); // Novo estado
+  const [selectedCollectionForResponsible, setSelectedCollectionForResponsible] = useState<{ id: string, name: string, responsibleId: string | null } | null>(null); // Novo estado
 
-  const { data: coletas, isLoading, error } = useQuery<Coleta[], Error>({
-    queryKey: ['coletasConcluidas', user?.id, selectedYear], // Adicionado selectedYear
+  const { data: coletas, isLoading, error } = useQuery<(Coleta & { profiles: Profile | null })[], Error>({
+    queryKey: ['coletasConcluidas', user?.id, selectedYear],
     queryFn: async () => {
       if (!user?.id) return [];
 
@@ -193,20 +200,27 @@ export const ColetasConcluidas: React.FC<ColetasConcluidasProps> = ({ selectedYe
 
       const { data, error } = await supabase
         .from('coletas')
-        .select('*')
+        .select(`
+          *,
+          profiles (
+            first_name,
+            last_name,
+            avatar_url
+          )
+        `)
         .eq('user_id', user.id)
-        .eq('status_coleta', 'concluida') // Filtra apenas coletas concluídas
-        .gte('previsao_coleta', startDate) // Filtrar por previsao_coleta dentro do ano selecionado
+        .eq('status_coleta', 'concluida')
+        .gte('previsao_coleta', startDate)
         .lt('previsao_coleta', endDate);
       
       if (error) throw new Error(error.message);
-      return data;
+      return data as (Coleta & { profiles: Profile | null })[];
     },
     enabled: !!user?.id,
   });
 
-  const { data: produtosForSelectedColeta, isLoading: isLoadingProdutosForColeta, error: produtosForColetaError } = useQuery<Produto[], Error>({
-    queryKey: ['produtosForCollection', selectedColeta?.id],
+  const { data: itemsForSelectedColeta, isLoading: isLoadingItemsForColeta, error: itemsForColetaError } = useQuery<Item[], Error>({
+    queryKey: ['itemsForCollection', selectedColeta?.id],
     queryFn: async () => {
       if (!selectedColeta?.id || !user?.id) return [];
       const { data, error } = await supabase
@@ -232,11 +246,11 @@ export const ColetasConcluidas: React.FC<ColetasConcluidasProps> = ({ selectedYe
       return data;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['coletasConcluidas', user?.id, selectedYear] }); // Invalida a lista de coletas concluídas
-      queryClient.invalidateQueries({ queryKey: ['coletasAtivas', user?.id, selectedYear] }); // Invalida a lista de coletas ativas também
-      queryClient.invalidateQueries({ queryKey: ['dashboardColetasMetrics', user?.id, selectedYear] }); // Invalida as métricas do dashboard
-      queryClient.invalidateQueries({ queryKey: ['productStatusChart', user?.id, selectedYear] }); // Invalida o gráfico de status de produtos
-      queryClient.invalidateQueries({ queryKey: ['collectionStatusChart', user?.id, selectedYear] }); // Invalida o gráfico de rosca
+      queryClient.invalidateQueries({ queryKey: ['coletasConcluidas', user?.id, selectedYear] });
+      queryClient.invalidateQueries({ queryKey: ['coletasAtivas', user?.id, selectedYear] });
+      queryClient.invalidateQueries({ queryKey: ['dashboardColetasMetrics', user?.id, selectedYear] });
+      queryClient.invalidateQueries({ queryKey: ['productStatusChart', user?.id, selectedYear] });
+      queryClient.invalidateQueries({ queryKey: ['collectionStatusChart', user?.id, selectedYear] });
       toast({ title: "Coleta atualizada!", description: "As informações da coleta foram atualizadas com sucesso." });
       setIsEditDialogOpen(false);
       setEditingColeta(null);
@@ -256,10 +270,10 @@ export const ColetasConcluidas: React.FC<ColetasConcluidasProps> = ({ selectedYe
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['coletasConcluidas', user?.id, selectedYear] });
-      queryClient.invalidateQueries({ queryKey: ['coletasAtivas', user?.id, selectedYear] }); // Invalida a lista de coletas ativas também
-      queryClient.invalidateQueries({ queryKey: ['dashboardColetasMetrics', user?.id, selectedYear] }); // Invalida as métricas do dashboard
-      queryClient.invalidateQueries({ queryKey: ['productStatusChart', user?.id, selectedYear] }); // Invalida o gráfico de status de produtos
-      queryClient.invalidateQueries({ queryKey: ['collectionStatusChart', user?.id, selectedYear] }); // Invalida o gráfico de rosca
+      queryClient.invalidateQueries({ queryKey: ['coletasAtivas', user?.id, selectedYear] });
+      queryClient.invalidateQueries({ queryKey: ['dashboardColetasMetrics', user?.id, selectedYear] });
+      queryClient.invalidateQueries({ queryKey: ['productStatusChart', user?.id, selectedYear] });
+      queryClient.invalidateQueries({ queryKey: ['collectionStatusChart', user?.id, selectedYear] });
       toast({ title: "Coleta excluída!", description: "A coleta foi removida com sucesso." });
     },
     onError: (err) => {
@@ -288,6 +302,15 @@ export const ColetasConcluidas: React.FC<ColetasConcluidasProps> = ({ selectedYe
       status: coleta.status_coleta || 'pendente'
     });
     setIsCollectionStatusUpdateDialogOpen(true);
+  };
+
+  const handleOpenEditResponsibleDialog = (coleta: Coleta) => {
+    setSelectedCollectionForResponsible({
+      id: coleta.id,
+      name: coleta.parceiro || 'Coleta',
+      responsibleId: coleta.responsible_user_id || null,
+    });
+    setIsEditResponsibleDialogOpen(true);
   };
 
   const handleSendWhatsApp = (coleta: Coleta) => {
@@ -345,7 +368,9 @@ export const ColetasConcluidas: React.FC<ColetasConcluidasProps> = ({ selectedYe
 
   const filteredColetas = coletas?.filter(coleta => {
     const matchesSearch = (coleta.parceiro?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                           coleta.endereco?.toLowerCase().includes(searchTerm.toLowerCase()));
+                           coleta.endereco?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                           coleta.profiles?.first_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                           coleta.profiles?.last_name?.toLowerCase().includes(searchTerm.toLowerCase()));
     return matchesSearch;
   }) || [];
 
@@ -414,7 +439,7 @@ export const ColetasConcluidas: React.FC<ColetasConcluidasProps> = ({ selectedYe
                 <div className="flex-1 relative">
                   <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
                   <Input
-                    placeholder="Buscar por cliente ou endereço..."
+                    placeholder="Buscar por cliente, endereço ou responsável..."
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
                     className="pl-10"
@@ -454,6 +479,20 @@ export const ColetasConcluidas: React.FC<ColetasConcluidasProps> = ({ selectedYe
                         <div>
                           <strong>{coleta.qtd_aparelhos_solicitado || 0}</strong> produtos - {coleta.modelo_aparelho || 'N/A'}
                         </div>
+                        {coleta.responsible_user_id && coleta.profiles ? (
+                          <div className="flex items-center gap-2">
+                            <Avatar className="h-6 w-6">
+                              <AvatarImage src={coleta.profiles.avatar_url || undefined} />
+                              <AvatarFallback>{coleta.profiles.first_name?.charAt(0)}</AvatarFallback>
+                            </Avatar>
+                            <span className="font-medium">Responsável:</span> {`${coleta.profiles.first_name || ''} ${coleta.profiles.last_name || ''}`.trim()}
+                          </div>
+                        ) : (
+                          <div className="flex items-center gap-2">
+                            <UserIcon className="h-4 w-4" />
+                            <span className="font-medium">Responsável:</span> N/A
+                          </div>
+                        )}
                       </div>
                       
                       {coleta.observacao && (
@@ -523,6 +562,23 @@ export const ColetasConcluidas: React.FC<ColetasConcluidasProps> = ({ selectedYe
                                   <Label className="text-sm font-medium">Tipo de Aparelho (Geral)</Label>
                                   <p className="text-sm text-muted-foreground">{selectedColeta.modelo_aparelho || 'N/A'}</p>
                                 </div>
+                                {selectedColeta.responsible_user_id && (selectedColeta as any).profiles ? (
+                                  <div>
+                                    <Label className="text-sm font-medium">Responsável</Label>
+                                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                                      <Avatar className="h-6 w-6">
+                                        <AvatarImage src={(selectedColeta as any).profiles.avatar_url || undefined} />
+                                        <AvatarFallback>{(selectedColeta as any).profiles.first_name?.charAt(0)}</AvatarFallback>
+                                      </Avatar>
+                                      {`${(selectedColeta as any).profiles.first_name || ''} ${(selectedColeta as any).profiles.last_name || ''}`.trim()}
+                                    </div>
+                                  </div>
+                                ) : (
+                                  <div>
+                                    <Label className="text-sm font-medium">Responsável</Label>
+                                    <p className="text-sm text-muted-foreground">N/A</p>
+                                  </div>
+                                )}
                               </div>
                               <div>
                                 <Label className="text-sm font-medium">Endereço</Label>
@@ -538,37 +594,37 @@ export const ColetasConcluidas: React.FC<ColetasConcluidasProps> = ({ selectedYe
                                   <Package className="h-5 w-5" />
                                   Produtos da Coleta
                                 </h3>
-                                {isLoadingProdutosForColeta ? (
+                                {isLoadingItemsForColeta ? (
                                   <div className="text-center text-muted-foreground">
                                     <div className="w-6 h-6 border-2 border-primary border-t-transparent rounded-full animate-spin mx-auto mb-2" />
                                     <p>Carregando produtos...</p>
                                   </div>
-                                ) : produtosForColetaError ? (
+                                ) : itemsForColetaError ? (
                                   <div className="text-center text-destructive">
-                                    <p>Erro ao carregar produtos: {produtosForColetaError.message}</p>
+                                    <p>Erro ao carregar produtos: {itemsForColetaError.message}</p>
                                   </div>
-                                ) : produtosForSelectedColeta && produtosForSelectedColeta.length > 0 ? (
+                                ) : itemsForSelectedColeta && itemsForSelectedColeta.length > 0 ? (
                                   <div className="space-y-3">
-                                    {produtosForSelectedColeta.map((produto, produtoIndex) => (
-                                      <Card key={produto.id} className="bg-slate-darker/10 border-primary/10 p-3">
+                                    {itemsForSelectedColeta.map((item, itemIndex) => (
+                                      <Card key={item.id} className="bg-slate-darker/10 border-primary/10 p-3">
                                         <CardContent className="p-0">
                                           <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-sm">
                                             <div className="flex items-center gap-2">
                                               <Tag className="h-4 w-4 text-muted-foreground" />
-                                              <span className="font-medium">Código do Produto:</span> {produto.name}
+                                              <span className="font-medium">Código do Produto:</span> {item.name}
                                             </div>
                                             <div className="flex items-center gap-2">
                                               <Box className="h-4 w-4 text-muted-foreground" />
-                                              <span className="font-medium">Modelo:</span> {produto.model || 'N/A'}
+                                              <span className="font-medium">Modelo:</span> {item.model || 'N/A'}
                                             </div>
                                             <div className="flex items-center gap-2 col-span-full">
                                               <ListChecks className="h-4 w-4 text-muted-foreground" />
-                                              <span className="font-medium">Quantidade:</span> {produto.quantity}
+                                              <span className="font-medium">Quantidade:</span> {item.quantity}
                                             </div>
-                                            {produto.description && (
+                                            {item.description && (
                                               <div className="flex items-start gap-2 col-span-full">
                                                 <MessageSquareText className="h-4 w-4 text-muted-foreground mt-1" />
-                                                <span className="font-medium">Descrição:</span> {produto.description}
+                                                <span className="font-medium">Descrição:</span> {item.description}
                                               </div>
                                             )}
                                           </div>
@@ -638,14 +694,24 @@ export const ColetasConcluidas: React.FC<ColetasConcluidasProps> = ({ selectedYe
                         Situação da Coleta
                       </Button>
 
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        className="border-neural text-neural hover:bg-neural/10"
+                        onClick={() => handleOpenEditResponsibleDialog(coleta)}
+                      >
+                        <UserIcon className="mr-1 h-3 w-3" />
+                        Editar Responsável
+                      </Button>
+
                       <Dialog open={isEditDialogOpen && editingColeta?.id === coleta.id} onOpenChange={setIsEditDialogOpen}>
                         <DialogTrigger asChild>
                           <Button 
                             size="sm" 
                             className="bg-gradient-primary hover:bg-gradient-primary/80" 
                             onClick={() => {
-                              setEditingColeta(coleta);
-                              setIsEditDialogOpen(true);
+                                setEditingColeta(coleta);
+                                setIsEditDialogOpen(true);
                             }}
                           >
                             <Edit className="mr-1 h-3 w-3" />
@@ -705,6 +771,15 @@ export const ColetasConcluidas: React.FC<ColetasConcluidasProps> = ({ selectedYe
           currentCollectionStatus={selectedCollectionForStatusUpdate.status}
           isOpen={isCollectionStatusUpdateDialogOpen}
           onClose={() => setIsCollectionStatusUpdateDialogOpen(false)}
+        />
+      )}
+      {selectedCollectionForResponsible && (
+        <EditResponsibleDialog
+          collectionId={selectedCollectionForResponsible.id}
+          collectionName={selectedCollectionForResponsible.name}
+          currentResponsibleUserId={selectedCollectionForResponsible.responsibleId}
+          isOpen={isEditResponsibleDialogOpen}
+          onClose={() => setIsEditResponsibleDialogOpen(false)}
         />
       )}
     </div>

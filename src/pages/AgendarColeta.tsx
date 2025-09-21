@@ -6,7 +6,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { Calendar as CalendarIcon, ArrowLeft, Package, MapPin, Truck, UserPlus } from "lucide-react";
+import { Calendar as CalendarIcon, ArrowLeft, Package, MapPin, Truck, UserPlus, User } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useState } from "react";
 import { useToast } from "@/hooks/use-toast";
@@ -15,16 +15,18 @@ import { supabase } from "@/integrations/supabase/client";
 import type { TablesInsert, Tables } from "@/integrations/supabase/types";
 import { useAuth } from "@/hooks/use-auth";
 import { ClientCombobox } from "@/components/ClientCombobox";
-import { ProductCombobox } from "@/components/ProductCombobox"; // Importar o novo ProductCombobox
+import { ProductCombobox } from "@/components/ProductCombobox";
+import { ResponsibleUserCombobox } from "@/components/ResponsibleUserCombobox"; // Importar o novo combobox
 import { Calendar } from "@/components/ui/calendar";
 import { cn } from "@/lib/utils";
-import { format, parse } from "date-fns"; // Importar parse
+import { format, parse } from "date-fns";
 import { ptBR } from "date-fns/locale";
 
 type ColetaInsert = TablesInsert<'coletas'>;
 type Client = Tables<'clients'>;
 type ClientInsert = TablesInsert<'clients'>;
-type Product = Tables<'products'>; // Importar o tipo Product
+type Product = Tables<'products'>;
+type Profile = Tables<'profiles'>; // Importar o tipo Profile
 
 export const AgendarColeta = () => {
   const navigate = useNavigate();
@@ -42,11 +44,12 @@ export const AgendarColeta = () => {
     cnpj: "",
     contato: "",
     previsao_coleta: "",
-    modelo_aparelho: "", // Agora armazenará o código do produto
+    modelo_aparelho: "",
     qtd_aparelhos_solicitado: 0,
-    status_coleta: "pendente", // ALTERADO: Agora o status padrão é 'pendente'
+    status_coleta: "pendente",
     observacao: "",
     user_id: user?.id || '',
+    responsible_user_id: null, // NOVA COLUNA: Inicializa como null
   });
   const [clientData, setClientData] = useState<ClientInsert>({
     name: "",
@@ -74,6 +77,9 @@ export const AgendarColeta = () => {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['coletas', user?.id] });
       queryClient.invalidateQueries({ queryKey: ['clients', user?.id] });
+      queryClient.invalidateQueries({ queryKey: ['dashboardColetasMetrics', user?.id] }); // Invalida as métricas do dashboard
+      queryClient.invalidateQueries({ queryKey: ['productStatusChart', user?.id] }); // Invalida o gráfico de status de produtos
+      queryClient.invalidateQueries({ queryKey: ['collectionStatusChart', user?.id] }); // Invalida o gráfico de rosca
       toast({
         title: "Coleta agendada com sucesso!",
         description: `Coleta para ${formData.parceiro} agendada para ${new Date(formData.previsao_coleta || '').toLocaleDateString()}.`
@@ -89,10 +95,10 @@ export const AgendarColeta = () => {
         previsao_coleta: "",
         modelo_aparelho: "",
         qtd_aparelhos_solicitado: 0,
-        status_coleta: "pendente", // Reset para 'pendente'
+        status_coleta: "pendente",
         observacao: "",
         user_id: user?.id || '',
-        client_id: undefined,
+        responsible_user_id: null, // Resetar também o responsável
       });
       setIsLoading(false);
     },
@@ -212,6 +218,14 @@ export const AgendarColeta = () => {
     }
   };
 
+  const handleResponsibleUserSelect = (userProfile: Profile | null) => {
+    setFormData(prev => ({
+      ...prev,
+      responsible_user_id: userProfile?.id || null,
+      responsavel: userProfile ? `${userProfile.first_name || ''} ${userProfile.last_name || ''}`.trim() : null,
+    }));
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!user?.id) {
@@ -287,6 +301,8 @@ export const AgendarColeta = () => {
       email: formData.email || null,
       cnpj: formData.cnpj || null,
       contato: formData.contato || null,
+      responsavel: formData.responsavel || null, // Garante que o campo 'responsavel' seja enviado
+      responsible_user_id: formData.responsible_user_id || null, // Garante que o campo 'responsible_user_id' seja enviado
     });
   };
 
@@ -537,6 +553,15 @@ export const AgendarColeta = () => {
                     value={formData.modelo_aparelho || ''}
                     onValueChange={(code) => handleInputChange("modelo_aparelho", code)}
                     onProductSelect={handleProductComboboxSelect}
+                  />
+                </div>
+
+                <div className="space-y-2 mb-4">
+                  <Label htmlFor="responsible_user">Responsável pela Coleta</Label>
+                  <ResponsibleUserCombobox
+                    value={formData.responsible_user_id || null}
+                    onValueChange={(id) => handleInputChange("responsible_user_id", id)}
+                    onUserSelect={handleResponsibleUserSelect}
                   />
                 </div>
 
