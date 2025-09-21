@@ -1,15 +1,14 @@
 import { jsPDF } from 'jspdf'; // Importado como named export
 
-// Garante que jsPDF.API exista antes que jspdf-autotable tente estendê-lo.
-// Esta é uma medida defensiva caso jsPDF não esteja populando .API como esperado em alguns ambientes.
-if (!(jsPDF as any).API) {
-  (jsPDF as any).API = {};
-}
+// Cria uma instância temporária de jsPDF para garantir que o objeto API seja inicializado.
+// Esta é uma solução comum para plugins que dependem de jsPDF.API.
+new jsPDF(); 
 
-// Esta linha garante que jspdf-autotable possa encontrar jsPDF no escopo global,
-// como pode esperar para seu mecanismo de plugin.
+// Garante que jsPDF esteja disponível globalmente para jspdf-autotable.
+// Isso deve acontecer ANTES da importação de 'jspdf-autotable'.
 (window as any).jsPDF = jsPDF; 
-import 'jspdf-autotable'; // Esta importação agora será executada e encontrará window.jsPDF e seu API
+
+import 'jspdf-autotable'; // Esta importação agora será executada e encontrará window.jsPDF com seu API populado.
 
 import { supabase } from "@/integrations/supabase/client";
 import type { Tables } from "@/integrations/supabase/types";
