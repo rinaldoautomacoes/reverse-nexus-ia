@@ -44,7 +44,7 @@ export const AgendarColeta = () => {
     previsao_coleta: "",
     modelo_aparelho: "", // Agora armazenará o código do produto
     qtd_aparelhos_solicitado: 0,
-    status_coleta: "agendada",
+    status_coleta: "pendente", // ALTERADO: Agora o status padrão é 'pendente'
     observacao: "",
     user_id: user?.id || '',
   });
@@ -89,7 +89,7 @@ export const AgendarColeta = () => {
         previsao_coleta: "",
         modelo_aparelho: "",
         qtd_aparelhos_solicitado: 0,
-        status_coleta: "agendada",
+        status_coleta: "pendente", // Reset para 'pendente'
         observacao: "",
         user_id: user?.id || '',
         client_id: undefined,
