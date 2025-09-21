@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Brain, Mail, Lock, Truck, Zap, ArrowLeft, User as UserIcon } from "lucide-react"; // Renomeado User para UserIcon
+import { Brain, Mail, Lock, Truck, Zap, ArrowLeft } from "lucide-react"; // Removido UserIcon, pois o campo username foi removido da UI de cadastro
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import type { User, Session } from '@supabase/supabase-js';
@@ -14,36 +14,27 @@ export const Auth = () => {
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(false);
-  const [loginEmail, setLoginEmail] = useState(""); // Agora é email
+  const [loginEmail, setLoginEmail] = useState("");
   const [loginPassword, setLoginPassword] = useState("");
-  const [signupEmail, setSignupEmail] = useState("");
-  const [signupPassword, setSignupPassword] = useState("");
-  const [signupUsername, setSignupUsername] = useState("");
-  const [signupFirstName, setSignupFirstName] = useState("");
-  const [signupLastName, setSignupLastName] = useState("");
   const navigate = useNavigate();
   const { toast } = useToast();
 
   useEffect(() => {
-    // Set up auth state listener FIRST
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (event, session) => {
         setSession(session);
         setUser(session?.user ?? null);
         
-        // Redirect authenticated users to dashboard
         if (session?.user) {
           navigate('/');
         }
       }
     );
 
-    // THEN check for existing session
     supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session);
       setUser(session?.user ?? null);
       
-      // Redirect if already authenticated
       if (session?.user) {
         navigate('/');
       }
@@ -51,70 +42,6 @@ export const Auth = () => {
 
     return () => subscription.unsubscribe();
   }, [navigate]);
-
-  const handleSignUp = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setLoading(true);
-
-    try {
-      const redirectUrl = `${window.location.origin}/`;
-      
-      const { error } = await supabase.auth.signUp({
-        email: signupEmail,
-        password: signupPassword,
-        options: {
-          emailRedirectTo: redirectUrl,
-          data: {
-            username: signupUsername,
-            first_name: signupFirstName,
-            last_name: signupLastName,
-            role: 'standard', // Define o papel padrão no cadastro
-          }
-        }
-      });
-
-      if (error) {
-        if (error.message.includes("already registered")) {
-          toast({
-            title: "Email já cadastrado",
-            description: "Este email já está registrado. Tente fazer login ou use outro email.",
-            variant: "destructive"
-          });
-        } else if (error.message.includes("profiles_username_key")) {
-          toast({
-            title: "Nome de usuário já existe",
-            description: "Este nome de usuário já está em uso. Por favor, escolha outro.",
-            variant: "destructive"
-          });
-        } else {
-          toast({
-            title: "Erro no cadastro",
-            description: error.message,
-            variant: "destructive"
-          });
-        }
-      } else {
-        toast({
-          title: "Cadastro realizado!",
-          description: "Verifique seu email para confirmar a conta e fazer login.",
-        });
-        // Clear signup form
-        setSignupEmail("");
-        setSignupPassword("");
-        setSignupUsername("");
-        setSignupFirstName("");
-        setSignupLastName("");
-      }
-    } catch (error) {
-      toast({
-        title: "Erro inesperado",
-        description: "Tente novamente em alguns momentos.",
-        variant: "destructive"
-      });
-    } finally {
-      setLoading(false);
-    }
-  };
 
   const handleSignIn = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -137,7 +64,6 @@ export const Auth = () => {
           title: "Login realizado!",
           description: "Bem-vindo ao LogiReverseIA.",
         });
-        // Clear login form
         setLoginEmail("");
         setLoginPassword("");
       }
@@ -190,14 +116,13 @@ export const Auth = () => {
             <CardHeader className="text-center">
               <CardTitle className="text-2xl font-semibold">Acesso à Plataforma</CardTitle>
               <CardDescription>
-                Entre na sua conta ou crie uma nova
+                Entre na sua conta
               </CardDescription>
             </CardHeader>
             <CardContent>
               <Tabs defaultValue="signin" className="w-full">
-                <TabsList className="grid w-full grid-cols-2 mb-6">
+                <TabsList className="grid w-full grid-cols-1 mb-6"> {/* Alterado para grid-cols-1 */}
                   <TabsTrigger value="signin">Entrar</TabsTrigger>
-                  <TabsTrigger value="signup">Cadastrar</TabsTrigger>
                 </TabsList>
 
                 <TabsContent value="signin">
@@ -243,93 +168,6 @@ export const Auth = () => {
                         <Zap className="w-4 h-4 mr-2" />
                       )}
                       Entrar
-                    </Button>
-                  </form>
-                </TabsContent>
-
-                <TabsContent value="signup">
-                  <form onSubmit={handleSignUp} className="space-y-4">
-                    <div className="space-y-2">
-                      <Label htmlFor="signup-email">Email</Label>
-                      <div className="relative">
-                        <Mail className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                        <Input
-                          id="signup-email"
-                          type="email"
-                          placeholder="seu@email.com"
-                          className="pl-10"
-                          value={signupEmail}
-                          onChange={(e) => setSignupEmail(e.target.value)}
-                          required
-                        />
-                      </div>
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="signup-username">Nome de Usuário</Label>
-                      <div className="relative">
-                        <UserIcon className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                        <Input
-                          id="signup-username"
-                          placeholder="Escolha um nome de usuário"
-                          className="pl-10"
-                          value={signupUsername}
-                          onChange={(e) => setSignupUsername(e.target.value)}
-                          required
-                        />
-                      </div>
-                    </div>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <div className="space-y-2">
-                        <Label htmlFor="signup-first-name">Primeiro Nome</Label>
-                        <Input
-                          id="signup-first-name"
-                          placeholder="Seu primeiro nome"
-                          value={signupFirstName}
-                          onChange={(e) => setSignupFirstName(e.target.value)}
-                          required
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="signup-last-name">Sobrenome</Label>
-                        <Input
-                          id="signup-last-name"
-                          placeholder="Seu sobrenome"
-                          value={signupLastName}
-                          onChange={(e) => setSignupLastName(e.target.value)}
-                          required
-                        />
-                      </div>
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="signup-password">Senha</Label>
-                      <div className="relative">
-                        <Lock className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                        <Input
-                          id="signup-password"
-                          type="password"
-                          placeholder="••••••••"
-                          className="pl-10"
-                          value={signupPassword}
-                          onChange={(e) => setSignupPassword(e.target.value)}
-                          required
-                          minLength={6}
-                        />
-                      </div>
-                      <p className="text-xs text-muted-foreground">
-                        Mínimo de 6 caracteres
-                      </p>
-                    </div>
-                    <Button
-                      type="submit"
-                      className="w-full bg-gradient-secondary hover:bg-gradient-secondary/80 glow-effect"
-                      disabled={loading}
-                    >
-                      {loading ? (
-                        <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin mr-2" />
-                      ) : (
-                        <Zap className="w-4 h-4 mr-2" />
-                      )}
-                      Cadastrar
                     </Button>
                   </form>
                 </TabsContent>
