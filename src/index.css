@@ -30,7 +30,7 @@ All colors MUST be HSL.
     --accent: 190 100% 45%;
     --accent-foreground: 225 25% 10%;
 
-    --destructive: 270 80% 65%; /* AI Purple for Pendente */
+    --destructive: 240 80% 40%; /* Deep Blue for Pendente */
     --destructive-foreground: 180 100% 95%;
 
     --border: 225 25% 18%;
@@ -46,8 +46,8 @@ All colors MUST be HSL.
     --darker-slate: 225 20% 4%;
     --ice-white: 180 20% 98%;
     --neural-blue: 220 100% 60%;
-    --ai-purple: 270 80% 65%;
-    --warning-yellow: 50 100% 60%; /* Already yellow, good for Em Trânsito */
+    --ai-purple: 270 80% 65%; /* Mantido como cor customizada, mas não mais para 'destructive' */
+    --warning-yellow: 220 100% 60%; /* Neural Blue for Em Trânsito */
     --success-green: 180 100% 50%; /* Neon Cyan for Concluída/Entregue */
     
     /* Gradients */
@@ -103,7 +103,7 @@ All colors MUST be HSL.
     --accent: 217.2 32.6% 17.5%;
     --accent-foreground: 210 40% 98%;
 
-    --destructive: 0 62.8% 30.6%;
+    --destructive: 0 62.8% 30.6%; /* Mantido o valor original do dark theme para destructive */
     --destructive-foreground: 210 40% 98%;
 
     --border: 217.2 32.6% 17.5%;
