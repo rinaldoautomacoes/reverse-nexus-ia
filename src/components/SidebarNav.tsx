@@ -32,12 +32,6 @@ export const SidebarNav = () => {
   const [isSheetOpen, setIsSheetOpen] = React.useState(false);
   const { isSidebarOpen, toggleSidebar, sidebarWidthClass } = useSidebar();
 
-  const handleLogout = async () => {
-    await supabase.auth.signOut();
-    navigate('/auth');
-    if (isMobile) setIsSheetOpen(false);
-  };
-
   const navItems = [
     {
       label: 'Dashboard',
@@ -111,13 +105,6 @@ export const SidebarNav = () => {
       path: '/user-management',
       roles: ['admin'],
     },
-    {
-      label: 'Sair',
-      icon: LogOut,
-      path: '/auth', // Redireciona para a página de autenticação após o logout
-      roles: ['standard', 'admin'], // Visível para usuários logados
-      action: handleLogout, // Ação de logout
-    },
   ];
 
   const renderNavContent = (isCollapsed: boolean) => (
@@ -143,10 +130,10 @@ export const SidebarNav = () => {
                   navigate.pathname === item.path && 'bg-primary/10 text-primary font-semibold',
                   isCollapsed && 'justify-center px-0'
                 )}
-                onClick={item.action || (() => {
+                onClick={() => {
                   navigate(item.path);
                   if (isMobile) setIsSheetOpen(false);
-                })}
+                }}
               >
                 <Icon className={cn(isCollapsed ? 'h-6 w-6' : 'mr-3 h-5 w-5')} />
                 {!isCollapsed && item.label}

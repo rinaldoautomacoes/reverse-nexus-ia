@@ -1,172 +1,18 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { TrendingUp, BarChart3, Package, User } from "lucide-react"; // Added Package and User icons
-import { useQuery } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
-import type { Tables } from "@/integrations/supabase/types";
-import { useAuth } from "@/hooks/use-auth";
-import {
-  BarChart,
-  Bar,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip,
-  Legend,
-  ResponsiveContainer,
-  LabelList,
-} from "recharts";
-import { format, parseISO, startOfMonth, endOfMonth, isSameMonth } from "date-fns";
-import { ptBR } from "date-fns/locale";
-import React from "react";
-
-type Coleta = Tables<'coletas'>;
-
-// Custom Tooltip for Recharts
-const CustomTooltip = ({ active, payload, label }: any) => {
-  if (active && payload && payload.length) {
-    const data = payload[0].payload; // Access the full data object for the month
-    return (
-      <div className="bg-card p-3 rounded-md border border-border shadow-lg text-sm">
-        <p className="font-semibold text-primary mb-1">{label}</p>
-        <p className="text-muted-foreground">Coletas Totais: <span className="text-foreground">{data.totalCollections}</span></p>
-        <p className="text-muted-foreground">Coletas Processadas: <span className="text-foreground">{data.processedCollections}</span></p>
-        <p className="text-muted-foreground">Total de Produtos: <span className="text-foreground">{data.totalProducts}</span></p>
-        <p className="text-muted-foreground">Clientes Únicos: <span className="text-foreground">{data.uniqueClients}</span></p>
-        {data.efficiency && <p className="text-muted-foreground">Eficiência: <span className="text-foreground">{data.efficiency.toFixed(1)}%</span></p>}
-      </div>
-    );
-  }
-  return null;
-};
+import { TrendingUp, BarChart3, PieChart } from "lucide-react";
 
 export const PerformanceChart = () => {
-  const { user } = useAuth();
+  const chartData = [
+    { month: "Jan", collections: 1200, processed: 1150, efficiency: 95.8 },
+    { month: "Fev", collections: 1350, processed: 1280, efficiency: 94.8 },
+    { month: "Mar", collections: 1500, processed: 1445, efficiency: 96.3 },
+    { month: "Abr", collections: 1680, processed: 1620, efficiency: 96.4 },
+    { month: "Mai", collections: 1850, processed: 1790, efficiency: 96.8 },
+    { month: "Jun", collections: 2100, processed: 2050, efficiency: 97.6 }
+  ];
 
-  const { data: coletas, isLoading, error } = useQuery<Coleta[], Error>({
-    queryKey: ['performanceColetas', user?.id],
-    queryFn: async () => {
-      if (!user?.id) return [];
-      const { data, error } = await supabase
-        .from('coletas')
-        .select('created_at, status_coleta, qtd_aparelhos_solicitado, parceiro')
-        .eq('user_id', user.id)
-        .order('created_at', { ascending: true });
-      if (error) throw new Error(error.message);
-      return data;
-    },
-    enabled: !!user?.id,
-  });
-
-  // Aggregate data for the chart
-  const aggregatedChartData = React.useMemo(() => {
-    if (!coletas) return [];
-
-    const monthlyDataMap = new Map<string, {
-      month: string;
-      totalCollections: number;
-      processedCollections: number;
-      totalProducts: number;
-      uniqueClients: Set<string>;
-      efficiency: number;
-    }>();
-
-    const months = Array.from({ length: 6 }).map((_, i) => {
-      const date = new Date();
-      date.setMonth(date.getMonth() - (5 - i)); // Go back 5, 4, 3, 2, 1, 0 months
-      return format(date, 'MMM', { locale: ptBR });
-    });
-
-    coletas.forEach(coleta => {
-      const createdAtDate = parseISO(coleta.created_at);
-      const monthKey = format(createdAtDate, 'MMM', { locale: ptBR });
-
-      if (!monthlyDataMap.has(monthKey)) {
-        monthlyDataMap.set(monthKey, {
-          month: monthKey,
-          totalCollections: 0,
-          processedCollections: 0,
-          totalProducts: 0,
-          uniqueClients: new Set<string>(),
-          efficiency: 0,
-        });
-      }
-
-      const entry = monthlyDataMap.get(monthKey)!;
-      entry.totalCollections += 1;
-      entry.totalProducts += (coleta.qtd_aparelhos_solicitado || 0);
-      if (coleta.parceiro) {
-        entry.uniqueClients.add(coleta.parceiro);
-      }
-      if (coleta.status_coleta === 'concluida') {
-        entry.processedCollections += 1;
-      }
-    });
-
-    // Fill in missing months and calculate efficiency
-    const finalChartData = months.map(month => {
-      const data = monthlyDataMap.get(month) || {
-        month,
-        totalCollections: 0,
-        processedCollections: 0,
-        totalProducts: 0,
-        uniqueClients: new Set<string>(),
-        efficiency: 0,
-      };
-      data.efficiency = data.totalCollections > 0 ? (data.processedCollections / data.totalCollections) * 100 : 0;
-      return {
-        ...data,
-        uniqueClients: data.uniqueClients.size, // Convert Set to size for display
-      };
-    });
-
-    return finalChartData;
-  }, [coletas]);
-
-  // Calculate summary metrics for below the chart
-  const summaryMetrics = React.useMemo(() => {
-    if (!coletas) return {
-      totalProducts: 0,
-      pendingProducts: 0,
-      inTransitProducts: 0,
-      deliveredProducts: 0,
-    };
-
-    const totalProducts = coletas.reduce((sum, c) => sum + (c.qtd_aparelhos_solicitado || 0), 0);
-    const pendingProducts = coletas.filter(c => c.status_coleta === 'pendente').reduce((sum, c) => sum + (c.qtd_aparelhos_solicitado || 0), 0);
-    const inTransitProducts = coletas.filter(c => c.status_coleta === 'agendada').reduce((sum, c) => sum + (c.qtd_aparelhos_solicitado || 0), 0);
-    const deliveredProducts = coletas.filter(c => c.status_coleta === 'concluida').reduce((sum, c) => sum + (c.qtd_aparelhos_solicitado || 0), 0);
-
-    return {
-      totalProducts,
-      pendingProducts,
-      inTransitProducts,
-      deliveredProducts,
-    };
-  }, [coletas]);
-
-  if (isLoading) {
-    return (
-      <Card className="card-futuristic border-0 animate-pulse">
-        <CardHeader>
-          <CardTitle className="h-6 w-48 bg-muted rounded" />
-        </CardHeader>
-        <CardContent className="flex items-center justify-center h-64">
-          <div className="w-16 h-16 border-4 border-primary border-t-transparent rounded-full animate-spin" />
-        </CardContent>
-      </Card>
-    );
-  }
-
-  if (error) {
-    return (
-      <Card className="card-futuristic border-0">
-        <CardContent className="p-6 text-center text-destructive">
-          Erro ao carregar dados de performance: {error.message}
-        </CardContent>
-      </Card>
-    );
-  }
+  const maxCollections = Math.max(...chartData.map(d => d.collections));
 
   return (
     <Card className="card-futuristic border-0">
@@ -179,13 +25,12 @@ export const PerformanceChart = () => {
             <p className="text-sm text-muted-foreground">Últimos 6 meses</p>
           </div>
           <div className="flex gap-2">
-            {/* Placeholder for overall trend, can be calculated from aggregatedChartData */}
             <Badge variant="secondary" className="bg-primary/20 text-primary">
               <TrendingUp className="w-3 h-3 mr-1" />
               +24%
             </Badge>
             <Badge variant="secondary" className="bg-neural/20 text-neural">
-              {aggregatedChartData.length > 0 ? aggregatedChartData[aggregatedChartData.length - 1].efficiency.toFixed(1) : '0.0'}% Eficiência
+              97.6% Eficiência
             </Badge>
           </div>
         </div>
@@ -194,32 +39,68 @@ export const PerformanceChart = () => {
         <div className="space-y-6">
           {/* Chart Visualization */}
           <div className="h-64 relative">
-            <ResponsiveContainer width="100%" height="100%">
-              <BarChart
-                data={aggregatedChartData}
-                margin={{
-                  top: 20,
-                  right: 30,
-                  left: 20,
-                  bottom: 5,
-                }}
-              >
-                <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border)/0.2)" />
-                <XAxis dataKey="month" stroke="hsl(var(--muted-foreground))" />
-                <YAxis stroke="hsl(var(--muted-foreground))" />
-                <Tooltip content={<CustomTooltip />} />
-                <Legend />
-                <Bar dataKey="totalCollections" name="Coletas Totais" fill="hsl(var(--neon-cyan))" radius={[4, 4, 0, 0]}>
-                  <LabelList
-                    dataKey="totalProducts"
-                    position="top"
-                    formatter={(value: number) => `${value} itens`} // Show total products as label
-                    className="text-xs fill-foreground"
-                  />
-                </Bar>
-                <Bar dataKey="processedCollections" name="Coletas Processadas" fill="hsl(var(--accent))" radius={[4, 4, 0, 0]} />
-              </BarChart>
-            </ResponsiveContainer>
+            <div className="absolute inset-0 bg-gradient-dark rounded-lg border border-border/50 p-4">
+              {/* Chart Grid */}
+              <div className="h-full relative">
+                {/* Grid Lines */}
+                <div className="absolute inset-0">
+                  {[0, 25, 50, 75, 100].map((percentage) => (
+                    <div 
+                      key={percentage}
+                      className="absolute w-full border-t border-border/20"
+                      style={{ top: `${100 - percentage}%` }}
+                    />
+                  ))}
+                </div>
+                
+                {/* Chart Bars */}
+                <div className="h-full flex items-end justify-between gap-2 relative z-10">
+                  {chartData.map((data, index) => {
+                    const height = (data.collections / maxCollections) * 100;
+                    const processedHeight = (data.processed / maxCollections) * 100;
+                    
+                    return (
+                      <div key={data.month} className="flex-1 flex flex-col items-center">
+                        {/* Bar Container */}
+                        <div className="relative w-full mb-2" style={{ height: '180px' }}>
+                          {/* Collections Bar */}
+                          <div 
+                            className="absolute bottom-0 w-full bg-gradient-primary rounded-t-md animate-slide-up"
+                            style={{ 
+                              height: `${height}%`,
+                              animationDelay: `${index * 200}ms`
+                            }}
+                          />
+                          {/* Processed Bar */}
+                          <div 
+                            className="absolute bottom-0 w-full bg-accent/80 rounded-t-md animate-slide-up"
+                            style={{ 
+                              height: `${processedHeight}%`,
+                              animationDelay: `${index * 200 + 100}ms`
+                            }}
+                          />
+                          
+                          {/* Efficiency Indicator */}
+                          <div 
+                            className="absolute -top-6 left-1/2 transform -translate-x-1/2 text-xs"
+                            style={{ animationDelay: `${index * 200 + 300}ms` }}
+                          >
+                            <span className="text-neural font-medium">
+                              {data.efficiency}%
+                            </span>
+                          </div>
+                        </div>
+                        
+                        {/* Month Label */}
+                        <span className="text-xs text-muted-foreground font-medium">
+                          {data.month}
+                        </span>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            </div>
           </div>
 
           {/* Legend and Stats */}
@@ -245,32 +126,6 @@ export const PerformanceChart = () => {
               <div>
                 <p className="text-sm font-medium">Eficiência IA</p>
                 <p className="text-xs text-muted-foreground">Taxa de otimização</p>
-              </div>
-            </div>
-          </div>
-
-          {/* Summary of Products */}
-          <div className="border-t border-border/30 pt-4 mt-6 space-y-2">
-            <h3 className="text-lg font-semibold gradient-text flex items-center gap-2">
-              <Package className="h-5 w-5" />
-              Resumo de Produtos
-            </h3>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 text-sm">
-              <div className="p-3 bg-secondary/10 rounded-lg flex items-center gap-2">
-                <span className="font-medium">Total Geral:</span>
-                <span className="text-foreground font-bold">{summaryMetrics.totalProducts} itens</span>
-              </div>
-              <div className="p-3 bg-neural/10 rounded-lg flex items-center gap-2">
-                <span className="font-medium">Pendentes:</span>
-                <span className="text-neural font-bold">{summaryMetrics.pendingProducts} itens</span>
-              </div>
-              <div className="p-3 bg-warning-yellow/10 rounded-lg flex items-center gap-2">
-                <span className="font-medium">Em Trânsito:</span>
-                <span className="text-warning-yellow font-bold">{summaryMetrics.inTransitProducts} itens</span>
-              </div>
-              <div className="p-3 bg-primary/10 rounded-lg flex items-center gap-2">
-                <span className="font-medium">Entregues:</span>
-                <span className="text-primary font-bold">{summaryMetrics.deliveredProducts} itens</span>
               </div>
             </div>
           </div>
