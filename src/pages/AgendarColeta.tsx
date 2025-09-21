@@ -18,7 +18,7 @@ import { ClientCombobox } from "@/components/ClientCombobox";
 import { ProductCombobox } from "@/components/ProductCombobox"; // Importar o novo ProductCombobox
 import { Calendar } from "@/components/ui/calendar";
 import { cn } from "@/lib/utils";
-import { format } from "date-fns";
+import { format, parse } from "date-fns"; // Importar parse
 import { ptBR } from "date-fns/locale";
 
 type ColetaInsert = TablesInsert<'coletas'>;
@@ -501,7 +501,7 @@ export const AgendarColeta = () => {
                         >
                           <CalendarIcon className="mr-2 h-4 w-4" />
                           {formData.previsao_coleta ? (
-                            format(new Date(formData.previsao_coleta), "dd/MM/yyyy", { locale: ptBR })
+                            format(parse(formData.previsao_coleta, "yyyy-MM-dd", new Date()), "dd/MM/yyyy", { locale: ptBR })
                           ) : (
                             <span>Selecione uma data</span>
                           )}
@@ -510,7 +510,7 @@ export const AgendarColeta = () => {
                       <PopoverContent className="w-auto p-0">
                         <Calendar
                           mode="single"
-                          selected={formData.previsao_coleta ? new Date(formData.previsao_coleta) : undefined}
+                          selected={formData.previsao_coleta ? parse(formData.previsao_coleta, "yyyy-MM-dd", new Date()) : undefined}
                           onSelect={(date) => handleInputChange("previsao_coleta", date ? format(date, "yyyy-MM-dd") : "")}
                           initialFocus
                           locale={ptBR}
