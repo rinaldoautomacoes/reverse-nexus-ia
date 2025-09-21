@@ -22,7 +22,7 @@ import { CollectionStatusUpdateDialog } from "@/components/CollectionStatusUpdat
 type Coleta = Tables<'coletas'>;
 type ColetaInsert = TablesInsert<'coletas'>;
 type ColetaUpdate = TablesUpdate<'coletas'>;
-type Item = Tables<'items'>; // Importar o tipo Item
+type Produto = Tables<'items'>; // Alterado de Item para Produto
 
 const EditColetaForm = ({ coleta, onUpdate, onCancel }: { coleta: Coleta, onUpdate: (coleta: ColetaUpdate) => void, onCancel: () => void }) => {
   const [formData, setFormData] = useState<ColetaUpdate>({
@@ -200,13 +200,13 @@ const Coletas = () => {
     enabled: !!user?.id,
   });
 
-  // Nova query para buscar os itens de uma coleta específica
-  const { data: itemsForSelectedColeta, isLoading: isLoadingItemsForColeta, error: itemsForColetaError } = useQuery<Item[], Error>({
-    queryKey: ['itemsForCollection', selectedColeta?.id],
+  // Nova query para buscar os produtos de uma coleta específica
+  const { data: produtosForSelectedColeta, isLoading: isLoadingProdutosForColeta, error: produtosForColetaError } = useQuery<Produto[], Error>({
+    queryKey: ['produtosForCollection', selectedColeta?.id], // Alterado queryKey
     queryFn: async () => {
       if (!selectedColeta?.id || !user?.id) return [];
       const { data, error } = await supabase
-        .from('items')
+        .from('items') // A tabela 'items' armazena os produtos associados às coletas
         .select('name, description, quantity, model') // Incluindo 'model' para o código
         .eq('collection_id', selectedColeta.id)
         .eq('user_id', user.id); // Garantir RLS
@@ -524,43 +524,43 @@ const Coletas = () => {
                                 <p className="text-sm text-muted-foreground">{selectedColeta.observacao || "Nenhuma observação"}</p>
                               </div>
 
-                              {/* Seção de Itens da Coleta */}
+                              {/* Seção de Produtos da Coleta */}
                               <div className="space-y-4 mt-6">
                                 <h3 className="text-lg font-semibold flex items-center gap-2 gradient-text">
                                   <Package className="h-5 w-5" />
-                                  Itens da Coleta
+                                  Produtos da Coleta
                                 </h3>
-                                {isLoadingItemsForColeta ? (
+                                {isLoadingProdutosForColeta ? (
                                   <div className="text-center text-muted-foreground">
                                     <div className="w-6 h-6 border-2 border-primary border-t-transparent rounded-full animate-spin mx-auto mb-2" />
-                                    <p>Carregando itens...</p>
+                                    <p>Carregando produtos...</p>
                                   </div>
-                                ) : itemsForColetaError ? (
+                                ) : produtosForColetaError ? (
                                   <div className="text-center text-destructive">
-                                    <p>Erro ao carregar itens: {itemsForColetaError.message}</p>
+                                    <p>Erro ao carregar produtos: {produtosForColetaError.message}</p>
                                   </div>
-                                ) : itemsForSelectedColeta && itemsForSelectedColeta.length > 0 ? (
+                                ) : produtosForSelectedColeta && produtosForSelectedColeta.length > 0 ? (
                                   <div className="space-y-3">
-                                    {itemsForSelectedColeta.map((item, itemIndex) => (
-                                      <Card key={item.id} className="bg-slate-darker/10 border-primary/10 p-3">
+                                    {produtosForSelectedColeta.map((produto, produtoIndex) => ( // Alterado item para produto
+                                      <Card key={produto.id} className="bg-slate-darker/10 border-primary/10 p-3">
                                         <CardContent className="p-0">
                                           <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-sm">
                                             <div className="flex items-center gap-2">
                                               <Tag className="h-4 w-4 text-muted-foreground" />
-                                              <span className="font-medium">Código:</span> {item.name}
+                                              <span className="font-medium">Código do Produto:</span> {produto.name}
                                             </div>
                                             <div className="flex items-center gap-2">
                                               <Box className="h-4 w-4 text-muted-foreground" />
-                                              <span className="font-medium">Modelo:</span> {item.model || 'N/A'}
+                                              <span className="font-medium">Modelo:</span> {produto.model || 'N/A'}
                                             </div>
                                             <div className="flex items-center gap-2 col-span-full">
                                               <ListChecks className="h-4 w-4 text-muted-foreground" />
-                                              <span className="font-medium">Quantidade:</span> {item.quantity}
+                                              <span className="font-medium">Quantidade:</span> {produto.quantity}
                                             </div>
-                                            {item.description && (
+                                            {produto.description && (
                                               <div className="flex items-start gap-2 col-span-full">
                                                 <MessageSquareText className="h-4 w-4 text-muted-foreground mt-1" />
-                                                <span className="font-medium">Descrição:</span> {item.description}
+                                                <span className="font-medium">Descrição:</span> {produto.description}
                                               </div>
                                             )}
                                           </div>
@@ -571,7 +571,7 @@ const Coletas = () => {
                                 ) : (
                                   <div className="text-center text-muted-foreground">
                                     <Package className="h-10 w-10 mx-auto mb-2" />
-                                    <p>Nenhum item associado a esta coleta.</p>
+                                    <p>Nenhum produto associado a esta coleta.</p>
                                   </div>
                                 )}
                               </div>
