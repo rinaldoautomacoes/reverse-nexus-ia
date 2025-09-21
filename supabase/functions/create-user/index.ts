@@ -51,7 +51,7 @@ serve(async (req) => {
     }
 
     // If the caller is an admin, proceed to create the new user
-    const { email, password, first_name, last_name, role } = await req.json();
+    const { email, password, first_name, last_name, role, avatar_url } = await req.json(); // Adicionado avatar_url
 
     if (!email || !password || !first_name || !last_name || !role) {
       return new Response('Bad Request: Missing required fields (email, password, first_name, last_name, role)', { status: 400, headers: corsHeaders });
@@ -67,7 +67,7 @@ serve(async (req) => {
       email,
       password,
       email_confirm: true, // Automatically confirm email for admin-created users
-      user_metadata: { first_name, last_name, role },
+      user_metadata: { first_name, last_name, role, avatar_url }, // Passa avatar_url para user_metadata
     });
 
     if (createUserError) {
@@ -79,7 +79,7 @@ serve(async (req) => {
     }
 
     // The handle_new_user trigger will automatically create the profile in public.profiles
-    // with the role from user_metadata.
+    // with the role and avatar_url from user_metadata.
 
     return new Response(JSON.stringify({ message: 'User created successfully', user: newUser.user?.id }), {
       status: 201,

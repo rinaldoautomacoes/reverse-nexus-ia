@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { ArrowLeft, UserPlus, Mail, Lock, User, Briefcase } from "lucide-react";
+import { ArrowLeft, UserPlus, Mail, Lock, User, Briefcase, Image as ImageIcon, Upload, Loader2, XCircle } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
@@ -13,19 +13,70 @@ import { useAuth } from "@/hooks/use-auth";
 export const UserManagement = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
-  const { session } = useAuth(); // Precisamos do token da sessão para a Edge Function
+  const { session, user: currentUser } = useAuth(); // Renomeado user para currentUser para evitar conflito
   const [isLoading, setIsLoading] = useState(false);
+  const [isUploading, setIsUploading] = useState(false);
+  const [imageFile, setImageFile] = useState<File | null>(null);
+  const [imagePreviewUrl, setImagePreviewUrl] = useState<string | null>(null);
   const [formData, setFormData] = useState({
     email: "",
     password: "",
     first_name: "",
     last_name: "",
-    username: "", // Mantido no estado para ser enviado ao user_metadata, mas sem input visível
     role: "standard",
+    avatar_url: "", // Adicionado campo para URL do avatar
   });
 
   const handleInputChange = (field: string, value: string) => {
     setFormData(prev => ({ ...prev, [field]: value }));
+  };
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      setImageFile(file);
+      setImagePreviewUrl(URL.createObjectURL(file));
+    } else {
+      setImageFile(null);
+      setImagePreviewUrl(null);
+    }
+  };
+
+  const handleRemoveImage = () => {
+    setImageFile(null);
+    setImagePreviewUrl(null);
+    handleInputChange("avatar_url", ""); // Limpa a URL do avatar no formulário
+  };
+
+  const uploadImage = async (file: File): Promise<string | null> => {
+    if (!currentUser?.id) {
+      toast({ title: "Erro de autenticação", description: "Usuário não logado.", variant: "destructive" });
+      return null;
+    }
+
+    setIsUploading(true);
+    const fileExtension = file.name.split('.').pop();
+    const filePath = `${currentUser.id}/avatars/${Date.now()}.${fileExtension}`; // Usar um bucket 'avatars'
+
+    const { data, error } = await supabase.storage
+      .from('avatars') // Nome do bucket para avatares
+      .upload(filePath, file, {
+        cacheControl: '3600',
+        upsert: false,
+      });
+
+    setIsUploading(false);
+
+    if (error) {
+      toast({ title: "Erro no upload da imagem", description: error.message, variant: "destructive" });
+      return null;
+    }
+
+    const { data: publicUrlData } = supabase.storage
+      .from('avatars')
+      .getPublicUrl(filePath);
+    
+    return publicUrlData.publicUrl;
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -42,10 +93,23 @@ export const UserManagement = () => {
       return;
     }
 
+    let finalAvatarUrl = formData.avatar_url;
+
+    if (imageFile) {
+      const uploadedUrl = await uploadImage(imageFile);
+      if (uploadedUrl) {
+        finalAvatarUrl = uploadedUrl;
+      } else {
+        // Se o upload falhou, impede o envio do formulário
+        setIsLoading(false);
+        return;
+      }
+    }
+
     try {
       // Invoke the Edge Function
       const { data, error } = await supabase.functions.invoke('create-user', {
-        body: JSON.stringify(formData),
+        body: JSON.stringify({ ...formData, avatar_url: finalAvatarUrl }),
         headers: {
           'Authorization': `Bearer ${session.access_token}`,
           'Content-Type': 'application/json',
@@ -67,9 +131,11 @@ export const UserManagement = () => {
         password: "",
         first_name: "",
         last_name: "",
-        username: "",
         role: "standard",
+        avatar_url: "",
       });
+      setImageFile(null);
+      setImagePreviewUrl(null);
 
     } catch (error: any) {
       console.error("Erro ao criar usuário:", error);
@@ -145,22 +211,6 @@ export const UserManagement = () => {
                   </div>
                 </div>
 
-                {/* O campo de username foi removido da UI, mas ainda é enviado no metadata */}
-                {/* <div className="space-y-2">
-                  <Label htmlFor="username">Nome de Usuário</Label>
-                  <div className="relative">
-                    <User className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                    <Input
-                      id="username"
-                      placeholder="Nome de usuário único"
-                      className="pl-10"
-                      value={formData.username}
-                      onChange={(e) => handleInputChange("username", e.target.value)}
-                      required
-                    />
-                  </div>
-                </div> */}
-
                 <div className="space-y-2">
                   <Label htmlFor="email">Email</Label>
                   <div className="relative">
@@ -198,6 +248,45 @@ export const UserManagement = () => {
                 </div>
 
                 <div className="space-y-2">
+                  <Label htmlFor="avatar_url">Foto de Perfil</Label>
+                  <div className="flex items-center gap-2">
+                    <Input
+                      id="avatar_url"
+                      type="file"
+                      accept="image/*"
+                      onChange={handleFileChange}
+                      className="flex-1"
+                      disabled={isUploading || isLoading}
+                    />
+                    {imagePreviewUrl && (
+                      <Button 
+                        type="button" 
+                        variant="outline" 
+                        size="icon" 
+                        onClick={handleRemoveImage}
+                        disabled={isUploading || isLoading}
+                      >
+                        <XCircle className="h-4 w-4 text-destructive" />
+                      </Button>
+                    )}
+                  </div>
+                  {imagePreviewUrl && (
+                    <div className="mt-2 relative w-24 h-24 rounded-full border border-border overflow-hidden">
+                      <img 
+                        src={imagePreviewUrl} 
+                        alt="Pré-visualização do avatar" 
+                        className="w-full h-full object-cover" 
+                      />
+                      {isUploading && (
+                        <div className="absolute inset-0 flex items-center justify-center bg-background/70">
+                          <Loader2 className="h-6 w-6 animate-spin text-primary" />
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
+
+                <div className="space-y-2">
                   <Label htmlFor="role">Papel (Role)</Label>
                   <div className="relative">
                     <Briefcase className="absolute left-3 top-3 h-4 w-4 text-muted-foreground z-10" />
@@ -217,9 +306,9 @@ export const UserManagement = () => {
                   <Button
                     type="submit"
                     className="flex-1 bg-gradient-primary hover:bg-gradient-primary/80 glow-effect"
-                    disabled={isLoading}
+                    disabled={isLoading || isUploading}
                   >
-                    {isLoading ? (
+                    {isLoading || isUploading ? (
                       <div className="w-4 h-4 border-2 border-primary-foreground border-t-transparent rounded-full animate-spin mr-2" />
                     ) : (
                       <UserPlus className="mr-2 h-4 w-4" />
@@ -231,6 +320,7 @@ export const UserManagement = () => {
                     variant="outline"
                     onClick={() => navigate('/')}
                     className="flex-1 border-accent text-accent hover:bg-accent/10"
+                    disabled={isLoading || isUploading}
                   >
                     Cancelar
                   </Button>
