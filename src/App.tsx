@@ -17,11 +17,12 @@ import { ProductManagement } from "./pages/ProductManagement";
 import { Debug } from "./pages/Debug";
 import { AuthProvider } from "./hooks/use-auth";
 import { ProtectedRoute } from "./components/ProtectedRoute";
-import { ErrorBoundary } from "./components/ErrorBoundary"; // Importação corrigida
+import { ErrorBoundary } from "./components/ErrorBoundary";
 import { useIsMobile } from "./hooks/use-mobile";
 import { SidebarProvider, useSidebar } from "./contexts/SidebarContext";
 import { cn } from "./lib/utils";
 import { useState } from "react";
+import { SidebarNav } from "./components/SidebarNav"; // Importação adicionada
 
 const queryClient = new QueryClient();
 
@@ -50,7 +51,7 @@ const AppLayout = () => {
 
   return (
     <div className="flex min-h-screen bg-background ai-pattern">
-      <SidebarNav selectedYear={selectedYear} setSelectedYear={setSelectedYear} /> {/* Passar props para SidebarNav */}
+      <SidebarNav selectedYear={selectedYear} setSelectedYear={setSelectedYear} />
 
       <main className={cn("flex-1 transition-all duration-300 ease-in-out", isMobile ? 'ml-0' : mainContentMarginClass)}>
         <Routes>
