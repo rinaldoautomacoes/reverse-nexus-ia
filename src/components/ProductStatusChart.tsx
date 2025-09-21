@@ -10,35 +10,29 @@ import { ptBR } from "date-fns/locale";
 import { useEffect } from "react";
 import { useToast } from "@/hooks/use-toast";
 
-type Item = Tables<'items'>;
-type Coleta = Tables<'coletas'>; // Importar o tipo Coleta
-
-// Definir um tipo para o item com o status da coleta aninhado
-type ItemWithColetaStatus = Item & {
-  coletas: Pick<Coleta, 'status_coleta'> | null;
-};
+// Removido o tipo Item, pois agora usaremos Coleta diretamente
+type Coleta = Tables<'coletas'>;
 
 export const ProductStatusChart = () => {
   const { user } = useAuth();
   const { toast } = useToast();
 
-  const { data: items, isLoading, error } = useQuery<ItemWithColetaStatus[], Error>({
+  // Alterado a query para buscar dados da tabela 'coletas'
+  const { data: coletas, isLoading, error } = useQuery<Coleta[], Error>({
     queryKey: ['productStatusChart', user?.id],
     queryFn: async () => {
       if (!user?.id) return [];
       const { data, error } = await supabase
-        .from('items')
+        .from('coletas') // Buscando da tabela 'coletas'
         .select(`
           created_at,
-          quantity,
-          status,
-          collection_id,
-          coletas (status_coleta)
+          qtd_aparelhos_solicitado,
+          status_coleta
         `)
         .eq('user_id', user.id)
         .order('created_at', { ascending: true });
       if (error) throw new Error(error.message);
-      return data as ItemWithColetaStatus[];
+      return data;
     },
     enabled: !!user?.id,
   });
@@ -46,22 +40,23 @@ export const ProductStatusChart = () => {
   useEffect(() => {
     if (error) {
       toast({
-        title: "Erro ao carregar dados dos produtos",
+        title: "Erro ao carregar dados das coletas para o gráfico de produtos",
         description: error.message,
         variant: "destructive",
       });
     }
   }, [error, toast]);
 
-  const processItemsData = (itemsData: ItemWithColetaStatus[] | undefined) => {
-    if (!itemsData || itemsData.length === 0) {
+  // Renomeado e ajustado a função de processamento para trabalhar com Coleta[]
+  const processColetasData = (coletasData: Coleta[] | undefined) => {
+    if (!coletasData || coletasData.length === 0) {
       return { chartData: [], totalItems: 0, totalPendente: 0, totalEmTransito: 0, totalEntregues: 0 };
     }
 
     const monthlyDataMap = new Map<string, { pendente: number; em_transito: number; entregues: number }>();
     const allMonths: string[] = [];
 
-    // Get the last 6 months
+    // Pega os últimos 6 meses
     const today = new Date();
     for (let i = 5; i >= 0; i--) {
       const month = startOfMonth(new Date(today.getFullYear(), today.getMonth() - i));
@@ -74,57 +69,41 @@ export const ProductStatusChart = () => {
     let totalEmTransito = 0;
     let totalEntregues = 0;
 
-    itemsData.forEach(item => {
-      const itemDate = parseISO(item.created_at);
-      const itemMonthKey = format(startOfMonth(itemDate), 'MMM', { locale: ptBR });
+    coletasData.forEach(coleta => { // Iterando sobre as coletas
+      const coletaDate = parseISO(coleta.created_at);
+      const coletaMonthKey = format(startOfMonth(coletaDate), 'MMM', { locale: ptBR });
+      const quantity = coleta.qtd_aparelhos_solicitado || 0; // Usando a quantidade da coleta
 
-      let effectiveStatus: 'pendente' | 'em_transito' | 'entregues' = 'pendente'; // Default
+      let effectiveStatus: 'pendente' | 'em_transito' | 'entregues' = 'pendente'; // Padrão
 
-      // Prioriza o status da coleta se o item estiver associado a uma coleta
-      if (item.collection_id && item.coletas?.status_coleta) {
-        switch (item.coletas.status_coleta) {
-          case 'pendente':
-            effectiveStatus = 'pendente';
-            break;
-          case 'agendada': // Coleta 'agendada' significa produto 'em_transito'
-            effectiveStatus = 'em_transito';
-            break;
-          case 'concluida': // Coleta 'concluida' significa produto 'entregues'
-            effectiveStatus = 'entregues';
-            break;
-          default:
-            effectiveStatus = 'pendente'; // Fallback
-        }
-      } else {
-        // Se não houver coleta associada ou status da coleta, usa o status do próprio item
-        switch (item.status) {
-          case 'pendente':
-            effectiveStatus = 'pendente';
-            break;
-          case 'agendada': // Status 'agendada' do item também significa 'em_transito'
-            effectiveStatus = 'em_transito';
-            break;
-          case 'processado': // Status 'processado' do item significa 'entregues'
-            effectiveStatus = 'entregues';
-            break;
-          default:
-            effectiveStatus = 'pendente'; // Fallback
-        }
+      // Determina o status efetivo com base no status_coleta
+      switch (coleta.status_coleta) {
+        case 'pendente':
+          effectiveStatus = 'pendente';
+          break;
+        case 'agendada':
+          effectiveStatus = 'em_transito';
+          break;
+        case 'concluida':
+          effectiveStatus = 'entregues';
+          break;
+        default:
+          effectiveStatus = 'pendente'; // Fallback
       }
 
-      if (monthlyDataMap.has(itemMonthKey)) {
-        const currentMonthData = monthlyDataMap.get(itemMonthKey)!;
+      if (monthlyDataMap.has(coletaMonthKey)) {
+        const currentMonthData = monthlyDataMap.get(coletaMonthKey)!;
         if (effectiveStatus === 'pendente') {
-          currentMonthData.pendente += item.quantity;
-          totalPendente += item.quantity;
+          currentMonthData.pendente += quantity;
+          totalPendente += quantity;
         } else if (effectiveStatus === 'em_transito') {
-          currentMonthData.em_transito += item.quantity;
-          totalEmTransito += item.quantity;
+          currentMonthData.em_transito += quantity;
+          totalEmTransito += quantity;
         } else if (effectiveStatus === 'entregues') {
-          currentMonthData.entregues += item.quantity;
-          totalEntregues += item.quantity;
+          currentMonthData.entregues += quantity;
+          totalEntregues += quantity;
         }
-        monthlyDataMap.set(itemMonthKey, currentMonthData);
+        monthlyDataMap.set(coletaMonthKey, currentMonthData);
       }
     });
 
@@ -144,7 +123,7 @@ export const ProductStatusChart = () => {
     return { chartData, totalItems, totalPendente, totalEmTransito, totalEntregues };
   };
 
-  const { chartData, totalItems, totalPendente, totalEmTransito, totalEntregues } = processItemsData(items);
+  const { chartData, totalItems, totalPendente, totalEmTransito, totalEntregues } = processColetasData(coletas);
 
   const maxTotalItemsPerMonth = Math.max(...chartData.map(d => d.total_month));
 
