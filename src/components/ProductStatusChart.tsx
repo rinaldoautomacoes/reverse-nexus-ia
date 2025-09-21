@@ -12,14 +12,22 @@ import { useToast } from "@/hooks/use-toast";
 
 type Coleta = Tables<'coletas'>;
 
-export const ProductStatusChart = () => {
+interface ProductStatusChartProps {
+  selectedYear: string;
+}
+
+export const ProductStatusChart: React.FC<ProductStatusChartProps> = ({ selectedYear }) => {
   const { user } = useAuth();
   const { toast } = useToast();
 
   const { data: coletas, isLoading, error } = useQuery<Coleta[], Error>({
-    queryKey: ['productStatusChart', user?.id],
+    queryKey: ['productStatusChart', user?.id, selectedYear], // Adicionado selectedYear ao queryKey
     queryFn: async () => {
       if (!user?.id) return [];
+
+      const startDate = `${selectedYear}-01-01`;
+      const endDate = `${parseInt(selectedYear) + 1}-01-01`;
+
       const { data, error } = await supabase
         .from('coletas')
         .select(`
@@ -29,6 +37,8 @@ export const ProductStatusChart = () => {
           previsao_coleta
         `)
         .eq('user_id', user.id)
+        .gte('previsao_coleta', startDate) // Filtrar por previsao_coleta dentro do ano selecionado
+        .lt('previsao_coleta', endDate)
         .order('created_at', { ascending: true });
       if (error) throw new Error(error.message);
       return data;
@@ -54,8 +64,7 @@ export const ProductStatusChart = () => {
     const monthlyDataMap = new Map<string, { pendente: number; em_transito: number; entregues: number }>();
     const allMonths: string[] = [];
 
-    const today = new Date();
-    const currentYear = today.getFullYear();
+    const currentYear = parseInt(selectedYear); // Usar o ano selecionado
     
     for (let i = 0; i < 12; i++) {
       const month = startOfMonth(new Date(currentYear, i));
@@ -161,7 +170,7 @@ export const ProductStatusChart = () => {
             <CardTitle className="text-xl font-orbitron gradient-text">
               Status dos Produtos
             </CardTitle>
-            <p className="text-sm text-muted-foreground">Ano Atual</p>
+            <p className="text-sm text-muted-foreground">Ano {selectedYear}</p>
           </div>
           <div className="flex gap-2">
             <Badge variant="secondary" className="bg-primary/20 text-primary">

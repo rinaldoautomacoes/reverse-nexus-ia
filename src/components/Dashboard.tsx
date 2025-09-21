@@ -27,11 +27,13 @@ import { useAuth } from "@/hooks/use-auth";
 import { supabase } from "@/integrations/supabase/client";
 // import { AuthButton } from "./AuthButton"; // Removido
 import { CollectionStatusDonutChart } from "./CollectionStatusDonutChart"; // Importar o novo componente
+import { useState } from "react"; // Importar useState
 
 export const Dashboard = () => {
   const navigate = useNavigate();
   const { user, profile } = useAuth();
   const isAdmin = profile?.role === 'admin';
+  const [selectedYear, setSelectedYear] = useState<string>('2025'); // Estado para o ano selecionado
 
   return (
     <div className="min-h-screen bg-background ai-pattern">
@@ -42,18 +44,25 @@ export const Dashboard = () => {
       >
         <div className="absolute inset-0 bg-gradient-to-r from-slate-darker/90 to-transparent" />
         
-        {/* Botões "Iniciar Rota IA" e "Dashboard IA" no canto superior esquerdo */}
+        {/* Botões de seleção de ano */}
         <div className="absolute top-6 left-6 z-20 flex flex-wrap gap-4 animate-slide-up animation-delay-400">
-          {/* Removido o botão "Iniciar Rota IA" */}
-          {/* Removido o botão "Dashboard IA" */}
+          <Button 
+            variant="outline" 
+            className={`bg-gradient-primary text-primary-foreground hover:bg-gradient-primary/80 glow-effect ${selectedYear === '2025' ? 'border-2 border-neon-cyan' : 'border-transparent'}`}
+            onClick={() => setSelectedYear('2025')}
+          >
+            Ano Atual 2025
+          </Button>
+          <Button 
+            variant="outline" 
+            className={`bg-gradient-primary text-primary-foreground hover:bg-gradient-primary/80 glow-effect ${selectedYear === '2026' ? 'border-2 border-neon-cyan' : 'border-transparent'}`}
+            onClick={() => setSelectedYear('2026')}
+          >
+            Ano 2026
+          </Button>
         </div>
 
-        {/* O AuthButton foi movido para o SidebarNav */}
-        {/* <div className="absolute top-6 right-6 z-20 animate-slide-up animation-delay-400">
-          <AuthButton />
-        </div> */}
-
-        <div className="relative z-10 flex flex-col justify-start pt-12 h-full px-6 lg:px-8"> {/* Alterado pt-24 para pt-12 */}
+        <div className="relative z-10 flex flex-col justify-start pt-12 h-full px-6 lg:px-8">
           <div className="max-w-4xl">
             <h1 className="text-5xl lg:text-7xl font-bold font-orbitron gradient-text mb-4 animate-slide-up animate-text-pulse-fade">
               LogiReversa
@@ -67,38 +76,20 @@ export const Dashboard = () => {
 
       {/* Main Dashboard Content */}
       <div className="px-6 lg:px-8 py-8 space-y-8">
-        {/* AI Status Bar */}
-        <div className="card-futuristic p-4 rounded-2xl">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-4">
-              <div className="w-3 h-3 bg-primary rounded-full animate-pulse-glow" />
-              <span className="text-sm font-medium">IA Ativa - Otimizando Rotas</span>
-              <Badge variant="secondary" className="bg-neural/20 text-neural">
-                <Brain className="w-3 h-3 mr-1" />
-                Neural Mode
-              </Badge>
-            </div>
-            <div className="flex items-center gap-2 text-sm text-muted-foreground">
-              <CheckCircle className="w-4 h-4 text-primary" />
-              Sistema Operacional
-            </div>
-          </div>
-        </div>
-
         {/* Metrics Cards */}
-        <MetricsCards />
+        <MetricsCards selectedYear={selectedYear} />
 
         {/* Main Grid */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           {/* Left Column - Charts */}
           <div className="lg:col-span-2 space-y-8">
-            <ProductStatusChart /> {/* Usando o novo componente */}
+            <ProductStatusChart selectedYear={selectedYear} />
             {/* <RouteMap /> */} {/* Removido */}
           </div>
 
           {/* Right Column - Sidebar */}
           <div className="space-y-8">
-            <CollectionStatusDonutChart /> {/* Novo gráfico de rosca */}
+            <CollectionStatusDonutChart selectedYear={selectedYear} />
           </div>
         </div>
 

@@ -39,17 +39,27 @@ const CustomLabel: React.FC<CustomLabelProps> = ({ cx, cy, midAngle, innerRadius
   );
 };
 
-export const CollectionStatusDonutChart: React.FC = () => {
+interface CollectionStatusDonutChartProps {
+  selectedYear: string;
+}
+
+export const CollectionStatusDonutChart: React.FC<CollectionStatusDonutChartProps> = ({ selectedYear }) => {
   const { user } = useAuth();
 
   const { data: coletas, isLoading, error } = useQuery<Coleta[], Error>({
-    queryKey: ['collectionStatusChart', user?.id],
+    queryKey: ['collectionStatusChart', user?.id, selectedYear], // Adicionado selectedYear ao queryKey
     queryFn: async () => {
       if (!user?.id) return [];
+
+      const startDate = `${selectedYear}-01-01T00:00:00Z`;
+      const endDate = `${parseInt(selectedYear) + 1}-01-01T00:00:00Z`;
+
       const { data, error } = await supabase
         .from('coletas')
         .select('status_coleta')
-        .eq('user_id', user.id);
+        .eq('user_id', user.id)
+        .gte('created_at', startDate) // Filtrar por created_at dentro do ano selecionado
+        .lt('created_at', endDate);
       if (error) throw new Error(error.message);
       return data;
     },
@@ -153,7 +163,7 @@ export const CollectionStatusDonutChart: React.FC = () => {
         ) : (
           <div className="text-center text-muted-foreground">
             <Package className="h-12 w-12 mx-auto mb-4" />
-            <p>Nenhuma coleta encontrada.</p>
+            <p>Nenhuma coleta encontrada para o ano de {selectedYear}.</p>
             <p className="text-sm">Agende sua primeira coleta!</p>
           </div>
         )}

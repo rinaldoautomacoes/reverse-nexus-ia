@@ -30,21 +30,31 @@ const iconMap: { [key: string]: React.ElementType } = {
 
 type Coleta = Tables<'coletas'>; // Alterado para Coleta
 
-export const MetricsCards = () => {
+interface MetricsCardsProps {
+  selectedYear: string;
+}
+
+export const MetricsCards: React.FC<MetricsCardsProps> = ({ selectedYear }) => {
   const { toast } = useToast();
   const { user } = useAuth();
 
   const { data: coletas, isLoading, error } = useQuery<Array<{status_coleta: string}>, Error>({
-    queryKey: ['dashboardColetasMetrics', user?.id], // Alterado queryKey
+    queryKey: ['dashboardColetasMetrics', user?.id, selectedYear], // Alterado queryKey para incluir selectedYear
     queryFn: async () => {
       if (!user?.id) {
         // Se não houver usuário logado, retornar um array vazio
         return [];
       }
+
+      const startDate = `${selectedYear}-01-01T00:00:00Z`;
+      const endDate = `${parseInt(selectedYear) + 1}-01-01T00:00:00Z`;
+
       const { data, error } = await supabase
         .from('coletas') // Buscar da tabela 'coletas'
         .select('status_coleta') // Selecionar apenas o status da coleta
-        .eq('user_id', user.id);
+        .eq('user_id', user.id)
+        .gte('created_at', startDate) // Filtrar por created_at dentro do ano selecionado
+        .lt('created_at', endDate);
       
       if (error) {
         throw new Error(error.message);
@@ -136,7 +146,7 @@ export const MetricsCards = () => {
     return (
       <Card className="card-futuristic border-0">
         <CardContent className="p-6 text-center text-muted-foreground">
-          Nenhuma métrica de coleta encontrada. Agende coletas para ver os dados.
+          Nenhuma métrica de coleta encontrada para o ano de {selectedYear}. Agende coletas para ver os dados.
         </CardContent>
       </Card>
     );
