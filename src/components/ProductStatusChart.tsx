@@ -25,33 +25,22 @@ export const ProductStatusChart: React.FC<ProductStatusChartProps> = ({ selected
     queryFn: async () => {
       if (!user?.id) return [];
 
-      const fetchForYear = async (year: string) => {
-        const startDate = `${year}-01-01`;
-        const endDate = `${parseInt(year) + 1}-01-01`;
+      const startDate = `${selectedYear}-01-01`;
+      const endDate = `${parseInt(selectedYear) + 1}-01-01`;
 
-        const { data, error } = await supabase
-          .from('coletas')
-          .select(`
-            created_at,
-            qtd_aparelhos_solicitado,
-            status_coleta,
-            previsao_coleta
-          `)
-          .eq('user_id', user.id)
-          .gte('previsao_coleta', startDate) // Filtrar por previsao_coleta dentro do ano selecionado
-          .lt('previsao_coleta', endDate)
-          .order('created_at', { ascending: true });
-        if (error) throw new Error(error.message);
-        return data;
-      };
-
-      let data = await fetchForYear(selectedYear);
-
-      // Se não houver dados para o selectedYear, tenta buscar para 2025 como fallback
-      if (!data || data.length === 0) {
-        console.log(`Nenhum dado de status de produto para ${selectedYear}, buscando para 2025 como fallback.`);
-        data = await fetchForYear('2025');
-      }
+      const { data, error } = await supabase
+        .from('coletas')
+        .select(`
+          created_at,
+          qtd_aparelhos_solicitado,
+          status_coleta,
+          previsao_coleta
+        `)
+        .eq('user_id', user.id)
+        .gte('previsao_coleta', startDate) // Filtrar por previsao_coleta dentro do ano selecionado
+        .lt('previsao_coleta', endDate)
+        .order('created_at', { ascending: true });
+      if (error) throw new Error(error.message);
       return data;
     },
     enabled: !!user?.id,
