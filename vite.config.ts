@@ -20,6 +20,6 @@ export default defineConfig(({ mode }) => ({
     },
   },
   optimizeDeps: { // Adicionado para otimizar o carregamento de jspdf e jspdf-autotable
-    include: ['jspdf', 'jspdf-autotable'],
+    include: ['jspdf'], // Removido 'jspdf-autotable' daqui
   },
 }));
