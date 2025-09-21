@@ -310,11 +310,11 @@ const Coletas = () => {
   const getStatusColor = (status: string | null) => {
     switch (status) {
       case 'concluida':
-        return 'bg-success-green/20 text-success-green'; // Alterado para success-green
-      case 'agendada':
-        return 'bg-accent/20 text-accent';
+        return 'bg-success-green/20 text-success-green';
+      case 'agendada': // Alterado para usar warning-yellow
+        return 'bg-warning-yellow/20 text-warning-yellow';
       case 'pendente':
-        return 'bg-destructive/20 text-destructive'; // Alterado para destructive
+        return 'bg-destructive/20 text-destructive';
       default:
         return 'bg-muted/20 text-muted-foreground';
     }
@@ -325,7 +325,7 @@ const Coletas = () => {
       case 'concluida':
         return 'Concluída';
       case 'agendada':
-        return 'Em Trânsito'; // Alterado de 'Agendada' para 'Em Trânsito'
+        return 'Em Trânsito';
       case 'pendente':
         return 'Pendente';
       default:
@@ -424,7 +424,7 @@ const Coletas = () => {
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="todos">Todos os Status</SelectItem>
-                      <SelectItem value="em_transito">Em Trânsito</SelectItem> {/* Alterado de 'Agendadas' para 'Em Trânsito' */}
+                      <SelectItem value="em_transito">Em Trânsito</SelectItem>
                       <SelectItem value="concluida">Concluídas</SelectItem>
                       <SelectItem value="pendente">Pendentes</SelectItem>
                     </SelectContent>
@@ -632,7 +632,7 @@ const Coletas = () => {
                               <Clock className="mr-2 h-3 w-3 text-destructive" /> Marcar como Pendente
                           </DropdownMenuItem>
                           <DropdownMenuItem onClick={() => handleStatusChange(coleta.id, 'agendada')}>
-                              <Calendar className="mr-2 h-3 w-3 text-accent" /> Marcar como Agendada
+                              <Calendar className="mr-2 h-3 w-3 text-warning-yellow" /> Marcar como Agendada
                           </DropdownMenuItem>
                           <DropdownMenuItem onClick={() => handleStatusChange(coleta.id, 'concluida')}>
                               <CheckCircle className="mr-2 h-3 w-3 text-success-green" /> Marcar como Concluída
