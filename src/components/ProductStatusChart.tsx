@@ -6,7 +6,7 @@ import { supabase } from "@/integrations/supabase/client";
 import type { Tables } from "@/integrations/supabase/types";
 import { useAuth } from "@/hooks/use-auth";
 import { format, parseISO, startOfMonth } from "date-fns";
-import { ptBR } => {
+import { ptBR } from "date-fns/locale";
 import { useEffect } from "react";
 import { useToast } from "@/hooks/use-toast";
 
