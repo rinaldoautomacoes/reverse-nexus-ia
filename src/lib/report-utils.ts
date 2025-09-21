@@ -4,7 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import type { Tables } from "@/integrations/supabase/types";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import * as XLSX from 'xlsx'; // Importar a biblioteca XLSX
+import * as XLSX from 'xlsx';
 
 type Coleta = Tables<'coletas'>;
 type Item = Tables<'items'>;
@@ -20,11 +20,17 @@ interface ReportData {
   collection_status_filter: string | null;
 }
 
+interface MonthlyPerformanceData {
+  month: string;
+  totalColetas: number;
+  totalItems: number;
+}
+
 // Função auxiliar para buscar dados comuns a todos os formatos
 const fetchReportData = async (reportData: ReportData, userId: string) => {
   let coletasQuery = supabase
     .from('coletas')
-    .select('id, parceiro, endereco, previsao_coleta, status_coleta, qtd_aparelhos_solicitado, modelo_aparelho, observacao')
+    .select('id, parceiro, endereco, previsao_coleta, status_coleta, qtd_aparelhos_solicitado, modelo_aparelho, observacao, created_at')
     .eq('user_id', userId);
 
   if (reportData.collection_status_filter && reportData.collection_status_filter !== 'todos') {
@@ -35,7 +41,7 @@ const fetchReportData = async (reportData: ReportData, userId: string) => {
 
   const { data: items, error: itemsError } = await supabase
     .from('items')
-    .select('name, description, quantity, status, model, collection_id')
+    .select('name, description, quantity, status, model, collection_id, created_at')
     .eq('user_id', userId);
   if (itemsError) throw itemsError;
 
@@ -49,11 +55,11 @@ const fetchReportData = async (reportData: ReportData, userId: string) => {
     }
   });
 
-  return { coletas, itemsByCollection };
+  return { coletas, itemsByCollection, allItems: items };
 };
 
 // --- PDF Report Generation ---
-const generatePdfReport = async (reportData: ReportData, userId: string) => {
+const generatePdfReport = async (reportData: ReportData, userId: string, performanceChartData: MonthlyPerformanceData[]) => {
   const { coletas, itemsByCollection } = await fetchReportData(reportData, userId);
 
   const pdf = new jsPDF();
@@ -89,6 +95,40 @@ const generatePdfReport = async (reportData: ReportData, userId: string) => {
     currentY += (splitText.length * 7) + 10;
   }
   
+  if (currentY > 250) {
+    pdf.addPage();
+    currentY = 30;
+  }
+
+  // Adicionar dados do gráfico de performance
+  pdf.setFontSize(16);
+  pdf.setTextColor(0, 0, 0);
+  pdf.text('Performance Mensal:', 20, currentY);
+  currentY += 15;
+
+  if (performanceChartData && performanceChartData.length > 0) {
+    const headers = [['Mês', 'Total Coletas', 'Total Itens']];
+    const tableData = performanceChartData.map(d => [d.month, d.totalColetas.toString(), d.totalItems.toString()]);
+    
+    pdf.autoTable({
+      startY: currentY,
+      head: headers,
+      body: tableData,
+      theme: 'grid',
+      styles: { fontSize: 10, cellPadding: 2, overflow: 'linebreak' },
+      headStyles: { fillColor: [0, 245, 255], textColor: [0, 0, 0] },
+      margin: { left: 20, right: 20 },
+      didDrawPage: function (data) {
+        currentY = data.cursor?.y || currentY;
+      }
+    });
+    currentY = (pdf as any).lastAutoTable.finalY + 10;
+  } else {
+    pdf.setFontSize(12);
+    pdf.text('Nenhum dado de performance mensal disponível.', 20, currentY);
+    currentY += 10;
+  }
+
   if (currentY > 250) {
     pdf.addPage();
     currentY = 30;
@@ -171,7 +211,7 @@ const generatePdfReport = async (reportData: ReportData, userId: string) => {
 };
 
 // --- Excel Report Generation ---
-const generateExcelReport = async (reportData: ReportData, userId: string) => {
+const generateExcelReport = async (reportData: ReportData, userId: string, performanceChartData: MonthlyPerformanceData[]) => {
   const { coletas, itemsByCollection } = await fetchReportData(reportData, userId);
 
   const data: any[][] = [];
@@ -187,6 +227,19 @@ const generateExcelReport = async (reportData: ReportData, userId: string) => {
     data.push(['Descrição:', reportData.description]);
   }
   data.push([]); // Empty row for spacing
+
+  // Adicionar dados do gráfico de performance
+  data.push(['Performance Mensal:']);
+  if (performanceChartData && performanceChartData.length > 0) {
+    data.push(['Mês', 'Total Coletas', 'Total Itens']);
+    performanceChartData.forEach(d => {
+      data.push([d.month, d.totalColetas, d.totalItems]);
+    });
+  } else {
+    data.push(['Nenhum dado de performance mensal disponível.']);
+  }
+  data.push([]); // Empty row for spacing
+
   data.push(['Detalhes das Coletas:']);
   data.push([]);
 
@@ -232,7 +285,7 @@ const generateExcelReport = async (reportData: ReportData, userId: string) => {
 };
 
 // --- Word (HTML-based) Report Generation ---
-const generateWordReport = async (reportData: ReportData, userId: string) => {
+const generateWordReport = async (reportData: ReportData, userId: string, performanceChartData: MonthlyPerformanceData[]) => {
   const { coletas, itemsByCollection } = await fetchReportData(reportData, userId);
 
   let htmlContent = `
@@ -266,6 +319,40 @@ const generateWordReport = async (reportData: ReportData, userId: string) => {
 
   if (reportData.description) {
     htmlContent += `<p><strong>Descrição:</strong> ${reportData.description}</p>`;
+  }
+
+  // Adicionar dados do gráfico de performance
+  htmlContent += `
+        <h2 class="section-title">Performance Mensal:</h2>
+  `;
+  if (performanceChartData && performanceChartData.length > 0) {
+    htmlContent += `
+      <table>
+        <thead>
+          <tr>
+            <th>Mês</th>
+            <th>Total Coletas</th>
+            <th>Total Itens</th>
+          </tr>
+        </thead>
+        <tbody>
+    `;
+    performanceChartData.forEach(d => {
+      htmlContent += `
+        <tr>
+          <td>${d.month}</td>
+          <td>${d.totalColetas}</td>
+          <td>${d.totalItems}</td>
+        </tr>
+      `;
+    });
+    htmlContent += `
+        </tbody>
+      </table>
+      <br>
+    `;
+  } else {
+    htmlContent += `<p>Nenhum dado de performance mensal disponível.</p><br>`;
   }
 
   htmlContent += `
@@ -344,20 +431,20 @@ const generateWordReport = async (reportData: ReportData, userId: string) => {
 };
 
 // Main function to generate report based on format
-export const generateReport = async (reportData: ReportData, userId: string) => {
+export const generateReport = async (reportData: ReportData, userId: string, performanceChartData: MonthlyPerformanceData[]) => {
   if (!reportData.format) {
     throw new Error("Formato do relatório não especificado.");
   }
 
   switch (reportData.format) {
     case 'PDF':
-      await generatePdfReport(reportData, userId);
+      await generatePdfReport(reportData, userId, performanceChartData);
       break;
     case 'Excel':
-      await generateExcelReport(reportData, userId);
+      await generateExcelReport(reportData, userId, performanceChartData);
       break;
     case 'Word':
-      await generateWordReport(reportData, userId);
+      await generateWordReport(reportData, userId, performanceChartData);
       break;
     default:
       throw new Error(`Formato de relatório '${reportData.format}' não suportado.`);

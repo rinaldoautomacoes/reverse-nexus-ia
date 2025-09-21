@@ -14,7 +14,11 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import type { Tables, TablesInsert, TablesUpdate } from "@/integrations/supabase/types";
 import { useAuth } from "@/hooks/use-auth";
-import { generateReport } from "@/lib/report-utils"; // Importar a nova função generateReport
+import { generateReport } from "@/lib/report-utils";
+import { PerformanceChart } from "@/components/PerformanceChart"; // Importar o novo componente
+import { format, parseISO, startOfMonth } from "date-fns";
+import { ptBR } from "date-fns/locale";
+import { useEffect } from "react";
 
 type Coleta = Tables<'coletas'>;
 type Item = Tables<'items'>;
@@ -32,16 +36,21 @@ export const Relatorios = () => {
   const [statusFilter, setStatusFilter] = useState("todos");
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [editingReport, setEditingReport] = useState<Report | null>(null);
+  const [selectedYear, setSelectedYear] = useState<string>('2025'); // Adicionado estado para o ano
 
   // --- Fetching Metrics ---
   const { data: coletasData, isLoading: isLoadingColetas, error: coletasError } = useQuery<Coleta[], Error>({
-    queryKey: ['coletasForReports', user?.id],
+    queryKey: ['coletasForReports', user?.id, selectedYear],
     queryFn: async () => {
       if (!user?.id) return [];
+      const startDate = `${selectedYear}-01-01`;
+      const endDate = `${parseInt(selectedYear) + 1}-01-01`;
       const { data, error } = await supabase
         .from('coletas')
-        .select('id, status_coleta')
-        .eq('user_id', user.id);
+        .select('id, status_coleta, created_at, qtd_aparelhos_solicitado') // Adicionado created_at e qtd_aparelhos_solicitado
+        .eq('user_id', user.id)
+        .gte('created_at', startDate) // Filtrar por created_at
+        .lt('created_at', endDate);
       if (error) throw new Error(error.message);
       return data;
     },
@@ -49,18 +58,64 @@ export const Relatorios = () => {
   });
 
   const { data: itemsData, isLoading: isLoadingItems, error: itemsError } = useQuery<Item[], Error>({
-    queryKey: ['itemsForReports', user?.id],
+    queryKey: ['itemsForReports', user?.id, selectedYear],
     queryFn: async () => {
       if (!user?.id) return [];
+      const startDate = `${selectedYear}-01-01`;
+      const endDate = `${parseInt(selectedYear) + 1}-01-01`;
       const { data, error } = await supabase
         .from('items')
-        .select('quantity, status')
-        .eq('user_id', user.id);
+        .select('quantity, status, created_at') // Adicionado created_at
+        .eq('user_id', user.id)
+        .gte('created_at', startDate) // Filtrar por created_at
+        .lt('created_at', endDate);
       if (error) throw new Error(error.message);
       return data;
     },
     enabled: !!user?.id,
   });
+
+  // Processar dados para o gráfico de performance
+  const processPerformanceChartData = (coletas: Coleta[] | undefined, items: Item[] | undefined) => {
+    const monthlyDataMap = new Map<string, { totalColetas: number; totalItems: number }>();
+    const allMonths: string[] = [];
+    const currentYear = parseInt(selectedYear);
+
+    for (let i = 0; i < 12; i++) {
+      const month = startOfMonth(new Date(currentYear, i));
+      const monthKey = format(month, 'MMM', { locale: ptBR });
+      allMonths.push(monthKey);
+      monthlyDataMap.set(monthKey, { totalColetas: 0, totalItems: 0 });
+    }
+
+    coletas?.forEach(coleta => {
+      if (coleta.created_at) {
+        const coletaDate = parseISO(coleta.created_at);
+        const monthKey = format(startOfMonth(coletaDate), 'MMM', { locale: ptBR });
+        if (monthlyDataMap.has(monthKey)) {
+          monthlyDataMap.get(monthKey)!.totalColetas += 1;
+        }
+      }
+    });
+
+    items?.forEach(item => {
+      if (item.created_at) {
+        const itemDate = parseISO(item.created_at);
+        const monthKey = format(startOfMonth(itemDate), 'MMM', { locale: ptBR });
+        if (monthlyDataMap.has(monthKey)) {
+          monthlyDataMap.get(monthKey)!.totalItems += item.quantity;
+        }
+      }
+    });
+
+    return allMonths.map(monthKey => ({
+      month: monthKey,
+      totalColetas: monthlyDataMap.get(monthKey)?.totalColetas || 0,
+      totalItems: monthlyDataMap.get(monthKey)?.totalItems || 0,
+    }));
+  };
+
+  const performanceChartData = processPerformanceChartData(coletasData, itemsData);
 
   const calculateMetrics = (coletas: Coleta[] | undefined, items: Item[] | undefined) => {
     if (!user?.id || (!coletas && !items)) {
@@ -189,7 +244,7 @@ export const Relatorios = () => {
 
     try {
       // Gerar o relatório usando a nova função e o formato do relatório
-      await generateReport(report, user.id);
+      await generateReport(report, user.id, performanceChartData); // Passar performanceChartData
 
       // Se a geração do relatório for bem-sucedida e o status não for 'Pronto', atualizá-lo
       if (report.status !== 'Pronto') {
@@ -303,23 +358,7 @@ export const Relatorios = () => {
           </div>
 
           {/* Gráfico Principal */}
-          <Card className="card-futuristic">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <BarChart3 className="h-5 w-5 text-primary" />
-                Performance Geral
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="h-80 bg-slate-darker/20 rounded-lg border border-primary/20 flex items-center justify-center">
-                <div className="text-center space-y-2">
-                  <TrendingUp className="h-12 w-12 text-primary mx-auto" />
-                  <p className="text-muted-foreground">Gráfico de performance detalhado</p>
-                  <p className="text-sm text-muted-foreground">Dados em tempo real com IA</p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
+          <PerformanceChart data={performanceChartData} selectedYear={selectedYear} />
 
           {/* Lista de Relatórios */}
           <Card className="card-futuristic">
@@ -432,8 +471,8 @@ export const Relatorios = () => {
                         </DialogContent>
                       </Dialog>
                       <Button 
-                        size="sm" 
                         variant="outline" 
+                        size="sm" 
                         className="border-destructive text-destructive hover:bg-destructive/10"
                         onClick={() => handleDeleteReport(report.id)}
                         disabled={deleteReportMutation.isPending}
