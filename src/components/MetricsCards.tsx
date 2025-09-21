@@ -46,15 +46,15 @@ export const MetricsCards: React.FC<MetricsCardsProps> = ({ selectedYear }) => {
         return [];
       }
 
-      const startDate = `${selectedYear}-01-01T00:00:00Z`;
-      const endDate = `${parseInt(selectedYear) + 1}-01-01T00:00:00Z`;
+      const startDate = `${selectedYear}-01-01`; // Ajustado para data sem hora para corresponder ao tipo DATE
+      const endDate = `${parseInt(selectedYear) + 1}-01-01`; // Ajustado para data sem hora
 
       const { data, error } = await supabase
         .from('coletas') // Buscar da tabela 'coletas'
         .select('status_coleta') // Selecionar apenas o status da coleta
         .eq('user_id', user.id)
-        .gte('created_at', startDate) // Filtrar por created_at dentro do ano selecionado
-        .lt('created_at', endDate);
+        .gte('previsao_coleta', startDate) // FILTRAR POR previsao_coleta
+        .lt('previsao_coleta', endDate); // FILTRAR POR previsao_coleta
       
       if (error) {
         throw new Error(error.message);
