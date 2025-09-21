@@ -1,4 +1,5 @@
-import { jsPDF } from 'jspdf'; // Importado como named export
+import jsPDF from 'jspdf'; // Importado como default
+import 'jspdf-autotable'; // Importado diretamente para estender o protótipo de jsPDF
 import { supabase } from "@/integrations/supabase/client";
 import type { Tables } from "@/integrations/supabase/types";
 import { format } from "date-fns";
@@ -59,10 +60,6 @@ const fetchReportData = async (reportData: ReportData, userId: string) => {
 
 // --- PDF Report Generation ---
 const generatePdfReport = async (reportData: ReportData, userId: string, performanceChartData: MonthlyPerformanceData[]) => {
-  // Importar jspdf-autotable aqui para garantir que ele seja carregado após jsPDF
-  // e que o plugin seja aplicado à instância correta.
-  await import('jspdf-autotable'); 
-
   const { coletas, itemsByCollection } = await fetchReportData(reportData, userId);
 
   const pdf = new jsPDF(); // Usando a instância padrão do jsPDF
