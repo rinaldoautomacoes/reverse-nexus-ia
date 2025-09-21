@@ -25,7 +25,7 @@ import { MetricsCards } from "./MetricsCards";
 import { PerformanceChart } from "./PerformanceChart";
 import { useAuth } from "@/hooks/use-auth";
 import { supabase } from "@/integrations/supabase/client";
-import { AuthButton } from "./AuthButton";
+// import { AuthButton } from "./AuthButton"; // Removido
 import { CollectionStatusDonutChart } from "./CollectionStatusDonutChart"; // Importar o novo componente
 
 export const Dashboard = () => {
@@ -48,10 +48,10 @@ export const Dashboard = () => {
           {/* Removido o botão "Dashboard IA" */}
         </div>
 
-        {/* Botão de Login/Cadastro no canto superior direito */}
-        <div className="absolute top-6 right-6 z-20 animate-slide-up animation-delay-400">
+        {/* O AuthButton foi movido para o SidebarNav */}
+        {/* <div className="absolute top-6 right-6 z-20 animate-slide-up animation-delay-400">
           <AuthButton />
-        </div>
+        </div> */}
 
         <div className="relative z-10 flex flex-col justify-start pt-24 h-full px-6 lg:px-8">
           <div className="max-w-4xl">
