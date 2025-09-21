@@ -18,14 +18,14 @@ import { useAuth } from "@/hooks/use-auth";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { CollectionStatusUpdateDialog } from "@/components/CollectionStatusUpdateDialog";
-import { EditResponsibleDialog } from "@/components/EditResponsibleDialog"; // Importar o novo diálogo
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"; // Importar Avatar
+import { EditResponsibleDialog } from "@/components/EditResponsibleDialog";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
 type Coleta = Tables<'coletas'>;
 type ColetaInsert = TablesInsert<'coletas'>;
 type ColetaUpdate = TablesUpdate<'coletas'>;
-type Item = Tables<'items'>; // Renomeado Produto para Item para consistência com types.ts
-type Profile = Tables<'profiles'>; // Importar o tipo Profile
+type Item = Tables<'items'>;
+type Profile = Tables<'profiles'>;
 
 // Definir um tipo auxiliar para a coleta com o perfil do responsável aninhado
 type ColetaWithResponsibleProfile = Coleta & {
@@ -49,7 +49,7 @@ const EditColetaForm = ({ coleta, onUpdate, onCancel }: { coleta: Coleta, onUpda
     telefone: coleta.telefone || '',
     email: coleta.email || '',
     contato: coleta.contato || '',
-    responsavel: coleta.responsavel || '', // Manter este campo para compatibilidade
+    responsavel: coleta.responsavel || '',
     responsible_user_id: coleta.responsible_user_id || null,
   });
 
@@ -192,10 +192,11 @@ export const ColetasConcluidas: React.FC<ColetasConcluidasProps> = ({ selectedYe
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [isCollectionStatusUpdateDialogOpen, setIsCollectionStatusUpdateDialogOpen] = useState(false);
   const [selectedCollectionForStatusUpdate, setSelectedCollectionForStatusUpdate] = useState<{ id: string, name: string, status: string } | null>(null);
-  const [isEditResponsibleDialogOpen, setIsEditResponsibleDialogOpen] = useState(false); // Novo estado
-  const [selectedCollectionForResponsible, setSelectedCollectionForResponsible] = useState<{ id: string, name: string, responsibleId: string | null } | null>(null); // Novo estado
+  const [isEditResponsibleDialogOpen, setIsEditResponsibleDialogOpen] = useState(false);
+  const [selectedCollectionForResponsible, setSelectedCollectionForResponsible] = useState<{ id: string, name: string, responsibleId: string | null } | null>(null);
 
-  const { data: coletas, isLoading, error } = useQuery<ColetaWithResponsibleProfile[], Error>({
+  // Query para buscar as coletas
+  const { data: coletas, isLoading: isLoadingColetas, error: coletasError } = useQuery<Coleta[], Error>({
     queryKey: ['coletasConcluidas', user?.id, selectedYear],
     queryFn: async () => {
       if (!user?.id) return [];
@@ -205,22 +206,40 @@ export const ColetasConcluidas: React.FC<ColetasConcluidasProps> = ({ selectedYe
 
       const { data, error } = await supabase
         .from('coletas')
-        .select(`
-          *,
-          responsible_user_profile: responsible_user_id(
-            profiles(first_name, last_name, avatar_url)
-          )
-        `)
+        .select(`*`) // Seleciona todas as colunas diretas
         .eq('user_id', user.id)
         .eq('status_coleta', 'concluida')
         .gte('previsao_coleta', startDate)
         .lt('previsao_coleta', endDate);
       
       if (error) throw new Error(error.message);
-      return data as ColetaWithResponsibleProfile[];
+      return data;
     },
     enabled: !!user?.id,
   });
+
+  // Query para buscar todos os perfis (para mapear o responsável)
+  const { data: profiles, isLoading: isLoadingProfiles, error: profilesError } = useQuery<Profile[], Error>({
+    queryKey: ['allProfiles'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('id, first_name, last_name, avatar_url');
+      if (error) throw new Error(error.message);
+      return data;
+    },
+    enabled: !!user?.id,
+  });
+
+  // Mapeia os perfis para um objeto para fácil acesso
+  const profilesMap = new Map<string, Pick<Profile, 'first_name' | 'last_name' | 'avatar_url'>>();
+  profiles?.forEach(p => profilesMap.set(p.id, p));
+
+  // Combina as coletas com os dados do perfil do responsável
+  const coletasWithProfiles: ColetaWithResponsibleProfile[] = coletas?.map(coleta => ({
+    ...coleta,
+    responsible_user_profile: coleta.responsible_user_id ? profilesMap.get(coleta.responsible_user_id) || null : null,
+  })) || [];
 
   const { data: itemsForSelectedColeta, isLoading: isLoadingItemsForColeta, error: itemsForColetaError } = useQuery<Item[], Error>({
     queryKey: ['itemsForCollection', selectedColeta?.id],
@@ -369,7 +388,7 @@ export const ColetasConcluidas: React.FC<ColetasConcluidasProps> = ({ selectedYe
     }
   };
 
-  const filteredColetas = coletas?.filter(coleta => {
+  const filteredColetas = coletasWithProfiles?.filter(coleta => {
     const matchesSearch = (coleta.parceiro?.toLowerCase().includes(searchTerm.toLowerCase()) ||
                            coleta.endereco?.toLowerCase().includes(searchTerm.toLowerCase()) ||
                            coleta.responsible_user_profile?.first_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -377,7 +396,7 @@ export const ColetasConcluidas: React.FC<ColetasConcluidasProps> = ({ selectedYe
     return matchesSearch;
   }) || [];
 
-  if (isLoading) {
+  if (isLoadingColetas || isLoadingProfiles) {
     return (
       <div className="min-h-screen bg-background ai-pattern p-6 flex items-center justify-center">
         <div className="text-center">
@@ -388,11 +407,11 @@ export const ColetasConcluidas: React.FC<ColetasConcluidasProps> = ({ selectedYe
     );
   }
 
-  if (error) {
+  if (coletasError || profilesError) {
     return (
       <div className="min-h-screen bg-background ai-pattern p-6">
         <div className="max-w-6xl mx-auto text-center text-destructive">
-          <p>Erro ao carregar coletas concluídas: {error.message}</p>
+          <p>Erro ao carregar coletas concluídas: {coletasError?.message || profilesError?.message}</p>
         </div>
       </div>
     );
@@ -426,7 +445,7 @@ export const ColetasConcluidas: React.FC<ColetasConcluidasProps> = ({ selectedYe
                 <CheckCircle className="h-8 w-8" />
                 <div>
                   <p className="text-sm font-medium opacity-80">Total de Coletas Concluídas</p>
-                  <p className="text-3xl font-bold font-orbitron">{coletas?.length || 0}</p>
+                  <p className="text-3xl font-bold font-orbitron">{coletasWithProfiles?.length || 0}</p>
                 </div>
               </div>
               <div className="text-right">
