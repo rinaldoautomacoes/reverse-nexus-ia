@@ -79,45 +79,34 @@ export const MetricsCards = () => {
         id: 'total-coletas',
         title: 'Total de Coletas',
         value: totalColetas.toString(),
-        change: '+12%', // Placeholder
-        trend: 'up',
-        icon_name: 'ListChecks', // Ícone para total de coletas
-        color: 'text-ai',
-        bg_color: 'bg-ai/10',
         description: 'Total de coletas registradas'
       },
       {
         id: 'coletas-pendentes',
         title: 'Coletas Pendentes',
         value: pendenteCount.toString(),
-        change: '-5%', // Placeholder
-        trend: 'down',
+        description: 'Aguardando agendamento ou início',
         icon_name: 'Clock',
-        color: 'text-destructive', // Agora será ai-purple
-        bg_color: 'bg-destructive/10', // Agora será ai-purple/10
-        description: 'Aguardando agendamento ou início'
+        color: 'text-destructive', // ai-purple
+        bg_color: 'bg-destructive/10', // ai-purple/10
       },
       {
         id: 'coletas-em-transito',
         title: 'Coletas Em Trânsito',
         value: agendadaCount.toString(),
-        change: '+8%', // Placeholder
-        trend: 'up',
-        icon_name: 'Truck', // Ícone para 'Em Trânsito'
-        color: 'text-warning-yellow', // Já é amarelo
-        bg_color: 'bg-warning-yellow/10', // Já é amarelo/10
-        description: 'Coletas agendadas e em andamento'
+        description: 'Coletas agendadas e em andamento',
+        icon_name: 'Truck',
+        color: 'text-warning-yellow', // amarelo
+        bg_color: 'bg-warning-yellow/10', // amarelo/10
       },
       {
         id: 'coletas-entregues',
         title: 'Coletas Entregues',
         value: concluidaCount.toString(),
-        change: '+15%', // Placeholder
-        trend: 'up',
+        description: 'Coletas finalizadas e processadas',
         icon_name: 'CheckCircle',
-        color: 'text-success-green', // Agora será neon-cyan
-        bg_color: 'bg-success-green/10', // Agora será neon-cyan/10
-        description: 'Coletas finalizadas e processadas'
+        color: 'text-success-green', // neon-cyan
+        bg_color: 'bg-success-green/10', // neon-cyan/10
       },
     ];
   };
@@ -156,7 +145,12 @@ export const MetricsCards = () => {
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
       {dashboardMetrics.map((metric, index) => {
-        const Icon = iconMap[metric.icon_name];
+        // Para o card "Total de Coletas", o ícone e as cores são fixos
+        const isTotalColetasCard = metric.id === 'total-coletas';
+        const Icon = isTotalColetasCard ? ListChecks : iconMap[metric.icon_name || ''];
+        const iconColorClass = isTotalColetasCard ? 'text-primary' : metric.color;
+        const iconBgColorClass = isTotalColetasCard ? 'bg-primary/10' : metric.bg_color;
+
         if (!Icon) {
           console.warn(`Ícone não encontrado para: ${metric.icon_name}`);
           return null;
@@ -164,15 +158,15 @@ export const MetricsCards = () => {
         return (
           <Card 
             key={metric.id} 
-            className="card-futuristic border-0 animate-slide-up" 
+            className="card-futuristic border-0 animate-slide-up hover:bg-gradient-primary hover:border-primary/50 transition-all duration-300 ease-in-out" 
             style={{ animationDelay: `${index * 100}ms` }}
           >
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium text-muted-foreground">
                 {metric.title}
               </CardTitle>
-              <div className={`p-2 rounded-lg ${metric.bg_color}`}>
-                <Icon className={`h-4 w-4 ${metric.color}`} />
+              <div className={`p-2 rounded-lg ${iconBgColorClass}`}>
+                <Icon className={`h-4 w-4 ${iconColorClass}`} />
               </div>
             </CardHeader>
             <CardContent>
@@ -182,17 +176,7 @@ export const MetricsCards = () => {
               {metric.description && (
                 <p className="text-sm text-muted-foreground mb-1">{metric.description}</p>
               )}
-              <div className="flex items-center text-sm">
-                <TrendingUp 
-                  className={`h-3 w-3 mr-1 ${
-                    metric.trend === 'up' ? 'text-primary' : 'text-destructive'
-                  }`} 
-                />
-                <span className={metric.trend === 'up' ? 'text-primary' : 'text-destructive'}>
-                  {metric.change}
-                </span>
-                <span className="text-muted-foreground ml-1">desde o último mês</span>
-              </div>
+              {/* Removido o bloco de porcentagem */}
             </CardContent>
           </Card>
         );
