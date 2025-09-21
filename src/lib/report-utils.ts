@@ -1,4 +1,5 @@
 import jsPDF from 'jspdf';
+import 'jspdf-autotable'; // Importação necessária para pdf.autoTable
 import html2canvas from 'html2canvas';
 import { supabase } from "@/integrations/supabase/client";
 import type { Tables } from "@/integrations/supabase/types";
@@ -110,7 +111,7 @@ const generatePdfReport = async (reportData: ReportData, userId: string, perform
     const headers = [['Mês', 'Total Coletas', 'Total Itens']];
     const tableData = performanceChartData.map(d => [d.month, d.totalColetas.toString(), d.totalItems.toString()]);
     
-    pdf.autoTable({
+    (pdf as any).autoTable({ // Usar 'as any' para acessar autoTable
       startY: currentY,
       head: headers,
       body: tableData,
@@ -118,7 +119,7 @@ const generatePdfReport = async (reportData: ReportData, userId: string, perform
       styles: { fontSize: 10, cellPadding: 2, overflow: 'linebreak' },
       headStyles: { fillColor: [0, 245, 255], textColor: [0, 0, 0] },
       margin: { left: 20, right: 20 },
-      didDrawPage: function (data) {
+      didDrawPage: function (data: any) { // Adicionar tipo para 'data'
         currentY = data.cursor?.y || currentY;
       }
     });
