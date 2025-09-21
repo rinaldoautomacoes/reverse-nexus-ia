@@ -11,7 +11,7 @@ import { cn } from "@/lib/utils";
 type Coleta = Tables<'coletas'>;
 
 const COLORS = {
-  pendente: 'hsl(var(--neural-blue))', // Cor neon para pendente
+  pendente: 'hsl(var(--destructive))', // Alterado para destructive
   agendada: 'hsl(var(--warning-yellow))', // Nova cor para 'Em Trânsito'
   concluida: 'hsl(var(--primary))',    // Cor primária para concluída
 };

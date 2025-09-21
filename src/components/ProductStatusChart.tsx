@@ -129,7 +129,7 @@ export const ProductStatusChart = () => {
 
   // Cores para os status dos produtos
   const BAR_COLORS = {
-    pendente: 'hsl(var(--neural-blue))',
+    pendente: 'hsl(var(--destructive))', // Alterado para destructive
     em_transito: 'hsl(var(--warning-yellow))',
     entregues: 'hsl(var(--primary))',
   };

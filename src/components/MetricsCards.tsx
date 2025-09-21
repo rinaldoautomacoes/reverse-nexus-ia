@@ -93,8 +93,8 @@ export const MetricsCards = () => {
         change: '-5%', // Placeholder
         trend: 'down',
         icon_name: 'Clock',
-        color: 'text-destructive',
-        bg_color: 'bg-destructive/10',
+        color: 'text-destructive', // Alterado para destructive
+        bg_color: 'bg-destructive/10', // Alterado para destructive/10
         description: 'Aguardando agendamento ou início'
       },
       {

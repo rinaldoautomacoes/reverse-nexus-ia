@@ -314,7 +314,7 @@ const Coletas = () => {
       case 'agendada':
         return 'bg-accent/20 text-accent';
       case 'pendente':
-        return 'bg-neural/20 text-neural';
+        return 'bg-destructive/20 text-destructive'; // Alterado para destructive
       default:
         return 'bg-muted/20 text-muted-foreground';
     }
@@ -609,7 +609,7 @@ const Coletas = () => {
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end" className="bg-card border-primary/20">
                           <DropdownMenuItem onClick={() => handleStatusChange(coleta.id, 'pendente')}>
-                              <Clock className="mr-2 h-3 w-3 text-neural" /> Marcar como Pendente
+                              <Clock className="mr-2 h-3 w-3 text-destructive" /> Marcar como Pendente
                           </DropdownMenuItem>
                           <DropdownMenuItem onClick={() => handleStatusChange(coleta.id, 'agendada')}>
                               <Calendar className="mr-2 h-3 w-3 text-accent" /> Marcar como Agendada
