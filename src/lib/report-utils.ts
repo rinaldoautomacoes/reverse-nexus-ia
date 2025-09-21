@@ -1,5 +1,8 @@
 import jsPDF from 'jspdf'; // Importado como default
-import 'jspdf-autotable'; // Importado diretamente para estender o protótipo de jsPDF
+// Esta linha garante que jspdf-autotable possa encontrar jsPDF no escopo global,
+// como pode esperar para seu mecanismo de plugin.
+(window as any).jsPDF = jsPDF; 
+import 'jspdf-autotable'; // Esta importação agora será executada e encontrará window.jsPDF
 import { supabase } from "@/integrations/supabase/client";
 import type { Tables } from "@/integrations/supabase/types";
 import { format } from "date-fns";
