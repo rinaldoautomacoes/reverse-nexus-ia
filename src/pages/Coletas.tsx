@@ -27,6 +27,11 @@ type ColetaUpdate = TablesUpdate<'coletas'>;
 type Item = Tables<'items'>; // Renomeado Produto para Item para consistência com types.ts
 type Profile = Tables<'profiles'>; // Importar o tipo Profile
 
+// Definir um tipo auxiliar para a coleta com o perfil do responsável aninhado
+type ColetaWithResponsibleProfile = Coleta & {
+  responsible_user_profile: Pick<Profile, 'first_name' | 'last_name' | 'avatar_url'> | null;
+};
+
 interface ColetasProps {
   selectedYear: string;
 }
@@ -182,7 +187,7 @@ const Coletas: React.FC<ColetasProps> = ({ selectedYear }) => {
 
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("todos");
-  const [selectedColeta, setSelectedColeta] = useState<Coleta | null>(null);
+  const [selectedColeta, setSelectedColeta] = useState<ColetaWithResponsibleProfile | null>(null);
   const [editingColeta, setEditingColeta] = useState<Coleta | null>(null);
   const [isViewDetailsDialogOpen, setIsViewDetailsDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
@@ -191,7 +196,7 @@ const Coletas: React.FC<ColetasProps> = ({ selectedYear }) => {
   const [isEditResponsibleDialogOpen, setIsEditResponsibleDialogOpen] = useState(false); // Novo estado
   const [selectedCollectionForResponsible, setSelectedCollectionForResponsible] = useState<{ id: string, name: string, responsibleId: string | null } | null>(null); // Novo estado
 
-  const { data: coletas, isLoading, error } = useQuery<(Coleta & { profiles: Profile | null })[], Error>({
+  const { data: coletas, isLoading, error } = useQuery<ColetaWithResponsibleProfile[], Error>({
     queryKey: ['coletasAtivas', user?.id, statusFilter, selectedYear],
     queryFn: async () => {
       if (!user?.id) return [];
@@ -203,10 +208,8 @@ const Coletas: React.FC<ColetasProps> = ({ selectedYear }) => {
         .from('coletas')
         .select(`
           *,
-          profiles (
-            first_name,
-            last_name,
-            avatar_url
+          responsible_user_profile: responsible_user_id(
+            profiles(first_name, last_name, avatar_url)
           )
         `)
         .eq('user_id', user.id)
@@ -220,7 +223,7 @@ const Coletas: React.FC<ColetasProps> = ({ selectedYear }) => {
 
       const { data, error } = await query;
       if (error) throw new Error(error.message);
-      return data as (Coleta & { profiles: Profile | null })[];
+      return data as ColetaWithResponsibleProfile[];
     },
     enabled: !!user?.id,
   });
@@ -375,8 +378,8 @@ const Coletas: React.FC<ColetasProps> = ({ selectedYear }) => {
   const filteredColetas = coletas?.filter(coleta => {
     const matchesSearch = (coleta.parceiro?.toLowerCase().includes(searchTerm.toLowerCase()) ||
                            coleta.endereco?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                           coleta.profiles?.first_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                           coleta.profiles?.last_name?.toLowerCase().includes(searchTerm.toLowerCase()));
+                           coleta.responsible_user_profile?.first_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                           coleta.responsible_user_profile?.last_name?.toLowerCase().includes(searchTerm.toLowerCase()));
     const matchesStatus = statusFilter === "todos" || 
                           (statusFilter === 'em_transito' && coleta.status_coleta === 'agendada') ||
                           (statusFilter !== 'em_transito' && coleta.status_coleta === statusFilter);
@@ -501,13 +504,13 @@ const Coletas: React.FC<ColetasProps> = ({ selectedYear }) => {
                         <div>
                           <strong>{coleta.qtd_aparelhos_solicitado || 0}</strong> produtos - {coleta.modelo_aparelho || 'N/A'}
                         </div>
-                        {coleta.responsible_user_id && coleta.profiles ? (
+                        {coleta.responsible_user_profile ? (
                           <div className="flex items-center gap-2">
                             <Avatar className="h-6 w-6">
-                              <AvatarImage src={coleta.profiles.avatar_url || undefined} />
-                              <AvatarFallback>{coleta.profiles.first_name?.charAt(0)}</AvatarFallback>
+                              <AvatarImage src={coleta.responsible_user_profile.avatar_url || undefined} />
+                              <AvatarFallback>{coleta.responsible_user_profile.first_name?.charAt(0)}</AvatarFallback>
                             </Avatar>
-                            <span className="font-medium">Responsável:</span> {`${coleta.profiles.first_name || ''} ${coleta.profiles.last_name || ''}`.trim()}
+                            <span className="font-medium">Responsável:</span> {`${coleta.responsible_user_profile.first_name || ''} ${coleta.responsible_user_profile.last_name || ''}`.trim()}
                           </div>
                         ) : (
                           <div className="flex items-center gap-2">
@@ -584,15 +587,15 @@ const Coletas: React.FC<ColetasProps> = ({ selectedYear }) => {
                                   <Label className="text-sm font-medium">Tipo de Aparelho (Geral)</Label>
                                   <p className="text-sm text-muted-foreground">{selectedColeta.modelo_aparelho || 'N/A'}</p>
                                 </div>
-                                {selectedColeta.responsible_user_id && (selectedColeta as any).profiles ? (
+                                {selectedColeta.responsible_user_profile ? (
                                   <div>
                                     <Label className="text-sm font-medium">Responsável</Label>
                                     <div className="flex items-center gap-2 text-sm text-muted-foreground">
                                       <Avatar className="h-6 w-6">
-                                        <AvatarImage src={(selectedColeta as any).profiles.avatar_url || undefined} />
-                                        <AvatarFallback>{(selectedColeta as any).profiles.first_name?.charAt(0)}</AvatarFallback>
+                                        <AvatarImage src={selectedColeta.responsible_user_profile.avatar_url || undefined} />
+                                        <AvatarFallback>{selectedColeta.responsible_user_profile.first_name?.charAt(0)}</AvatarFallback>
                                       </Avatar>
-                                      {`${(selectedColeta as any).profiles.first_name || ''} ${(selectedColeta as any).profiles.last_name || ''}`.trim()}
+                                      {`${selectedColeta.responsible_user_profile.first_name || ''} ${selectedColeta.responsible_user_profile.last_name || ''}`.trim()}
                                     </div>
                                   </div>
                                 ) : (
