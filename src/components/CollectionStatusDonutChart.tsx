@@ -89,7 +89,7 @@ export const CollectionStatusDonutChart: React.FC = () => {
         <CardHeader>
           <CardTitle className="h-6 w-48 bg-muted rounded" />
         </CardHeader>
-        <CardContent className="flex items-center justify-center h-80">
+        <CardContent className="flex items-center justify-center h-[450px]"> {/* Ajustado a altura */}
           <div className="w-16 h-16 border-4 border-primary border-t-transparent rounded-full animate-spin" />
         </CardContent>
       </Card>
@@ -114,7 +114,7 @@ export const CollectionStatusDonutChart: React.FC = () => {
           Status das Coletas
         </CardTitle>
       </CardHeader>
-      <CardContent className="h-80 flex flex-col items-center justify-center">
+      <CardContent className="h-[450px] flex flex-col items-center justify-center"> {/* Ajustado a altura */}
         {total > 0 ? (
           <ResponsiveContainer width="100%" height="100%">
             <PieChart>
@@ -122,8 +122,8 @@ export const CollectionStatusDonutChart: React.FC = () => {
                 data={chartData}
                 cx="50%"
                 cy="50%"
-                innerRadius={60}
-                outerRadius={90}
+                innerRadius={80} // Aumentado o raio interno
+                outerRadius={130} // Aumentado o raio externo para preencher melhor o espaço
                 fill="#8884d8"
                 paddingAngle={5}
                 dataKey="value"
