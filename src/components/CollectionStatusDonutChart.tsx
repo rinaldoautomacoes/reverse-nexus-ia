@@ -27,7 +27,9 @@ interface CustomLabelProps {
   name: string;
 }
 
-const CustomLabel: React.FC<CustomLabelProps> = ({ cx, cy, midAngle, innerRadius, outerRadius, percent, name }) => {
+const CustomLabel: React.FC<CustomLabelProps> = ({ cx, cy, midAngle, innerRadius, outerRadius, percent, value, name }) => {
+  if (value === 0) return null; // Não renderiza o label para valores zero
+
   const radius = innerRadius + (outerRadius - innerRadius) * 0.5;
   const x = cx + radius * Math.cos(-midAngle * Math.PI / 180);
   const y = cy + radius * Math.sin(-midAngle * Math.PI / 180);
@@ -67,26 +69,16 @@ export const CollectionStatusDonutChart: React.FC<CollectionStatusDonutChartProp
   });
 
   const calculateStatusData = (coletasData: Coleta[] | undefined) => {
-    if (!coletasData || coletasData.length === 0) {
-      return {
-        total: 0,
-        pendente: 0,
-        agendada: 0, // Adicionado
-        concluida: 0,
-        chartData: [],
-      };
-    }
-
-    const pendenteCount = coletasData.filter(c => c.status_coleta === 'pendente').length;
-    const agendadaCount = coletasData.filter(c => c.status_coleta === 'agendada').length; // Contagem de 'agendada'
-    const concluidaCount = coletasData.filter(c => c.status_coleta === 'concluida').length;
-    const total = pendenteCount + agendadaCount + concluidaCount; // Total atualizado
+    const pendenteCount = coletasData?.filter(c => c.status_coleta === 'pendente').length || 0;
+    const agendadaCount = coletasData?.filter(c => c.status_coleta === 'agendada').length || 0;
+    const concluidaCount = coletasData?.filter(c => c.status_coleta === 'concluida').length || 0;
+    const total = pendenteCount + agendadaCount + concluidaCount;
 
     const chartData = [
       { name: 'Coletas Pendentes', value: pendenteCount, color: COLORS.pendente },
-      { name: 'Coletas Em Trânsito', value: agendadaCount, color: COLORS.agendada }, // Nova entrada
+      { name: 'Coletas Em Trânsito', value: agendadaCount, color: COLORS.agendada },
       { name: 'Coletas Finalizadas', value: concluidaCount, color: COLORS.concluida },
-    ].filter(entry => entry.value > 0); // Filtra entradas com valor 0 para não aparecer no gráfico
+    ]; // Removido o filtro para sempre exibir todas as categorias
 
     return { total, pendente: pendenteCount, agendada: agendadaCount, concluida: concluidaCount, chartData };
   };
@@ -99,7 +91,7 @@ export const CollectionStatusDonutChart: React.FC<CollectionStatusDonutChartProp
         <CardHeader>
           <CardTitle className="h-6 w-48 bg-muted rounded" />
         </CardHeader>
-        <CardContent className="flex items-center justify-center h-[450px]"> {/* Ajustado a altura */}
+        <CardContent className="flex items-center justify-center h-[450px]">
           <div className="w-16 h-16 border-4 border-primary border-t-transparent rounded-full animate-spin" />
         </CardContent>
       </Card>
@@ -124,44 +116,44 @@ export const CollectionStatusDonutChart: React.FC<CollectionStatusDonutChartProp
           Status das Coletas
         </CardTitle>
       </CardHeader>
-      <CardContent className="h-[450px] flex flex-col items-center justify-center"> {/* Ajustado a altura */}
-        {total > 0 ? (
-          <ResponsiveContainer width="100%" height="100%">
-            <PieChart>
-              <Pie
-                data={chartData}
-                cx="50%"
-                cy="50%"
-                innerRadius={80} // Aumentado o raio interno
-                outerRadius={130} // Aumentado o raio externo para preencher melhor o espaço
-                fill="#8884d8"
-                paddingAngle={5}
-                dataKey="value"
-                cornerRadius={5}
-                labelLine={false}
-                label={CustomLabel}
-              >
-                {chartData.map((entry, index) => (
-                  <Cell key={`cell-${index}`} fill={entry.color} stroke={entry.color} strokeWidth={2} />
-                ))}
-              </Pie>
-              <Tooltip 
-                contentStyle={{ backgroundColor: 'hsl(var(--card))', border: '1px solid hsl(var(--border))', borderRadius: '0.5rem' }}
-                itemStyle={{ color: 'hsl(var(--foreground))' }}
-              />
-              <Legend 
-                wrapperStyle={{ paddingTop: '10px' }}
-                formatter={(value, entry) => (
-                  <span className="text-sm flex items-center gap-2">
-                    <span className="inline-block w-3 h-3 rounded-full" style={{ backgroundColor: entry.color }} />
-                    <span className="font-semibold text-foreground">{value}</span>
-                  </span>
-                )}
-              />
-            </PieChart>
-          </ResponsiveContainer>
-        ) : (
-          <div className="text-center text-muted-foreground">
+      <CardContent className="h-[450px] flex flex-col items-center justify-center">
+        {/* O gráfico sempre será renderizado, mesmo que todos os valores sejam zero */}
+        <ResponsiveContainer width="100%" height="100%">
+          <PieChart>
+            <Pie
+              data={chartData}
+              cx="50%"
+              cy="50%"
+              innerRadius={80}
+              outerRadius={130}
+              fill="#8884d8"
+              paddingAngle={5}
+              dataKey="value"
+              cornerRadius={5}
+              labelLine={false}
+              label={CustomLabel}
+            >
+              {chartData.map((entry, index) => (
+                <Cell key={`cell-${index}`} fill={entry.color} stroke={entry.color} strokeWidth={2} />
+              ))}
+            </Pie>
+            <Tooltip 
+              contentStyle={{ backgroundColor: 'hsl(var(--card))', border: '1px solid hsl(var(--border))', borderRadius: '0.5rem' }}
+              itemStyle={{ color: 'hsl(var(--foreground))' }}
+            />
+            <Legend 
+              wrapperStyle={{ paddingTop: '10px' }}
+              formatter={(value, entry) => (
+                <span className="text-sm flex items-center gap-2">
+                  <span className="inline-block w-3 h-3 rounded-full" style={{ backgroundColor: entry.color }} />
+                  <span className="font-semibold text-foreground">{value}</span>
+                </span>
+              )}
+            />
+          </PieChart>
+        </ResponsiveContainer>
+        {total === 0 && ( // Exibe a mensagem apenas se o total de coletas for 0
+          <div className="text-center text-muted-foreground mt-4">
             <Package className="h-12 w-12 mx-auto mb-4" />
             <p>Nenhuma coleta encontrada para o ano de {selectedYear}.</p>
             <p className="text-sm">Agende sua primeira coleta!</p>
@@ -170,7 +162,6 @@ export const CollectionStatusDonutChart: React.FC<CollectionStatusDonutChartProp
         {total > 0 && (
           <div className="mt-4 text-center">
             <p className="text-sm text-muted-foreground">Total de Coletas: <span className="font-semibold text-foreground">{total}</span></p>
-            {/* Removido o bloco que exibia as contagens de pendentes e concluídas separadamente */}
           </div>
         )}
       </CardContent>

@@ -75,14 +75,11 @@ export const MetricsCards: React.FC<MetricsCardsProps> = ({ selectedYear }) => {
   }, [error, toast]);
 
   const calculateCollectionMetrics = (coletasData: Array<{status_coleta: string}> | undefined) => {
-    if (!coletasData || coletasData.length === 0) {
-      return [];
-    }
-
-    const totalColetas = coletasData.length;
-    const pendenteCount = coletasData.filter(c => c.status_coleta === 'pendente').length;
-    const agendadaCount = coletasData.filter(c => c.status_coleta === 'agendada').length; // Mapeado para 'Em Trânsito'
-    const concluidaCount = coletasData.filter(c => c.status_coleta === 'concluida').length; // Mapeado para 'Entregues'
+    // Sempre retornar a estrutura completa, mesmo que coletasData seja undefined ou vazio
+    const totalColetas = coletasData?.length || 0;
+    const pendenteCount = coletasData?.filter(c => c.status_coleta === 'pendente').length || 0;
+    const agendadaCount = coletasData?.filter(c => c.status_coleta === 'agendada').length || 0;
+    const concluidaCount = coletasData?.filter(c => c.status_coleta === 'concluida').length || 0;
 
     return [
       {
@@ -142,15 +139,8 @@ export const MetricsCards: React.FC<MetricsCardsProps> = ({ selectedYear }) => {
     );
   }
 
-  if (!dashboardMetrics || dashboardMetrics.length === 0) {
-    return (
-      <Card className="card-futuristic border-0">
-        <CardContent className="p-6 text-center text-muted-foreground">
-          Nenhuma métrica de coleta encontrada para o ano de {selectedYear}. Agende coletas para ver os dados.
-        </CardContent>
-      </Card>
-    );
-  }
+  // Não há necessidade de um bloco de 'if (!dashboardMetrics || dashboardMetrics.length === 0)' aqui,
+  // pois calculateCollectionMetrics sempre retorna um array com 4 itens.
 
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">

@@ -58,13 +58,29 @@ export const ProductStatusChart: React.FC<ProductStatusChartProps> = ({ selected
 
   const processColetasData = (coletasData: Coleta[] | undefined) => {
     if (!coletasData || coletasData.length === 0) {
-      return { chartData: [], totalItems: 0, totalPendente: 0, totalEmTransito: 0, totalEntregues: 0 };
+      const emptyMonthlyDataMap = new Map<string, { pendente: number; em_transito: number; entregues: number }>();
+      const allMonths: string[] = [];
+      const currentYear = parseInt(selectedYear);
+      for (let i = 0; i < 12; i++) {
+        const month = startOfMonth(new Date(currentYear, i));
+        const monthKey = format(month, 'MMM', { locale: ptBR });
+        allMonths.push(monthKey);
+        emptyMonthlyDataMap.set(monthKey, { pendente: 0, em_transito: 0, entregues: 0 });
+      }
+      const emptyChartData = allMonths.map(monthKey => ({
+        month: monthKey,
+        pendente: 0,
+        em_transito: 0,
+        entregues: 0,
+        total_month: 0,
+      }));
+      return { chartData: emptyChartData, totalItems: 0, totalPendente: 0, totalEmTransito: 0, totalEntregues: 0 };
     }
 
     const monthlyDataMap = new Map<string, { pendente: number; em_transito: number; entregues: number }>();
     const allMonths: string[] = [];
 
-    const currentYear = parseInt(selectedYear); // Usar o ano selecionado
+    const currentYear = parseInt(selectedYear); 
     
     for (let i = 0; i < 12; i++) {
       const month = startOfMonth(new Date(currentYear, i));
@@ -78,9 +94,9 @@ export const ProductStatusChart: React.FC<ProductStatusChartProps> = ({ selected
     let totalEntregues = 0;
 
     coletasData.forEach(coleta => {
-      if (!coleta.previsao_coleta) return; // Ignora coletas sem data prevista
+      if (!coleta.previsao_coleta) return;
 
-      const coletaDate = parseISO(coleta.previsao_coleta); // Usa previsao_coleta
+      const coletaDate = parseISO(coleta.previsao_coleta);
       
       const timezoneOffsetMinutes = coletaDate.getTimezoneOffset();
       const adjustedDateForLocalMonth = new Date(coletaDate.getTime() - timezoneOffsetMinutes * 60 * 1000);
@@ -138,7 +154,8 @@ export const ProductStatusChart: React.FC<ProductStatusChartProps> = ({ selected
 
   const { chartData, totalItems, totalPendente, totalEmTransito, totalEntregues } = processColetasData(coletas);
 
-  const maxTotalItemsPerMonth = Math.max(...chartData.map(d => d.total_month));
+  // Garante que maxTotalItemsPerMonth seja pelo menos 1 para evitar divisão por zero
+  const maxTotalItemsPerMonth = Math.max(1, ...chartData.map(d => d.total_month));
 
   const BAR_COLORS = {
     pendente: 'hsl(var(--destructive))',
@@ -200,7 +217,7 @@ export const ProductStatusChart: React.FC<ProductStatusChartProps> = ({ selected
                 
                 <div className="h-full flex items-end justify-between gap-2 relative z-10">
                   {chartData.map((data, index) => {
-                    const totalMonthHeight = maxTotalItemsPerMonth > 0 ? (data.total_month / maxTotalItemsPerMonth) * 100 : 0;
+                    const totalMonthHeight = (data.total_month / maxTotalItemsPerMonth) * 100;
                     
                     const entreguesHeight = data.total_month > 0 ? (data.entregues / data.total_month) * totalMonthHeight : 0;
                     const emTransitoHeight = data.total_month > 0 ? (data.em_transito / data.total_month) * totalMonthHeight : 0;
