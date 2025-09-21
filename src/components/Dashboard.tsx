@@ -22,7 +22,7 @@ import { MetricsCards } from "./MetricsCards";
 // import { RouteMap } from "./RouteMap"; // Removido
 // import { AIAssistant } from "./AIAssistant"; // Removido
 // import { RecentActivity } from "./RecentActivity"; // Removido
-import { PerformanceChart } from "./PerformanceChart";
+import { ProductStatusChart } from "./ProductStatusChart"; // Importado o novo componente
 import { useAuth } from "@/hooks/use-auth";
 import { supabase } from "@/integrations/supabase/client";
 // import { AuthButton } from "./AuthButton"; // Removido
@@ -92,7 +92,7 @@ export const Dashboard = () => {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           {/* Left Column - Charts */}
           <div className="lg:col-span-2 space-y-8">
-            <PerformanceChart />
+            <ProductStatusChart /> {/* Usando o novo componente */}
             {/* <RouteMap /> */} {/* Removido */}
           </div>
 
