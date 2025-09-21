@@ -1,4 +1,4 @@
-import jsPDF from 'jspdf'; // Importado como default
+import { jsPDF } from 'jspdf'; // Importado como named export
 
 // Garante que jsPDF.API exista antes que jspdf-autotable tente estendê-lo.
 // Esta é uma medida defensiva caso jsPDF não esteja populando .API como esperado em alguns ambientes.

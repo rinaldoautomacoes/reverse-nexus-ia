@@ -19,7 +19,7 @@ export default defineConfig(({ mode }) => ({
       "@": path.resolve(__dirname, "./src"),
     },
   },
-  optimizeDeps: { // Adicionado para otimizar o carregamento de jspdf e jspdf-autotable
-    include: ['jspdf'], // Removido 'jspdf-autotable' daqui
+  optimizeDeps: { // Removendo jspdf da otimização de dependências
+    include: [], 
   },
 }));
