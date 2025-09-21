@@ -56,10 +56,13 @@ export const ProductStatusChart = () => {
     const monthlyDataMap = new Map<string, { pendente: number; em_transito: number; entregues: number }>();
     const allMonths: string[] = [];
 
-    // Pega os últimos 6 meses
+    // Gerar meses de janeiro do ano atual até o mês corrente
     const today = new Date();
-    for (let i = 5; i >= 0; i--) {
-      const month = startOfMonth(new Date(today.getFullYear(), today.getMonth() - i));
+    const currentYear = today.getFullYear();
+    const currentMonthIndex = today.getMonth(); // 0 para janeiro, 11 para dezembro
+
+    for (let i = 0; i <= currentMonthIndex; i++) {
+      const month = startOfMonth(new Date(currentYear, i));
       const monthKey = format(month, 'MMM', { locale: ptBR });
       allMonths.push(monthKey);
       monthlyDataMap.set(monthKey, { pendente: 0, em_transito: 0, entregues: 0 });
@@ -167,7 +170,7 @@ export const ProductStatusChart = () => {
             <CardTitle className="text-xl font-orbitron gradient-text">
               Status dos Produtos
             </CardTitle>
-            <p className="text-sm text-muted-foreground">Últimos 6 meses</p>
+            <p className="text-sm text-muted-foreground">Ano Atual</p>
           </div>
           <div className="flex gap-2">
             <Badge variant="secondary" className="bg-primary/20 text-primary">
