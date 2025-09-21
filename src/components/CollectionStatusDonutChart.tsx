@@ -51,16 +51,27 @@ export const CollectionStatusDonutChart: React.FC<CollectionStatusDonutChartProp
     queryFn: async () => {
       if (!user?.id) return [];
 
-      const startDate = `${selectedYear}-01-01T00:00:00Z`;
-      const endDate = `${parseInt(selectedYear) + 1}-01-01T00:00:00Z`;
+      const fetchForYear = async (year: string) => {
+        const startDate = `${year}-01-01T00:00:00Z`;
+        const endDate = `${parseInt(year) + 1}-01-01T00:00:00Z`;
 
-      const { data, error } = await supabase
-        .from('coletas')
-        .select('status_coleta')
-        .eq('user_id', user.id)
-        .gte('created_at', startDate) // Filtrar por created_at dentro do ano selecionado
-        .lt('created_at', endDate);
-      if (error) throw new Error(error.message);
+        const { data, error } = await supabase
+          .from('coletas')
+          .select('status_coleta')
+          .eq('user_id', user.id)
+          .gte('created_at', startDate) // Filtrar por created_at dentro do ano selecionado
+          .lt('created_at', endDate);
+        if (error) throw new Error(error.message);
+        return data;
+      };
+
+      let data = await fetchForYear(selectedYear);
+
+      // Se não houver dados para o selectedYear, tenta buscar para 2025 como fallback
+      if (!data || data.length === 0) {
+        console.log(`Nenhum dado de status de coleta para ${selectedYear}, buscando para 2025 como fallback.`);
+        data = await fetchForYear('2025');
+      }
       return data;
     },
     enabled: !!user?.id,
@@ -163,7 +174,7 @@ export const CollectionStatusDonutChart: React.FC<CollectionStatusDonutChartProp
         ) : (
           <div className="text-center text-muted-foreground">
             <Package className="h-12 w-12 mx-auto mb-4" />
-            <p>Nenhuma coleta encontrada para o ano de {selectedYear}.</p>
+            <p>Nenhuma coleta encontrada para o ano de {selectedYear} ou 2025.</p>
             <p className="text-sm">Agende sua primeira coleta!</p>
           </div>
         )}

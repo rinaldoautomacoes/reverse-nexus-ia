@@ -46,19 +46,31 @@ export const MetricsCards: React.FC<MetricsCardsProps> = ({ selectedYear }) => {
         return [];
       }
 
-      const startDate = `${selectedYear}-01-01T00:00:00Z`;
-      const endDate = `${parseInt(selectedYear) + 1}-01-01T00:00:00Z`;
+      const fetchForYear = async (year: string) => {
+        const startDate = `${year}-01-01T00:00:00Z`;
+        const endDate = `${parseInt(year) + 1}-01-01T00:00:00Z`;
 
-      const { data, error } = await supabase
-        .from('coletas') // Buscar da tabela 'coletas'
-        .select('status_coleta') // Selecionar apenas o status da coleta
-        .eq('user_id', user.id)
-        .gte('created_at', startDate) // Filtrar por created_at dentro do ano selecionado
-        .lt('created_at', endDate);
-      
-      if (error) {
-        throw new Error(error.message);
+        const { data, error } = await supabase
+          .from('coletas') // Buscar da tabela 'coletas'
+          .select('status_coleta') // Selecionar apenas o status da coleta
+          .eq('user_id', user.id)
+          .gte('created_at', startDate) // Filtrar por created_at dentro do ano selecionado
+          .lt('created_at', endDate);
+        
+        if (error) {
+          throw new Error(error.message);
+        }
+        return data;
+      };
+
+      let data = await fetchForYear(selectedYear);
+
+      // Se não houver dados para o selectedYear, tenta buscar para 2025 como fallback
+      if (!data || data.length === 0) {
+        console.log(`Nenhum dado para ${selectedYear}, buscando para 2025 como fallback.`);
+        data = await fetchForYear('2025');
       }
+      
       return data;
     },
     enabled: !!user?.id, // A query só será executada se houver um user.id
@@ -146,7 +158,7 @@ export const MetricsCards: React.FC<MetricsCardsProps> = ({ selectedYear }) => {
     return (
       <Card className="card-futuristic border-0">
         <CardContent className="p-6 text-center text-muted-foreground">
-          Nenhuma métrica de coleta encontrada para o ano de {selectedYear}. Agende coletas para ver os dados.
+          Nenhuma métrica de coleta encontrada para o ano de {selectedYear} ou 2025. Agende coletas para ver os dados.
         </CardContent>
       </Card>
     );
