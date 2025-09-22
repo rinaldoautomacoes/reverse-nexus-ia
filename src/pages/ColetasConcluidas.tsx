@@ -7,7 +7,8 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { ArrowLeft, Package, MapPin, Calendar, Search, Filter, Eye, Edit, Trash2, MessageSquareText, Mail, RefreshCcw, Clock, CheckCircle, ListChecks, Tag, Box, User as UserIcon } from "lucide-react";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"; // Importar Popover
+import { Calendar as CalendarIcon, ArrowLeft, Package, MapPin, Calendar, Search, Filter, Eye, Edit, Trash2, MessageSquareText, Mail, RefreshCcw, Clock, CheckCircle, ListChecks, Tag, Box, User as UserIcon } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useState } from "react";
 import { useToast } from "@/hooks/use-toast";
@@ -20,6 +21,8 @@ import { ptBR } from "date-fns/locale";
 import { CollectionStatusUpdateDialog } from "@/components/CollectionStatusUpdateDialog";
 import { EditResponsibleDialog } from "@/components/EditResponsibleDialog";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { ResponsibleUserCombobox } from "@/components/ResponsibleUserCombobox"; // Importar ResponsibleUserCombobox
+import { cn } from "@/lib/utils"; // Importar cn para classes condicionais
 
 type Coleta = Tables<'coletas'>;
 type ColetaInsert = TablesInsert<'coletas'>;
@@ -195,51 +198,50 @@ export const ColetasConcluidas: React.FC<ColetasConcluidasProps> = ({ selectedYe
   const [isEditResponsibleDialogOpen, setIsEditResponsibleDialogOpen] = useState(false);
   const [selectedCollectionForResponsible, setSelectedCollectionForResponsible] = useState<{ id: string, name: string, responsibleId: string | null } | null>(null);
 
+  // Novos estados para os filtros
+  const [startDateFilter, setStartDateFilter] = useState<Date | undefined>(undefined);
+  const [endDateFilter, setEndDateFilter] = useState<Date | undefined>(undefined);
+  const [responsibleUserFilterId, setResponsibleUserFilterId] = useState<string | null>(null);
+
   // Query para buscar as coletas
-  const { data: coletas, isLoading: isLoadingColetas, error: coletasError } = useQuery<Coleta[], Error>({
-    queryKey: ['coletasConcluidas', user?.id, selectedYear],
+  const { data: coletas, isLoading: isLoadingColetas, error: coletasError } = useQuery<ColetaWithResponsibleProfile[], Error>({
+    queryKey: ['coletasConcluidas', user?.id, selectedYear, searchTerm, startDateFilter, endDateFilter, responsibleUserFilterId],
     queryFn: async () => {
       if (!user?.id) return [];
 
-      const startDate = `${selectedYear}-01-01`;
-      const endDate = `${parseInt(selectedYear) + 1}-01-01`;
+      const yearStartDate = `${selectedYear}-01-01`;
+      const yearEndDate = `${parseInt(selectedYear) + 1}-01-01`;
 
-      const { data, error } = await supabase
+      let query = supabase
         .from('coletas')
-        .select(`*`) // Seleciona todas as colunas diretas
+        .select(`*, responsible_user_profile:profiles(first_name, last_name, avatar_url)`) // Seleciona todas as colunas diretas e o perfil do responsável
         .eq('user_id', user.id)
         .eq('status_coleta', 'concluida')
-        .gte('previsao_coleta', startDate)
-        .lt('previsao_coleta', endDate);
+        .gte('previsao_coleta', yearStartDate)
+        .lt('previsao_coleta', yearEndDate);
       
+      // Aplicar filtros de data
+      if (startDateFilter) {
+        query = query.gte('previsao_coleta', format(startDateFilter, 'yyyy-MM-dd'));
+      }
+      if (endDateFilter) {
+        query = query.lte('previsao_coleta', format(endDateFilter, 'yyyy-MM-dd'));
+      }
+
+      // Aplicar filtro de responsável
+      if (responsibleUserFilterId) {
+        query = query.eq('responsible_user_id', responsibleUserFilterId);
+      }
+
+      const { data, error } = await query;
       if (error) throw new Error(error.message);
       return data;
     },
     enabled: !!user?.id,
   });
 
-  // Query para buscar todos os perfis (para mapear o responsável)
-  const { data: profiles, isLoading: isLoadingProfiles, error: profilesError } = useQuery<Profile[], Error>({
-    queryKey: ['allProfiles'],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from('profiles')
-        .select('id, first_name, last_name, avatar_url');
-      if (error) throw new Error(error.message);
-      return data;
-    },
-    enabled: !!user?.id,
-  });
-
-  // Mapeia os perfis para um objeto para fácil acesso
-  const profilesMap = new Map<string, Pick<Profile, 'first_name' | 'last_name' | 'avatar_url'>>();
-  profiles?.forEach(p => profilesMap.set(p.id, p));
-
-  // Combina as coletas com os dados do perfil do responsável
-  const coletasWithProfiles: ColetaWithResponsibleProfile[] = coletas?.map(coleta => ({
-    ...coleta,
-    responsible_user_profile: coleta.responsible_user_id ? profilesMap.get(coleta.responsible_user_id) || null : null,
-  })) || [];
+  // `coletasWithProfiles` agora é o próprio `coletas` retornado pela query
+  const coletasWithProfiles: ColetaWithResponsibleProfile[] = coletas || [];
 
   const { data: itemsForSelectedColeta, isLoading: isLoadingItemsForColeta, error: itemsForColetaError } = useQuery<Item[], Error>({
     queryKey: ['itemsForCollection', selectedColeta?.id],
@@ -396,7 +398,7 @@ export const ColetasConcluidas: React.FC<ColetasConcluidasProps> = ({ selectedYe
     return matchesSearch;
   }) || [];
 
-  if (isLoadingColetas || isLoadingProfiles) {
+  if (isLoadingColetas) { // Removido isLoadingProfiles, pois o perfil é carregado junto
     return (
       <div className="min-h-screen bg-background ai-pattern p-6 flex items-center justify-center">
         <div className="text-center">
@@ -407,11 +409,11 @@ export const ColetasConcluidas: React.FC<ColetasConcluidasProps> = ({ selectedYe
     );
   }
 
-  if (coletasError || profilesError) {
+  if (coletasError) { // Removido profilesError
     return (
       <div className="min-h-screen bg-background ai-pattern p-6">
         <div className="max-w-6xl mx-auto text-center text-destructive">
-          <p>Erro ao carregar coletas concluídas: {coletasError?.message || profilesError?.message}</p>
+          <p>Erro ao carregar coletas concluídas: {coletasError?.message}</p>
         </div>
       </div>
     );
@@ -466,6 +468,80 @@ export const ColetasConcluidas: React.FC<ColetasConcluidasProps> = ({ selectedYe
                     onChange={(e) => setSearchTerm(e.target.value)}
                     className="pl-10"
                   />
+                </div>
+                {/* Novos Filtros */}
+                <div className="flex flex-col md:flex-row gap-4 w-full md:w-auto">
+                  {/* Data Inicial */}
+                  <div className="w-full md:w-48">
+                    <Label htmlFor="start-date" className="sr-only">Data Inicial</Label>
+                    <Popover>
+                      <PopoverTrigger asChild>
+                        <Button
+                          variant={"outline"}
+                          className={cn(
+                            "w-full justify-start text-left font-normal",
+                            !startDateFilter && "text-muted-foreground"
+                          )}
+                        >
+                          <CalendarIcon className="mr-2 h-4 w-4" />
+                          {startDateFilter ? (
+                            format(startDateFilter, "dd/MM/yyyy", { locale: ptBR })
+                          ) : (
+                            <span>Data Inicial</span>
+                          )}
+                        </Button>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-auto p-0">
+                        <Calendar
+                          mode="single"
+                          selected={startDateFilter}
+                          onSelect={setStartDateFilter}
+                          initialFocus
+                          locale={ptBR}
+                        />
+                      </PopoverContent>
+                    </Popover>
+                  </div>
+                  {/* Data Final */}
+                  <div className="w-full md:w-48">
+                    <Label htmlFor="end-date" className="sr-only">Data Final</Label>
+                    <Popover>
+                      <PopoverTrigger asChild>
+                        <Button
+                          variant={"outline"}
+                          className={cn(
+                            "w-full justify-start text-left font-normal",
+                            !endDateFilter && "text-muted-foreground"
+                          )}
+                        >
+                          <CalendarIcon className="mr-2 h-4 w-4" />
+                          {endDateFilter ? (
+                            format(endDateFilter, "dd/MM/yyyy", { locale: ptBR })
+                          ) : (
+                            <span>Data Final</span>
+                          )}
+                        </Button>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-auto p-0">
+                        <Calendar
+                          mode="single"
+                          selected={endDateFilter}
+                          onSelect={setEndDateFilter}
+                          initialFocus
+                          locale={ptBR}
+                        />
+                      </PopoverContent>
+                    </Popover>
+                  </div>
+                  {/* Responsável */}
+                  <div className="w-full md:w-48">
+                    <Label htmlFor="responsible-filter" className="sr-only">Responsável</Label>
+                    <ResponsibleUserCombobox
+                      value={responsibleUserFilterId}
+                      onValueChange={setResponsibleUserFilterId}
+                      onUserSelect={() => {}}
+                    />
+                  </div>
                 </div>
               </div>
             </CardContent>
