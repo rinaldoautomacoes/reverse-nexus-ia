@@ -469,7 +469,7 @@ export const ColetasConcluidas: React.FC<ColetasConcluidasProps> = ({ selectedYe
                     className="pl-10"
                   />
                 </div>
-                <div className="flex flex-col md:flex-row gap-4 w-full md:w-auto">
+                <div className="flex flex-col md:flex-row gap-4 w-full md:w-auto relative"> {/* Adicionado 'relative' aqui */}
                   {/* Data Inicial */}
                   <div className="w-full md:w-48">
                     <Label htmlFor="start-date" className="sr-only">Data Inicial</Label>
@@ -490,7 +490,7 @@ export const ColetasConcluidas: React.FC<ColetasConcluidasProps> = ({ selectedYe
                           )}
                         </Button>
                       </PopoverTrigger>
-                      <PopoverContent className="w-auto p-0 z-50">
+                      <PopoverContent className="w-[280px] h-auto p-0 z-50"> {/* Definido width e height */}
                         <Calendar
                           mode="single"
                           selected={startDateFilter}
@@ -524,7 +524,7 @@ export const ColetasConcluidas: React.FC<ColetasConcluidasProps> = ({ selectedYe
                           )}
                         </Button>
                       </PopoverTrigger>
-                      <PopoverContent className="w-auto p-0 z-50">
+                      <PopoverContent className="w-[280px] h-auto p-0 z-50"> {/* Definido width e height */}
                         <Calendar
                           mode="single"
                           selected={endDateFilter}
