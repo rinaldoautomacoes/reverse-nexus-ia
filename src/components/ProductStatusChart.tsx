@@ -178,15 +178,14 @@ export const ProductStatusChart: React.FC<ProductStatusChartProps> = ({ selected
                   bottom: 0,
                 }}
               >
-                {/* Eixo X agora exibe os rótulos dos meses */}
+                {/* Eixos X e Y completamente invisíveis */}
                 <XAxis 
                   dataKey="month" 
                   axisLine={false} 
                   tickLine={false} 
-                  tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 12 }} // Rótulos dos meses visíveis
-                  height={30} // Ajusta a altura para os rótulos dos meses
+                  tick={false} // Remove os rótulos do eixo X
+                  height={0} // Oculta o espaço do eixo X
                 />
-                {/* Eixo Y continua invisível */}
                 <YAxis 
                   axisLine={false} 
                   tickLine={false} 
@@ -217,13 +216,13 @@ export const ProductStatusChart: React.FC<ProductStatusChartProps> = ({ selected
                   strokeWidth={2} 
                   name="Total de Itens"
                 >
-                  {/* LabelList para exibir os rótulos de dados */}
+                  {/* Adiciona LabelList para exibir os rótulos de dados */}
                   <LabelList 
                     dataKey="total_month" 
                     position="top" 
-                    fill="hsl(var(--foreground))"
+                    fill="hsl(var(--foreground))" // Cor do texto do rótulo
                     fontSize={12}
-                    offset={10}
+                    offset={10} // Ajusta a posição vertical do rótulo
                   />
                 </Area>
               </AreaChart>
