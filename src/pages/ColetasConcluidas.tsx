@@ -212,28 +212,24 @@ export const ColetasConcluidas: React.FC<ColetasConcluidasProps> = ({ selectedYe
     queryFn: async () => {
       if (!user?.id) return [];
 
-      const yearStartDate = `${selectedYear}-01-01`;
-      const yearEndDate = `${parseInt(selectedYear) + 1}-01-01`;
-
       let query = supabase
         .from('coletas')
         .select(`*, responsible_user_profile:profiles(first_name, last_name, avatar_url)`)
         .eq('user_id', user.id)
         .eq('status_coleta', 'concluida');
       
-      // Aplicar filtros de data
-      if (startDateFilter) {
-        query = query.gte('previsao_coleta', format(startDateFilter, 'yyyy-MM-dd'));
-      } else {
-        query = query.gte('previsao_coleta', yearStartDate);
-      }
-      if (endDateFilter) {
-        query = query.lte('previsao_coleta', format(endDateFilter, 'yyyy-MM-dd'));
-      } else {
-        query = query.lt('previsao_coleta', yearEndDate);
-      }
+      // Determine the effective start and end dates for the query
+      const effectiveStartDate = startDateFilter 
+        ? format(startDateFilter, 'yyyy-MM-dd') 
+        : `${selectedYear}-01-01`;
+      
+      const effectiveEndDate = endDateFilter 
+        ? format(endDateFilter, 'yyyy-MM-dd') 
+        : `${selectedYear}-12-31`;
 
-      // Aplicar filtro de responsável
+      query = query.gte('previsao_coleta', effectiveStartDate);
+      query = query.lte('previsao_coleta', effectiveEndDate);
+
       if (responsibleUserFilterId) {
         query = query.eq('responsible_user_id', responsibleUserFilterId);
       }
