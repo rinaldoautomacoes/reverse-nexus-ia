@@ -197,14 +197,23 @@ export const ColetasConcluidas: React.FC<ColetasConcluidasProps> = ({ selectedYe
   const [isEditResponsibleDialogOpen, setIsEditResponsibleDialogOpen] = useState(false);
   const [selectedCollectionForResponsible, setSelectedCollectionForResponsible] = useState<{ id: string, name: string, responsibleId: string | null } | null>(null);
 
+  // Novos estados para os filtros
   const [startDateFilter, setStartDateFilter] = useState<Date | undefined>(undefined);
   const [endDateFilter, setEndDateFilter] = useState<Date | undefined>(undefined);
   const [responsibleUserFilterId, setResponsibleUserFilterId] = useState<string | null>(null);
 
+  // Estados para controlar a abertura dos Popovers de data
+  const [isStartDatePickerOpen, setIsStartDatePickerOpen] = useState(false);
+  const [isEndDatePickerOpen, setIsEndDatePickerOpen] = useState(false);
+
+  // Query para buscar as coletas
   const { data: coletas, isLoading: isLoadingColetas, error: coletasError } = useQuery<ColetaWithResponsibleProfile[], Error>({
     queryKey: ['coletasConcluidas', user?.id, selectedYear, searchTerm, startDateFilter, endDateFilter, responsibleUserFilterId],
     queryFn: async () => {
       if (!user?.id) return [];
+
+      const yearStartDate = `${selectedYear}-01-01`;
+      const yearEndDate = `${parseInt(selectedYear) + 1}-01-01`;
 
       let query = supabase
         .from('coletas')
@@ -212,18 +221,19 @@ export const ColetasConcluidas: React.FC<ColetasConcluidasProps> = ({ selectedYe
         .eq('user_id', user.id)
         .eq('status_coleta', 'concluida');
       
-      // Determine the effective start and end dates for the query
-      const effectiveStartDate = startDateFilter 
-        ? format(startDateFilter, 'yyyy-MM-dd') 
-        : `${selectedYear}-01-01`;
-      
-      const effectiveEndDate = endDateFilter 
-        ? format(endDateFilter, 'yyyy-MM-dd') 
-        : `${selectedYear}-12-31`;
+      // Aplicar filtros de data
+      if (startDateFilter) {
+        query = query.gte('previsao_coleta', format(startDateFilter, 'yyyy-MM-dd'));
+      } else {
+        query = query.gte('previsao_coleta', yearStartDate);
+      }
+      if (endDateFilter) {
+        query = query.lte('previsao_coleta', format(endDateFilter, 'yyyy-MM-dd'));
+      } else {
+        query = query.lt('previsao_coleta', yearEndDate);
+      }
 
-      query = query.gte('previsao_coleta', effectiveStartDate);
-      query = query.lte('previsao_coleta', effectiveEndDate);
-
+      // Aplicar filtro de responsável
       if (responsibleUserFilterId) {
         query = query.eq('responsible_user_id', responsibleUserFilterId);
       }
@@ -464,9 +474,10 @@ export const ColetasConcluidas: React.FC<ColetasConcluidasProps> = ({ selectedYe
                   />
                 </div>
                 <div className="flex flex-col md:flex-row gap-4 w-full md:w-auto">
+                  {/* Data Inicial */}
                   <div className="w-full md:w-48">
                     <Label htmlFor="start-date" className="sr-only">Data Inicial</Label>
-                    <Popover>
+                    <Popover open={isStartDatePickerOpen} onOpenChange={setIsStartDatePickerOpen}>
                       <PopoverTrigger asChild>
                         <Button
                           variant={"outline"}
@@ -483,20 +494,24 @@ export const ColetasConcluidas: React.FC<ColetasConcluidasProps> = ({ selectedYe
                           )}
                         </Button>
                       </PopoverTrigger>
-                      <PopoverContent className="w-auto p-0">
+                      <PopoverContent className="w-auto p-0 z-50">
                         <Calendar
                           mode="single"
                           selected={startDateFilter}
-                          onSelect={setStartDateFilter}
+                          onSelect={(date) => {
+                            setStartDateFilter(date);
+                            setIsStartDatePickerOpen(false);
+                          }}
                           initialFocus
                           locale={ptBR}
                         />
                       </PopoverContent>
                     </Popover>
                   </div>
+                  {/* Data Final */}
                   <div className="w-full md:w-48">
                     <Label htmlFor="end-date" className="sr-only">Data Final</Label>
-                    <Popover>
+                    <Popover open={isEndDatePickerOpen} onOpenChange={setIsEndDatePickerOpen}>
                       <PopoverTrigger asChild>
                         <Button
                           variant={"outline"}
@@ -513,17 +528,21 @@ export const ColetasConcluidas: React.FC<ColetasConcluidasProps> = ({ selectedYe
                           )}
                         </Button>
                       </PopoverTrigger>
-                      <PopoverContent className="w-auto p-0">
+                      <PopoverContent className="w-auto p-0 z-50">
                         <Calendar
                           mode="single"
                           selected={endDateFilter}
-                          onSelect={setEndDateFilter}
+                          onSelect={(date) => {
+                            setEndDateFilter(date);
+                            setIsEndDatePickerOpen(false);
+                          }}
                           initialFocus
                           locale={ptBR}
                         />
                       </PopoverContent>
                     </Popover>
                   </div>
+                  {/* Responsável */}
                   <div className="w-full md:w-48">
                     <Label htmlFor="responsible-filter" className="sr-only">Responsável</Label>
                     <ResponsibleUserCombobox
