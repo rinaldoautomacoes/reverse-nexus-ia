@@ -7,7 +7,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"; // Importar Popover
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar as CalendarIcon, ArrowLeft, Package, MapPin, Calendar, Search, Filter, Eye, Edit, Trash2, MessageSquareText, Mail, RefreshCcw, Clock, CheckCircle, ListChecks, Tag, Box, User as UserIcon } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useState } from "react";
@@ -21,8 +21,8 @@ import { ptBR } from "date-fns/locale";
 import { CollectionStatusUpdateDialog } from "@/components/CollectionStatusUpdateDialog";
 import { EditResponsibleDialog } from "@/components/EditResponsibleDialog";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { ResponsibleUserCombobox } from "@/components/ResponsibleUserCombobox"; // Importar ResponsibleUserCombobox
-import { cn } from "@/lib/utils"; // Importar cn para classes condicionais
+import { ResponsibleUserCombobox } from "@/components/ResponsibleUserCombobox";
+import { cn } from "@/lib/utils";
 
 type Coleta = Tables<'coletas'>;
 type ColetaInsert = TablesInsert<'coletas'>;
@@ -30,7 +30,6 @@ type ColetaUpdate = TablesUpdate<'coletas'>;
 type Item = Tables<'items'>;
 type Profile = Tables<'profiles'>;
 
-// Definir um tipo auxiliar para a coleta com o perfil do responsável aninhado
 type ColetaWithResponsibleProfile = Coleta & {
   responsible_user_profile: Pick<Profile, 'first_name' | 'last_name' | 'avatar_url'> | null;
 };
@@ -198,37 +197,33 @@ export const ColetasConcluidas: React.FC<ColetasConcluidasProps> = ({ selectedYe
   const [isEditResponsibleDialogOpen, setIsEditResponsibleDialogOpen] = useState(false);
   const [selectedCollectionForResponsible, setSelectedCollectionForResponsible] = useState<{ id: string, name: string, responsibleId: string | null } | null>(null);
 
-  // Novos estados para os filtros
   const [startDateFilter, setStartDateFilter] = useState<Date | undefined>(undefined);
   const [endDateFilter, setEndDateFilter] = useState<Date | undefined>(undefined);
   const [responsibleUserFilterId, setResponsibleUserFilterId] = useState<string | null>(null);
 
-  // Query para buscar as coletas
   const { data: coletas, isLoading: isLoadingColetas, error: coletasError } = useQuery<ColetaWithResponsibleProfile[], Error>({
     queryKey: ['coletasConcluidas', user?.id, selectedYear, searchTerm, startDateFilter, endDateFilter, responsibleUserFilterId],
     queryFn: async () => {
       if (!user?.id) return [];
 
-      const yearStartDate = `${selectedYear}-01-01`;
-      const yearEndDate = `${parseInt(selectedYear) + 1}-01-01`;
-
       let query = supabase
         .from('coletas')
-        .select(`*, responsible_user_profile:profiles(first_name, last_name, avatar_url)`) // Seleciona todas as colunas diretas e o perfil do responsável
+        .select(`*, responsible_user_profile:profiles(first_name, last_name, avatar_url)`)
         .eq('user_id', user.id)
-        .eq('status_coleta', 'concluida')
-        .gte('previsao_coleta', yearStartDate)
-        .lt('previsao_coleta', yearEndDate);
+        .eq('status_coleta', 'concluida');
       
-      // Aplicar filtros de data
-      if (startDateFilter) {
-        query = query.gte('previsao_coleta', format(startDateFilter, 'yyyy-MM-dd'));
-      }
-      if (endDateFilter) {
-        query = query.lte('previsao_coleta', format(endDateFilter, 'yyyy-MM-dd'));
-      }
+      // Determine the effective start and end dates for the query
+      const effectiveStartDate = startDateFilter 
+        ? format(startDateFilter, 'yyyy-MM-dd') 
+        : `${selectedYear}-01-01`;
+      
+      const effectiveEndDate = endDateFilter 
+        ? format(endDateFilter, 'yyyy-MM-dd') 
+        : `${selectedYear}-12-31`;
 
-      // Aplicar filtro de responsável
+      query = query.gte('previsao_coleta', effectiveStartDate);
+      query = query.lte('previsao_coleta', effectiveEndDate);
+
       if (responsibleUserFilterId) {
         query = query.eq('responsible_user_id', responsibleUserFilterId);
       }
@@ -240,7 +235,6 @@ export const ColetasConcluidas: React.FC<ColetasConcluidasProps> = ({ selectedYe
     enabled: !!user?.id,
   });
 
-  // `coletasWithProfiles` agora é o próprio `coletas` retornado pela query
   const coletasWithProfiles: ColetaWithResponsibleProfile[] = coletas || [];
 
   const { data: itemsForSelectedColeta, isLoading: isLoadingItemsForColeta, error: itemsForColetaError } = useQuery<Item[], Error>({
@@ -398,7 +392,7 @@ export const ColetasConcluidas: React.FC<ColetasConcluidasProps> = ({ selectedYe
     return matchesSearch;
   }) || [];
 
-  if (isLoadingColetas) { // Removido isLoadingProfiles, pois o perfil é carregado junto
+  if (isLoadingColetas) {
     return (
       <div className="min-h-screen bg-background ai-pattern p-6 flex items-center justify-center">
         <div className="text-center">
@@ -409,7 +403,7 @@ export const ColetasConcluidas: React.FC<ColetasConcluidasProps> = ({ selectedYe
     );
   }
 
-  if (coletasError) { // Removido profilesError
+  if (coletasError) {
     return (
       <div className="min-h-screen bg-background ai-pattern p-6">
         <div className="max-w-6xl mx-auto text-center text-destructive">
@@ -469,9 +463,7 @@ export const ColetasConcluidas: React.FC<ColetasConcluidasProps> = ({ selectedYe
                     className="pl-10"
                   />
                 </div>
-                {/* Novos Filtros */}
                 <div className="flex flex-col md:flex-row gap-4 w-full md:w-auto">
-                  {/* Data Inicial */}
                   <div className="w-full md:w-48">
                     <Label htmlFor="start-date" className="sr-only">Data Inicial</Label>
                     <Popover>
@@ -502,7 +494,6 @@ export const ColetasConcluidas: React.FC<ColetasConcluidasProps> = ({ selectedYe
                       </PopoverContent>
                     </Popover>
                   </div>
-                  {/* Data Final */}
                   <div className="w-full md:w-48">
                     <Label htmlFor="end-date" className="sr-only">Data Final</Label>
                     <Popover>
@@ -533,7 +524,6 @@ export const ColetasConcluidas: React.FC<ColetasConcluidasProps> = ({ selectedYe
                       </PopoverContent>
                     </Popover>
                   </div>
-                  {/* Responsável */}
                   <div className="w-full md:w-48">
                     <Label htmlFor="responsible-filter" className="sr-only">Responsável</Label>
                     <ResponsibleUserCombobox
