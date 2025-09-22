@@ -490,7 +490,7 @@ export const ColetasConcluidas: React.FC<ColetasConcluidasProps> = ({ selectedYe
                           )}
                         </Button>
                       </PopoverTrigger>
-                      <PopoverContent className="p-0 z-50" side="bottom" align="start">
+                      <PopoverContent className="p-0 z-50 bg-popover border shadow-lg" side="bottom" align="start">
                         <Calendar
                           mode="single"
                           selected={startDateFilter}
@@ -524,7 +524,7 @@ export const ColetasConcluidas: React.FC<ColetasConcluidasProps> = ({ selectedYe
                           )}
                         </Button>
                       </PopoverTrigger>
-                      <PopoverContent className="p-0 z-50" side="bottom" align="start">
+                      <PopoverContent className="p-0 z-50 bg-popover border shadow-lg" side="bottom" align="start">
                         <Calendar
                           mode="single"
                           selected={endDateFilter}
