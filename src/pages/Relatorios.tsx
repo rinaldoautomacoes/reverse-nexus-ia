@@ -17,7 +17,7 @@ import { useAuth } from "@/hooks/use-auth";
 import { generateReport } from "@/lib/report-utils";
 import { PerformanceChart } from "@/components/PerformanceChart"; // Importar o novo componente
 import { format, parseISO, startOfMonth } from "date-fns";
-import { ptBR } from "date-fns/locale";
+import { ptBR } from "date-fns/locale"; // Importação corrigida
 import { useEffect } from "react";
 
 type Coleta = Tables<'coletas'>;
