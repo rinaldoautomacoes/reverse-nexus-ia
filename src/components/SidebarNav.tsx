@@ -23,6 +23,11 @@ import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { cn } from '@/lib/utils';
 import { useSidebar } from '@/contexts/SidebarContext';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip"; // Importar componentes de Tooltip
 
 interface SidebarNavProps {
   selectedYear: string;
@@ -114,7 +119,7 @@ export const SidebarNav: React.FC<SidebarNavProps> = ({ selectedYear, setSelecte
             const showItem = user && item.roles.includes(profile?.role || 'standard');
             if (!showItem) return null;
 
-            return (
+            const buttonContent = (
               <Button
                 key={item.path}
                 variant="ghost"
@@ -131,6 +136,15 @@ export const SidebarNav: React.FC<SidebarNavProps> = ({ selectedYear, setSelecte
                 <Icon className={cn(isCollapsed ? 'h-6 w-6' : 'mr-3 h-5 w-5')} />
                 {!isCollapsed && item.label}
               </Button>
+            );
+
+            return isCollapsed ? (
+              <Tooltip key={item.path}>
+                <TooltipTrigger asChild>{buttonContent}</TooltipTrigger>
+                <TooltipContent side="right">{item.label}</TooltipContent>
+              </Tooltip>
+            ) : (
+              buttonContent
             );
           })}
         </nav>
