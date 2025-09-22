@@ -7,7 +7,6 @@ import type { Tables } from "@/integrations/supabase/types";
 import { useAuth } from "@/hooks/use-auth";
 import { Package, Clock, CheckCircle } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { ptBR } from "date-fns/locale"; // Importação corrigida
 
 type Coleta = Tables<'coletas'>;
 

@@ -20,7 +20,7 @@ import { ResponsibleUserCombobox } from "@/components/ResponsibleUserCombobox"; 
 import { Calendar } from "@/components/ui/calendar";
 import { cn } from "@/lib/utils";
 import { format, parse } from "date-fns";
-import { ptBR } from "date-fns/locale"; // Importação corrigida
+import { ptBR } from "date-fns/locale";
 
 type ColetaInsert = TablesInsert<'coletas'>;
 type Client = Tables<'clients'>;

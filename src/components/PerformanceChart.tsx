@@ -11,7 +11,6 @@ import {
 } from 'recharts';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { BarChart3 } from 'lucide-react';
-import { ptBR } from "date-fns/locale"; // Importação corrigida
 
 interface MonthlyData {
   month: string;

@@ -7,7 +7,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { ArrowLeft, Package, MapPin, Calendar, Search, Filter, Eye, Edit, Trash2, MessageSquareText, Mail, RefreshCcw, Clock, CheckCircle, ListChecks, Tag, Box, User as UserIcon, ChevronDown } from "lucide-react";
+import { ArrowLeft, Package, MapPin, Calendar, Search, Filter, Eye, Edit, Trash2, MessageSquareText, Mail, RefreshCcw, Clock, CheckCircle, ListChecks, Tag, Box, User as UserIcon } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useState } from "react";
 import { useToast } from "@/hooks/use-toast";
@@ -15,23 +15,17 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import type { Tables, TablesInsert, TablesUpdate } from "@/integrations/supabase/types";
 import { useAuth } from "@/hooks/use-auth";
-import { format, ptBR } from "date-fns";
+import { format } from "date-fns";
+import { ptBR } from "date-fns/locale";
 import { CollectionStatusUpdateDialog } from "@/components/CollectionStatusUpdateDialog";
 import { EditResponsibleDialog } from "@/components/EditResponsibleDialog";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { Calendar as CalendarComponent } from "@/components/ui/calendar";
-import { cn } from "@/lib/utils";
-import { DateRange } from "react-day-picker";
-import { ClientCombobox } from "@/components/ClientCombobox";
-import { ResponsibleUserCombobox } from "@/components/ResponsibleUserCombobox";
 
 type Coleta = Tables<'coletas'>;
 type ColetaInsert = TablesInsert<'coletas'>;
 type ColetaUpdate = TablesUpdate<'coletas'>;
 type Item = Tables<'items'>;
 type Profile = Tables<'profiles'>;
-type Client = Tables<'clients'>;
 
 // Definir um tipo auxiliar para a coleta com o perfil do responsável aninhado
 type ColetaWithResponsibleProfile = Coleta & {
@@ -192,10 +186,6 @@ export const ColetasConcluidas: React.FC<ColetasConcluidasProps> = ({ selectedYe
   const { user } = useAuth();
 
   const [searchTerm, setSearchTerm] = useState("");
-  const [dateRange, setDateRange] = useState<DateRange | undefined>(undefined);
-  const [selectedClient, setSelectedClient] = useState<Client | null>(null);
-  const [selectedResponsibleUser, setSelectedResponsibleUser] = useState<Profile | null>(null);
-
   const [selectedColeta, setSelectedColeta] = useState<ColetaWithResponsibleProfile | null>(null);
   const [editingColeta, setEditingColeta] = useState<Coleta | null>(null);
   const [isViewDetailsDialogOpen, setIsViewDetailsDialogOpen] = useState(false);
@@ -207,40 +197,21 @@ export const ColetasConcluidas: React.FC<ColetasConcluidasProps> = ({ selectedYe
 
   // Query para buscar as coletas
   const { data: coletas, isLoading: isLoadingColetas, error: coletasError } = useQuery<Coleta[], Error>({
-    queryKey: ['coletasConcluidas', user?.id, selectedYear, dateRange, selectedClient?.id, selectedResponsibleUser?.id],
+    queryKey: ['coletasConcluidas', user?.id, selectedYear],
     queryFn: async () => {
       if (!user?.id) return [];
 
-      let query = supabase
+      const startDate = `${selectedYear}-01-01`;
+      const endDate = `${parseInt(selectedYear) + 1}-01-01`;
+
+      const { data, error } = await supabase
         .from('coletas')
-        .select(`*`)
+        .select(`*`) // Seleciona todas as colunas diretas
         .eq('user_id', user.id)
-        .eq('status_coleta', 'concluida');
+        .eq('status_coleta', 'concluida')
+        .gte('previsao_coleta', startDate)
+        .lt('previsao_coleta', endDate);
       
-      // Filtrar por ano (previsao_coleta)
-      const startDateOfYear = `${selectedYear}-01-01`;
-      const endDateOfYear = `${parseInt(selectedYear) + 1}-01-01`;
-      query = query.gte('previsao_coleta', startDateOfYear).lt('previsao_coleta', endDateOfYear);
-
-      // Filtrar por data de previsão de coleta (range)
-      if (dateRange?.from) {
-        query = query.gte('previsao_coleta', format(dateRange.from, 'yyyy-MM-dd'));
-      }
-      if (dateRange?.to) {
-        query = query.lte('previsao_coleta', format(dateRange.to, 'yyyy-MM-dd'));
-      }
-
-      // Filtrar por cliente
-      if (selectedClient?.id) {
-        query = query.eq('client_id', selectedClient.id);
-      }
-
-      // Filtrar por responsável
-      if (selectedResponsibleUser?.id) {
-        query = query.eq('responsible_user_id', selectedResponsibleUser.id);
-      }
-
-      const { data, error } = await query;
       if (error) throw new Error(error.message);
       return data;
     },
@@ -297,7 +268,7 @@ export const ColetasConcluidas: React.FC<ColetasConcluidasProps> = ({ selectedYe
       return data;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['coletasConcluidas', user?.id, selectedYear, dateRange, selectedClient?.id, selectedResponsibleUser?.id] });
+      queryClient.invalidateQueries({ queryKey: ['coletasConcluidas', user?.id, selectedYear] });
       queryClient.invalidateQueries({ queryKey: ['coletasAtivas', user?.id, selectedYear] });
       queryClient.invalidateQueries({ queryKey: ['dashboardColetasMetrics', user?.id, selectedYear] });
       queryClient.invalidateQueries({ queryKey: ['productStatusChart', user?.id, selectedYear] });
@@ -320,7 +291,7 @@ export const ColetasConcluidas: React.FC<ColetasConcluidasProps> = ({ selectedYe
       if (error) throw new Error(error.message);
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['coletasConcluidas', user?.id, selectedYear, dateRange, selectedClient?.id, selectedResponsibleUser?.id] });
+      queryClient.invalidateQueries({ queryKey: ['coletasConcluidas', user?.id, selectedYear] });
       queryClient.invalidateQueries({ queryKey: ['coletasAtivas', user?.id, selectedYear] });
       queryClient.invalidateQueries({ queryKey: ['dashboardColetasMetrics', user?.id, selectedYear] });
       queryClient.invalidateQueries({ queryKey: ['productStatusChart', user?.id, selectedYear] });
@@ -495,69 +466,6 @@ export const ColetasConcluidas: React.FC<ColetasConcluidasProps> = ({ selectedYe
                     onChange={(e) => setSearchTerm(e.target.value)}
                     className="pl-10"
                   />
-                </div>
-                <div className="flex flex-col md:flex-row gap-4">
-                  {/* Filtro por Data */}
-                  <Popover>
-                    <PopoverTrigger asChild>
-                      <Button
-                        id="date"
-                        variant={"outline"}
-                        className={cn(
-                          "w-full justify-start text-left font-normal",
-                          !dateRange?.from && "text-muted-foreground"
-                        )}
-                      >
-                        <Calendar className="mr-2 h-4 w-4" />
-                        {dateRange?.from ? (
-                          dateRange.to ? (
-                            <>
-                              {format(dateRange.from, "dd/MM/yyyy", { locale: ptBR })} -{" "}
-                              {format(dateRange.to, "dd/MM/yyyy", { locale: ptBR })}
-                            </>
-                          ) : (
-                            format(dateRange.from, "dd/MM/yyyy", { locale: ptBR })
-                          )
-                        ) : (
-                          <span>Filtrar por Data</span>
-                        )}
-                        <ChevronDown className="ml-auto h-4 w-4 opacity-50" />
-                      </Button>
-                    </PopoverTrigger>
-                    <PopoverContent className="w-auto p-0" align="end">
-                      <CalendarComponent
-                        initialFocus
-                        mode="range"
-                        defaultMonth={dateRange?.from}
-                        selected={dateRange}
-                        onSelect={setDateRange}
-                        numberOfMonths={2}
-                        locale={ptBR}
-                      />
-                    </PopoverContent> {/* Corrigido: Fechamento correto do PopoverContent */}
-                  </Popover>
-
-                  {/* Filtro por Cliente */}
-                  <div className="w-full md:w-48">
-                    <ClientCombobox
-                      value={selectedClient?.name || ''}
-                      onValueChange={(name) => {
-                        if (!name) setSelectedClient(null); // Clear if input is empty
-                      }}
-                      onClientSelect={setSelectedClient}
-                    />
-                  </div>
-
-                  {/* Filtro por Responsável */}
-                  <div className="w-full md:w-48">
-                    <ResponsibleUserCombobox
-                      value={selectedResponsibleUser?.id || null}
-                      onValueChange={(id) => {
-                        if (!id) setSelectedResponsibleUser(null); // Clear if input is empty
-                      }}
-                      onUserSelect={setSelectedResponsibleUser}
-                    />
-                  </div>
                 </div>
               </div>
             </CardContent>
