@@ -534,7 +534,7 @@ export const ColetasConcluidas: React.FC<ColetasConcluidasProps> = ({ selectedYe
                         numberOfMonths={2}
                         locale={ptBR}
                       />
-                    </button>
+                    </PopoverContent> {/* Corrigido: Fechamento correto do PopoverContent */}
                   </Popover>
 
                   {/* Filtro por Cliente */}
