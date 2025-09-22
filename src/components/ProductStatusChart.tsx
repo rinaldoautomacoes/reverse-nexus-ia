@@ -14,9 +14,11 @@ import {
   AreaChart,
   XAxis,
   YAxis,
+  // CartesianGrid, // Removido para um visual mais limpo
   Tooltip,
   Area,
-  LabelList, // Importado LabelList
+  // Legend, // Removido para replicar a imagem
+  // LabelList, // Removido para replicar a imagem
 } from 'recharts';
 
 type Coleta = Tables<'coletas'>;
@@ -178,20 +180,21 @@ export const ProductStatusChart: React.FC<ProductStatusChartProps> = ({ selected
                   bottom: 0,
                 }}
               >
-                {/* Eixos X e Y completamente invisíveis */}
+                {/* CartesianGrid é removido para um visual mais limpo */}
                 <XAxis 
                   dataKey="month" 
+                  stroke="hsl(var(--muted-foreground))" 
                   axisLine={false} 
                   tickLine={false} 
-                  tick={false} // Remove os rótulos do eixo X
-                  height={0} // Oculta o espaço do eixo X
+                  tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 12 }} 
                 />
                 <YAxis 
+                  stroke="hsl(var(--muted-foreground))" 
                   axisLine={false} 
                   tickLine={false} 
-                  tick={false} // Remove os rótulos do eixo Y
-                  width={0} // Oculta o espaço do eixo Y
+                  tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 12 }} 
                   domain={[0, 'dataMax']} 
+                  tickFormatter={(value) => value.toFixed(0)} 
                 />
                 <Tooltip
                   contentStyle={{
@@ -202,29 +205,21 @@ export const ProductStatusChart: React.FC<ProductStatusChartProps> = ({ selected
                   itemStyle={{ color: 'hsl(var(--foreground))' }}
                   labelStyle={{ color: 'hsl(var(--primary))' }}
                 />
+                {/* Legend e LabelList são removidos para replicar a imagem */}
                 <defs>
                   <linearGradient id="gradientTotalItems" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="0%" stopColor="hsl(var(--neon-cyan))" stopOpacity={0.4} />
-                    <stop offset="95%" stopColor="hsl(var(--neon-cyan))" stopOpacity={0.15} />
+                    <stop offset="0%" stopColor="hsl(var(--neon-cyan))" stopOpacity={0.4} /> {/* Topo do degradê, ciano mais claro */}
+                    <stop offset="95%" stopColor="hsl(var(--neon-cyan))" stopOpacity={0.15} /> {/* Base do degradê, ciano mais escuro/transparente */}
                   </linearGradient>
                 </defs>
                 <Area 
                   type="monotone" 
                   dataKey="total_month" 
-                  stroke="hsl(var(--neon-cyan))"
+                  stroke="hsl(var(--neon-cyan))" // Ciano neon brilhante para a linha
                   fill="url(#gradientTotalItems)" 
                   strokeWidth={2} 
                   name="Total de Itens"
-                >
-                  {/* Adiciona LabelList para exibir os rótulos de dados */}
-                  <LabelList 
-                    dataKey="total_month" 
-                    position="top" 
-                    fill="hsl(var(--foreground))" // Cor do texto do rótulo
-                    fontSize={12}
-                    offset={10} // Ajusta a posição vertical do rótulo
-                  />
-                </Area>
+                />
               </AreaChart>
             </ResponsiveContainer>
           </div>
