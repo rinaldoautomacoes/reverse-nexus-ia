@@ -40,7 +40,7 @@ export const SidebarNav: React.FC<SidebarNavProps> = ({ selectedYear, setSelecte
   const isAdmin = profile?.role === 'admin';
   const isMobile = useIsMobile();
   const [isSheetOpen, setIsSheetOpen] = React.useState(false);
-  const { isSidebarOpen, toggleSidebar, sidebarWidthClass } = useSidebar(); // sidebarWidthClass não será mais usado para controlar a largura diretamente
+  const { isSidebarOpen, toggleSidebar, sidebarWidthClass } = useSidebar();
 
   const handleLogout = async () => {
     await supabase.auth.signOut();
@@ -229,14 +229,10 @@ export const SidebarNav: React.FC<SidebarNavProps> = ({ selectedYear, setSelecte
   }
 
   return (
-    <aside 
-      style={{ gridArea: 'left-aside' }} // Atribuído à área de grid 'left-aside'
-      className={cn(
-        "h-full bg-card border-r border-border z-50 shadow-lg card-futuristic transition-all duration-300 ease-in-out",
-        // As classes de largura (sidebarWidthClass) e posicionamento fixo foram removidas
-        // pois o grid agora controla a largura e o posicionamento.
-      )}
-    >
+    <aside className={cn(
+      "fixed top-0 left-0 h-full bg-card border-r border-border z-50 shadow-lg card-futuristic transition-all duration-300 ease-in-out",
+      sidebarWidthClass
+    )}>
       <Button
         variant="ghost"
         size="icon"
