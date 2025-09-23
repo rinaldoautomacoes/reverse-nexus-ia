@@ -46,14 +46,23 @@ const App = () => (
 
 const AppLayout = () => {
   const isMobile = useIsMobile();
-  const { mainContentMarginClass } = useSidebar();
+  const { mainContentMarginClass } = useSidebar(); // Esta classe não será mais usada para o layout principal
   const [selectedYear, setSelectedYear] = useState<string>('2025');
 
   return (
-    <div className="flex min-h-screen bg-background ai-pattern">
+    <div className="container bg-background ai-pattern">
+      {/* Header Area */}
+      <div style={{ gridArea: 'header' }} className="bg-card p-2 text-center text-muted-foreground">Header Placeholder</div>
+
+      {/* Left Aside Area (SidebarNav) */}
+      {/* O SidebarNav agora é um item de grid e não mais fixo */}
       <SidebarNav selectedYear={selectedYear} setSelectedYear={setSelectedYear} />
 
-      <main className={cn("flex-1 transition-all duration-300 ease-in-out", isMobile ? 'ml-0' : mainContentMarginClass)}>
+      {/* Banner Area */}
+      <div style={{ gridArea: 'banner' }} className="bg-secondary/20 p-2 text-center text-muted-foreground">Banner Placeholder</div>
+
+      {/* Main Content Area */}
+      <main style={{ gridArea: 'main' }} className="p-4">
         <Routes>
           <Route path="/auth" element={<Auth />} />
           <Route path="/debug" element={<Debug />} />
@@ -61,8 +70,8 @@ const AppLayout = () => {
           <Route element={<ProtectedRoute allowedRoles={['standard', 'admin']} />}>
             <Route path="/" element={<Index selectedYear={selectedYear} />} />
             <Route path="/agendar-coleta" element={<AgendarColeta />} />
-            <Route path="/coletas-ativas" element={<Coletas selectedYear={selectedYear} />} /> {/* Passando selectedYear */}
-            <Route path="/coletas-concluidas" element={<ColetasConcluidas selectedYear={selectedYear} />} /> {/* Passando selectedYear */}
+            <Route path="/coletas-ativas" element={<Coletas selectedYear={selectedYear} />} />
+            <Route path="/coletas-concluidas" element={<ColetasConcluidas selectedYear={selectedYear} />} />
             <Route path="/relatorios" element={<Relatorios />} />
             <Route path="/product-management" element={<ProductManagement />} />
           </Route>
@@ -76,6 +85,15 @@ const AppLayout = () => {
           <Route path="*" element={<NotFound />} />
         </Routes>
       </main>
+
+      {/* Right Aside Area */}
+      <div style={{ gridArea: 'right-aside' }} className="bg-card p-2 text-center text-muted-foreground">Right Aside Placeholder</div>
+
+      {/* Low Content Area */}
+      <div style={{ gridArea: 'low-content' }} className="bg-secondary/20 p-2 text-center text-muted-foreground">Low Content Placeholder</div>
+
+      {/* Footer Area */}
+      <div style={{ gridArea: 'footer' }} className="bg-card p-2 text-center text-sm text-muted-foreground">Footer Placeholder</div>
     </div>
   );
 };
