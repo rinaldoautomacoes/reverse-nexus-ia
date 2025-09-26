@@ -31,7 +31,7 @@ export const ProductStatusChart: React.FC<ProductStatusChartProps> = ({ selected
   const { user } = useAuth();
   const { toast } = useToast();
 
-  const { data: coletas, isLoading, error } = useQuery<Coleta[], Error>({
+  const { data: coletas, isLoading, error } = useQuery({
     queryKey: ['productStatusChart', user?.id, selectedYear],
     queryFn: async () => {
       if (!user?.id) return [];
@@ -52,7 +52,7 @@ export const ProductStatusChart: React.FC<ProductStatusChartProps> = ({ selected
         .lt('previsao_coleta', endDate)
         .order('created_at', { ascending: true });
       if (error) throw new Error(error.message);
-      return data;
+      return data || [];
     },
     enabled: !!user?.id,
   });
@@ -67,7 +67,7 @@ export const ProductStatusChart: React.FC<ProductStatusChartProps> = ({ selected
     }
   }, [error, toast]);
 
-  const processColetasData = (coletasData: Coleta[] | undefined) => {
+  const processColetasData = (coletasData: any[] | undefined) => {
     const monthlyDataMap = new Map<string, { pendente: number; em_transito: number; entregues: number; total_month: number }>();
     const allMonths: string[] = [];
     const currentYear = parseInt(selectedYear);

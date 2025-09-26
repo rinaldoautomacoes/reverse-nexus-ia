@@ -48,7 +48,7 @@ interface CollectionStatusDonutChartProps {
 export const CollectionStatusDonutChart: React.FC<CollectionStatusDonutChartProps> = ({ selectedYear }) => {
   const { user } = useAuth();
 
-  const { data: coletas, isLoading, error } = useQuery<Coleta[], Error>({
+  const { data: coletas, isLoading, error } = useQuery({
     queryKey: ['collectionStatusChart', user?.id, selectedYear], // Adicionado selectedYear ao queryKey
     queryFn: async () => {
       if (!user?.id) return [];
@@ -63,12 +63,12 @@ export const CollectionStatusDonutChart: React.FC<CollectionStatusDonutChartProp
         .gte('previsao_coleta', startDate) // FILTRAR POR previsao_coleta
         .lt('previsao_coleta', endDate); // FILTRAR POR previsao_coleta
       if (error) throw new Error(error.message);
-      return data;
+      return data || [];
     },
     enabled: !!user?.id,
   });
 
-  const calculateStatusData = (coletasData: Coleta[] | undefined) => {
+  const calculateStatusData = (coletasData: any[] | undefined) => {
     const pendenteCount = coletasData?.filter(c => c.status_coleta === 'pendente').length || 0;
     const agendadaCount = coletasData?.filter(c => c.status_coleta === 'agendada').length || 0;
     const concluidaCount = coletasData?.filter(c => c.status_coleta === 'concluida').length || 0;

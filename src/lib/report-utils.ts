@@ -1,10 +1,18 @@
 import jsPDF from 'jspdf';
+import 'jspdf-autotable';
 import html2canvas from 'html2canvas';
 import { supabase } from "@/integrations/supabase/client";
 import type { Tables } from "@/integrations/supabase/types";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import * as XLSX from 'xlsx';
+
+declare module 'jspdf' {
+  interface jsPDF {
+    autoTable: (options: any) => jsPDF;
+    lastAutoTable: any;
+  }
+}
 
 type Coleta = Tables<'coletas'>;
 type Item = Tables<'items'>;
@@ -45,7 +53,7 @@ const fetchReportData = async (reportData: ReportData, userId: string) => {
     .eq('user_id', userId);
   if (itemsError) throw itemsError;
 
-  const itemsByCollection = new Map<string, Item[]>();
+  const itemsByCollection = new Map<string, any[]>();
   items?.forEach(item => {
     if (item.collection_id) {
       if (!itemsByCollection.has(item.collection_id)) {

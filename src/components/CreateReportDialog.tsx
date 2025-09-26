@@ -8,7 +8,7 @@ import { supabase } from "@/integrations/supabase/client";
 import type { TablesInsert } from "@/integrations/supabase/types";
 import { useAuth } from "@/hooks/use-auth";
 import { ReportForm } from "./ReportForm"; // Importar o novo ReportForm
-import { generateReportPDF } from "@/lib/report-utils"; // Importar a função de geração de PDF do utilitário
+import { generateReport } from "@/lib/report-utils"; // Importar a função de geração de relatório do utilitário
 
 type ReportInsert = TablesInsert<'reports'>;
 

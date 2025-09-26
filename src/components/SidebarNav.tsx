@@ -16,6 +16,7 @@ import {
   ChevronRight,
   Menu,
   User as UserIcon,
+  Truck,
 } from 'lucide-react';
 import { useAuth } from '@/hooks/use-auth';
 import { supabase } from '@/integrations/supabase/client';
@@ -74,6 +75,12 @@ export const SidebarNav: React.FC<SidebarNavProps> = ({ selectedYear, setSelecte
       roles: ['standard', 'admin'],
     },
     {
+      label: 'Entregas',
+      icon: Truck,
+      path: '/entregas',
+      roles: ['standard', 'admin'],
+    },
+    {
       label: 'Relatórios',
       icon: TrendingUp,
       path: '/relatorios',
@@ -125,13 +132,13 @@ export const SidebarNav: React.FC<SidebarNavProps> = ({ selectedYear, setSelecte
                 variant="ghost"
                 className={cn(
                   'w-full justify-start text-left h-12 text-base hover:bg-primary/10 hover:text-primary',
-                  navigate.pathname === item.path && 'bg-primary/10 text-primary font-semibold',
+                  window.location.pathname === item.path && 'bg-primary/10 text-primary font-semibold',
                   isCollapsed && 'justify-center px-0'
                 )}
-                onClick={item.action || (() => {
+                onClick={() => {
                   navigate(item.path);
                   if (isMobile) setIsSheetOpen(false);
-                })}
+                }}
               >
                 <Icon className={cn(isCollapsed ? 'h-6 w-6' : 'mr-3 h-5 w-5')} />
                 {!isCollapsed && item.label}

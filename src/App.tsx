@@ -14,6 +14,7 @@ import { MetricsManagement } from "./pages/MetricsManagement";
 import { UserManagement } from "./pages/UserManagement";
 import { ClientManagement } from "./pages/ClientManagement";
 import { ProductManagement } from "./pages/ProductManagement";
+import { Entregas } from "./pages/Entregas";
 import { Debug } from "./pages/Debug";
 import { AuthProvider } from "./hooks/use-auth";
 import { ProtectedRoute } from "./components/ProtectedRoute";
@@ -63,6 +64,7 @@ const AppLayout = () => {
             <Route path="/agendar-coleta" element={<AgendarColeta />} />
             <Route path="/coletas-ativas" element={<Coletas selectedYear={selectedYear} />} /> {/* Passando selectedYear */}
             <Route path="/coletas-concluidas" element={<ColetasConcluidas selectedYear={selectedYear} />} /> {/* Passando selectedYear */}
+            <Route path="/entregas" element={<Entregas selectedYear={selectedYear} />} />
             <Route path="/relatorios" element={<Relatorios />} />
             <Route path="/product-management" element={<ProductManagement />} />
           </Route>
