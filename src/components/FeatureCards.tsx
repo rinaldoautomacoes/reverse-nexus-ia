@@ -1,38 +1,64 @@
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Brain, Lightbulb } from 'lucide-react'; // Mantendo alguns ícones para o placeholder
+import { Brain, Lightbulb, FileText, Package, Truck } from 'lucide-react'; // Adicionado FileText, Package, Truck
 import { cn } from '@/lib/utils';
+import { useNavigate } from 'react-router-dom'; // Importar useNavigate
 
 interface FeatureCardProps {
   title: string;
   description: string;
   icon: React.ElementType;
   delay: number;
+  path: string; // Adicionado path para navegação
 }
 
-// O componente FeatureCard individual não será mais usado diretamente, mas mantido para referência
-const FeatureCard: React.FC<FeatureCardProps> = ({ title, description, icon: Icon, delay }) => (
-  <Card 
-    className="card-futuristic border-0 bg-gradient-dark animate-slide-up transition-all duration-300 ease-in-out"
-    style={{ animationDelay: `${delay}ms` }}
-  >
-    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-      <CardTitle className="text-sm font-medium text-muted-foreground">
-        {title}
-      </CardTitle>
-      <div className="p-2 rounded-lg bg-primary/10 text-primary">
-        <Icon className="h-4 w-4" />
-      </div>
-    </CardHeader>
-    <CardContent>
-      <p className="text-lg font-bold font-orbitron gradient-text">{description}</p>
-    </CardContent>
-  </Card>
-);
+const FeatureCard: React.FC<FeatureCardProps> = ({ title, description, icon: Icon, delay, path }) => {
+  const navigate = useNavigate(); // Usar useNavigate dentro do componente
+  return (
+    <Card 
+      className="card-futuristic border-0 bg-gradient-dark animate-slide-up transition-all duration-300 ease-in-out cursor-pointer hover:scale-[1.02]"
+      style={{ animationDelay: `${delay}ms` }}
+      onClick={() => navigate(path)} // Adicionar onClick para navegar
+    >
+      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+        <CardTitle className="text-sm font-medium text-muted-foreground">
+          {title}
+        </CardTitle>
+        <div className="p-2 rounded-lg bg-primary/10 text-primary">
+          <Icon className="h-4 w-4" />
+        </div>
+      </CardHeader>
+      <CardContent>
+        <p className="text-lg font-bold font-orbitron gradient-text">{description}</p>
+      </CardContent>
+    </Card>
+  );
+};
 
 export const FeatureCards: React.FC = () => {
-  // As features foram removidas para deixar o card vazio
-  // const features = [...]; 
+  const features = [
+    {
+      title: 'Relatório de Coletas',
+      description: 'Análises e insights sobre suas coletas.',
+      icon: FileText,
+      path: '/relatorios',
+      delay: 0,
+    },
+    {
+      title: 'Relatório de Entregas',
+      description: 'Análises e insights sobre suas entregas.',
+      icon: Truck, // Usando Truck para diferenciar de coletas
+      path: '/relatorios-entregas',
+      delay: 100,
+    },
+    {
+      title: 'Status dos Produtos',
+      description: 'Visão geral do status dos produtos em coletas.',
+      icon: Package,
+      path: '/coletas-dashboard', // O gráfico de status de produtos está no dashboard de coletas
+      delay: 200,
+    },
+  ];
 
   return (
     <section className="px-6 lg:px-8 py-12 bg-background">
@@ -40,18 +66,17 @@ export const FeatureCards: React.FC = () => {
         <h2 className="text-3xl md:text-4xl font-bold font-orbitron gradient-text text-center mb-10 animate-slide-up">
           Transforme Sua Logística
         </h2>
-        <div className="grid grid-cols-1"> {/* Alterado para uma única coluna */}
-          <Card className="card-futuristic border-0 bg-gradient-dark h-48 flex items-center justify-center text-center">
-            <CardContent className="p-6">
-              <Brain className="h-12 w-12 text-primary mx-auto mb-4 animate-float" />
-              <p className="text-lg font-semibold text-muted-foreground">
-                Conteúdo futuro para esta seção.
-              </p>
-              <p className="text-sm text-muted-foreground mt-2">
-                Novas funcionalidades e insights em breve!
-              </p>
-            </CardContent>
-          </Card>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"> {/* Alterado para 3 colunas */}
+          {features.map((feature, index) => (
+            <FeatureCard
+              key={index}
+              title={feature.title}
+              description={feature.description}
+              icon={feature.icon}
+              delay={feature.delay}
+              path={feature.path}
+            />
+          ))}
         </div>
       </div>
     </section>
