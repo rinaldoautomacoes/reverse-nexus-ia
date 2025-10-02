@@ -11,7 +11,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Calendar as CalendarIcon, ArrowLeft, Package, MapPin, Search, Filter, Eye, Edit, Trash2, MessageSquareText, Mail, RefreshCcw, Clock, CheckCircle, ListChecks, Tag, Box, User as UserIcon, Truck } from "lucide-react";
 import { Calendar } from "@/components/ui/calendar";
 import { useNavigate } from "react-router-dom";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -64,6 +64,14 @@ export const EntregasConcluidasList: React.FC<EntregasConcluidasListProps> = ({ 
   // Estados para controlar a abertura dos Popovers de data
   const [isStartDatePickerOpen, setIsStartDatePickerOpen] = useState(false);
   const [isEndDatePickerOpen, setIsEndDatePickerOpen] = useState(false);
+
+  // Fechar calendários quando dialogs são abertos
+  useEffect(() => {
+    if (isViewDetailsDialogOpen || isEditDialogOpen) {
+      setIsStartDatePickerOpen(false);
+      setIsEndDatePickerOpen(false);
+    }
+  }, [isViewDetailsDialogOpen, isEditDialogOpen]);
 
   // Query para buscar as entregas (coletas com status 'concluida')
   const { data: entregas, isLoading: isLoadingEntregas, error: entregasError } = useQuery<Coleta[], Error>({
@@ -358,24 +366,68 @@ export const EntregasConcluidasList: React.FC<EntregasConcluidasListProps> = ({ 
                   {/* Data Inicial */}
                   <div className="w-full md:w-48">
                     <Label htmlFor="start-date" className="sr-only">Data Inicial</Label>
-                    <Input
-                      id="start-date"
-                      type="date"
-                      value={startDateFilter ? format(startDateFilter, "yyyy-MM-dd") : ''}
-                      onChange={(e) => setStartDateFilter(e.target.value ? new Date(e.target.value) : undefined)}
-                      className="w-full"
-                    />
+                    <Popover open={isStartDatePickerOpen} onOpenChange={setIsStartDatePickerOpen}>
+                      <PopoverTrigger asChild>
+                        <Button
+                          variant={"outline"}
+                          className={cn(
+                            "w-full justify-start text-left font-normal",
+                            !startDateFilter && "text-muted-foreground"
+                          )}
+                        >
+                          <CalendarIcon className="mr-2 h-4 w-4" />
+                          {startDateFilter ? (
+                            format(startDateFilter, "dd/MM/yyyy", { locale: ptBR })
+                          ) : (
+                            <span>Data Inicial</span>
+                          )}
+                        </Button>
+                      </PopoverTrigger>
+                      <PopoverContent className="p-0 z-50 bg-popover border shadow-lg" side="bottom" align="start">
+                        <Calendar
+                          mode="single"
+                          selected={startDateFilter}
+                          onSelect={(date) => {
+                            setStartDateFilter(date);
+                            setIsStartDatePickerOpen(false);
+                          }}
+                          locale={ptBR}
+                        />
+                      </PopoverContent>
+                    </Popover>
                   </div>
                   {/* Data Final */}
                   <div className="w-full md:w-48">
                     <Label htmlFor="end-date" className="sr-only">Data Final</Label>
-                    <Input
-                      id="end-date"
-                      type="date"
-                      value={endDateFilter ? format(endDateFilter, "yyyy-MM-dd") : ''}
-                      onChange={(e) => setEndDateFilter(e.target.value ? new Date(e.target.value) : undefined)}
-                      className="w-full"
-                    />
+                    <Popover open={isEndDatePickerOpen} onOpenChange={setIsEndDatePickerOpen}>
+                      <PopoverTrigger asChild>
+                        <Button
+                          variant={"outline"}
+                          className={cn(
+                            "w-full justify-start text-left font-normal",
+                            !endDateFilter && "text-muted-foreground"
+                          )}
+                        >
+                          <CalendarIcon className="mr-2 h-4 w-4" />
+                          {endDateFilter ? (
+                            format(endDateFilter, "dd/MM/yyyy", { locale: ptBR })
+                          ) : (
+                            <span>Data Final</span>
+                          )}
+                        </Button>
+                      </PopoverTrigger>
+                      <PopoverContent className="p-0 z-50 bg-popover border shadow-lg" side="bottom" align="start">
+                        <Calendar
+                          mode="single"
+                          selected={endDateFilter}
+                          onSelect={(date) => {
+                            setEndDateFilter(date);
+                            setIsEndDatePickerOpen(false);
+                          }}
+                          locale={ptBR}
+                        />
+                      </PopoverContent>
+                    </Popover>
                   </div>
                   {/* Responsável */}
                   <div className="w-full md:w-48">
