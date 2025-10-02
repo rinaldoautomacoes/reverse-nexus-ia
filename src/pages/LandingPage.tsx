@@ -150,14 +150,14 @@ export const LandingPage: React.FC = () => {
       <FeatureCards />
 
       {/* Video Carousel Section */}
-      <section className="px-6 lg:px-8 py-12 bg-background">
+      {/* <section className="px-6 lg:px-8 py-12 bg-background">
         <div className="max-w-7xl mx-auto">
           <h2 className="text-3xl md:text-4xl font-bold font-orbitron gradient-text text-center mb-10 animate-slide-up">
             Explore Nossos Recursos
           </h2>
           <VideoCarousel />
         </div>
-      </section>
+      </section> */}
     </div>
   );
 };
