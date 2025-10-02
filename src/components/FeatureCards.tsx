@@ -2,23 +2,23 @@ import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Brain, Lightbulb, FileText, Package, Truck } from 'lucide-react'; // Adicionado FileText, Package, Truck
 import { cn } from '@/lib/utils';
-import { useNavigate } from 'react-router-dom'; // Importar useNavigate
+// import { useNavigate } from 'react-router-dom'; // Removido useNavigate, pois os cards não serão mais clicáveis
 
 interface FeatureCardProps {
   title: string;
   description: string;
   icon: React.ElementType;
   delay: number;
-  path: string; // Adicionado path para navegação
+  // path: string; // Removido path, pois os cards não serão mais clicáveis
 }
 
-const FeatureCard: React.FC<FeatureCardProps> = ({ title, description, icon: Icon, delay, path }) => {
-  const navigate = useNavigate(); // Usar useNavigate dentro do componente
+const FeatureCard: React.FC<FeatureCardProps> = ({ title, description, icon: Icon, delay /*, path*/ }) => {
+  // const navigate = useNavigate(); // Removido useNavigate
   return (
     <Card 
-      className="card-futuristic border-0 bg-gradient-dark animate-slide-up transition-all duration-300 ease-in-out cursor-pointer hover:scale-[1.02]"
+      className="card-futuristic border-0 bg-gradient-dark animate-slide-up transition-all duration-300 ease-in-out" // Removido cursor-pointer e hover:scale
       style={{ animationDelay: `${delay}ms` }}
-      onClick={() => navigate(path)} // Adicionar onClick para navegar
+      // onClick={() => navigate(path)} // Removido onClick
     >
       <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
         <CardTitle className="text-sm font-medium text-muted-foreground">
@@ -41,21 +41,21 @@ export const FeatureCards: React.FC = () => {
       title: 'Relatório de Coletas',
       description: 'Análises e insights sobre suas coletas.',
       icon: FileText,
-      path: '/relatorios',
+      // path: '/relatorios', // Removido path
       delay: 0,
     },
     {
       title: 'Relatório de Entregas',
       description: 'Análises e insights sobre suas entregas.',
       icon: Truck, // Usando Truck para diferenciar de coletas
-      path: '/relatorios-entregas',
+      // path: '/relatorios-entregas', // Removido path
       delay: 100,
     },
     {
       title: 'Status dos Produtos',
       description: 'Visão geral do status dos produtos em coletas.',
       icon: Package,
-      path: '/coletas-dashboard', // O gráfico de status de produtos está no dashboard de coletas
+      // path: '/coletas-dashboard', // Removido path
       delay: 200,
     },
   ];
@@ -74,7 +74,7 @@ export const FeatureCards: React.FC = () => {
               description={feature.description}
               icon={feature.icon}
               delay={feature.delay}
-              path={feature.path}
+              // path={feature.path} // Não passa mais o path
             />
           ))}
         </div>
