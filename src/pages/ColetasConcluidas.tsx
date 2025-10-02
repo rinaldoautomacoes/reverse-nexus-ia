@@ -183,7 +183,7 @@ const EditColetaForm = ({ coleta, onUpdate, onCancel }: { coleta: Coleta, onUpda
   );
 };
 
-export const ColetasConcluidas: React.FC<ColetasConcluidasProps> = ({ selectedYear }) => {
+const ColetasConcluidas: React.FC<ColetasConcluidasProps> = ({ selectedYear }) => {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const { toast } = useToast();
@@ -522,7 +522,7 @@ export const ColetasConcluidas: React.FC<ColetasConcluidasProps> = ({ selectedYe
                             setStartDateFilter(date);
                             setIsStartDatePickerOpen(false);
                           }}
-                          initialFocus
+                          // initialFocus // Removido
                           locale={ptBR}
                         />
                       </PopoverContent>
@@ -556,7 +556,7 @@ export const ColetasConcluidas: React.FC<ColetasConcluidasProps> = ({ selectedYe
                             setEndDateFilter(date);
                             setIsEndDatePickerOpen(false);
                           }}
-                          initialFocus
+                          // initialFocus // Removido
                           locale={ptBR}
                         />
                       </PopoverContent>

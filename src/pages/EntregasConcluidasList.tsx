@@ -383,7 +383,7 @@ export const EntregasConcluidasList: React.FC<EntregasConcluidasListProps> = ({ 
                             setStartDateFilter(date);
                             setIsStartDatePickerOpen(false);
                           }}
-                          initialFocus
+                          // initialFocus // Removido
                           locale={ptBR}
                         />
                       </PopoverContent>
@@ -417,7 +417,7 @@ export const EntregasConcluidasList: React.FC<EntregasConcluidasListProps> = ({ 
                             setEndDateFilter(date);
                             setIsEndDatePickerOpen(false);
                           }}
-                          initialFocus
+                          // initialFocus // Removido
                           locale={ptBR}
                         />
                       </PopoverContent>
