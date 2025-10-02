@@ -1,6 +1,6 @@
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Brain, Zap, TrendingUp, Package, Truck, Route, ShieldCheck, Lightbulb } from 'lucide-react';
+import { Brain, Lightbulb } from 'lucide-react'; // Mantendo alguns ícones para o placeholder
 import { cn } from '@/lib/utils';
 
 interface FeatureCardProps {
@@ -10,6 +10,7 @@ interface FeatureCardProps {
   delay: number;
 }
 
+// O componente FeatureCard individual não será mais usado diretamente, mas mantido para referência
 const FeatureCard: React.FC<FeatureCardProps> = ({ title, description, icon: Icon, delay }) => (
   <Card 
     className="card-futuristic border-0 bg-gradient-dark animate-slide-up transition-all duration-300 ease-in-out"
@@ -30,44 +31,8 @@ const FeatureCard: React.FC<FeatureCardProps> = ({ title, description, icon: Ico
 );
 
 export const FeatureCards: React.FC = () => {
-  const features = [
-    {
-      title: 'Robôs IA',
-      description: 'Automação inteligente para otimizar processos.',
-      icon: Brain,
-      delay: 0,
-    },
-    {
-      title: 'Eficiência Operacional',
-      description: 'Reduza custos e tempo com gestão 360.',
-      icon: Zap,
-      delay: 100,
-    },
-    {
-      title: 'Insights Preditivos',
-      description: 'Decisões estratégicas baseadas em dados.',
-      icon: Lightbulb,
-      delay: 200,
-    },
-    {
-      title: 'Otimização de Rotas',
-      description: 'Planejamento inteligente para entregas rápidas.',
-      icon: Route,
-      delay: 300,
-    },
-    {
-      title: 'Segurança de Dados',
-      description: 'Proteção avançada para suas informações.',
-      icon: ShieldCheck,
-      delay: 400,
-    },
-    {
-      title: 'Gestão de Estoque',
-      description: 'Controle total e visibilidade em tempo real.',
-      icon: Package,
-      delay: 500,
-    },
-  ];
+  // As features foram removidas para deixar o card vazio
+  // const features = [...]; 
 
   return (
     <section className="px-6 lg:px-8 py-12 bg-background">
@@ -75,16 +40,18 @@ export const FeatureCards: React.FC = () => {
         <h2 className="text-3xl md:text-4xl font-bold font-orbitron gradient-text text-center mb-10 animate-slide-up">
           Transforme Sua Logística
         </h2>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {features.map((feature, index) => (
-            <FeatureCard
-              key={index}
-              title={feature.title}
-              description={feature.description}
-              icon={feature.icon}
-              delay={feature.delay}
-            />
-          ))}
+        <div className="grid grid-cols-1"> {/* Alterado para uma única coluna */}
+          <Card className="card-futuristic border-0 bg-gradient-dark h-48 flex items-center justify-center text-center">
+            <CardContent className="p-6">
+              <Brain className="h-12 w-12 text-primary mx-auto mb-4 animate-float" />
+              <p className="text-lg font-semibold text-muted-foreground">
+                Conteúdo futuro para esta seção.
+              </p>
+              <p className="text-sm text-muted-foreground mt-2">
+                Novas funcionalidades e insights em breve!
+              </p>
+            </CardContent>
+          </Card>
         </div>
       </div>
     </section>
