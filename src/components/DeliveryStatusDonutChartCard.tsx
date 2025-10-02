@@ -55,7 +55,7 @@ export const DeliveryStatusDonutChartCard: React.FC = () => {
           Status das Entregas
         </CardTitle>
       </CardHeader>
-      <CardContent className="h-[350px] p-0 flex flex-col items-center justify-center">
+      <CardContent className="h-[450px] p-0 flex flex-col items-center justify-center">
         {totalDeliveries > 0 ? (
           <ResponsiveContainer width="100%" height="100%">
             <PieChart>

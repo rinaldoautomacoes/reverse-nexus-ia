@@ -55,7 +55,7 @@ export const CollectionStatusDonutChartCard: React.FC = () => {
           Status das Coletas
         </CardTitle>
       </CardHeader>
-      <CardContent className="h-[350px] p-0 flex flex-col items-center justify-center">
+      <CardContent className="h-[450px] p-0 flex flex-col items-center justify-center">
         {totalCollections > 0 ? (
           <ResponsiveContainer width="100%" height="100%">
             <PieChart>
