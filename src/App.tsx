@@ -29,6 +29,7 @@ import { cn } from "./lib/utils";
 import { useState } from "react";
 import { SidebarNav } from "./components/SidebarNav";
 import { LandingPage } from "./pages/LandingPage";
+import { EntregasDashboardPage } from "./pages/EntregasDashboardPage"; // Adicionado esta importação
 
 const queryClient = new QueryClient();
 
