@@ -45,7 +45,7 @@ export const CollectionReportDashboardCard: React.FC = () => {
     <div className="p-4 space-y-6">
       <div className="text-center">
         <h3 className="text-xl font-bold font-orbitron gradient-text mb-2">Relatório de Coletas</h3>
-        <p className="text-sm text-muted-foreground">Análises inteligentes e insights automatizados para suas coletas</p>
+        {/* <p className="text-sm text-muted-foreground">Análises inteligentes e insights automatizados para suas coletas</p> */}
       </div>
 
       {/* Métricas Rápidas */}
