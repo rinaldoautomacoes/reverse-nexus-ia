@@ -10,7 +10,7 @@ import { AgendarEntrega } from "./pages/AgendarEntrega";
 import { Relatorios } from "./pages/Relatorios";
 import { RelatoriosEntregas } from "./pages/RelatoriosEntregas";
 import { Coletas } from "./pages/Coletas";
-import { ColetasConcluidas } from "./pages/ColetasConcluidas";
+import ColetasConcluidas from "./pages/ColetasConcluidas"; // Alterado para default import
 import { Auth } from "./pages/Auth";
 import { MetricsManagement } from "./pages/MetricsManagement";
 import { UserManagement } from "./pages/UserManagement";
@@ -18,8 +18,7 @@ import { ClientManagement } from "./pages/ClientManagement";
 import { ProductManagement } from "./pages/ProductManagement";
 import { EntregasAtivas } from "./pages/EntregasAtivas";
 import { EntregasConcluidasPage } from "./pages/EntregasConcluidasPage";
-import { EntregasDashboardPage } from "./pages/EntregasDashboardPage";
-import { EntregasConcluidasList } from "./pages/EntregasConcluidasList";
+import EntregasConcluidasList from "./pages/EntregasConcluidasList"; // Alterado para default import
 import { Debug } from "./pages/Debug";
 import { AuthProvider } from "./hooks/use-auth";
 import { ProtectedRoute } from "./components/ProtectedRoute";

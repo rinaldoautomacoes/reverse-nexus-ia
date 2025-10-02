@@ -522,7 +522,6 @@ const ColetasConcluidas: React.FC<ColetasConcluidasProps> = ({ selectedYear }) =
                             setStartDateFilter(date);
                             setIsStartDatePickerOpen(false);
                           }}
-                          // initialFocus // Removido
                           locale={ptBR}
                         />
                       </PopoverContent>
@@ -556,7 +555,6 @@ const ColetasConcluidas: React.FC<ColetasConcluidasProps> = ({ selectedYear }) =
                             setEndDateFilter(date);
                             setIsEndDatePickerOpen(false);
                           }}
-                          // initialFocus // Removido
                           locale={ptBR}
                         />
                       </PopoverContent>
@@ -912,3 +910,5 @@ const ColetasConcluidas: React.FC<ColetasConcluidasProps> = ({ selectedYear }) =
     </div>
   );
 };
+
+export default ColetasConcluidas;
