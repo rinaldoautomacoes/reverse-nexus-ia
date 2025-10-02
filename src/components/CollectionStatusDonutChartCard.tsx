@@ -2,7 +2,7 @@ import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, Legend } from 'recharts';
 import { Package } from "lucide-react";
-import { format, startOfMonth } from 'date-fns';
+import { format, startOfMonth } => 'date-fns';
 import { ptBR } from 'date-fns/locale';
 
 const COLORS = {
@@ -55,7 +55,7 @@ export const CollectionStatusDonutChartCard: React.FC = () => {
           Status das Coletas
         </CardTitle>
       </CardHeader>
-      <CardContent className="h-[250px] p-0 flex flex-col items-center justify-center">
+      <CardContent className="h-[350px] p-0 flex flex-col items-center justify-center">
         {totalCollections > 0 ? (
           <ResponsiveContainer width="100%" height="100%">
             <PieChart>
