@@ -56,19 +56,19 @@ export const CollectionReportDashboardCard: React.FC = () => {
             <Card key={index} className="card-futuristic border-0">
               <CardContent className="p-4">
                 <div className="space-y-2">
-                  <p className="text-sm text-muted-foreground">{metrica.titulo}</p>
+                  {/* <p className="text-sm text-muted-foreground">{metrica.titulo}</p> */} {/* Removido */}
                   <div className="flex items-end justify-between">
                     <div>
                       <p className="text-2xl font-bold">{metrica.valor}</p>
-                      <p className="text-xs text-muted-foreground">{metrica.unidade}</p>
+                      {/* <p className="text-xs text-muted-foreground">{metrica.unidade}</p> */} {/* Removido */}
                     </div>
-                    <Badge 
+                    {/* <Badge 
                       variant="secondary" 
                       className={`${metrica.bgColor} ${metrica.color}`}
                     >
                       <TrendingUp className="w-3 h-3 mr-1" />
                       {metrica.variacao}
-                    </Badge>
+                    </Badge> */} {/* Removido */}
                   </div>
                 </div>
               </CardContent>
