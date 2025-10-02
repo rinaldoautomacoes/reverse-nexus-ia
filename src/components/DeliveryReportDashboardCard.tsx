@@ -11,7 +11,7 @@ import {
   Area,
   Legend,
 } from 'recharts';
-import { format, startOfMonth } from 'date-fns';
+import { format, startOfMonth } => 'date-fns';
 import { ptBR } from 'date-fns/locale';
 
 // Dados fictícios para o gráfico de performance
@@ -59,7 +59,7 @@ export const DeliveryReportDashboardCard: React.FC = () => {
                   {/* <p className="text-sm text-muted-foreground">{metrica.titulo}</p> */} {/* Removido */}
                   <div className="flex items-end justify-between">
                     <div>
-                      <p className="text-2xl font-bold">{metrica.valor}</p>
+                      {/* <p className="text-2xl font-bold">{metrica.valor}</p> */} {/* Removido */}
                       {/* <p className="text-xs text-muted-foreground">{metrica.unidade}</p> */} {/* Removido */}
                     </div>
                     {/* <Badge 
