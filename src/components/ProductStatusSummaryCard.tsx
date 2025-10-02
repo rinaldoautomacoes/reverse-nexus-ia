@@ -35,7 +35,7 @@ export const ProductStatusSummaryCard: React.FC = () => {
       </div>
       <div className="space-y-1">
         <p className="text-sm text-muted-foreground">Disponibilidade: {stockPercentage.toFixed(0)}%</p>
-        <Progress value={stockPercentage} className="h-2" indicatorColor="bg-success-green" />
+        <Progress value={stockPercentage} className="h-2 [&>div]:bg-success-green" />
       </div>
     </div>
   );

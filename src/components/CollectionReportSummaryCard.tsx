@@ -35,7 +35,7 @@ export const CollectionReportSummaryCard: React.FC = () => {
       </div>
       <div className="space-y-1">
         <p className="text-sm text-muted-foreground">Taxa de Conclusão: {completionRate.toFixed(0)}%</p>
-        <Progress value={completionRate} className="h-2" indicatorColor="bg-success-green" />
+        <Progress value={completionRate} className="h-2 [&>div]:bg-success-green" />
       </div>
     </div>
   );

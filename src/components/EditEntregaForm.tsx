@@ -156,34 +156,13 @@ export const EditEntregaForm: React.FC<EditEntregaFormProps> = ({ entrega, onUpd
         </div>
         <div className="space-y-2">
           <Label htmlFor="previsao_coleta">Data da Entrega</Label>
-          <Popover>
-            <PopoverTrigger asChild>
-              <Button
-                variant={"outline"}
-                className={cn(
-                  "w-full justify-start text-left font-normal",
-                  !formData.previsao_coleta && "text-muted-foreground"
-                )}
-                disabled={isPending}
-              >
-                <CalendarIcon className="mr-2 h-4 w-4" />
-                {formData.previsao_coleta ? (
-                  format(parse(formData.previsao_coleta, "yyyy-MM-dd", new Date()), "dd/MM/yyyy", { locale: ptBR })
-                ) : (
-                  <span>Selecione uma data</span>
-                )}
-              </Button>
-            </PopoverTrigger>
-            <PopoverContent className="w-auto p-0">
-              <Calendar
-                mode="single"
-                selected={formData.previsao_coleta ? parse(formData.previsao_coleta, "yyyy-MM-dd", new Date()) : undefined}
-                onSelect={(date) => handleInputChange("previsao_coleta", date ? format(date, "yyyy-MM-dd") : "")}
-                initialFocus
-                locale={ptBR}
-              />
-            </PopoverContent>
-          </Popover>
+          <Input
+            id="previsao_coleta"
+            type="date"
+            value={formData.previsao_coleta || ''}
+            onChange={(e) => handleInputChange("previsao_coleta", e.target.value)}
+            disabled={isPending}
+          />
         </div>
         <div className="space-y-2">
           <Label htmlFor="qtd_aparelhos_solicitado">Quantidade de Aparelhos</Label>
