@@ -53,15 +53,16 @@ export const FeatureCards: React.FC = () => {
       delay: 100,
     },
     {
-      title: 'Status Operacionais', // Título atualizado para refletir ambos os gráficos
-      icon: Brain, // Ícone genérico para representar "Status Operacionais"
-      component: (
-        <div className="flex flex-col gap-4"> {/* Usar um div para agrupar os dois gráficos */}
-          <DeliveryStatusDonutChartCard />
-          <CollectionStatusDonutChartCard />
-        </div>
-      ),
+      title: 'Status das Entregas', // Novo card para status de entregas
+      icon: Truck,
+      component: <DeliveryStatusDonutChartCard />,
       delay: 200,
+    },
+    {
+      title: 'Status das Coletas', // Novo card para status de coletas
+      icon: Package,
+      component: <CollectionStatusDonutChartCard />,
+      delay: 300,
     },
   ];
 
@@ -71,7 +72,7 @@ export const FeatureCards: React.FC = () => {
         <h2 className="text-3xl md:text-4xl font-bold font-orbitron gradient-text text-center mb-10 animate-slide-up">
           Transforme Sua Logística
         </h2>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6"> {/* Alterado para 4 colunas */}
           {features.map((feature, index) => (
             <FeatureCard
               key={index}
