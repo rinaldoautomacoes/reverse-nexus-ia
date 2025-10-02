@@ -11,7 +11,7 @@ import {
   Area,
   Legend,
 } from 'recharts';
-import { format, startOfMonth } => 'date-fns';
+import { format, startOfMonth } from 'date-fns'; // Corrigido aqui
 import { ptBR } from 'date-fns/locale';
 
 // Dados fictícios para o gráfico de performance
