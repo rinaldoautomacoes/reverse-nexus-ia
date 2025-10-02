@@ -7,7 +7,8 @@ import { DeliveryReportSummaryCard } from './DeliveryReportSummaryCard';
 import { ProductStatusSummaryCard } from './ProductStatusSummaryCard';
 import { CollectionReportDashboardCard } from './CollectionReportDashboardCard';
 import { DeliveryReportDashboardCard } from './DeliveryReportDashboardCard';
-import { DeliveryStatusDonutChartCard } from './DeliveryStatusDonutChartCard'; // Importar o novo componente
+import { DeliveryStatusDonutChartCard } from './DeliveryStatusDonutChartCard';
+import { CollectionStatusDonutChartCard } from './CollectionStatusDonutChartCard'; // Importar o novo componente
 
 interface FeatureCardProps {
   title: string;
@@ -52,9 +53,14 @@ export const FeatureCards: React.FC = () => {
       delay: 100,
     },
     {
-      title: 'Status das Entregas', // Título atualizado para refletir o conteúdo
-      icon: Package, // Ícone pode ser ajustado se houver um mais específico para status de entrega
-      component: <DeliveryStatusDonutChartCard />, // Usando o novo componente de gráfico de rosca
+      title: 'Status Operacionais', // Título atualizado para refletir ambos os gráficos
+      icon: Brain, // Ícone genérico para representar "Status Operacionais"
+      component: (
+        <div className="flex flex-col gap-4"> {/* Usar um div para agrupar os dois gráficos */}
+          <DeliveryStatusDonutChartCard />
+          <CollectionStatusDonutChartCard />
+        </div>
+      ),
       delay: 200,
     },
   ];
