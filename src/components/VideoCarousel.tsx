@@ -64,7 +64,7 @@ export const VideoCarousel: React.FC = () => {
         <div className="flex -ml-4">
           {videoData.map((video) => (
             <div key={video.id} className="flex-none w-full md:w-1/2 lg:w-1/3 pl-4">
-              <Card className="card-futuristic h-full flex flex-col">
+              <Card className="card-futuristic h-full flex flex-col bg-card/80 backdrop-blur-sm border-border/50">
                 <CardHeader className="relative p-0 overflow-hidden rounded-t-lg">
                   <div className="relative w-full pt-[56.25%]"> {/* 16:9 Aspect Ratio */}
                     <iframe
@@ -78,7 +78,7 @@ export const VideoCarousel: React.FC = () => {
                 </CardHeader>
                 <CardContent className="p-4 flex-1 flex flex-col justify-between">
                   <div>
-                    <CardTitle className="text-lg font-semibold mb-2">{video.title}</CardTitle>
+                    <CardTitle className="text-lg font-semibold mb-2 gradient-text">{video.title}</CardTitle>
                     <CardDescription className="text-sm text-muted-foreground">{video.description}</CardDescription>
                   </div>
                 </CardContent>

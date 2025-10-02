@@ -18,7 +18,8 @@ import {
 } from 'lucide-react';
 import heroBackground from "@/assets/hero-ai-logistics-dashboard.png";
 import { useAuth } from '@/hooks/use-auth';
-import { FeatureCards } from '@/components/FeatureCards'; // Importar o novo componente
+import { FeatureCards } from '@/components/FeatureCards';
+import { VideoCarousel } from '@/components/VideoCarousel'; // Importar o novo componente
 
 export const LandingPage: React.FC = () => {
   const navigate = useNavigate();
@@ -147,6 +148,16 @@ export const LandingPage: React.FC = () => {
 
       {/* Feature Cards Section */}
       <FeatureCards />
+
+      {/* Video Carousel Section */}
+      <section className="px-6 lg:px-8 py-12 bg-background">
+        <div className="max-w-7xl mx-auto">
+          <h2 className="text-3xl md:text-4xl font-bold font-orbitron gradient-text text-center mb-10 animate-slide-up">
+            Explore Nossos Recursos
+          </h2>
+          <VideoCarousel />
+        </div>
+      </section>
     </div>
   );
 };
