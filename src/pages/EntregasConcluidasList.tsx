@@ -358,68 +358,24 @@ export const EntregasConcluidasList: React.FC<EntregasConcluidasListProps> = ({ 
                   {/* Data Inicial */}
                   <div className="w-full md:w-48">
                     <Label htmlFor="start-date" className="sr-only">Data Inicial</Label>
-                    <Popover open={isStartDatePickerOpen} onOpenChange={setIsStartDatePickerOpen}>
-                      <PopoverTrigger asChild>
-                        <Button
-                          variant={"outline"}
-                          className={cn(
-                            "w-full justify-start text-left font-normal",
-                            !startDateFilter && "text-muted-foreground"
-                          )}
-                        >
-                          <CalendarIcon className="mr-2 h-4 w-4" />
-                          {startDateFilter ? (
-                            format(startDateFilter, "dd/MM/yyyy", { locale: ptBR })
-                          ) : (
-                            <span>Data Inicial</span>
-                          )}
-                        </Button>
-                      </PopoverTrigger>
-                      <PopoverContent className="p-0 z-50 bg-popover border shadow-lg" side="bottom" align="start">
-                        <Calendar
-                          mode="single"
-                          selected={startDateFilter}
-                          onSelect={(date) => {
-                            setStartDateFilter(date);
-                            setIsStartDatePickerOpen(false);
-                          }}
-                          locale={ptBR}
-                        />
-                      </PopoverContent>
-                    </Popover>
+                    <Input
+                      id="start-date"
+                      type="date"
+                      value={startDateFilter ? format(startDateFilter, "yyyy-MM-dd") : ''}
+                      onChange={(e) => setStartDateFilter(e.target.value ? new Date(e.target.value) : undefined)}
+                      className="w-full"
+                    />
                   </div>
                   {/* Data Final */}
                   <div className="w-full md:w-48">
                     <Label htmlFor="end-date" className="sr-only">Data Final</Label>
-                    <Popover open={isEndDatePickerOpen} onOpenChange={setIsEndDatePickerOpen}>
-                      <PopoverTrigger asChild>
-                        <Button
-                          variant={"outline"}
-                          className={cn(
-                            "w-full justify-start text-left font-normal",
-                            !endDateFilter && "text-muted-foreground"
-                          )}
-                        >
-                          <CalendarIcon className="mr-2 h-4 w-4" />
-                          {endDateFilter ? (
-                            format(endDateFilter, "dd/MM/yyyy", { locale: ptBR })
-                          ) : (
-                            <span>Data Final</span>
-                          )}
-                        </Button>
-                      </PopoverTrigger>
-                      <PopoverContent className="p-0 z-50 bg-popover border shadow-lg" side="bottom" align="start">
-                        <Calendar
-                          mode="single"
-                          selected={endDateFilter}
-                          onSelect={(date) => {
-                            setEndDateFilter(date);
-                            setIsEndDatePickerOpen(false);
-                          }}
-                          locale={ptBR}
-                        />
-                      </PopoverContent>
-                    </Popover>
+                    <Input
+                      id="end-date"
+                      type="date"
+                      value={endDateFilter ? format(endDateFilter, "yyyy-MM-dd") : ''}
+                      onChange={(e) => setEndDateFilter(e.target.value ? new Date(e.target.value) : undefined)}
+                      className="w-full"
+                    />
                   </div>
                   {/* Responsável */}
                   <div className="w-full md:w-48">
