@@ -5,7 +5,8 @@ import { cn } from '@/lib/utils';
 import { CollectionReportSummaryCard } from './CollectionReportSummaryCard';
 import { DeliveryReportSummaryCard } from './DeliveryReportSummaryCard';
 import { ProductStatusSummaryCard } from './ProductStatusSummaryCard';
-import { CollectionReportDashboardCard } from './CollectionReportDashboardCard'; // Importar o novo componente
+import { CollectionReportDashboardCard } from './CollectionReportDashboardCard';
+import { DeliveryReportDashboardCard } from './DeliveryReportDashboardCard'; // Importar o novo componente
 
 interface FeatureCardProps {
   title: string;
@@ -40,13 +41,13 @@ export const FeatureCards: React.FC = () => {
     {
       title: 'Relatório de Coletas',
       icon: FileText,
-      component: <CollectionReportDashboardCard />, // Usando o novo componente de dashboard
+      component: <CollectionReportDashboardCard />,
       delay: 0,
     },
     {
       title: 'Relatório de Entregas',
       icon: Truck,
-      component: <DeliveryReportSummaryCard />,
+      component: <DeliveryReportDashboardCard />, // Usando o novo componente de dashboard
       delay: 100,
     },
     {
