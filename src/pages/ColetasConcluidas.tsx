@@ -495,7 +495,7 @@ export const ColetasConcluidas: React.FC<ColetasConcluidasProps> = ({ selectedYe
                 </div>
                 <div className="flex flex-col md:flex-row gap-4 w-full md:w-auto relative">
                   {/* Data Inicial */}
-                  {/* <div className="w-full md:w-48">
+                  <div className="w-full md:w-48">
                     <Label htmlFor="start-date" className="sr-only">Data Inicial</Label>
                     <Popover open={isStartDatePickerOpen} onOpenChange={setIsStartDatePickerOpen}>
                       <PopoverTrigger asChild>
@@ -527,9 +527,9 @@ export const ColetasConcluidas: React.FC<ColetasConcluidasProps> = ({ selectedYe
                         />
                       </PopoverContent>
                     </Popover>
-                  </div> */}
+                  </div>
                   {/* Data Final */}
-                  {/* <div className="w-full md:w-48">
+                  <div className="w-full md:w-48">
                     <Label htmlFor="end-date" className="sr-only">Data Final</Label>
                     <Popover open={isEndDatePickerOpen} onOpenChange={setIsEndDatePickerOpen}>
                       <PopoverTrigger asChild>
@@ -561,7 +561,7 @@ export const ColetasConcluidas: React.FC<ColetasConcluidasProps> = ({ selectedYe
                         />
                       </PopoverContent>
                     </Popover>
-                  </div> */}
+                  </div>
                   {/* Responsável */}
                   <div className="w-full md:w-48">
                     <Label htmlFor="responsible-filter" className="sr-only">Responsável</Label>
