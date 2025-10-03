@@ -3,13 +3,49 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { Package, CheckCircle, Clock } from 'lucide-react';
+import { useQuery } from '@tanstack/react-query';
+import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/hooks/use-auth';
+import { Skeleton } from '@/components/ui/skeleton';
 
-export const CollectionReportSummaryCard: React.FC = () => {
-  // Dados fictícios para demonstração
-  const totalCollections = 150;
-  const completedCollections = 120;
-  const pendingCollections = 30;
-  const completionRate = (completedCollections / totalCollections) * 100;
+interface CollectionReportSummaryCardProps {
+  selectedYear: string;
+}
+
+export const CollectionReportSummaryCard: React.FC<CollectionReportSummaryCardProps> = ({ selectedYear }) => {
+  const { user } = useAuth();
+
+  const { data: coletas, isLoading } = useQuery({
+    queryKey: ['collection-summary', user?.id, selectedYear],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('coletas')
+        .select('*')
+        .eq('user_id', user?.id)
+        .eq('type', 'coleta')
+        .gte('created_at', `${selectedYear}-01-01`)
+        .lte('created_at', `${selectedYear}-12-31`);
+
+      if (error) throw error;
+      return data || [];
+    },
+    enabled: !!user?.id,
+  });
+
+  const totalCollections = coletas?.length || 0;
+  const completedCollections = coletas?.filter(c => c.status_coleta === 'concluida').length || 0;
+  const pendingCollections = coletas?.filter(c => c.status_coleta === 'pendente').length || 0;
+  const completionRate = totalCollections > 0 ? (completedCollections / totalCollections) * 100 : 0;
+
+  if (isLoading) {
+    return (
+      <div className="space-y-3 p-4">
+        <Skeleton className="h-6 w-3/4" />
+        <Skeleton className="h-4 w-full" />
+        <Skeleton className="h-4 w-full" />
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-3 p-4">

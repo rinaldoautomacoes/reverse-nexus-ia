@@ -3,13 +3,48 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { Box, Warehouse, Truck } from 'lucide-react';
+import { useQuery } from '@tanstack/react-query';
+import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/hooks/use-auth';
+import { Skeleton } from '@/components/ui/skeleton';
 
-export const ProductStatusSummaryCard: React.FC = () => {
-  // Dados fictícios para demonstração
-  const totalProducts = 500;
-  const inStock = 450;
-  const inCollection = 50;
-  const stockPercentage = (inStock / totalProducts) * 100;
+interface ProductStatusSummaryCardProps {
+  selectedYear: string;
+}
+
+export const ProductStatusSummaryCard: React.FC<ProductStatusSummaryCardProps> = ({ selectedYear }) => {
+  const { user } = useAuth();
+
+  const { data: items, isLoading } = useQuery({
+    queryKey: ['product-summary', user?.id, selectedYear],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('items')
+        .select('*')
+        .eq('user_id', user?.id)
+        .gte('created_at', `${selectedYear}-01-01`)
+        .lte('created_at', `${selectedYear}-12-31`);
+
+      if (error) throw error;
+      return data || [];
+    },
+    enabled: !!user?.id,
+  });
+
+  const totalProducts = items?.reduce((sum, item) => sum + (item.quantity || 0), 0) || 0;
+  const inStock = items?.filter(i => i.status === 'concluida').reduce((sum, item) => sum + (item.quantity || 0), 0) || 0;
+  const inCollection = items?.filter(i => i.status === 'pendente' || i.status === 'em_transito').reduce((sum, item) => sum + (item.quantity || 0), 0) || 0;
+  const stockPercentage = totalProducts > 0 ? (inStock / totalProducts) * 100 : 0;
+
+  if (isLoading) {
+    return (
+      <div className="space-y-3 p-4">
+        <Skeleton className="h-6 w-3/4" />
+        <Skeleton className="h-4 w-full" />
+        <Skeleton className="h-4 w-full" />
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-3 p-4">

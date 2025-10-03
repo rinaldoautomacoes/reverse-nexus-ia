@@ -3,13 +3,49 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { Truck, CheckCircle, Clock } from 'lucide-react';
+import { useQuery } from '@tanstack/react-query';
+import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/hooks/use-auth';
+import { Skeleton } from '@/components/ui/skeleton';
 
-export const DeliveryReportSummaryCard: React.FC = () => {
-  // Dados fictícios para demonstração
-  const totalDeliveries = 180;
-  const completedDeliveries = 160;
-  const inTransitDeliveries = 20;
-  const completionRate = (completedDeliveries / totalDeliveries) * 100;
+interface DeliveryReportSummaryCardProps {
+  selectedYear: string;
+}
+
+export const DeliveryReportSummaryCard: React.FC<DeliveryReportSummaryCardProps> = ({ selectedYear }) => {
+  const { user } = useAuth();
+
+  const { data: entregas, isLoading } = useQuery({
+    queryKey: ['delivery-summary', user?.id, selectedYear],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('coletas')
+        .select('*')
+        .eq('user_id', user?.id)
+        .eq('type', 'entrega')
+        .gte('created_at', `${selectedYear}-01-01`)
+        .lte('created_at', `${selectedYear}-12-31`);
+
+      if (error) throw error;
+      return data || [];
+    },
+    enabled: !!user?.id,
+  });
+
+  const totalDeliveries = entregas?.length || 0;
+  const completedDeliveries = entregas?.filter(e => e.status_coleta === 'concluida').length || 0;
+  const inTransitDeliveries = entregas?.filter(e => e.status_coleta === 'agendada').length || 0;
+  const completionRate = totalDeliveries > 0 ? (completedDeliveries / totalDeliveries) * 100 : 0;
+
+  if (isLoading) {
+    return (
+      <div className="space-y-3 p-4">
+        <Skeleton className="h-6 w-3/4" />
+        <Skeleton className="h-4 w-full" />
+        <Skeleton className="h-4 w-full" />
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-3 p-4">
