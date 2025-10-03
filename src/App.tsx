@@ -35,19 +35,19 @@ const queryClient = new QueryClient();
 
 const App = () => (
   <ErrorBoundary>
-    <QueryClientProvider client={queryClient}>
-      <TooltipProvider>
-        <Toaster />
-        <Sonner />
-        <BrowserRouter>
-          <AuthProvider>
+    <BrowserRouter>
+      <QueryClientProvider client={queryClient}>
+        <AuthProvider>
+          <TooltipProvider>
             <SidebarProvider>
+              <Toaster />
+              <Sonner />
               <AppLayout />
             </SidebarProvider>
-          </AuthProvider>
-        </BrowserRouter>
-      </TooltipProvider>
-    </QueryClientProvider>
+          </TooltipProvider>
+        </AuthProvider>
+      </QueryClientProvider>
+    </BrowserRouter>
   </ErrorBoundary>
 );
 
