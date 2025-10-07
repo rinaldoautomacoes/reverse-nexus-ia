@@ -40,7 +40,7 @@ export const AgendarEntrega = () => {
     parceiro: "",
     telefone: "",
     email: "",
-    endereco: "",
+    // endereco: "", // Removido
     cnpj: "",
     contato: "",
     previsao_coleta: "",
@@ -96,7 +96,7 @@ export const AgendarEntrega = () => {
         parceiro: "",
         telefone: "",
         email: "",
-        endereco: "",
+        // endereco: "", // Removido
         cnpj: "",
         contato: "",
         previsao_coleta: "",
@@ -145,7 +145,7 @@ export const AgendarEntrega = () => {
         parceiro: newClient.name,
         telefone: newClient.phone || '',
         email: newClient.email || '',
-        endereco: newClient.address || '',
+        // endereco: newClient.address || '', // Removido
         cnpj: newClient.cnpj || '',
         contato: newClient.contact_person || '',
         client_id: newClient.id,
@@ -239,7 +239,7 @@ export const AgendarEntrega = () => {
         parceiro: client.name,
         telefone: client.phone || '',
         email: client.email || '',
-        endereco: client.address || '',
+        // endereco: client.address || '', // Removido
         cnpj: client.cnpj || '',
         contato: client.contact_person || '',
         client_id: client.id,
@@ -251,7 +251,7 @@ export const AgendarEntrega = () => {
         parceiro: formData.parceiro,
         telefone: "",
         email: "",
-        endereco: "",
+        // endereco: "", // Removido
         cnpj: "",
         contato: "",
         client_id: undefined,
@@ -292,10 +292,10 @@ export const AgendarEntrega = () => {
       return;
     }
 
-    if (!formData.parceiro || !formData.telefone || !formData.endereco || !formData.previsao_coleta || formData.qtd_aparelhos_solicitado === 0 || !formData.modelo_aparelho) {
+    if (!formData.parceiro || !formData.telefone || !formData.endereco_origem || !formData.endereco_destino || !formData.previsao_coleta || formData.qtd_aparelhos_solicitado === 0 || !formData.modelo_aparelho) {
       toast({
         title: "Campos obrigatórios",
-        description: "Preencha todos os campos obrigatórios (Cliente, Telefone, Endereço, Data, Quantidade de Aparelhos e Tipo de Material).",
+        description: "Preencha todos os campos obrigatórios (Cliente, Telefone, Endereço de Origem, Endereço de Destino, Data, Quantidade de Aparelhos e Tipo de Material).",
         variant: "destructive"
       });
       return;
@@ -331,7 +331,7 @@ export const AgendarEntrega = () => {
             name: formData.parceiro,
             phone: formData.telefone,
             email: formData.email || null,
-            address: formData.endereco,
+            address: formData.endereco_origem, // Usar endereço de origem como endereço do cliente
             cnpj: formData.cnpj || null,
             contact_person: formData.contato || null,
           })
@@ -359,6 +359,7 @@ export const AgendarEntrega = () => {
       responsavel: formData.responsavel || null,
       responsible_user_id: formData.responsible_user_id || null,
       type: 'entrega', // Garante que o tipo seja 'entrega'
+      endereco: formData.endereco_origem, // Usar o endereço de origem para o campo 'endereco' da entrega
     });
   };
 
@@ -583,7 +584,8 @@ export const AgendarEntrega = () => {
                   </div>
                 </div>
 
-                <div className="space-y-2 mb-4">
+                {/* Removido o campo de endereço redundante */}
+                {/* <div className="space-y-2 mb-4">
                   <Label htmlFor="endereco">Endereço *</Label>
                   <Input 
                     id="endereco" 
@@ -591,7 +593,7 @@ export const AgendarEntrega = () => {
                     value={formData.endereco || ''}
                     onChange={(e) => handleInputChange("endereco", e.target.value)}
                   />
-                </div>
+                </div> */}
 
                 <div className="space-y-2 mb-4">
                   <Label htmlFor="contato">Pessoa de Contato</Label>
