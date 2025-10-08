@@ -79,6 +79,11 @@ export type Database = {
           type: string
           uf: string | null
           user_id: string
+          // NEWLY ADDED COLUMNS
+          cep_origem: string | null
+          cep_destino: string | null
+          endereco_origem: string | null
+          endereco_destino: string | null
         }
         Insert: {
           bairro?: string | null
@@ -108,6 +113,11 @@ export type Database = {
           type?: string
           uf?: string | null
           user_id: string
+          // NEWLY ADDED COLUMNS
+          cep_origem?: string | null
+          cep_destino?: string | null
+          endereco_origem?: string | null
+          endereco_destino?: string | null
         }
         Update: {
           bairro?: string | null
@@ -137,6 +147,11 @@ export type Database = {
           type?: string
           uf?: string | null
           user_id?: string
+          // NEWLY ADDED COLUMNS
+          cep_origem?: string | null
+          cep_destino?: string | null
+          endereco_origem?: string | null
+          endereco_destino?: string | null
         }
         Relationships: [
           {

@@ -40,7 +40,6 @@ export const AgendarEntrega = () => {
     parceiro: "",
     telefone: "",
     email: "",
-    // endereco: "", // Removido
     cnpj: "",
     contato: "",
     previsao_coleta: "",
@@ -96,7 +95,6 @@ export const AgendarEntrega = () => {
         parceiro: "",
         telefone: "",
         email: "",
-        // endereco: "", // Removido
         cnpj: "",
         contato: "",
         previsao_coleta: "",
@@ -107,6 +105,10 @@ export const AgendarEntrega = () => {
         user_id: user?.id || '',
         responsible_user_id: null,
         type: "entrega", // Manter o tipo 'entrega'
+        cep_origem: "",
+        cep_destino: "",
+        endereco_origem: "",
+        endereco_destino: "",
       });
       setIsLoading(false);
     },
@@ -145,7 +147,6 @@ export const AgendarEntrega = () => {
         parceiro: newClient.name,
         telefone: newClient.phone || '',
         email: newClient.email || '',
-        // endereco: newClient.address || '', // Removido
         cnpj: newClient.cnpj || '',
         contato: newClient.contact_person || '',
         client_id: newClient.id,
@@ -239,7 +240,6 @@ export const AgendarEntrega = () => {
         parceiro: client.name,
         telefone: client.phone || '',
         email: client.email || '',
-        // endereco: client.address || '', // Removido
         cnpj: client.cnpj || '',
         contato: client.contact_person || '',
         client_id: client.id,
@@ -251,7 +251,6 @@ export const AgendarEntrega = () => {
         parceiro: formData.parceiro,
         telefone: "",
         email: "",
-        // endereco: "", // Removido
         cnpj: "",
         contato: "",
         client_id: undefined,
@@ -360,6 +359,7 @@ export const AgendarEntrega = () => {
       responsible_user_id: formData.responsible_user_id || null,
       type: 'entrega', // Garante que o tipo seja 'entrega'
       endereco: formData.endereco_origem, // Usar o endereço de origem para o campo 'endereco' da entrega
+      cep: formData.cep_origem, // Adicionado o CEP de origem para o campo 'cep' da entrega
     });
   };
 
@@ -583,17 +583,6 @@ export const AgendarEntrega = () => {
                     />
                   </div>
                 </div>
-
-                {/* Removido o campo de endereço redundante */}
-                {/* <div className="space-y-2 mb-4">
-                  <Label htmlFor="endereco">Endereço *</Label>
-                  <Input 
-                    id="endereco" 
-                    placeholder="Endereço completo para entrega"
-                    value={formData.endereco || ''}
-                    onChange={(e) => handleInputChange("endereco", e.target.value)}
-                  />
-                </div> */}
 
                 <div className="space-y-2 mb-4">
                   <Label htmlFor="contato">Pessoa de Contato</Label>
