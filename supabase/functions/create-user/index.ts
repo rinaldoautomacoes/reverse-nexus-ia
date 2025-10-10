@@ -7,9 +7,8 @@ const corsHeaders = {
 };
 
 serve(async (req) => {
-  console.log('Edge Function create-user invoked'); // Log de início da função
+  console.log('Edge Function create-user invoked');
 
-  // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
@@ -23,7 +22,6 @@ serve(async (req) => {
 
     const token = authHeader.replace('Bearer ', '');
     
-    // Create a Supabase client with the user's JWT to verify their role
     const userSupabase = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
       Deno.env.get('SUPABASE_ANON_KEY') ?? '',
@@ -41,7 +39,6 @@ serve(async (req) => {
     }
     console.log('User authenticated:', user.id);
 
-    // Fetch the user's profile to check their role
     const { data: profile, error: profileError } = await userSupabase
       .from('profiles')
       .select('role')
@@ -54,7 +51,6 @@ serve(async (req) => {
     }
     console.log('Admin user authorized.');
 
-    // If the caller is an admin, proceed to create the new user
     const { email, password, first_name, last_name, role, avatar_url, phone_number } = await req.json();
     console.log('Received data for new user:', { email, first_name, last_name, role, avatar_url: avatar_url ? 'Present' : 'N/A', phone_number: phone_number ? 'Present' : 'N/A' });
 
@@ -63,7 +59,6 @@ serve(async (req) => {
       return new Response(JSON.stringify({ error: 'Bad Request: Missing required fields (email, password, first_name, last_name, role)' }), { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
     }
 
-    // Create a Supabase client with the service role key
     const adminSupabase = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
@@ -72,12 +67,13 @@ serve(async (req) => {
     const { data: newUser, error: createUserError } = await adminSupabase.auth.admin.createUser({
       email,
       password,
-      email_confirm: true, // Automatically confirm email for admin-created users
-      user_metadata: { first_name, last_name, role, avatar_url, phone_number }, // Passa avatar_url e phone_number para user_metadata
+      email_confirm: true,
+      user_metadata: { first_name, last_name, role, avatar_url, phone_number },
     });
 
     if (createUserError) {
-      console.error('Error creating user with admin.createUser:', createUserError.message);
+      // Log o objeto de erro completo para depuração detalhada nos logs do Supabase
+      console.error('Error creating user with admin.createUser:', createUserError); 
       return new Response(JSON.stringify({ error: createUserError.message }), {
         status: 400,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
