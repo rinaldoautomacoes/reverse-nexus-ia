@@ -31,7 +31,7 @@ type Profile = Tables<'profiles'>;
 export const AgendarEntrega = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
-  const { user } = useAuth();
+  const { user, session } = useAuth(); // Obter a sessão para a chamada da Edge Function
   const queryClient = useQueryClient();
 
   const [isLoading, setIsLoading] = useState(false);
@@ -78,7 +78,7 @@ export const AgendarEntrega = () => {
       if (error) throw new Error(error.message);
       return data;
     },
-    onSuccess: () => {
+    onSuccess: async (newEntrega) => { // Adicionado 'async' aqui
       queryClient.invalidateQueries({ queryKey: ['coletas', user?.id] });
       queryClient.invalidateQueries({ queryKey: ['clients', user?.id] });
       queryClient.invalidateQueries({ queryKey: ['dashboardColetasMetrics', user?.id] });
@@ -90,6 +90,31 @@ export const AgendarEntrega = () => {
         title: "Entrega agendada com sucesso!",
         description: `Entrega para ${formData.parceiro} agendada para ${new Date(formData.previsao_coleta || '').toLocaleDateString()}.`
       });
+
+      // Chamar a Edge Function para enviar notificação
+      if (newEntrega.id && session?.access_token) {
+        try {
+          await supabase.functions.invoke('send-notification', {
+            body: JSON.stringify({ collectionId: newEntrega.id, type: 'entrega' }),
+            headers: {
+              'Authorization': `Bearer ${session.access_token}`,
+              'Content-Type': 'application/json',
+            },
+          });
+          toast({
+            title: "Notificação enviada!",
+            description: "O responsável foi notificado sobre a nova entrega.",
+          });
+        } catch (notificationError: any) {
+          console.error("Erro ao enviar notificação:", notificationError);
+          toast({
+            title: "Erro ao enviar notificação",
+            description: notificationError.message || "Não foi possível enviar a notificação ao responsável.",
+            variant: "destructive",
+          });
+        }
+      }
+
       // Reset form
       setFormData({
         parceiro: "",

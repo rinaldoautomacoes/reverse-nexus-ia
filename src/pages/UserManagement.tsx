@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { ArrowLeft, UserPlus, Mail, Lock, User, Briefcase, Image as ImageIcon, Upload, Loader2, XCircle } from "lucide-react";
+import { ArrowLeft, UserPlus, Mail, Lock, User, Briefcase, Image as ImageIcon, Upload, Loader2, XCircle, Phone } from "lucide-react"; // Adicionado Phone
 import { useNavigate } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
@@ -25,6 +25,7 @@ export const UserManagement = () => {
     last_name: "",
     role: "standard",
     avatar_url: "", // Adicionado campo para URL do avatar
+    phone_number: "", // NOVO CAMPO: número de telefone
   });
 
   const handleInputChange = (field: string, value: string) => {
@@ -133,6 +134,7 @@ export const UserManagement = () => {
         last_name: "",
         role: "standard",
         avatar_url: "",
+        phone_number: "", // Resetar também o telefone
       });
       setImageFile(null);
       setImagePreviewUrl(null);
@@ -245,6 +247,22 @@ export const UserManagement = () => {
                   <p className="text-xs text-muted-foreground">
                     Mínimo de 6 caracteres
                   </p>
+                </div>
+
+                {/* NOVO CAMPO: Número de Telefone */}
+                <div className="space-y-2">
+                  <Label htmlFor="phone_number">Número de Telefone (para notificações)</Label>
+                  <div className="relative">
+                    <Phone className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                    <Input
+                      id="phone_number"
+                      type="tel"
+                      placeholder="(XX) XXXXX-XXXX"
+                      className="pl-10"
+                      value={formData.phone_number}
+                      onChange={(e) => handleInputChange("phone_number", e.target.value)}
+                    />
+                  </div>
                 </div>
 
                 <div className="space-y-2">
