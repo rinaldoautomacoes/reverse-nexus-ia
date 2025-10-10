@@ -674,7 +674,15 @@ export const AgendarColeta = () => {
                     <CalendarIcon className="mr-2 h-4 w-4" />
                     {isLoading || addColetaMutation.isPending ? "Agendando..." : "Agendar Coleta"}
                   </Button>
-                  {/* Removido o botão "Rota IA" */}
+                  <Button 
+                    type="button" 
+                    variant="outline" 
+                    className="flex-1 border-destructive text-destructive hover:bg-destructive/10"
+                    onClick={() => navigate('/')}
+                    disabled={isLoading || addColetaMutation.isPending}
+                  >
+                    Cancelar
+                  </Button>
                 </div>
               </form>
             </CardContent>

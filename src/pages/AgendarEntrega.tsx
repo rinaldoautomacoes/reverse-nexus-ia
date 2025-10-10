@@ -676,6 +676,15 @@ export const AgendarEntrega = () => {
                     <Truck className="mr-2 h-4 w-4" />
                     {isLoading || addEntregaMutation.isPending ? "Agendando..." : "Agendar Entrega"}
                   </Button>
+                  <Button 
+                    type="button" 
+                    variant="outline" 
+                    className="flex-1 border-destructive text-destructive hover:bg-destructive/10"
+                    onClick={() => navigate('/')}
+                    disabled={isLoading || addEntregaMutation.isPending}
+                  >
+                    Cancelar
+                  </Button>
                 </div>
               </form>
             </CardContent>
