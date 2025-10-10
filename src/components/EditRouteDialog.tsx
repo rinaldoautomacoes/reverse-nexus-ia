@@ -88,7 +88,7 @@ export const EditRouteDialog: React.FC<EditRouteDialogProps> = ({ open, onOpenCh
           if (response.data.routes && response.data.routes.length > 0) {
             const route = response.data.routes[0];
             totalDistance = route.distance / 1000; // meters to km
-            estimatedDuration = route.duration / 60; // seconds to minutes
+            estimatedDuration = Math.round(route.duration / 60); // seconds to minutes, rounded to integer
           }
         } catch (directionsError) {
           console.error("Erro ao recalcular direções:", directionsError);
