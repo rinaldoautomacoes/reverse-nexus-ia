@@ -18,7 +18,7 @@ serve(async (req) => {
     const authHeader = req.headers.get('Authorization');
     if (!authHeader) {
       console.error('Unauthorized: Missing Authorization header');
-      return new Response('Unauthorized: Missing Authorization header', { status: 401, headers: corsHeaders });
+      return new Response(JSON.stringify({ error: 'Unauthorized: Missing Authorization header' }), { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
     }
 
     const token = authHeader.replace('Bearer ', '');
@@ -37,7 +37,7 @@ serve(async (req) => {
 
     if (userError || !user) {
       console.error('Error getting user from token:', userError?.message);
-      return new Response('Unauthorized: Invalid token', { status: 401, headers: corsHeaders });
+      return new Response(JSON.stringify({ error: 'Unauthorized: Invalid token' }), { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
     }
     console.log('User authenticated:', user.id);
 
@@ -50,7 +50,7 @@ serve(async (req) => {
 
     if (profileError || !profile || profile.role !== 'admin') {
       console.warn(`User ${user.id} (role: ${profile?.role}) attempted to create user without admin role.`);
-      return new Response('Forbidden: Only administrators can create new users', { status: 403, headers: corsHeaders });
+      return new Response(JSON.stringify({ error: 'Forbidden: Only administrators can create new users' }), { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
     }
     console.log('Admin user authorized.');
 
@@ -60,7 +60,7 @@ serve(async (req) => {
 
     if (!email || !password || !first_name || !last_name || !role) {
       console.error('Bad Request: Missing required fields in request body.');
-      return new Response('Bad Request: Missing required fields (email, password, first_name, last_name, role)', { status: 400, headers: corsHeaders });
+      return new Response(JSON.stringify({ error: 'Bad Request: Missing required fields (email, password, first_name, last_name, role)' }), { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
     }
 
     // Create a Supabase client with the service role key

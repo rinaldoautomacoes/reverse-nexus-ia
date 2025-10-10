@@ -118,9 +118,15 @@ export const UserManagement = () => {
       });
 
       if (error) {
-        // O objeto de erro de supabase.functions.invoke pode conter o corpo da resposta real em `data`
-        const edgeFunctionError = (error as any).data?.error || error.message;
-        throw new Error(edgeFunctionError);
+        console.error("Erro completo da função Edge:", error); // Log do erro completo
+        // Tenta extrair a mensagem de erro do corpo da resposta da função Edge
+        let errorMessage = "Falha ao criar o usuário. Verifique os dados e tente novamente.";
+        if ((error as any).data && (error as any).data.error) {
+          errorMessage = (error as any).data.error;
+        } else if (error.message) {
+          errorMessage = error.message;
+        }
+        throw new Error(errorMessage);
       }
 
       toast({
