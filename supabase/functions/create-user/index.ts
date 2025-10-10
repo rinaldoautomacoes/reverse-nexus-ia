@@ -1,6 +1,5 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.45.0';
-// import { verify } from 'https://deno.land/x/djwt@v2.8/mod.ts'; // Removido: importação não utilizada
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -8,6 +7,8 @@ const corsHeaders = {
 };
 
 serve(async (req) => {
+  console.log('Edge Function create-user invoked'); // Log de início da função
+
   // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
@@ -16,6 +17,7 @@ serve(async (req) => {
   try {
     const authHeader = req.headers.get('Authorization');
     if (!authHeader) {
+      console.error('Unauthorized: Missing Authorization header');
       return new Response('Unauthorized: Missing Authorization header', { status: 401, headers: corsHeaders });
     }
 
@@ -37,6 +39,7 @@ serve(async (req) => {
       console.error('Error getting user from token:', userError?.message);
       return new Response('Unauthorized: Invalid token', { status: 401, headers: corsHeaders });
     }
+    console.log('User authenticated:', user.id);
 
     // Fetch the user's profile to check their role
     const { data: profile, error: profileError } = await userSupabase
@@ -49,11 +52,14 @@ serve(async (req) => {
       console.warn(`User ${user.id} (role: ${profile?.role}) attempted to create user without admin role.`);
       return new Response('Forbidden: Only administrators can create new users', { status: 403, headers: corsHeaders });
     }
+    console.log('Admin user authorized.');
 
     // If the caller is an admin, proceed to create the new user
-    const { email, password, first_name, last_name, role, avatar_url, phone_number } = await req.json(); // Adicionado phone_number
+    const { email, password, first_name, last_name, role, avatar_url, phone_number } = await req.json();
+    console.log('Received data for new user:', { email, first_name, last_name, role, avatar_url: avatar_url ? 'Present' : 'N/A', phone_number: phone_number ? 'Present' : 'N/A' });
 
     if (!email || !password || !first_name || !last_name || !role) {
+      console.error('Bad Request: Missing required fields in request body.');
       return new Response('Bad Request: Missing required fields (email, password, first_name, last_name, role)', { status: 400, headers: corsHeaders });
     }
 
@@ -71,16 +77,14 @@ serve(async (req) => {
     });
 
     if (createUserError) {
-      console.error('Error creating user:', createUserError.message);
+      console.error('Error creating user with admin.createUser:', createUserError.message);
       return new Response(JSON.stringify({ error: createUserError.message }), {
         status: 400,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
     }
 
-    // The handle_new_user trigger will automatically create the profile in public.profiles
-    // with the role and avatar_url from user_metadata.
-
+    console.log('New user created successfully:', newUser.user?.id);
     return new Response(JSON.stringify({ message: 'User created successfully', user: newUser.user?.id }), {
       status: 201,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },

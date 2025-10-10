@@ -118,7 +118,9 @@ export const UserManagement = () => {
       });
 
       if (error) {
-        throw new Error(error.message);
+        // O objeto de erro de supabase.functions.invoke pode conter o corpo da resposta real em `data`
+        const edgeFunctionError = (error as any).data?.error || error.message;
+        throw new Error(edgeFunctionError);
       }
 
       toast({
@@ -140,7 +142,7 @@ export const UserManagement = () => {
       setImagePreviewUrl(null);
 
     } catch (error: any) {
-      console.error("Erro ao criar usuário:", error);
+      console.error("Erro ao criar usuário no cliente:", error);
       toast({
         title: "Erro ao criar usuário",
         description: error.message || "Falha ao criar o usuário. Verifique os dados e tente novamente.",
