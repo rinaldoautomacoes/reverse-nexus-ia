@@ -119,10 +119,15 @@ export const UserManagement = () => {
 
       if (error) {
         console.error("Erro completo da função Edge:", error); // Log do erro completo
-        // Tenta extrair a mensagem de erro do corpo da resposta da função Edge
         let errorMessage = "Falha ao criar o usuário. Verifique os dados e tente novamente.";
-        if ((error as any).data && (error as any).data.error) {
-          errorMessage = (error as any).data.error;
+
+        // Tenta extrair a mensagem de erro detalhada
+        if ((error as any).name === 'FunctionsHttpError' && (error as any).data) {
+          if (typeof (error as any).data === 'object' && (error as any).data.error) {
+            errorMessage = (error as any).data.error;
+          } else if (typeof (error as any).data === 'string') {
+            errorMessage = (error as any).data;
+          }
         } else if (error.message) {
           errorMessage = error.message;
         }
