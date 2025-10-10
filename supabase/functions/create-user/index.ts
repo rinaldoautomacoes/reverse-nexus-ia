@@ -1,6 +1,6 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.45.0';
-import { verify } from 'https://deno.land/x/djwt@v2.8/mod.ts';
+// import { verify } from 'https://deno.land/x/djwt@v2.8/mod.ts'; // Removido: importação não utilizada
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -51,7 +51,7 @@ serve(async (req) => {
     }
 
     // If the caller is an admin, proceed to create the new user
-    const { email, password, first_name, last_name, role, avatar_url } = await req.json(); // Adicionado avatar_url
+    const { email, password, first_name, last_name, role, avatar_url, phone_number } = await req.json(); // Adicionado phone_number
 
     if (!email || !password || !first_name || !last_name || !role) {
       return new Response('Bad Request: Missing required fields (email, password, first_name, last_name, role)', { status: 400, headers: corsHeaders });
@@ -67,7 +67,7 @@ serve(async (req) => {
       email,
       password,
       email_confirm: true, // Automatically confirm email for admin-created users
-      user_metadata: { first_name, last_name, role, avatar_url }, // Passa avatar_url para user_metadata
+      user_metadata: { first_name, last_name, role, avatar_url, phone_number }, // Passa avatar_url e phone_number para user_metadata
     });
 
     if (createUserError) {
