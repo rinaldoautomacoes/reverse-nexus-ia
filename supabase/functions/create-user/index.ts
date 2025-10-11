@@ -21,6 +21,7 @@ serve(async (req) => {
     }
 
     const token = authHeader.replace('Bearer ', '');
+    console.log('Token received (first 10 chars):', token.substring(0, 10));
     
     const userSupabase = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
@@ -37,7 +38,7 @@ serve(async (req) => {
       console.error('Error getting user from token:', userError?.message);
       return new Response(JSON.stringify({ error: 'Unauthorized: Invalid token' }), { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
     }
-    console.log('User authenticated:', user.id);
+    console.log('User authenticated:', user.id, 'Email:', user.email);
 
     const { data: profile, error: profileError } = await userSupabase
       .from('profiles')
@@ -49,7 +50,7 @@ serve(async (req) => {
       console.warn(`User ${user.id} (role: ${profile?.role}) attempted to create user without admin role.`);
       return new Response(JSON.stringify({ error: 'Forbidden: Only administrators can create new users' }), { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
     }
-    console.log('Admin user authorized.');
+    console.log('Admin user authorized. Role:', profile.role);
 
     const { email, password, first_name, last_name, role, avatar_url, phone_number } = await req.json();
     console.log('Received data for new user:', { email, first_name, last_name, role, avatar_url: avatar_url ? 'Present' : 'N/A', phone_number: phone_number ? 'Present' : 'N/A' });
@@ -63,6 +64,7 @@ serve(async (req) => {
       Deno.env.get('SUPABASE_URL') ?? '',
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     );
+    console.log('Attempting to create user with admin client...');
 
     const { data: newUser, error: createUserError } = await adminSupabase.auth.admin.createUser({
       email,
@@ -72,7 +74,6 @@ serve(async (req) => {
     });
 
     if (createUserError) {
-      // Log o objeto de erro completo para depuração detalhada nos logs do Supabase
       console.error('Error creating user with admin.createUser:', createUserError); 
       return new Response(JSON.stringify({ error: createUserError.message }), {
         status: 400,
