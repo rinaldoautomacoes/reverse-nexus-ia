@@ -37,14 +37,21 @@ export const AgendarEntrega = () => {
 
   const [isLoading, setIsLoading] = useState(false);
   const [isClientDialogOpen, setIsClientDialogOpen] = useState(false);
-  const [formData, setFormData] = useState<ColetaInsert & { client_id?: string; cep_origem?: string; cep_destino?: string; endereco_origem?: string; endereco_destino?: string }>({
+  const [formData, setFormData] = useState<ColetaInsert & { 
+    client_id?: string; 
+    cep_origem?: string; 
+    cep_destino?: string; 
+    endereco_origem?: string; 
+    endereco_destino?: string;
+    product_description: string; // NOVO CAMPO
+  }>({
     parceiro: "",
     telefone: "",
     email: "",
     cnpj: "",
     contato: "",
     previsao_coleta: "",
-    modelo_aparelho: "",
+    modelo_aparelho: "", // Este campo agora será o código do produto
     qtd_aparelhos_solicitado: 0,
     status_coleta: "pendente",
     observacao: "",
@@ -55,6 +62,7 @@ export const AgendarEntrega = () => {
     cep_destino: "",
     endereco_origem: "",
     endereco_destino: "",
+    product_description: "", // Inicialização do novo campo
   });
   const [clientData, setClientData] = useState<ClientInsert>({
     name: "",
@@ -99,11 +107,11 @@ export const AgendarEntrega = () => {
         const newItem: ItemInsert = {
           collection_id: newEntrega.id,
           user_id: user.id,
-          name: formData.modelo_aparelho, // Usar o modelo_aparelho como nome do item
+          name: formData.modelo_aparelho, // Usar o código do produto como nome do item
           quantity: formData.qtd_aparelhos_solicitado,
           status: 'pendente', // Status inicial do item
           model: formData.modelo_aparelho, // Também usar como modelo do item
-          description: formData.observacao || null, // Usar observação da entrega como descrição do item
+          description: formData.product_description || null, // Usar a nova descrição do produto
         };
         const { error: itemError } = await supabase.from('items').insert(newItem);
         if (itemError) {
@@ -162,6 +170,7 @@ export const AgendarEntrega = () => {
         cep_destino: "",
         endereco_origem: "",
         endereco_destino: "",
+        product_description: "", // Resetar novo campo
       });
       setIsLoading(false);
     },
@@ -316,11 +325,13 @@ export const AgendarEntrega = () => {
       setFormData(prev => ({
         ...prev,
         modelo_aparelho: product.code, // Armazena o código do produto
+        product_description: product.description || '', // Define a descrição do produto
       }));
     } else {
       setFormData(prev => ({
         ...prev,
         modelo_aparelho: "", // Limpa o modelo se nada for selecionado
+        product_description: "", // Limpa a descrição do produto
       }));
     }
   };
@@ -347,7 +358,7 @@ export const AgendarEntrega = () => {
     if (!formData.parceiro || !formData.telefone || !formData.endereco_origem || !formData.endereco_destino || !formData.previsao_coleta || formData.qtd_aparelhos_solicitado === 0 || !formData.modelo_aparelho) {
       toast({
         title: "Campos obrigatórios",
-        description: "Preencha todos os campos obrigatórios (Cliente, Telefone, Endereço de Origem, Endereço de Destino, Data, Quantidade de Aparelhos e Tipo de Material).",
+        description: "Preencha todos os campos obrigatórios (Cliente, Telefone, Endereço de Origem, Endereço de Destino, Data, Quantidade de Aparelhos, Código do Produto e Tipo de Material).",
         variant: "destructive"
       });
       return;
@@ -697,6 +708,30 @@ export const AgendarEntrega = () => {
                     value={formData.modelo_aparelho || ''}
                     onValueChange={(code) => handleInputChange("modelo_aparelho", code)}
                     onProductSelect={handleProductComboboxSelect}
+                  />
+                </div>
+
+                {/* NOVO CAMPO: Código do Produto */}
+                <div className="space-y-2 mb-4">
+                  <Label htmlFor="product_code">Código do Produto *</Label>
+                  <Input
+                    id="product_code"
+                    placeholder="Código do produto (ex: PROD-001)"
+                    value={formData.modelo_aparelho || ''} // Vinculado a modelo_aparelho
+                    onChange={(e) => handleInputChange("modelo_aparelho", e.target.value)}
+                    required
+                  />
+                </div>
+
+                {/* NOVO CAMPO: Descrição do Produto */}
+                <div className="space-y-2 mb-4">
+                  <Label htmlFor="product_description">Descrição do Produto</Label>
+                  <Textarea
+                    id="product_description"
+                    placeholder="Descrição detalhada do produto"
+                    rows={3}
+                    value={formData.product_description || ''}
+                    onChange={(e) => handleInputChange("product_description", e.target.value)}
                   />
                 </div>
 
