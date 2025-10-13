@@ -109,31 +109,28 @@ export const UserManagement = () => {
 
     try {
       const requestBody = { ...formData, avatar_url: finalAvatarUrl };
-      console.log('Frontend: Sending request body:', requestBody); // Log do objeto antes de stringify
-      console.log('Frontend: Stringified request body:', JSON.stringify(requestBody)); // Log da string JSON
+      console.log('Frontend: Sending request body (object):', requestBody); // Log do objeto antes de stringify
+      const stringifiedBody = JSON.stringify(requestBody);
+      console.log('Frontend: Stringified request body (JSON):', stringifiedBody); // Log da string JSON
+      console.log('Frontend: Access Token (first 10 chars):', session.access_token.substring(0, 10));
 
-      // Invoke the Edge Function
-      const { data, error } = await supabase.functions.invoke('create-user', {
-        body: JSON.stringify(requestBody),
+      // Invoke the Edge Function using fetch directly
+      const response = await fetch('https://wbfbhdmkawoxpxkeeucj.supabase.co/functions/v1/create-user', {
+        method: 'POST',
         headers: {
           'Authorization': `Bearer ${session.access_token}`,
           'Content-Type': 'application/json',
         },
+        body: stringifiedBody,
       });
 
-      if (error) {
-        console.error("Erro completo da função Edge:", error); // Log do erro completo
-        let errorMessage = "Falha ao criar o usuário. Verifique os dados e tente novamente.";
+      const data = await response.json();
 
-        // Tenta extrair a mensagem de erro detalhada
-        if ((error as any).name === 'FunctionsHttpError' && (error as any).data) {
-          if (typeof (error as any).data === 'object' && (error as any).data.error) {
-            errorMessage = (error as any).data.error;
-          } else if (typeof (error as any).data === 'string') {
-            errorMessage = (error as any).data;
-          }
-        } else if (error.message) {
-          errorMessage = error.message;
+      if (!response.ok) {
+        console.error("Erro da função Edge (resposta não-OK):", data);
+        let errorMessage = "Falha ao criar o usuário. Verifique os dados e tente novamente.";
+        if (data && data.error) {
+          errorMessage = data.error;
         }
         throw new Error(errorMessage);
       }
