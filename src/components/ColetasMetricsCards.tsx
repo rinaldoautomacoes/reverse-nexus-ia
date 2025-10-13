@@ -15,6 +15,7 @@ import type { Tables } from "@/integrations/supabase/types"; // Import Tables ty
 
 type Coleta = Tables<'coletas'>;
 type Item = Tables<'items'>;
+type Product = Tables<'products'>; // Import Product type
 
 // Mapeamento de nomes de ícones para componentes Lucide React
 const iconMap: { [key: string]: React.ElementType } = {
@@ -32,6 +33,28 @@ interface ColetasMetricsCardsProps {
 export const ColetasMetricsCards: React.FC<ColetasMetricsCardsProps> = ({ selectedYear }) => {
   const { toast } = useToast();
   const { user } = useAuth();
+
+  // NEW: Fetch all products to get their descriptions
+  const { data: products, isLoading: isLoadingProducts, error: productsError } = useQuery<Product[], Error>({
+    queryKey: ['allProducts', user?.id],
+    queryFn: async () => {
+      if (!user?.id) return [];
+      const { data, error } = await supabase
+        .from('products')
+        .select('code, description')
+        .eq('user_id', user.id);
+      if (error) throw new Error(error.message);
+      return data;
+    },
+    enabled: !!user?.id,
+  });
+
+  const productDescriptionsMap = new Map<string, string>();
+  products?.forEach(p => {
+    if (p.code && p.description) {
+      productDescriptionsMap.set(p.code, p.description);
+    }
+  });
 
   // Fetch coletas for the selected year and type 'coleta'
   const { data: coletas, isLoading: isLoadingColetas, error: coletasError } = useQuery<Coleta[], Error>({
@@ -90,40 +113,57 @@ export const ColetasMetricsCards: React.FC<ColetasMetricsCardsProps> = ({ select
         variant: "destructive",
       });
     }
-  }, [coletasError, itemsError, toast]);
+    if (productsError) { // NEW: Error handling for products
+      toast({
+        title: "Erro ao carregar descrições de produtos",
+        description: productsError.message,
+        variant: "destructive",
+      });
+    }
+  }, [coletasError, itemsError, productsError, toast]);
 
-  const generateItemDescription = (itemModelsMap: Map<string, number>) => {
-    const models = Array.from(itemModelsMap.keys());
-    if (models.length === 0) return "Nenhum item";
-    if (models.length === 1) return models[0];
-    if (models.length === 2) return `${models[0]} e ${models[1]}`;
-    return `${models[0]}, ${models[1]} e outros`; // For more than 2 types
+  // Modified generateItemDescription
+  const generateItemDescription = (itemCodeQuantities: Map<string, number>) => {
+    const descriptions: string[] = [];
+    itemCodeQuantities.forEach((quantity, code) => {
+      const description = productDescriptionsMap.get(code);
+      if (description) {
+        descriptions.push(`${code} - ${description}`);
+      } else {
+        descriptions.push(code); // Fallback to just code if description not found
+      }
+    });
+
+    if (descriptions.length === 0) return "Nenhum item";
+    if (descriptions.length === 1) return descriptions[0];
+    if (descriptions.length === 2) return `${descriptions[0]} e ${descriptions[1]}`;
+    return `${descriptions[0]}, ${descriptions[1]} e outros`; // For more than 2 types
   };
 
   const calculateColetasMetrics = (coletasData: Coleta[] | undefined, itemsData: Item[] | undefined) => {
     const coletasMap = new Map(coletasData?.map(c => [c.id, c.status_coleta]));
 
     let totalItemsCount = 0;
-    const pendenteItems: Map<string, number> = new Map();
+    const pendenteItems: Map<string, number> = new Map(); // Key: productCode, Value: quantity
     const emTransitoItems: Map<string, number> = new Map();
     const concluidaItems: Map<string, number> = new Map();
 
     itemsData?.forEach(item => {
       const collectionStatus = item.collection_id ? coletasMap.get(item.collection_id) : undefined;
       const quantity = item.quantity || 0;
-      const itemType = item.model || item.name || 'Item Desconhecido';
+      const productCode = item.name || 'Item Desconhecido'; // item.name is the product code
 
       totalItemsCount += quantity;
 
       switch (collectionStatus) {
         case 'pendente':
-          pendenteItems.set(itemType, (pendenteItems.get(itemType) || 0) + quantity);
+          pendenteItems.set(productCode, (pendenteItems.get(productCode) || 0) + quantity);
           break;
         case 'agendada': // 'agendada' is 'em trânsito' for coletas
-          emTransitoItems.set(itemType, (emTransitoItems.get(itemType) || 0) + quantity);
+          emTransitoItems.set(productCode, (emTransitoItems.get(productCode) || 0) + quantity);
           break;
         case 'concluida':
-          concluidaItems.set(itemType, (concluidaItems.get(itemType) || 0) + quantity);
+          concluidaItems.set(productCode, (concluidaItems.get(productCode) || 0) + quantity);
           break;
       }
     });
@@ -174,7 +214,7 @@ export const ColetasMetricsCards: React.FC<ColetasMetricsCardsProps> = ({ select
 
   const dashboardMetrics = calculateColetasMetrics(coletas, items);
 
-  if (isLoadingColetas || isLoadingItems) {
+  if (isLoadingColetas || isLoadingItems || isLoadingProducts) { // Add isLoadingProducts
     return (
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         {[...Array(4)].map((_, i) => (
