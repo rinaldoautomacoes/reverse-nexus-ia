@@ -17,6 +17,8 @@ import {
   Area,
   Legend,
 } from 'recharts';
+import type { Tables } from "@/integrations/supabase/types"; // Import Tables type
+type Product = Tables<'products'>; // Import Product type
 
 interface EntregasConcluidasStatusChartProps {
   selectedYear: string;
@@ -26,7 +28,29 @@ export const EntregasConcluidasStatusChart: React.FC<EntregasConcluidasStatusCha
   const { user } = useAuth();
   const { toast } = useToast();
 
-  const { data: entregas, isLoading, error } = useQuery({
+  // NEW: Fetch all products to get their descriptions
+  const { data: products, isLoading: isLoadingProducts, error: productsError } = useQuery<Product[], Error>({
+    queryKey: ['allProducts', user?.id],
+    queryFn: async () => {
+      if (!user?.id) return [];
+      const { data, error } = await supabase
+        .from('products')
+        .select('code, description')
+        .eq('user_id', user.id);
+      if (error) throw new Error(error.message);
+      return data;
+    },
+    enabled: !!user?.id,
+  });
+
+  const productDescriptionsMap = new Map<string, string>();
+  products?.forEach(p => {
+    if (p.code && p.description) {
+      productDescriptionsMap.set(p.code, p.description);
+    }
+  });
+
+  const { data: entregas, isLoading: isLoadingEntregas, error: entregasError } = useQuery({
     queryKey: ['entregasConcluidasStatusChart', user?.id, selectedYear],
     queryFn: async () => {
       if (!user?.id) return [];
@@ -40,7 +64,8 @@ export const EntregasConcluidasStatusChart: React.FC<EntregasConcluidasStatusCha
           created_at,
           qtd_aparelhos_solicitado,
           status_coleta,
-          previsao_coleta
+          previsao_coleta,
+          modelo_aparelho // Add this
         `)
         .eq('user_id', user.id)
         .eq('type', 'entrega') // FILTRAR POR TIPO 'entrega'
@@ -55,17 +80,45 @@ export const EntregasConcluidasStatusChart: React.FC<EntregasConcluidasStatusCha
   });
 
   useEffect(() => {
-    if (error) {
+    if (entregasError) {
       toast({
         title: "Erro ao carregar dados das entregas",
-        description: error.message,
+        description: entregasError.message,
         variant: "destructive",
       });
     }
-  }, [error, toast]);
+    if (productsError) {
+      toast({
+        title: "Erro ao carregar descrições de produtos",
+        description: productsError.message,
+        variant: "destructive",
+      });
+    }
+  }, [entregasError, productsError, toast]);
+
+  // Helper function to generate item descriptions for tooltips/cards
+  const generateItemDescription = (itemCodeQuantities: Map<string, number>) => {
+    const descriptions: string[] = [];
+    itemCodeQuantities.forEach((quantity, code) => {
+      const description = productDescriptionsMap.get(code);
+      if (description) {
+        descriptions.push(`${quantity}x ${code} (${description})`);
+      } else {
+        descriptions.push(`${quantity}x ${code}`);
+      }
+    });
+
+    if (descriptions.length === 0) return "Nenhum item";
+    if (descriptions.length === 1) return descriptions[0];
+    if (descriptions.length === 2) return `${descriptions[0]} e ${descriptions[1]}`;
+    return `${descriptions[0]}, ${descriptions[1]} e outros`; // For more than 2 types
+  };
 
   const processEntregasData = (entregasData: any[] | undefined) => {
-    const monthlyDataMap = new Map<string, { entregues: number }>();
+    const monthlyDataMap = new Map<string, { 
+      entregues: Map<string, number>; 
+      total_all: number 
+    }>();
     const allMonths: string[] = [];
     const currentYear = parseInt(selectedYear);
 
@@ -73,13 +126,14 @@ export const EntregasConcluidasStatusChart: React.FC<EntregasConcluidasStatusCha
       const month = startOfMonth(new Date(currentYear, i));
       const monthKey = format(month, 'MMM', { locale: ptBR });
       allMonths.push(monthKey);
-      monthlyDataMap.set(monthKey, { entregues: 0 });
+      monthlyDataMap.set(monthKey, { entregues: new Map(), total_all: 0 });
     }
 
-    let totalEntregues = 0;
+    const totalEntreguesItems: Map<string, number> = new Map();
+    let totalAll = 0;
 
     entregasData?.forEach(entrega => {
-      if (!entrega.previsao_coleta) return;
+      if (!entrega.previsao_coleta || !entrega.modelo_aparelho) return;
 
       const entregaDate = parseISO(entrega.previsao_coleta);
 
@@ -87,29 +141,71 @@ export const EntregasConcluidasStatusChart: React.FC<EntregasConcluidasStatusCha
       const adjustedDateForLocalMonth = new Date(entregaDate.getTime() - timezoneOffsetMinutes * 60 * 1000);
 
       const entregaMonthKey = format(startOfMonth(adjustedDateForLocalMonth), 'MMM', { locale: ptBR });
-      // AQUI ESTÁ A CORREÇÃO: Contar 1 para cada entrega, não a quantidade de aparelhos
+      const quantity = entrega.qtd_aparelhos_solicitado || 0;
+      const productCode = entrega.modelo_aparelho;
+
       if (monthlyDataMap.has(entregaMonthKey)) {
         const currentMonthData = monthlyDataMap.get(entregaMonthKey)!;
-        currentMonthData.entregues += 1; // Conta 1 entrega
-        totalEntregues += 1; // Soma 1 ao total de entregas
+        currentMonthData.entregues.set(productCode, (currentMonthData.entregues.get(productCode) || 0) + quantity);
+        totalEntreguesItems.set(productCode, (totalEntreguesItems.get(productCode) || 0) + quantity);
+        
+        currentMonthData.total_all += quantity;
+        totalAll += quantity;
         monthlyDataMap.set(entregaMonthKey, currentMonthData);
       }
     });
 
     const chartData = allMonths.map(monthKey => {
-      const data = monthlyDataMap.get(monthKey) || { entregues: 0 };
+      const data = monthlyDataMap.get(monthKey) || { entregues: new Map(), total_all: 0 };
       return {
         month: monthKey,
-        entregues: data.entregues,
+        entregues: Array.from(data.entregues.values()).reduce((sum, q) => sum + q, 0),
+        total_all: data.total_all,
+        entreguesItems: data.entregues,
       };
     });
 
-    return { chartData, totalEntregues };
+    const totalEntreguesCount = Array.from(totalEntreguesItems.values()).reduce((sum, q) => sum + q, 0);
+
+    return { 
+      chartData, 
+      totalEntreguesCount, 
+      totalAll,
+      totalEntreguesItems
+    };
   };
 
-  const { chartData, totalEntregues } = processEntregasData(entregas);
+  const { chartData, totalEntreguesCount, totalAll, totalEntreguesItems } = processEntregasData(entregas);
 
-  if (isLoading) {
+  // Custom Tooltip Content
+  const CustomTooltip = ({ active, payload, label }: any) => {
+    if (active && payload && payload.length) {
+      const data = chartData.find(d => d.month === label); // Find the full data for the month
+      if (!data) return null;
+
+      return (
+        <div className="bg-card p-3 rounded-lg border border-border shadow-lg text-sm">
+          <p className="font-semibold text-primary mb-2">{label}</p>
+          <p className="text-muted-foreground">Total de Itens: <span className="font-bold text-foreground">{data.total_all}</span></p>
+          {data.entreguesItems.size > 0 && (
+            <div className="mt-2">
+              <p className="font-medium text-success-green">Concluídas:</p>
+              <ul className="list-disc list-inside ml-2">
+                {Array.from(data.entreguesItems.entries()).map(([code, quantity]) => (
+                  <li key={code} className="text-muted-foreground text-xs">
+                    {quantity}x {code} ({productDescriptionsMap.get(code) || 'N/A'})
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+        </div>
+      );
+    }
+    return null;
+  };
+
+  if (isLoadingEntregas || isLoadingProducts) {
     return (
       <Card className="card-futuristic border-0 animate-pulse">
         <CardHeader>
@@ -138,7 +234,7 @@ export const EntregasConcluidasStatusChart: React.FC<EntregasConcluidasStatusCha
               100% Entregues
             </Badge>
             <Badge variant="secondary" className="bg-neural/20 text-neural">
-              {totalEntregues} Entregas Concluídas {/* CORRIGIDO: 'Entregas' em vez de 'Total' */}
+              {totalEntreguesCount} Entregas Concluídas
             </Badge>
           </div>
         </div>
@@ -171,21 +267,13 @@ export const EntregasConcluidasStatusChart: React.FC<EntregasConcluidasStatusCha
                   domain={[0, 'dataMax']}
                   tickFormatter={(value) => value.toFixed(0)}
                 />
-                <Tooltip
-                  contentStyle={{
-                    backgroundColor: 'hsl(var(--card))',
-                    border: '1px solid hsl(var(--border))',
-                    borderRadius: '0.5rem',
-                  }}
-                  itemStyle={{ color: 'hsl(var(--foreground))' }}
-                  labelStyle={{ color: 'hsl(var(--primary))' }}
-                />
+                <Tooltip content={<CustomTooltip />} />
                 <Legend
                   wrapperStyle={{ paddingTop: '10px' }}
                   formatter={(value) => (
                     <span className="text-sm flex items-center gap-2">
                       <span className="font-semibold text-foreground">
-                        {value === 'pendente' ? 'Entregas Pendentes' : value === 'em_transito' ? 'Entregas Em Trânsito' : 'Entregas Concluídas'}
+                        {value === 'entregues' ? 'Entregas Concluídas' : value}
                       </span>
                     </span>
                   )}
@@ -212,8 +300,11 @@ export const EntregasConcluidasStatusChart: React.FC<EntregasConcluidasStatusCha
             <div className="flex items-center gap-3 p-3 bg-secondary/10 rounded-lg">
               <div className="w-4 h-4 rounded" style={{ backgroundColor: 'hsl(var(--success-green))' }} />
               <div>
-                <p className="text-sm font-medium">Total de Entregas Concluídas</p>
-                <p className="text-xs text-muted-foreground">{totalEntregues} entregas concluídas</p> {/* CORRIGIDO */}
+                <p className="text-sm font-medium">Total de Itens Entregues</p>
+                <p className="text-xs text-muted-foreground">{totalEntreguesCount} itens entregues</p>
+                {totalEntreguesItems.size > 0 && (
+                  <p className="text-xs text-muted-foreground italic">({generateItemDescription(totalEntreguesItems)})</p>
+                )}
               </div>
             </div>
 

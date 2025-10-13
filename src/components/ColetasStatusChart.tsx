@@ -17,6 +17,8 @@ import {
   Area,
   Legend,
 } from 'recharts';
+import type { Tables } from "@/integrations/supabase/types"; // Import Tables type
+type Product = Tables<'products'>; // Import Product type
 
 interface ColetasStatusChartProps {
   selectedYear: string;
@@ -26,7 +28,29 @@ export const ColetasStatusChart: React.FC<ColetasStatusChartProps> = ({ selected
   const { user } = useAuth();
   const { toast } = useToast();
 
-  const { data: coletas, isLoading, error } = useQuery({
+  // NEW: Fetch all products to get their descriptions
+  const { data: products, isLoading: isLoadingProducts, error: productsError } = useQuery<Product[], Error>({
+    queryKey: ['allProducts', user?.id],
+    queryFn: async () => {
+      if (!user?.id) return [];
+      const { data, error } = await supabase
+        .from('products')
+        .select('code, description')
+        .eq('user_id', user.id);
+      if (error) throw new Error(error.message);
+      return data;
+    },
+    enabled: !!user?.id,
+  });
+
+  const productDescriptionsMap = new Map<string, string>();
+  products?.forEach(p => {
+    if (p.code && p.description) {
+      productDescriptionsMap.set(p.code, p.description);
+    }
+  });
+
+  const { data: coletas, isLoading: isLoadingColetas, error: coletasError } = useQuery({
     queryKey: ['coletasStatusChart', user?.id, selectedYear],
     queryFn: async () => {
       if (!user?.id) return [];
@@ -40,7 +64,8 @@ export const ColetasStatusChart: React.FC<ColetasStatusChartProps> = ({ selected
           created_at,
           qtd_aparelhos_solicitado,
           status_coleta,
-          previsao_coleta
+          previsao_coleta,
+          modelo_aparelho // Add this
         `)
         .eq('user_id', user.id)
         .eq('type', 'coleta') // FILTER FOR 'coleta' type
@@ -54,17 +79,47 @@ export const ColetasStatusChart: React.FC<ColetasStatusChartProps> = ({ selected
   });
 
   useEffect(() => {
-    if (error) {
+    if (coletasError) {
       toast({
         title: "Erro ao carregar dados das coletas",
-        description: error.message,
+        description: coletasError.message,
         variant: "destructive",
       });
     }
-  }, [error, toast]);
+    if (productsError) {
+      toast({
+        title: "Erro ao carregar descrições de produtos",
+        description: productsError.message,
+        variant: "destructive",
+      });
+    }
+  }, [coletasError, productsError, toast]);
+
+  // Helper function to generate item descriptions for tooltips/cards
+  const generateItemDescription = (itemCodeQuantities: Map<string, number>) => {
+    const descriptions: string[] = [];
+    itemCodeQuantities.forEach((quantity, code) => {
+      const description = productDescriptionsMap.get(code);
+      if (description) {
+        descriptions.push(`${quantity}x ${code} (${description})`);
+      } else {
+        descriptions.push(`${quantity}x ${code}`);
+      }
+    });
+
+    if (descriptions.length === 0) return "Nenhum item";
+    if (descriptions.length === 1) return descriptions[0];
+    if (descriptions.length === 2) return `${descriptions[0]} e ${descriptions[1]}`;
+    return `${descriptions[0]}, ${descriptions[1]} e outros`; // For more than 2 types
+  };
 
   const processColetasData = (coletasData: any[] | undefined) => {
-    const monthlyDataMap = new Map<string, { pendente: number; em_transito: number; concluidas: number; total_all: number }>();
+    const monthlyDataMap = new Map<string, { 
+      pendente: Map<string, number>; 
+      em_transito: Map<string, number>; 
+      concluidas: Map<string, number>; 
+      total_all: number 
+    }>();
     const allMonths: string[] = [];
     const currentYear = parseInt(selectedYear);
 
@@ -72,16 +127,21 @@ export const ColetasStatusChart: React.FC<ColetasStatusChartProps> = ({ selected
       const month = startOfMonth(new Date(currentYear, i));
       const monthKey = format(month, 'MMM', { locale: ptBR });
       allMonths.push(monthKey);
-      monthlyDataMap.set(monthKey, { pendente: 0, em_transito: 0, concluidas: 0, total_all: 0 });
+      monthlyDataMap.set(monthKey, { 
+        pendente: new Map(), 
+        em_transito: new Map(), 
+        concluidas: new Map(), 
+        total_all: 0 
+      });
     }
 
-    let totalPendente = 0;
-    let totalEmTransito = 0;
-    let totalConcluidas = 0;
+    const totalPendenteItems: Map<string, number> = new Map();
+    const totalEmTransitoItems: Map<string, number> = new Map();
+    const totalConcluidasItems: Map<string, number> = new Map();
     let totalAll = 0;
 
     coletasData?.forEach(coleta => {
-      if (!coleta.previsao_coleta) return;
+      if (!coleta.previsao_coleta || !coleta.modelo_aparelho) return;
 
       const coletaDate = parseISO(coleta.previsao_coleta);
 
@@ -90,21 +150,22 @@ export const ColetasStatusChart: React.FC<ColetasStatusChartProps> = ({ selected
 
       const coletaMonthKey = format(startOfMonth(adjustedDateForLocalMonth), 'MMM', { locale: ptBR });
       const quantity = coleta.qtd_aparelhos_solicitado || 0;
+      const productCode = coleta.modelo_aparelho;
 
       if (monthlyDataMap.has(coletaMonthKey)) {
         const currentMonthData = monthlyDataMap.get(coletaMonthKey)!;
         switch (coleta.status_coleta) {
           case 'pendente':
-            currentMonthData.pendente += quantity;
-            totalPendente += quantity;
+            currentMonthData.pendente.set(productCode, (currentMonthData.pendente.get(productCode) || 0) + quantity);
+            totalPendenteItems.set(productCode, (totalPendenteItems.get(productCode) || 0) + quantity);
             break;
           case 'agendada': // 'agendada' is 'em trânsito' for coletas
-            currentMonthData.em_transito += quantity;
-            totalEmTransito += quantity;
+            currentMonthData.em_transito.set(productCode, (currentMonthData.em_transito.get(productCode) || 0) + quantity);
+            totalEmTransitoItems.set(productCode, (totalEmTransitoItems.get(productCode) || 0) + quantity);
             break;
           case 'concluida':
-            currentMonthData.concluidas += quantity;
-            totalConcluidas += quantity;
+            currentMonthData.concluidas.set(productCode, (currentMonthData.concluidas.get(productCode) || 0) + quantity);
+            totalConcluidasItems.set(productCode, (totalConcluidasItems.get(productCode) || 0) + quantity);
             break;
         }
         currentMonthData.total_all += quantity;
@@ -114,22 +175,90 @@ export const ColetasStatusChart: React.FC<ColetasStatusChartProps> = ({ selected
     });
 
     const chartData = allMonths.map(monthKey => {
-      const data = monthlyDataMap.get(monthKey) || { pendente: 0, em_transito: 0, concluidas: 0, total_all: 0 };
+      const data = monthlyDataMap.get(monthKey) || { pendente: new Map(), em_transito: new Map(), concluidas: new Map(), total_all: 0 };
       return {
         month: monthKey,
-        pendente: data.pendente,
-        em_transito: data.em_transito,
-        concluidas: data.concluidas,
+        pendente: Array.from(data.pendente.values()).reduce((sum, q) => sum + q, 0),
+        em_transito: Array.from(data.em_transito.values()).reduce((sum, q) => sum + q, 0),
+        concluidas: Array.from(data.concluidas.values()).reduce((sum, q) => sum + q, 0),
         total_all: data.total_all,
+        pendenteItems: data.pendente,
+        emTransitoItems: data.em_transito,
+        concluidasItems: data.concluidas,
       };
     });
 
-    return { chartData, totalPendente, totalEmTransito, totalConcluidas, totalAll };
+    const totalPendenteCount = Array.from(totalPendenteItems.values()).reduce((sum, q) => sum + q, 0);
+    const totalEmTransitoCount = Array.from(totalEmTransitoItems.values()).reduce((sum, q) => sum + q, 0);
+    const totalConcluidasCount = Array.from(totalConcluidasItems.values()).reduce((sum, q) => sum + q, 0);
+
+    return { 
+      chartData, 
+      totalPendenteCount, 
+      totalEmTransitoCount, 
+      totalConcluidasCount, 
+      totalAll,
+      totalPendenteItems,
+      totalEmTransitoItems,
+      totalConcluidasItems
+    };
   };
 
-  const { chartData, totalPendente, totalEmTransito, totalConcluidas, totalAll } = processColetasData(coletas);
+  const { chartData, totalPendenteCount, totalEmTransitoCount, totalConcluidasCount, totalAll, totalPendenteItems, totalEmTransitoItems, totalConcluidasItems } = processColetasData(coletas);
 
-  if (isLoading) {
+  // Custom Tooltip Content
+  const CustomTooltip = ({ active, payload, label }: any) => {
+    if (active && payload && payload.length) {
+      const data = chartData.find(d => d.month === label); // Find the full data for the month
+      if (!data) return null;
+
+      return (
+        <div className="bg-card p-3 rounded-lg border border-border shadow-lg text-sm">
+          <p className="font-semibold text-primary mb-2">{label}</p>
+          <p className="text-muted-foreground">Total de Itens: <span className="font-bold text-foreground">{data.total_all}</span></p>
+          {data.pendenteItems.size > 0 && (
+            <div className="mt-2">
+              <p className="font-medium text-destructive">Pendentes:</p>
+              <ul className="list-disc list-inside ml-2">
+                {Array.from(data.pendenteItems.entries()).map(([code, quantity]) => (
+                  <li key={code} className="text-muted-foreground text-xs">
+                    {quantity}x {code} ({productDescriptionsMap.get(code) || 'N/A'})
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+          {data.emTransitoItems.size > 0 && (
+            <div className="mt-2">
+              <p className="font-medium text-warning-yellow">Em Trânsito:</p>
+              <ul className="list-disc list-inside ml-2">
+                {Array.from(data.emTransitoItems.entries()).map(([code, quantity]) => (
+                  <li key={code} className="text-muted-foreground text-xs">
+                    {quantity}x {code} ({productDescriptionsMap.get(code) || 'N/A'})
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+          {data.concluidasItems.size > 0 && (
+            <div className="mt-2">
+              <p className="font-medium text-success-green">Concluídas:</p>
+              <ul className="list-disc list-inside ml-2">
+                {Array.from(data.concluidasItems.entries()).map(([code, quantity]) => (
+                  <li key={code} className="text-muted-foreground text-xs">
+                    {quantity}x {code} ({productDescriptionsMap.get(code) || 'N/A'})
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+        </div>
+      );
+    }
+    return null;
+  };
+
+  if (isLoadingColetas || isLoadingProducts) {
     return (
       <Card className="card-futuristic border-0 animate-pulse">
         <CardHeader>
@@ -182,15 +311,7 @@ export const ColetasStatusChart: React.FC<ColetasStatusChartProps> = ({ selected
                   domain={[0, 'dataMax']}
                   tickFormatter={(value) => value.toFixed(0)}
                 />
-                <Tooltip
-                  contentStyle={{
-                    backgroundColor: 'hsl(var(--card))',
-                    border: '1px solid hsl(var(--border))',
-                    borderRadius: '0.5rem',
-                  }}
-                  itemStyle={{ color: 'hsl(var(--foreground))' }}
-                  labelStyle={{ color: 'hsl(var(--primary))' }}
-                />
+                <Tooltip content={<CustomTooltip />} />
                 <Legend
                   wrapperStyle={{ paddingTop: '10px' }}
                   formatter={(value) => (
@@ -251,7 +372,10 @@ export const ColetasStatusChart: React.FC<ColetasStatusChartProps> = ({ selected
               <div className="w-4 h-4 rounded" style={{ backgroundColor: 'hsl(var(--warning-yellow))' }} />
               <div>
                 <p className="text-sm font-medium">Coletas Em Trânsito</p>
-                <p className="text-xs text-muted-foreground">{totalEmTransito} itens a caminho</p>
+                <p className="text-xs text-muted-foreground">{totalEmTransitoCount} itens a caminho</p>
+                {totalEmTransitoItems.size > 0 && (
+                  <p className="text-xs text-muted-foreground italic">({generateItemDescription(totalEmTransitoItems)})</p>
+                )}
               </div>
             </div>
 
@@ -259,7 +383,10 @@ export const ColetasStatusChart: React.FC<ColetasStatusChartProps> = ({ selected
               <div className="w-4 h-4 rounded" style={{ backgroundColor: 'hsl(var(--destructive))' }} />
               <div>
                 <p className="text-sm font-medium">Coletas Pendentes</p>
-                <p className="text-xs text-muted-foreground">{totalPendente} itens aguardando</p>
+                <p className="text-xs text-muted-foreground">{totalPendenteCount} itens aguardando</p>
+                {totalPendenteItems.size > 0 && (
+                  <p className="text-xs text-muted-foreground italic">({generateItemDescription(totalPendenteItems)})</p>
+                )}
               </div>
             </div>
 
@@ -267,7 +394,10 @@ export const ColetasStatusChart: React.FC<ColetasStatusChartProps> = ({ selected
               <div className="w-4 h-4 rounded" style={{ backgroundColor: 'hsl(var(--success-green))' }} />
               <div>
                 <p className="text-sm font-medium">Coletas Concluídas</p>
-                <p className="text-xs text-muted-foreground">{totalConcluidas} itens coletados</p>
+                <p className="text-xs text-muted-foreground">{totalConcluidasCount} itens coletados</p>
+                {totalConcluidasItems.size > 0 && (
+                  <p className="text-xs text-muted-foreground italic">({generateItemDescription(totalConcluidasItems)})</p>
+                )}
               </div>
             </div>
           </div>

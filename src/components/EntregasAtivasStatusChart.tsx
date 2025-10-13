@@ -17,6 +17,8 @@ import {
   Area,
   Legend, // Adicionado Legend para mostrar todos os itens
 } from 'recharts';
+import type { Tables } from "@/integrations/supabase/types"; // Import Tables type
+type Product = Tables<'products'>; // Import Product type
 
 interface EntregasAtivasStatusChartProps {
   selectedYear: string;
@@ -26,7 +28,29 @@ export const EntregasAtivasStatusChart: React.FC<EntregasAtivasStatusChartProps>
   const { user } = useAuth();
   const { toast } = useToast();
 
-  const { data: entregas, isLoading, error } = useQuery({
+  // NEW: Fetch all products to get their descriptions
+  const { data: products, isLoading: isLoadingProducts, error: productsError } = useQuery<Product[], Error>({
+    queryKey: ['allProducts', user?.id],
+    queryFn: async () => {
+      if (!user?.id) return [];
+      const { data, error } = await supabase
+        .from('products')
+        .select('code, description')
+        .eq('user_id', user.id);
+      if (error) throw new Error(error.message);
+      return data;
+    },
+    enabled: !!user?.id,
+  });
+
+  const productDescriptionsMap = new Map<string, string>();
+  products?.forEach(p => {
+    if (p.code && p.description) {
+      productDescriptionsMap.set(p.code, p.description);
+    }
+  });
+
+  const { data: entregas, isLoading: isLoadingEntregas, error: entregasError } = useQuery({
     queryKey: ['entregasAtivasStatusChart', user?.id, selectedYear],
     queryFn: async () => {
       if (!user?.id) return [];
@@ -40,7 +64,8 @@ export const EntregasAtivasStatusChart: React.FC<EntregasAtivasStatusChartProps>
           created_at,
           qtd_aparelhos_solicitado,
           status_coleta,
-          previsao_coleta
+          previsao_coleta,
+          modelo_aparelho // Add this
         `)
         .eq('user_id', user.id)
         .eq('type', 'entrega') // FILTRAR POR TIPO 'entrega'
@@ -54,17 +79,47 @@ export const EntregasAtivasStatusChart: React.FC<EntregasAtivasStatusChartProps>
   });
 
   useEffect(() => {
-    if (error) {
+    if (entregasError) {
       toast({
         title: "Erro ao carregar dados das entregas ativas",
-        description: error.message,
+        description: entregasError.message,
         variant: "destructive",
       });
     }
-  }, [error, toast]);
+    if (productsError) {
+      toast({
+        title: "Erro ao carregar descrições de produtos",
+        description: productsError.message,
+        variant: "destructive",
+      });
+    }
+  }, [entregasError, productsError, toast]);
+
+  // Helper function to generate item descriptions for tooltips/cards
+  const generateItemDescription = (itemCodeQuantities: Map<string, number>) => {
+    const descriptions: string[] = [];
+    itemCodeQuantities.forEach((quantity, code) => {
+      const description = productDescriptionsMap.get(code);
+      if (description) {
+        descriptions.push(`${quantity}x ${code} (${description})`);
+      } else {
+        descriptions.push(`${quantity}x ${code}`);
+      }
+    });
+
+    if (descriptions.length === 0) return "Nenhum item";
+    if (descriptions.length === 1) return descriptions[0];
+    if (descriptions.length === 2) return `${descriptions[0]} e ${descriptions[1]}`;
+    return `${descriptions[0]}, ${descriptions[1]} e outros`; // For more than 2 types
+  };
 
   const processEntregasData = (entregasData: any[] | undefined) => {
-    const monthlyDataMap = new Map<string, { pendente: number; em_transito: number; entregues: number; total_all: number }>();
+    const monthlyDataMap = new Map<string, { 
+      pendente: Map<string, number>; 
+      em_transito: Map<string, number>; 
+      entregues: Map<string, number>; 
+      total_all: number 
+    }>();
     const allMonths: string[] = [];
     const currentYear = parseInt(selectedYear);
 
@@ -72,16 +127,21 @@ export const EntregasAtivasStatusChart: React.FC<EntregasAtivasStatusChartProps>
       const month = startOfMonth(new Date(currentYear, i));
       const monthKey = format(month, 'MMM', { locale: ptBR });
       allMonths.push(monthKey);
-      monthlyDataMap.set(monthKey, { pendente: 0, em_transito: 0, entregues: 0, total_all: 0 });
+      monthlyDataMap.set(monthKey, { 
+        pendente: new Map(), 
+        em_transito: new Map(), 
+        entregues: new Map(), 
+        total_all: 0 
+      });
     }
 
-    let totalPendente = 0;
-    let totalEmTransito = 0;
-    let totalEntregues = 0;
+    const totalPendenteItems: Map<string, number> = new Map();
+    const totalEmTransitoItems: Map<string, number> = new Map();
+    const totalEntreguesItems: Map<string, number> = new Map();
     let totalAll = 0;
 
     entregasData?.forEach(entrega => {
-      if (!entrega.previsao_coleta) return;
+      if (!entrega.previsao_coleta || !entrega.modelo_aparelho) return;
 
       const entregaDate = parseISO(entrega.previsao_coleta);
 
@@ -90,21 +150,22 @@ export const EntregasAtivasStatusChart: React.FC<EntregasAtivasStatusChartProps>
 
       const entregaMonthKey = format(startOfMonth(adjustedDateForLocalMonth), 'MMM', { locale: ptBR });
       const quantity = entrega.qtd_aparelhos_solicitado || 0;
+      const productCode = entrega.modelo_aparelho;
 
       if (monthlyDataMap.has(entregaMonthKey)) {
         const currentMonthData = monthlyDataMap.get(entregaMonthKey)!;
         switch (entrega.status_coleta) {
           case 'pendente':
-            currentMonthData.pendente += quantity;
-            totalPendente += quantity;
+            currentMonthData.pendente.set(productCode, (currentMonthData.pendente.get(productCode) || 0) + quantity);
+            totalPendenteItems.set(productCode, (totalPendenteItems.get(productCode) || 0) + quantity);
             break;
           case 'agendada':
-            currentMonthData.em_transito += quantity;
-            totalEmTransito += quantity;
+            currentMonthData.em_transito.set(productCode, (currentMonthData.em_transito.get(productCode) || 0) + quantity);
+            totalEmTransitoItems.set(productCode, (totalEmTransitoItems.get(productCode) || 0) + quantity);
             break;
           case 'concluida': // Incluído status concluída
-            currentMonthData.entregues += quantity;
-            totalEntregues += quantity;
+            currentMonthData.entregues.set(productCode, (currentMonthData.entregues.get(productCode) || 0) + quantity);
+            totalEntreguesItems.set(productCode, (totalEntreguesItems.get(productCode) || 0) + quantity);
             break;
         }
         currentMonthData.total_all += quantity;
@@ -114,27 +175,90 @@ export const EntregasAtivasStatusChart: React.FC<EntregasAtivasStatusChartProps>
     });
 
     const chartData = allMonths.map(monthKey => {
-      const data = monthlyDataMap.get(monthKey) || { pendente: 0, em_transito: 0, entregues: 0, total_all: 0 };
+      const data = monthlyDataMap.get(monthKey) || { pendente: new Map(), em_transito: new Map(), entregues: new Map(), total_all: 0 };
       return {
         month: monthKey,
-        pendente: data.pendente,
-        em_transito: data.em_transito,
-        entregues: data.entregues, // Adicionado entregues
+        pendente: Array.from(data.pendente.values()).reduce((sum, q) => sum + q, 0),
+        em_transito: Array.from(data.em_transito.values()).reduce((sum, q) => sum + q, 0),
+        entregues: Array.from(data.entregues.values()).reduce((sum, q) => sum + q, 0),
         total_all: data.total_all,
+        pendenteItems: data.pendente,
+        emTransitoItems: data.em_transito,
+        entreguesItems: data.entregues,
       };
     });
 
-    return { chartData, totalPendente, totalEmTransito, totalEntregues, totalAll };
+    const totalPendenteCount = Array.from(totalPendenteItems.values()).reduce((sum, q) => sum + q, 0);
+    const totalEmTransitoCount = Array.from(totalEmTransitoItems.values()).reduce((sum, q) => sum + q, 0);
+    const totalEntreguesCount = Array.from(totalEntreguesItems.values()).reduce((sum, q) => sum + q, 0);
+
+    return { 
+      chartData, 
+      totalPendenteCount, 
+      totalEmTransitoCount, 
+      totalEntreguesCount, 
+      totalAll,
+      totalPendenteItems,
+      totalEmTransitoItems,
+      totalEntreguesItems
+    };
   };
 
-  const { chartData, totalPendente, totalEmTransito, totalEntregues, totalAll } = processEntregasData(entregas);
+  const { chartData, totalPendenteCount, totalEmTransitoCount, totalEntreguesCount, totalAll, totalPendenteItems, totalEmTransitoItems, totalEntreguesItems } = processEntregasData(entregas);
 
-  const percentageEmTransito = totalAll > 0 ? ((totalEmTransito / totalAll) * 100).toFixed(1) : '0.0';
-  const percentagePendente = totalAll > 0 ? ((totalPendente / totalAll) * 100).toFixed(1) : '0.0';
-  const percentageEntregues = totalAll > 0 ? ((totalEntregues / totalAll) * 100).toFixed(1) : '0.0';
+  // Custom Tooltip Content
+  const CustomTooltip = ({ active, payload, label }: any) => {
+    if (active && payload && payload.length) {
+      const data = chartData.find(d => d.month === label); // Find the full data for the month
+      if (!data) return null;
 
+      return (
+        <div className="bg-card p-3 rounded-lg border border-border shadow-lg text-sm">
+          <p className="font-semibold text-primary mb-2">{label}</p>
+          <p className="text-muted-foreground">Total de Itens: <span className="font-bold text-foreground">{data.total_all}</span></p>
+          {data.pendenteItems.size > 0 && (
+            <div className="mt-2">
+              <p className="font-medium text-destructive">Pendentes:</p>
+              <ul className="list-disc list-inside ml-2">
+                {Array.from(data.pendenteItems.entries()).map(([code, quantity]) => (
+                  <li key={code} className="text-muted-foreground text-xs">
+                    {quantity}x {code} ({productDescriptionsMap.get(code) || 'N/A'})
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+          {data.emTransitoItems.size > 0 && (
+            <div className="mt-2">
+              <p className="font-medium text-warning-yellow">Em Trânsito:</p>
+              <ul className="list-disc list-inside ml-2">
+                {Array.from(data.emTransitoItems.entries()).map(([code, quantity]) => (
+                  <li key={code} className="text-muted-foreground text-xs">
+                    {quantity}x {code} ({productDescriptionsMap.get(code) || 'N/A'})
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+          {data.entreguesItems.size > 0 && (
+            <div className="mt-2">
+              <p className="font-medium text-success-green">Concluídas:</p>
+              <ul className="list-disc list-inside ml-2">
+                {Array.from(data.entreguesItems.entries()).map(([code, quantity]) => (
+                  <li key={code} className="text-muted-foreground text-xs">
+                    {quantity}x {code} ({productDescriptionsMap.get(code) || 'N/A'})
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+        </div>
+      );
+    }
+    return null;
+  };
 
-  if (isLoading) {
+  if (isLoadingEntregas || isLoadingProducts) {
     return (
       <Card className="card-futuristic border-0 animate-pulse">
         <CardHeader>
@@ -188,15 +312,7 @@ export const EntregasAtivasStatusChart: React.FC<EntregasAtivasStatusChartProps>
                   domain={[0, 'dataMax']}
                   tickFormatter={(value) => value.toFixed(0)}
                 />
-                <Tooltip
-                  contentStyle={{
-                    backgroundColor: 'hsl(var(--card))',
-                    border: '1px solid hsl(var(--border))',
-                    borderRadius: '0.5rem',
-                  }}
-                  itemStyle={{ color: 'hsl(var(--foreground))' }}
-                  labelStyle={{ color: 'hsl(var(--primary))' }}
-                />
+                <Tooltip content={<CustomTooltip />} />
                 <Legend
                   wrapperStyle={{ paddingTop: '10px' }}
                   formatter={(value) => (
@@ -257,7 +373,10 @@ export const EntregasAtivasStatusChart: React.FC<EntregasAtivasStatusChartProps>
               <div className="w-4 h-4 rounded" style={{ backgroundColor: 'hsl(var(--warning-yellow))' }} />
               <div>
                 <p className="text-sm font-medium">Entregas Em Trânsito</p>
-                <p className="text-xs text-muted-foreground">{totalEmTransito} itens a caminho</p>
+                <p className="text-xs text-muted-foreground">{totalEmTransitoCount} itens a caminho</p>
+                {totalEmTransitoItems.size > 0 && (
+                  <p className="text-xs text-muted-foreground italic">({generateItemDescription(totalEmTransitoItems)})</p>
+                )}
               </div>
             </div>
 
@@ -265,7 +384,10 @@ export const EntregasAtivasStatusChart: React.FC<EntregasAtivasStatusChartProps>
               <div className="w-4 h-4 rounded" style={{ backgroundColor: 'hsl(var(--destructive))' }} />
               <div>
                 <p className="text-sm font-medium">Entregas Pendentes</p>
-                <p className="text-xs text-muted-foreground">{totalPendente} itens aguardando</p>
+                <p className="text-xs text-muted-foreground">{totalPendenteCount} itens aguardando</p>
+                {totalPendenteItems.size > 0 && (
+                  <p className="text-xs text-muted-foreground italic">({generateItemDescription(totalPendenteItems)})</p>
+                )}
               </div>
             </div>
 
@@ -273,7 +395,10 @@ export const EntregasAtivasStatusChart: React.FC<EntregasAtivasStatusChartProps>
               <div className="w-4 h-4 rounded" style={{ backgroundColor: 'hsl(var(--success-green))' }} />
               <div>
                 <p className="text-sm font-medium">Entregas Concluídas</p>
-                <p className="text-xs text-muted-foreground">{totalEntregues} itens entregues</p>
+                <p className="text-xs text-muted-foreground">{totalEntreguesCount} itens entregues</p>
+                {totalEntreguesItems.size > 0 && (
+                  <p className="text-xs text-muted-foreground italic">({generateItemDescription(totalEntreguesItems)})</p>
+                )}
               </div>
             </div>
           </div>
