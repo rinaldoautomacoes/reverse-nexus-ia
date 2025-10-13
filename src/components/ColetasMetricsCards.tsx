@@ -130,7 +130,7 @@ export const ColetasMetricsCards: React.FC<ColetasMetricsCardsProps> = ({ select
       if (description) {
         descriptions.push(`${quantity}x ${description}`);
       } else {
-        descriptions.push(`${quantity}x ${code}`); // Fallback to code if description not found
+        descriptions.push(`${quantity}x Item Desconhecido`); // Fallback to generic item if description not found
       }
     });
 

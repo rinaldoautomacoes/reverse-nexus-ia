@@ -68,7 +68,7 @@ export const ProductStatusChart: React.FC<ProductStatusChartProps> = ({ selected
           qtd_aparelhos_solicitado,
           status_coleta,
           previsao_coleta,
-          modelo_aparelho // Add this
+          modelo_aparelho
         `)
         .eq('user_id', user.id)
         .eq('type', 'coleta') // FILTRAR POR TIPO 'coleta'
@@ -106,7 +106,7 @@ export const ProductStatusChart: React.FC<ProductStatusChartProps> = ({ selected
       if (description) {
         descriptions.push(`${quantity}x ${description}`);
       } else {
-        descriptions.push(`${quantity}x ${code}`); // Fallback to code if description not found
+        descriptions.push(`${quantity}x Item Desconhecido`); // Fallback to generic item if description not found
       }
     });
 
