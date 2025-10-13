@@ -65,7 +65,7 @@ export const EntregasAtivasStatusChart: React.FC<EntregasAtivasStatusChartProps>
           qtd_aparelhos_solicitado,
           status_coleta,
           previsao_coleta,
-          modelo_aparelho // Add this
+          modelo_aparelho
         `)
         .eq('user_id', user.id)
         .eq('type', 'entrega') // FILTRAR POR TIPO 'entrega'
