@@ -699,7 +699,7 @@ export const AgendarColeta = () => {
                 </div>
 
                 <div className="space-y-2 mb-4">
-                  <Label htmlFor="modelo_aparelho">Tipo de Material *</Label>
+                  <Label htmlFor="modelo_aparelho">Código do Produto *</Label>
                   <ProductCombobox
                     value={formData.modelo_aparelho || ''}
                     onValueChange={(code) => handleInputChange("modelo_aparelho", code)}
@@ -707,19 +707,7 @@ export const AgendarColeta = () => {
                   />
                 </div>
 
-                {/* NOVO CAMPO: Código do Produto */}
-                <div className="space-y-2 mb-4">
-                  <Label htmlFor="product_code">Código do Produto *</Label>
-                  <Input
-                    id="product_code"
-                    placeholder="Código do produto (ex: PROD-001)"
-                    value={formData.modelo_aparelho || ''} // Vinculado a modelo_aparelho
-                    onChange={(e) => handleInputChange("modelo_aparelho", e.target.value)}
-                    required
-                  />
-                </div>
-
-                {/* NOVO CAMPO: Descrição do Produto */}
+                {/* Campo de Descrição do Produto (agora somente leitura) */}
                 <div className="space-y-2 mb-4">
                   <Label htmlFor="product_description">Descrição do Produto</Label>
                   <Textarea
@@ -727,7 +715,8 @@ export const AgendarColeta = () => {
                     placeholder="Descrição detalhada do produto"
                     rows={3}
                     value={formData.product_description || ''}
-                    onChange={(e) => handleInputChange("product_description", e.target.value)}
+                    readOnly // Tornar somente leitura
+                    className="bg-muted/50 cursor-not-allowed" // Estilo para indicar que é somente leitura
                   />
                 </div>
 
