@@ -37,7 +37,7 @@ export const AgendarColeta = () => {
 
   const [isLoading, setIsLoading] = useState(false);
   const [isClientDialogOpen, setIsClientDialogOpen] = useState(false);
-  const [formData, setFormData] = useState<ColetaInsert & { 
+  const [formData, setFormData] = useState<Omit<ColetaInsert, 'cep' | 'endereco'> & { // Removido 'cep' e 'endereco' para serem definidos no mutate
     client_id?: string; 
     cep_origem?: string; 
     cep_destino?: string; 
@@ -75,13 +75,13 @@ export const AgendarColeta = () => {
   });
 
   const addColetaMutation = useMutation({
-    mutationFn: async (newColeta: ColetaInsert) => {
+    mutationFn: async (newColetaData: ColetaInsert) => { // Recebe um objeto ColetaInsert já formatado
       if (!user?.id) {
         throw new Error("Usuário não autenticado. Faça login para agendar coletas.");
       }
       const { data, error } = await supabase
         .from('coletas')
-        .insert({ ...newColeta, user_id: user.id, type: 'coleta' }) // Garantir que o tipo seja 'coleta'
+        .insert({ ...newColetaData, user_id: user.id, type: 'coleta' }) // Garantir que o tipo seja 'coleta'
         .select()
         .single();
       if (error) throw new Error(error.message);
@@ -407,9 +407,12 @@ export const AgendarColeta = () => {
       }
     }
 
+    // Prepara os dados para a inserção na tabela 'coletas', excluindo 'product_description'
+    const { product_description, ...coletaDataToInsert } = formData;
+
     // Agora, agende a coleta com o client_id e os dados adicionais
     addColetaMutation.mutate({ 
-      ...formData, 
+      ...coletaDataToInsert, // Usa o objeto sem product_description
       user_id: user.id, 
       client_id: finalClientId,
       email: formData.email || null,
