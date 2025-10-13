@@ -23,6 +23,7 @@ import { format, parse } from "date-fns";
 import { ptBR } from "date-fns/locale";
 
 type ColetaInsert = TablesInsert<'coletas'>;
+type ItemInsert = TablesInsert<'items'>; // Adicionado tipo para inserção de item
 type Client = Tables<'clients'>;
 type ClientInsert = TablesInsert<'clients'>;
 type Product = Tables<'products'>;
@@ -89,6 +90,31 @@ export const AgendarColeta = () => {
         description: `Coleta para ${formData.parceiro} agendada para ${new Date(formData.previsao_coleta || '').toLocaleDateString()}.`
       });
       
+      // --- NOVO: Criar um item associado na tabela 'items' ---
+      if (newColeta.id && formData.modelo_aparelho && formData.qtd_aparelhos_solicitado && user?.id) {
+        const newItem: ItemInsert = {
+          collection_id: newColeta.id,
+          user_id: user.id,
+          name: formData.modelo_aparelho, // Usar o modelo_aparelho como nome do item
+          quantity: formData.qtd_aparelhos_solicitado,
+          status: 'pendente', // Status inicial do item
+          model: formData.modelo_aparelho, // Também usar como modelo do item
+          description: formData.observacao || null, // Usar observação da coleta como descrição do item
+        };
+        const { error: itemError } = await supabase.from('items').insert(newItem);
+        if (itemError) {
+          console.error("Erro ao criar item associado:", itemError);
+          toast({
+            title: "Erro ao criar item",
+            description: `A coleta foi agendada, mas houve um erro ao registrar o item: ${itemError.message}`,
+            variant: "destructive",
+          });
+        } else {
+          queryClient.invalidateQueries({ queryKey: ['itemsForColetasMetrics', user?.id] }); // Invalida os itens para as métricas
+        }
+      }
+      // --- FIM NOVO ---
+
       // Chamar a Edge Function para enviar notificação
       if (newColeta.id && session?.access_token) {
         try {
