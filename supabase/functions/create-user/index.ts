@@ -10,6 +10,7 @@ serve(async (req) => {
   console.log('Edge Function create-user invoked');
 
   if (req.method === 'OPTIONS') {
+    console.log('Handling OPTIONS request');
     return new Response(null, { headers: corsHeaders });
   }
 
@@ -52,7 +53,21 @@ serve(async (req) => {
     }
     console.log('Admin user authorized. Role:', profile.role);
 
-    const { email, password, first_name, last_name, role, avatar_url, phone_number } = await req.json();
+    console.log('Request Content-Type:', req.headers.get('Content-Type'));
+    console.log('Request Content-Length:', req.headers.get('Content-Length'));
+    
+    let requestBody;
+    try {
+      requestBody = await req.json();
+      console.log('Successfully parsed request body.');
+      console.log('Parsed request body content:', JSON.stringify(requestBody)); // Log the parsed content
+    } catch (jsonError) {
+      console.error('Error parsing request JSON body:', jsonError instanceof Error ? jsonError.message : String(jsonError));
+      // Retorna um erro 400 com uma mensagem mais específica para o frontend
+      return new Response(JSON.stringify({ error: 'Bad Request: Invalid or empty JSON body. Please ensure all required fields are sent correctly.' }), { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+    }
+
+    const { email, password, first_name, last_name, role, avatar_url, phone_number } = requestBody;
     console.log('Received data for new user:', { email, first_name, last_name, role, avatar_url: avatar_url ? 'Present' : 'N/A', phone_number: phone_number ? 'Present' : 'N/A' });
 
     if (!email || !password || !first_name || !last_name || !role) {

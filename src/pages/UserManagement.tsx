@@ -108,9 +108,13 @@ export const UserManagement = () => {
     }
 
     try {
+      const requestBody = { ...formData, avatar_url: finalAvatarUrl };
+      console.log('Frontend: Sending request body:', requestBody); // Log do objeto antes de stringify
+      console.log('Frontend: Stringified request body:', JSON.stringify(requestBody)); // Log da string JSON
+
       // Invoke the Edge Function
       const { data, error } = await supabase.functions.invoke('create-user', {
-        body: JSON.stringify({ ...formData, avatar_url: finalAvatarUrl }),
+        body: JSON.stringify(requestBody),
         headers: {
           'Authorization': `Bearer ${session.access_token}`,
           'Content-Type': 'application/json',
