@@ -23,6 +23,7 @@ import { format, parse } from "date-fns";
 import { ptBR } from "date-fns/locale";
 
 type ColetaInsert = TablesInsert<'coletas'>;
+type ItemInsert = TablesInsert<'items'>; // Adicionado tipo para inserção de item
 type Client = Tables<'clients'>;
 type ClientInsert = TablesInsert<'clients'>;
 type Product = Tables<'products'>;
@@ -31,7 +32,7 @@ type Profile = Tables<'profiles'>;
 export const AgendarEntrega = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
-  const { user, session } = useAuth(); // Obter a sessão para a chamada da Edge Function
+  const { user, session } = useAuth();
   const queryClient = useQueryClient();
 
   const [isLoading, setIsLoading] = useState(false);
@@ -78,7 +79,7 @@ export const AgendarEntrega = () => {
       if (error) throw new Error(error.message);
       return data;
     },
-    onSuccess: async (newEntrega) => { // Adicionado 'async' aqui
+    onSuccess: async (newEntrega) => {
       queryClient.invalidateQueries({ queryKey: ['coletas', user?.id] });
       queryClient.invalidateQueries({ queryKey: ['clients', user?.id] });
       queryClient.invalidateQueries({ queryKey: ['dashboardColetasMetrics', user?.id] });
@@ -86,10 +87,37 @@ export const AgendarEntrega = () => {
       queryClient.invalidateQueries({ queryKey: ['collectionStatusChart', user?.id] });
       queryClient.invalidateQueries({ queryKey: ['entregasAtivasStatusChart', user?.id] });
       queryClient.invalidateQueries({ queryKey: ['entregasConcluidasStatusChart', user?.id] });
+      queryClient.invalidateQueries({ queryKey: ['entregasForMetrics', user?.id] }); // Invalida as métricas de entregas
+      queryClient.invalidateQueries({ queryKey: ['itemsForEntregasMetrics', user?.id] }); // Invalida os itens para as métricas de entregas
       toast({
         title: "Entrega agendada com sucesso!",
         description: `Entrega para ${formData.parceiro} agendada para ${new Date(formData.previsao_coleta || '').toLocaleDateString()}.`
       });
+
+      // --- NOVO: Criar um item associado na tabela 'items' ---
+      if (newEntrega.id && formData.modelo_aparelho && formData.qtd_aparelhos_solicitado && user?.id) {
+        const newItem: ItemInsert = {
+          collection_id: newEntrega.id,
+          user_id: user.id,
+          name: formData.modelo_aparelho, // Usar o modelo_aparelho como nome do item
+          quantity: formData.qtd_aparelhos_solicitado,
+          status: 'pendente', // Status inicial do item
+          model: formData.modelo_aparelho, // Também usar como modelo do item
+          description: formData.observacao || null, // Usar observação da entrega como descrição do item
+        };
+        const { error: itemError } = await supabase.from('items').insert(newItem);
+        if (itemError) {
+          console.error("Erro ao criar item associado:", itemError);
+          toast({
+            title: "Erro ao criar item",
+            description: `A entrega foi agendada, mas houve um erro ao registrar o item: ${itemError.message}`,
+            variant: "destructive",
+          });
+        } else {
+          queryClient.invalidateQueries({ queryKey: ['itemsForEntregasMetrics', user?.id] }); // Invalida os itens para as métricas de entregas
+        }
+      }
+      // --- FIM NOVO ---
 
       // Chamar a Edge Function para enviar notificação
       if (newEntrega.id && session?.access_token) {
