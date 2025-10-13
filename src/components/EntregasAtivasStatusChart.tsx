@@ -103,7 +103,7 @@ export const EntregasAtivasStatusChart: React.FC<EntregasAtivasStatusChartProps>
       if (description) {
         descriptions.push(`${quantity}x ${description}`);
       } else {
-        descriptions.push(`${quantity}x Item Desconhecido`); // Fallback to generic item if description not found
+        descriptions.push(`${quantity}x Item Desconhecido`);
       }
     });
 
