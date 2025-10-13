@@ -379,10 +379,7 @@ const EntregasAtivas: React.FC<EntregasAtivasProps> = ({ selectedYear }) => {
                           <MapPin className="h-4 w-4" />
                           {entrega.endereco}
                         </div>
-                        <div className="flex items-center gap-2">
-                          <Calendar className="h-4 w-4" />
-                          {entrega.previsao_coleta ? format(new Date(entrega.previsao_coleta), "dd/MM/yyyy", { locale: ptBR }) : 'N/A'}
-                        </div>
+                        {/* REMOVIDO: A linha que exibia o ícone de calendário e a data */}
                         <div>
                           <strong>{entrega.qtd_aparelhos_solicitado || 0}</strong> produtos - {entrega.modelo_aparelho || 'N/A'}
                         </div>
@@ -445,7 +442,7 @@ const EntregasAtivas: React.FC<EntregasAtivasProps> = ({ selectedYear }) => {
                                 </div>
                                 <div>
                                   <Label className="text-sm font-medium">Telefone</Label>
-                                  <p className="text-sm text-muted-foreground">{selectedEntrega.telefone || 'N/A'}</p>
+                                  <p className className="text-sm text-muted-foreground">{selectedEntrega.telefone || 'N/A'}</p>
                                 </div>
                                 <div>
                                   <Label className="text-sm font-medium">Email</Label>

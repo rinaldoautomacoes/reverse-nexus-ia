@@ -11,7 +11,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Calendar as CalendarIcon, ArrowLeft, Package, MapPin, Search, Filter, Eye, Edit, Trash2, MessageSquareText, Mail, RefreshCcw, Clock, CheckCircle, ListChecks, Tag, Box, User as UserIcon } from "lucide-react";
 import { Calendar } from "@/components/ui/calendar";
 import { useNavigate } from "react-router-dom";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -207,6 +207,14 @@ const ColetasConcluidas: React.FC<ColetasConcluidasProps> = ({ selectedYear }) =
   // Estados para controlar a abertura dos Popovers de data
   const [isStartDatePickerOpen, setIsStartDatePickerOpen] = useState(false);
   const [isEndDatePickerOpen, setIsEndDatePickerOpen] = useState(false);
+
+  // Fechar calendários quando dialogs são abertos
+  useEffect(() => {
+    if (isViewDetailsDialogOpen || isEditDialogOpen) {
+      setIsStartDatePickerOpen(false);
+      setIsEndDatePickerOpen(false);
+    }
+  }, [isViewDetailsDialogOpen, isEditDialogOpen]);
 
   // Query para buscar as coletas
   const { data: coletas, isLoading: isLoadingColetas, error: coletasError} = useQuery<Coleta[], Error>({
@@ -597,10 +605,7 @@ const ColetasConcluidas: React.FC<ColetasConcluidasProps> = ({ selectedYear }) =
                           <MapPin className="h-4 w-4" />
                           {coleta.endereco}
                         </div>
-                        <div className="flex items-center gap-2">
-                          <Calendar className="h-4 w-4" />
-                          {coleta.previsao_coleta ? format(new Date(coleta.previsao_coleta), "dd/MM/yyyy", { locale: ptBR }) : 'N/A'}
-                        </div>
+                        {/* REMOVIDO: A linha que exibia o ícone de calendário e a data */}
                         <div>
                           <strong>{coleta.qtd_aparelhos_solicitado || 0}</strong> produtos - {coleta.modelo_aparelho || 'N/A'}
                         </div>

@@ -518,10 +518,7 @@ const Coletas: React.FC<ColetasProps> = ({ selectedYear }) => {
                           <MapPin className="h-4 w-4" />
                           {coleta.endereco}
                         </div>
-                        <div className="flex items-center gap-2">
-                          <Calendar className="h-4 w-4" />
-                          {coleta.previsao_coleta ? format(new Date(coleta.previsao_coleta), "dd/MM/yyyy", { locale: ptBR }) : 'N/A'}
-                        </div>
+                        {/* REMOVIDO: A linha que exibia o ícone de calendário e a data */}
                         <div>
                           <strong>{coleta.qtd_aparelhos_solicitado || 0}</strong> produtos - {coleta.modelo_aparelho || 'N/A'}
                         </div>
