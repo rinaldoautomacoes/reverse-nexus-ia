@@ -11,6 +11,10 @@ import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { useEffect } from "react";
 import { useAuth } from "@/hooks/use-auth";
+import type { Tables } from "@/integrations/supabase/types"; // Import Tables type
+
+type Coleta = Tables<'coletas'>;
+type Item = Tables<'items'>;
 
 // Mapeamento de nomes de ícones para componentes Lucide React
 const iconMap: { [key: string]: React.ElementType } = {
@@ -29,21 +33,20 @@ export const ColetasMetricsCards: React.FC<ColetasMetricsCardsProps> = ({ select
   const { toast } = useToast();
   const { user } = useAuth();
 
-  const { data: coletas, isLoading, error } = useQuery<Array<{status_coleta: string}>, Error>({
-    queryKey: ['dashboardColetasMetrics', user?.id, selectedYear],
+  // Fetch coletas for the selected year and type 'coleta'
+  const { data: coletas, isLoading: isLoadingColetas, error: coletasError } = useQuery<Coleta[], Error>({
+    queryKey: ['coletasForMetrics', user?.id, selectedYear],
     queryFn: async () => {
-      if (!user?.id) {
-        return [];
-      }
+      if (!user?.id) return [];
 
       const startDate = `${selectedYear}-01-01`;
       const endDate = `${parseInt(selectedYear) + 1}-01-01`;
 
       const { data, error } = await supabase
         .from('coletas')
-        .select('status_coleta')
+        .select('id, status_coleta') // Only need id and status_coleta
         .eq('user_id', user.id)
-        .eq('type', 'coleta') // FILTER FOR 'coleta' type
+        .eq('type', 'coleta')
         .gte('previsao_coleta', startDate)
         .lt('previsao_coleta', endDate);
       
@@ -55,65 +58,110 @@ export const ColetasMetricsCards: React.FC<ColetasMetricsCardsProps> = ({ select
     enabled: !!user?.id,
   });
 
+  // Fetch items associated with the fetched coletas
+  const collectionIds = coletas?.map(c => c.id) || [];
+  const { data: items, isLoading: isLoadingItems, error: itemsError } = useQuery<Item[], Error>({
+    queryKey: ['itemsForColetasMetrics', user?.id, collectionIds],
+    queryFn: async () => {
+      if (!user?.id || collectionIds.length === 0) return [];
+      const { data, error } = await supabase
+        .from('items')
+        .select('quantity, collection_id') // Only need quantity and collection_id
+        .eq('user_id', user.id)
+        .in('collection_id', collectionIds);
+      if (error) throw new Error(error.message);
+      return data;
+    },
+    enabled: !!user?.id && collectionIds.length > 0,
+  });
+
   useEffect(() => {
-    if (error) {
+    if (coletasError) {
       toast({
         title: "Erro ao carregar dados das coletas",
-        description: error.message,
+        description: coletasError.message,
         variant: "destructive",
       });
     }
-  }, [error, toast]);
+    if (itemsError) {
+      toast({
+        title: "Erro ao carregar dados dos itens",
+        description: itemsError.message,
+        variant: "destructive",
+      });
+    }
+  }, [coletasError, itemsError, toast]);
 
-  const calculateColetasMetrics = (coletasData: Array<{status_coleta: string}> | undefined) => {
-    const totalColetas = coletasData?.length || 0;
-    const pendenteCount = coletasData?.filter(e => e.status_coleta === 'pendente').length || 0;
-    const emTransitoCount = coletasData?.filter(e => e.status_coleta === 'agendada').length || 0; // 'agendada' is 'em trânsito' for coletas
-    const concluidaCount = coletasData?.filter(e => e.status_coleta === 'concluida').length || 0;
+  const calculateColetasMetrics = (coletasData: Coleta[] | undefined, itemsData: Item[] | undefined) => {
+    const coletasMap = new Map(coletasData?.map(c => [c.id, c.status_coleta]));
+
+    let totalItemsCount = 0;
+    let pendenteItemsCount = 0;
+    let emTransitoItemsCount = 0;
+    let concluidaItemsCount = 0;
+
+    itemsData?.forEach(item => {
+      const collectionStatus = item.collection_id ? coletasMap.get(item.collection_id) : undefined;
+      const quantity = item.quantity || 0;
+
+      totalItemsCount += quantity;
+
+      switch (collectionStatus) {
+        case 'pendente':
+          pendenteItemsCount += quantity;
+          break;
+        case 'agendada': // 'agendada' is 'em trânsito' for coletas
+          emTransitoItemsCount += quantity;
+          break;
+        case 'concluida':
+          concluidaItemsCount += quantity;
+          break;
+      }
+    });
 
     return [
       {
-        id: 'total-coletas',
-        title: 'Total de Coletas',
-        value: totalColetas.toString(),
-        description: 'Total de coletas registradas',
+        id: 'total-items',
+        title: 'Total de Itens',
+        value: totalItemsCount.toString(),
+        description: 'Total de itens registrados para coleta',
         icon_name: 'ListChecks',
         color: 'text-primary',
         bg_color: 'bg-primary/10',
       },
       {
-        id: 'coletas-pendentes',
-        title: 'Coletas Pendentes',
-        value: pendenteCount.toString(),
-        description: 'Coletas aguardando agendamento ou início',
+        id: 'items-pendentes',
+        title: 'Itens Pendentes',
+        value: pendenteItemsCount.toString(),
+        description: 'Itens aguardando agendamento ou início',
         icon_name: 'Clock',
-        color: 'text-destructive', // ai-purple
-        bg_color: 'bg-destructive/10', // ai-purple/10
+        color: 'text-destructive',
+        bg_color: 'bg-destructive/10',
       },
       {
-        id: 'coletas-em-transito',
-        title: 'Coletas Em Trânsito',
-        value: emTransitoCount.toString(),
-        description: 'Coletas agendadas e em andamento',
-        icon_name: 'Package', // Changed from Truck to Package
-        color: 'text-warning-yellow', // amarelo
-        bg_color: 'bg-warning-yellow/10', // amarelo/10
+        id: 'items-em-transito',
+        title: 'Itens Em Trânsito',
+        value: emTransitoItemsCount.toString(),
+        description: 'Itens agendados e em andamento',
+        icon_name: 'Package',
+        color: 'text-warning-yellow',
+        bg_color: 'bg-warning-yellow/10',
       },
       {
-        id: 'coletas-concluidas',
-        title: 'Coletas Concluídas',
-        value: concluidaCount.toString(),
-        description: 'Coletas finalizadas e processadas',
+        id: 'items-concluidos',
+        title: 'Itens Concluídos',
+        value: concluidaItemsCount.toString(),
+        description: 'Itens coletados e processados',
         icon_name: 'CheckCircle',
-        color: 'text-success-green', // neon-cyan
-        bg_color: 'bg-success-green/10', // neon-cyan/10
+        color: 'text-success-green',
+        bg_color: 'bg-success-green/10',
       },
     ];
   };
 
-  const dashboardMetrics = calculateColetasMetrics(coletas);
+  const dashboardMetrics = calculateColetasMetrics(coletas, items);
 
-  if (isLoading) {
+  if (isLoadingColetas || isLoadingItems) {
     return (
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         {[...Array(4)].map((_, i) => (

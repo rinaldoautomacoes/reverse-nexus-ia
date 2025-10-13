@@ -11,6 +11,10 @@ import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { useEffect } from "react";
 import { useAuth } from "@/hooks/use-auth";
+import type { Tables } from "@/integrations/supabase/types"; // Import Tables type
+
+type Coleta = Tables<'coletas'>;
+type Item = Tables<'items'>;
 
 // Mapeamento de nomes de ícones para componentes Lucide React
 const iconMap: { [key: string]: React.ElementType } = {
@@ -29,21 +33,20 @@ export const EntregasMetricsCards: React.FC<EntregasMetricsCardsProps> = ({ sele
   const { toast } = useToast();
   const { user } = useAuth();
 
-  const { data: entregas, isLoading, error } = useQuery<Array<{status_coleta: string}>, Error>({
-    queryKey: ['dashboardEntregasMetrics', user?.id, selectedYear],
+  // Fetch coletas for the selected year and type 'entrega'
+  const { data: entregas, isLoading: isLoadingEntregas, error: entregasError } = useQuery<Coleta[], Error>({
+    queryKey: ['entregasForMetrics', user?.id, selectedYear],
     queryFn: async () => {
-      if (!user?.id) {
-        return [];
-      }
+      if (!user?.id) return [];
 
       const startDate = `${selectedYear}-01-01`;
       const endDate = `${parseInt(selectedYear) + 1}-01-01`;
 
       const { data, error } = await supabase
-        .from('coletas') // Usamos a tabela 'coletas' para representar as entregas
-        .select('status_coleta')
+        .from('coletas')
+        .select('id, status_coleta') // Only need id and status_coleta
         .eq('user_id', user.id)
-        .eq('type', 'entrega') // FILTRO CORRIGIDO: Apenas registros do tipo 'entrega'
+        .eq('type', 'entrega')
         .gte('previsao_coleta', startDate)
         .lt('previsao_coleta', endDate);
       
@@ -55,65 +58,110 @@ export const EntregasMetricsCards: React.FC<EntregasMetricsCardsProps> = ({ sele
     enabled: !!user?.id,
   });
 
+  // Fetch items associated with the fetched entregas
+  const collectionIds = entregas?.map(c => c.id) || [];
+  const { data: items, isLoading: isLoadingItems, error: itemsError } = useQuery<Item[], Error>({
+    queryKey: ['itemsForEntregasMetrics', user?.id, collectionIds],
+    queryFn: async () => {
+      if (!user?.id || collectionIds.length === 0) return [];
+      const { data, error } = await supabase
+        .from('items')
+        .select('quantity, collection_id') // Only need quantity and collection_id
+        .eq('user_id', user.id)
+        .in('collection_id', collectionIds);
+      if (error) throw new Error(error.message);
+      return data;
+    },
+    enabled: !!user?.id && collectionIds.length > 0,
+  });
+
   useEffect(() => {
-    if (error) {
+    if (entregasError) {
       toast({
         title: "Erro ao carregar dados das entregas",
-        description: error.message,
+        description: entregasError.message,
         variant: "destructive",
       });
     }
-  }, [error, toast]);
+    if (itemsError) {
+      toast({
+        title: "Erro ao carregar dados dos itens",
+        description: itemsError.message,
+        variant: "destructive",
+      });
+    }
+  }, [entregasError, itemsError, toast]);
 
-  const calculateEntregasMetrics = (entregasData: Array<{status_coleta: string}> | undefined) => {
-    const totalEntregas = entregasData?.length || 0;
-    const pendenteCount = entregasData?.filter(e => e.status_coleta === 'pendente').length || 0;
-    const emTransitoCount = entregasData?.filter(e => e.status_coleta === 'agendada').length || 0; // 'agendada' é 'em trânsito' para entregas
-    const concluidaCount = entregasData?.filter(e => e.status_coleta === 'concluida').length || 0;
+  const calculateEntregasMetrics = (entregasData: Coleta[] | undefined, itemsData: Item[] | undefined) => {
+    const entregasMap = new Map(entregasData?.map(e => [e.id, e.status_coleta]));
+
+    let totalItemsCount = 0;
+    let pendenteItemsCount = 0;
+    let emTransitoItemsCount = 0;
+    let concluidaItemsCount = 0;
+
+    itemsData?.forEach(item => {
+      const collectionStatus = item.collection_id ? entregasMap.get(item.collection_id) : undefined;
+      const quantity = item.quantity || 0;
+
+      totalItemsCount += quantity;
+
+      switch (collectionStatus) {
+        case 'pendente':
+          pendenteItemsCount += quantity;
+          break;
+        case 'agendada': // 'agendada' is 'em trânsito' for entregas
+          emTransitoItemsCount += quantity;
+          break;
+        case 'concluida':
+          concluidaItemsCount += quantity;
+          break;
+      }
+    });
 
     return [
       {
-        id: 'total-entregas',
-        title: 'Total de Entregas',
-        value: totalEntregas.toString(),
-        description: 'Total de entregas registradas',
+        id: 'total-items',
+        title: 'Total de Itens',
+        value: totalItemsCount.toString(),
+        description: 'Total de itens registrados para entrega',
         icon_name: 'ListChecks',
         color: 'text-primary',
         bg_color: 'bg-primary/10',
       },
       {
-        id: 'entregas-pendentes',
-        title: 'Entregas Pendentes',
-        value: pendenteCount.toString(),
-        description: 'Entregas aguardando agendamento ou início', // Alterado aqui
+        id: 'items-pendentes',
+        title: 'Itens Pendentes',
+        value: pendenteItemsCount.toString(),
+        description: 'Itens aguardando agendamento ou início',
         icon_name: 'Clock',
-        color: 'text-destructive', // ai-purple
-        bg_color: 'bg-destructive/10', // ai-purple/10
+        color: 'text-destructive',
+        bg_color: 'bg-destructive/10',
       },
       {
-        id: 'entregas-em-transito',
-        title: 'Entregas Em Trânsito',
-        value: emTransitoCount.toString(),
-        description: 'Entregas agendadas e em andamento',
+        id: 'items-em-transito',
+        title: 'Itens Em Trânsito',
+        value: emTransitoItemsCount.toString(),
+        description: 'Itens agendados e em andamento',
         icon_name: 'Truck',
-        color: 'text-warning-yellow', // amarelo
-        bg_color: 'bg-warning-yellow/10', // amarelo/10
+        color: 'text-warning-yellow',
+        bg_color: 'bg-warning-yellow/10',
       },
       {
-        id: 'entregas-concluidas',
-        title: 'Entregas Concluídas',
-        value: concluidaCount.toString(),
-        description: 'Entregas finalizadas e processadas',
+        id: 'items-concluidos',
+        title: 'Itens Concluídos',
+        value: concluidaItemsCount.toString(),
+        description: 'Itens entregues e processados',
         icon_name: 'CheckCircle',
-        color: 'text-success-green', // neon-cyan
-        bg_color: 'bg-success-green/10', // neon-cyan/10
+        color: 'text-success-green',
+        bg_color: 'bg-success-green/10',
       },
     ];
   };
 
-  const dashboardMetrics = calculateEntregasMetrics(entregas);
+  const dashboardMetrics = calculateEntregasMetrics(entregas, items);
 
-  if (isLoading) {
+  if (isLoadingEntregas || isLoadingItems) {
     return (
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         {[...Array(4)].map((_, i) => (
