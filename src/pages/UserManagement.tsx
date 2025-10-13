@@ -109,36 +109,27 @@ export const UserManagement = () => {
 
     try {
       const requestBody = { ...formData, avatar_url: finalAvatarUrl };
-      console.log('Frontend: Sending request body (object):', requestBody); // Log do objeto antes de stringify
-      const stringifiedBody = JSON.stringify(requestBody);
-      console.log('Frontend: Stringified request body (JSON):', stringifiedBody); // Log da string JSON
-      console.log('Frontend: Access Token (first 10 chars):', session.access_token.substring(0, 10));
-
-      // Invoke the Edge Function using fetch directly
-      const response = await fetch('https://wbfbhdmkawoxpxkeeucj.supabase.co/functions/v1/create-user', {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${session.access_token}`,
-          'Content-Type': 'application/json',
-        },
-        body: stringifiedBody,
+      
+      // Invoke the Edge Function using supabase.functions.invoke
+      const { data, error: invokeError } = await supabase.functions.invoke('create-user', {
+        body: requestBody,
       });
 
-      const data = await response.json();
-
-      if (!response.ok) {
-        console.error("Erro da função Edge (resposta não-OK):", data);
-        let errorMessage = "Falha ao criar o usuário. Verifique os dados e tente novamente.";
-        if (data && data.error) {
-          errorMessage = data.error;
-        }
-        throw new Error(errorMessage);
+      if (invokeError) {
+        console.error("Erro ao invocar função Edge:", invokeError);
+        throw new Error(invokeError.message);
       }
-
-      toast({
-        title: "Usuário criado!",
-        description: `O usuário ${formData.email} foi criado com sucesso.`,
-      });
+      
+      // 'data' already contains the parsed response from the Edge Function
+      if (data && data.message) {
+        toast({
+          title: "Usuário criado!",
+          description: `O usuário ${formData.email} foi criado com sucesso.`,
+        });
+      } else {
+        // If data is present but no success message, assume an error from the function
+        throw new Error(data?.error || "Falha ao criar o usuário. Verifique os dados e tente novamente.");
+      }
 
       // Reset form
       setFormData({
