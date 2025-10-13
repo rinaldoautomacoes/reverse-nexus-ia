@@ -112,7 +112,7 @@ export const Debug = () => {
             <div className="space-y-2">
               <p className="text-sm font-medium">URL do Supabase:</p>
               <p className="text-xs font-mono bg-muted p-2 rounded">
-                {process.env.NODE_ENV === 'development' ? 'wbfbhdmkawoxpxkeeucj.supabase.co' : 'Conectado'}
+                {import.meta.env.VITE_SUPABASE_URL}
               </p>
             </div>
           </CardContent>
@@ -127,7 +127,7 @@ export const Debug = () => {
             <div className="grid grid-cols-2 gap-4 text-sm">
               <div>
                 <p className="font-medium">Ambiente:</p>
-                <p className="text-muted-foreground">{process.env.NODE_ENV}</p>
+                <p className="text-muted-foreground">{import.meta.env.MODE}</p>
               </div>
               <div>
                 <p className="font-medium">URL Atual:</p>
