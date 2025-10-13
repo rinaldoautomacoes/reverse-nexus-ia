@@ -36,7 +36,7 @@ export const RelatoriosEntregas = () => {
   const [statusFilter, setStatusFilter] = useState("todos");
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [editingReport, setEditingReport] = useState<Report | null>(null);
-  const [selectedYear, setSelectedYear] = useState<string>('2025');
+  const [selectedYear, setSelectedYear] = useState<string>('2025'); // Mantido para o dashboard, mas não para o filtro de relatório
 
   // --- Fetching Metrics ---
   const { data: entregasData, isLoading: isLoadingEntregas, error: entregasError } = useQuery<Coleta[], Error>({
@@ -295,8 +295,7 @@ export const RelatoriosEntregas = () => {
 
   const filteredReports = reports?.filter(report => {
     const matchesSearch = (report.title?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                           report.description?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                           report.period?.toLowerCase().includes(searchTerm.toLowerCase()));
+                           report.description?.toLowerCase().includes(searchTerm.toLowerCase())); // Removido filtro por período
     const matchesStatus = statusFilter === "todos" || report.status === statusFilter;
     return matchesSearch && matchesStatus;
   }) || [];
@@ -413,7 +412,9 @@ export const RelatoriosEntregas = () => {
                     <div className="flex flex-col gap-1">
                       <h3 className="font-semibold">{report.title}</h3>
                       <div className="flex items-center gap-4 text-sm text-muted-foreground">
-                        <span>{report.period}</span>
+                        <span>
+                          {report.start_date ? format(parseISO(report.start_date), "dd/MM/yyyy", { locale: ptBR }) : 'N/A'} - {report.end_date ? format(parseISO(report.end_date), "dd/MM/yyyy", { locale: ptBR }) : 'N/A'}
+                        </span>
                         <Badge variant="secondary" className="text-xs">
                           {report.type}
                         </Badge>

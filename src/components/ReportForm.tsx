@@ -4,8 +4,13 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import { Zap, FileText } from "lucide-react";
+import { Zap, FileText, Calendar as CalendarIcon } from "lucide-react";
 import type { TablesInsert, TablesUpdate } from "@/integrations/supabase/types";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Calendar } from "@/components/ui/calendar";
+import { cn } from "@/lib/utils";
+import { format, parseISO } from "date-fns";
+import { ptBR } from "date-fns/locale";
 
 type ReportInsert = TablesInsert<'reports'>;
 type ReportUpdate = TablesUpdate<'reports'>;
@@ -20,7 +25,8 @@ interface ReportFormProps {
 export const ReportForm: React.FC<ReportFormProps> = ({ initialData, onSave, onCancel, isPending }) => {
   const [formData, setFormData] = useState<ReportInsert | ReportUpdate>(initialData || {
     title: "",
-    period: "",
+    start_date: format(new Date(), 'yyyy-MM-dd'), // Default to today
+    end_date: format(new Date(), 'yyyy-MM-dd'),   // Default to today
     type: "",
     format: "PDF",
     description: "",
@@ -32,7 +38,11 @@ export const ReportForm: React.FC<ReportFormProps> = ({ initialData, onSave, onC
 
   useEffect(() => {
     if (initialData) {
-      setFormData(initialData);
+      setFormData({
+        ...initialData,
+        start_date: initialData.start_date || format(new Date(), 'yyyy-MM-dd'),
+        end_date: initialData.end_date || format(new Date(), 'yyyy-MM-dd'),
+      });
     }
   }, [initialData]);
 
@@ -60,35 +70,89 @@ export const ReportForm: React.FC<ReportFormProps> = ({ initialData, onSave, onC
 
       <div className="grid grid-cols-2 gap-4">
         <div className="space-y-2">
-          <Label htmlFor="period">Período</Label>
-          <Input
-            id="period"
-            value={formData.period || ''}
-            onChange={(e) => handleInputChange("period", e.target.value)}
-            placeholder="Ex: Janeiro 2024"
-            required
-          />
+          <Label htmlFor="start_date">Data Inicial</Label>
+          <Popover>
+            <PopoverTrigger asChild>
+              <Button
+                variant={"outline"}
+                className={cn(
+                  "w-full justify-start text-left font-normal",
+                  !formData.start_date && "text-muted-foreground"
+                )}
+                disabled={isPending}
+              >
+                <CalendarIcon className="mr-2 h-4 w-4" />
+                {formData.start_date ? (
+                  format(parseISO(formData.start_date), "dd/MM/yyyy", { locale: ptBR })
+                ) : (
+                  <span>Selecione uma data</span>
+                )}
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-auto p-0">
+              <Calendar
+                mode="single"
+                selected={formData.start_date ? parseISO(formData.start_date) : undefined}
+                onSelect={(date) => handleInputChange("start_date", date ? format(date, "yyyy-MM-dd") : null)}
+                initialFocus
+                locale={ptBR}
+              />
+            </PopoverContent>
+          </Popover>
         </div>
 
         <div className="space-y-2">
-          <Label htmlFor="type">Tipo</Label>
-          <Select 
-            value={formData.type || ''} 
-            onValueChange={(value) => handleInputChange("type", value)}
-            required
-          >
-            <SelectTrigger>
-              <SelectValue placeholder="Selecione o tipo" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="Completo">Completo</SelectItem>
-              <SelectItem value="Operacional">Operacional</SelectItem>
-              <SelectItem value="IA Insights">IA Insights</SelectItem>
-              <SelectItem value="Performance">Performance</SelectItem>
-              <SelectItem value="Eficiência">Eficiência</SelectItem>
-            </SelectContent>
-          </Select>
+          <Label htmlFor="end_date">Data Final</Label>
+          <Popover>
+            <PopoverTrigger asChild>
+              <Button
+                variant={"outline"}
+                className={cn(
+                  "w-full justify-start text-left font-normal",
+                  !formData.end_date && "text-muted-foreground"
+                )}
+                disabled={isPending}
+              >
+                <CalendarIcon className="mr-2 h-4 w-4" />
+                {formData.end_date ? (
+                  format(parseISO(formData.end_date), "dd/MM/yyyy", { locale: ptBR })
+                ) : (
+                  <span>Selecione uma data</span>
+                )}
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-auto p-0">
+              <Calendar
+                mode="single"
+                selected={formData.end_date ? parseISO(formData.end_date) : undefined}
+                onSelect={(date) => handleInputChange("end_date", date ? format(date, "yyyy-MM-dd") : null)}
+                initialFocus
+                locale={ptBR}
+              />
+            </PopoverContent>
+          </Popover>
         </div>
+      </div>
+
+      <div className="space-y-2">
+        <Label htmlFor="type">Tipo</Label>
+        <Select 
+          value={formData.type || ''} 
+          onValueChange={(value) => handleInputChange("type", value)}
+          required
+          disabled={isPending}
+        >
+          <SelectTrigger>
+            <SelectValue placeholder="Selecione o tipo" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="Completo">Completo</SelectItem>
+            <SelectItem value="Operacional">Operacional</SelectItem>
+            <SelectItem value="IA Insights">IA Insights</SelectItem>
+            <SelectItem value="Performance">Performance</SelectItem>
+            <SelectItem value="Eficiência">Eficiência</SelectItem>
+          </SelectContent>
+        </Select>
       </div>
 
       <div className="grid grid-cols-2 gap-4">
@@ -97,6 +161,7 @@ export const ReportForm: React.FC<ReportFormProps> = ({ initialData, onSave, onC
           <Select 
             value={formData.format || 'PDF'} 
             onValueChange={(value) => handleInputChange("format", value)}
+            disabled={isPending}
           >
             <SelectTrigger>
               <SelectValue />
@@ -113,6 +178,7 @@ export const ReportForm: React.FC<ReportFormProps> = ({ initialData, onSave, onC
           <Select 
             value={formData.status || 'Gerando'} 
             onValueChange={(value) => handleInputChange("status", value)}
+            disabled={isPending}
           >
             <SelectTrigger>
               <SelectValue />
@@ -132,6 +198,7 @@ export const ReportForm: React.FC<ReportFormProps> = ({ initialData, onSave, onC
           value={formData.collection_type_filter || 'coleta'} 
           onValueChange={(value) => handleInputChange("collection_type_filter", value)}
           required
+          disabled={isPending}
         >
           <SelectTrigger>
             <SelectValue placeholder="Selecione o tipo de registro" />
@@ -149,6 +216,7 @@ export const ReportForm: React.FC<ReportFormProps> = ({ initialData, onSave, onC
         <Select 
           value={formData.collection_status_filter || 'todos'} 
           onValueChange={(value) => handleInputChange("collection_status_filter", value)}
+          disabled={isPending}
         >
           <SelectTrigger>
             <SelectValue placeholder="Todos os Status" />
@@ -170,6 +238,7 @@ export const ReportForm: React.FC<ReportFormProps> = ({ initialData, onSave, onC
           onChange={(e) => handleInputChange("description", e.target.value)}
           placeholder="Descrição detalhada do relatório..."
           rows={3}
+          disabled={isPending}
         />
       </div>
 

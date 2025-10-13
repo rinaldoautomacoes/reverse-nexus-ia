@@ -20,13 +20,14 @@ type Item = Tables<'items'>;
 interface ReportData {
   id?: string;
   title: string;
-  period: string;
+  start_date: string | null; // NOVO CAMPO
+  end_date: string | null;   // NOVO CAMPO
   type: string;
   format: string;
   status: string;
   description: string | null;
   collection_status_filter: string | null;
-  collection_type_filter?: string | null; // NOVO CAMPO: filtro por tipo de coleta/entrega
+  collection_type_filter?: string | null;
 }
 
 interface MonthlyPerformanceData {
@@ -50,6 +51,14 @@ const fetchReportData = async (reportData: ReportData, userId: string) => {
     coletasQuery = coletasQuery.eq('type', reportData.collection_type_filter); // Aplicar filtro de tipo
   }
 
+  // Aplicar filtros de data
+  if (reportData.start_date) {
+    coletasQuery = coletasQuery.gte('created_at', reportData.start_date);
+  }
+  if (reportData.end_date) {
+    coletasQuery = coletasQuery.lte('created_at', reportData.end_date);
+  }
+
   const { data: coletas, error: coletasError } = await coletasQuery;
   if (coletasError) throw coletasError;
 
@@ -62,6 +71,14 @@ const fetchReportData = async (reportData: ReportData, userId: string) => {
   if (reportData.collection_type_filter && reportData.collection_type_filter !== 'todos' && coletas) {
     const relevantCollectionIds = coletas.filter(c => c.type === reportData.collection_type_filter).map(c => c.id);
     itemsQuery = itemsQuery.in('collection_id', relevantCollectionIds);
+  }
+
+  // Aplicar filtros de data para itens também
+  if (reportData.start_date) {
+    itemsQuery = itemsQuery.gte('created_at', reportData.start_date);
+  }
+  if (reportData.end_date) {
+    itemsQuery = itemsQuery.lte('created_at', reportData.end_date);
   }
 
   const { data: items, error: itemsError } = await itemsQuery;
@@ -98,7 +115,7 @@ const generatePdfReport = async (reportData: ReportData, userId: string, perform
   currentY += 20;
   
   pdf.setFontSize(12);
-  pdf.text(`Período: ${reportData.period}`, 20, currentY);
+  pdf.text(`Período: ${reportData.start_date ? format(new Date(reportData.start_date), "dd/MM/yyyy", { locale: ptBR }) : 'N/A'} a ${reportData.end_date ? format(new Date(reportData.end_date), "dd/MM/yyyy", { locale: ptBR }) : 'N/A'}`, 20, currentY);
   currentY += 10;
   pdf.text(`Tipo: ${reportData.type}`, 20, currentY);
   currentY += 10;
@@ -240,7 +257,7 @@ const generateExcelReport = async (reportData: ReportData, userId: string, perfo
 
   // Add report header
   data.push([reportData.title]);
-  data.push([`Período: ${reportData.period}`]);
+  data.push([`Período: ${reportData.start_date ? format(new Date(reportData.start_date), "dd/MM/yyyy", { locale: ptBR }) : 'N/A'} a ${reportData.end_date ? format(new Date(reportData.end_date), "dd/MM/yyyy", { locale: ptBR }) : 'N/A'}`]);
   data.push([`Tipo: ${reportData.type}`]);
   data.push([`Status do Relatório: ${reportData.status}`]);
   data.push([`Filtro de Status: ${reportData.collection_status_filter === 'todos' ? 'Todos' : reportData.collection_status_filter}`]);
@@ -333,7 +350,7 @@ const generateWordReport = async (reportData: ReportData, userId: string, perfor
     <body>
         <h1>LogiReverseIA - Relatório</h1>
         <h2>${reportData.title}</h2>
-        <p><strong>Período:</strong> ${reportData.period}</p>
+        <p><strong>Período:</strong> ${reportData.start_date ? format(new Date(reportData.start_date), "dd/MM/yyyy", { locale: ptBR }) : 'N/A'} a ${reportData.end_date ? format(new Date(reportData.end_date), "dd/MM/yyyy", { locale: ptBR }) : 'N/A'}</p>
         <p><strong>Tipo:</strong> ${reportData.type}</p>
         <p><strong>Status do Relatório:</strong> ${reportData.status}</p>
         <p><strong>Filtro de Status:</strong> ${reportData.collection_status_filter === 'todos' ? 'Todos' : reportData.collection_status_filter}</p>

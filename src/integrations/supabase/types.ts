@@ -373,9 +373,10 @@ export type Database = {
           collection_type_filter: string
           created_at: string | null
           description: string | null
+          end_date: string | null
           format: string
           id: string
-          period: string
+          start_date: string | null
           status: string
           title: string
           type: string
@@ -386,9 +387,10 @@ export type Database = {
           collection_type_filter?: string
           created_at?: string | null
           description?: string | null
+          end_date?: string | null
           format?: string
           id?: string
-          period: string
+          start_date?: string | null
           status?: string
           title: string
           type: string
@@ -399,9 +401,10 @@ export type Database = {
           collection_type_filter?: string
           created_at?: string | null
           description?: string | null
+          end_date?: string | null
           format?: string
           id?: string
-          period?: string
+          start_date?: string | null
           status?: string
           title?: string
           type?: string
