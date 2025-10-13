@@ -101,9 +101,9 @@ export const EntregasAtivasStatusChart: React.FC<EntregasAtivasStatusChartProps>
     itemCodeQuantities.forEach((quantity, code) => {
       const description = productDescriptionsMap.get(code);
       if (description) {
-        descriptions.push(`${quantity}x ${code} (${description})`);
+        descriptions.push(`${quantity}x ${description}`);
       } else {
-        descriptions.push(`${quantity}x ${code}`);
+        descriptions.push(`${quantity}x ${code}`); // Fallback to code if description not found
       }
     });
 
@@ -222,7 +222,7 @@ export const EntregasAtivasStatusChart: React.FC<EntregasAtivasStatusChartProps>
               <ul className="list-disc list-inside ml-2">
                 {Array.from(data.pendenteItems.entries()).map(([code, quantity]) => (
                   <li key={code} className="text-muted-foreground text-xs">
-                    {quantity}x {code} ({productDescriptionsMap.get(code) || 'N/A'})
+                    {quantity}x {productDescriptionsMap.get(code) || 'N/A'}
                   </li>
                 ))}
               </ul>
@@ -234,7 +234,7 @@ export const EntregasAtivasStatusChart: React.FC<EntregasAtivasStatusChartProps>
               <ul className="list-disc list-inside ml-2">
                 {Array.from(data.emTransitoItems.entries()).map(([code, quantity]) => (
                   <li key={code} className="text-muted-foreground text-xs">
-                    {quantity}x {code} ({productDescriptionsMap.get(code) || 'N/A'})
+                    {quantity}x {productDescriptionsMap.get(code) || 'N/A'}
                   </li>
                 ))}
               </ul>
@@ -246,7 +246,7 @@ export const EntregasAtivasStatusChart: React.FC<EntregasAtivasStatusChartProps>
               <ul className="list-disc list-inside ml-2">
                 {Array.from(data.entreguesItems.entries()).map(([code, quantity]) => (
                   <li key={code} className="text-muted-foreground text-xs">
-                    {quantity}x {code} ({productDescriptionsMap.get(code) || 'N/A'})
+                    {quantity}x {productDescriptionsMap.get(code) || 'N/A'}
                   </li>
                 ))}
               </ul>

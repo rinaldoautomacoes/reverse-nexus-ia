@@ -128,9 +128,9 @@ export const EntregasMetricsCards: React.FC<EntregasMetricsCardsProps> = ({ sele
     itemCodeQuantities.forEach((quantity, code) => {
       const description = productDescriptionsMap.get(code);
       if (description) {
-        descriptions.push(`${code} - ${description}`);
+        descriptions.push(`${quantity}x ${description}`);
       } else {
-        descriptions.push(code); // Fallback to just code if description not found
+        descriptions.push(`${quantity}x ${code}`); // Fallback to code if description not found
       }
     });
 
