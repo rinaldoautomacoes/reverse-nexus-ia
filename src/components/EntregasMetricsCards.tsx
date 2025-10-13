@@ -66,7 +66,7 @@ export const EntregasMetricsCards: React.FC<EntregasMetricsCardsProps> = ({ sele
       if (!user?.id || collectionIds.length === 0) return [];
       const { data, error } = await supabase
         .from('items')
-        .select('quantity, collection_id') // Only need quantity and collection_id
+        .select('quantity, collection_id, model, name') // Added model and name
         .eq('user_id', user.id)
         .in('collection_id', collectionIds);
       if (error) throw new Error(error.message);
@@ -92,39 +92,52 @@ export const EntregasMetricsCards: React.FC<EntregasMetricsCardsProps> = ({ sele
     }
   }, [entregasError, itemsError, toast]);
 
+  const generateItemDescription = (itemModelsMap: Map<string, number>) => {
+    const models = Array.from(itemModelsMap.keys());
+    if (models.length === 0) return "Nenhum item";
+    if (models.length === 1) return models[0];
+    if (models.length === 2) return `${models[0]} e ${models[1]}`;
+    return `${models[0]}, ${models[1]} e outros`; // For more than 2 types
+  };
+
   const calculateEntregasMetrics = (entregasData: Coleta[] | undefined, itemsData: Item[] | undefined) => {
     const entregasMap = new Map(entregasData?.map(e => [e.id, e.status_coleta]));
 
     let totalItemsCount = 0;
-    let pendenteItemsCount = 0;
-    let emTransitoItemsCount = 0;
-    let concluidaItemsCount = 0;
+    const pendenteItems: Map<string, number> = new Map();
+    const emTransitoItems: Map<string, number> = new Map();
+    const concluidaItems: Map<string, number> = new Map();
 
     itemsData?.forEach(item => {
       const collectionStatus = item.collection_id ? entregasMap.get(item.collection_id) : undefined;
       const quantity = item.quantity || 0;
+      const itemType = item.model || item.name || 'Item Desconhecido';
 
       totalItemsCount += quantity;
 
       switch (collectionStatus) {
         case 'pendente':
-          pendenteItemsCount += quantity;
+          pendenteItems.set(itemType, (pendenteItems.get(itemType) || 0) + quantity);
           break;
         case 'agendada': // 'agendada' is 'em trânsito' for entregas
-          emTransitoItemsCount += quantity;
+          emTransitoItems.set(itemType, (emTransitoItems.get(itemType) || 0) + quantity);
           break;
         case 'concluida':
-          concluidaItemsCount += quantity;
+          concluidaItems.set(itemType, (concluidaItems.get(itemType) || 0) + quantity);
           break;
       }
     });
+
+    const totalPendenteCount = Array.from(pendenteItems.values()).reduce((sum, q) => sum + q, 0);
+    const totalEmTransitoCount = Array.from(emTransitoItems.values()).reduce((sum, q) => sum + q, 0);
+    const totalConcluidaCount = Array.from(concluidaItems.values()).reduce((sum, q) => sum + q, 0);
 
     return [
       {
         id: 'total-items',
         title: 'Total de Itens',
         value: totalItemsCount.toString(),
-        description: 'Total de itens registrados para entrega',
+        description: generateItemDescription(new Map([...pendenteItems, ...emTransitoItems, ...concluidaItems])),
         icon_name: 'ListChecks',
         color: 'text-primary',
         bg_color: 'bg-primary/10',
@@ -132,8 +145,8 @@ export const EntregasMetricsCards: React.FC<EntregasMetricsCardsProps> = ({ sele
       {
         id: 'items-pendentes',
         title: 'Itens Pendentes',
-        value: pendenteItemsCount.toString(),
-        description: 'Itens aguardando agendamento ou início',
+        value: totalPendenteCount.toString(),
+        description: generateItemDescription(pendenteItems),
         icon_name: 'Clock',
         color: 'text-destructive',
         bg_color: 'bg-destructive/10',
@@ -141,8 +154,8 @@ export const EntregasMetricsCards: React.FC<EntregasMetricsCardsProps> = ({ sele
       {
         id: 'items-em-transito',
         title: 'Itens Em Trânsito',
-        value: emTransitoItemsCount.toString(),
-        description: 'Itens agendados e em andamento',
+        value: totalEmTransitoCount.toString(),
+        description: generateItemDescription(emTransitoItems),
         icon_name: 'Truck',
         color: 'text-warning-yellow',
         bg_color: 'bg-warning-yellow/10',
@@ -150,8 +163,8 @@ export const EntregasMetricsCards: React.FC<EntregasMetricsCardsProps> = ({ sele
       {
         id: 'items-concluidos',
         title: 'Itens Concluídos',
-        value: concluidaItemsCount.toString(),
-        description: 'Itens entregues e processados',
+        value: totalConcluidaCount.toString(),
+        description: generateItemDescription(concluidaItems),
         icon_name: 'CheckCircle',
         color: 'text-success-green',
         bg_color: 'bg-success-green/10',
