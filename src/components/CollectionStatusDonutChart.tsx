@@ -78,7 +78,7 @@ export const CollectionStatusDonutChart: React.FC<CollectionStatusDonutChartProp
     const chartData = [
       { name: 'Coletas Pendentes', value: pendenteCount, color: COLORS.pendente },
       { name: 'Coletas Em Trânsito', value: agendadaCount, color: COLORS.agendada },
-      { name: 'Coletas Finalizadas', value: concluidaCount, color: COLORS.concluida },
+      { name: 'Coletas Concluídas', value: concluidaCount, color: COLORS.concluida },
     ]; // Removido o filtro para sempre exibir todas as categorias
 
     return { total, pendente: pendenteCount, agendada: agendadaCount, concluida: concluidaCount, chartData };

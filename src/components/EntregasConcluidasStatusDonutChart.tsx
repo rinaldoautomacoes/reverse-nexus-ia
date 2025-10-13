@@ -67,14 +67,19 @@ export const EntregasConcluidasStatusDonutChart: React.FC<EntregasConcluidasStat
   });
 
   const calculateStatusData = (entregasData: any[] | undefined) => {
-    const total = entregasData?.length || 0;
-    const entregue = total; // Todas são entregas concluídas
+    // Para este gráfico de "Entregas Concluídas", pendente e em trânsito serão sempre 0
+    const pendenteCount = 0;
+    const emTransitoCount = 0;
+    const concluidaCount = entregasData?.length || 0; // Todas as entregas são concluídas pelo filtro
+    const total = pendenteCount + emTransitoCount + concluidaCount;
 
     const chartData = [
-      { name: 'Entregas Concluídas', value: entregue, color: COLORS.entregue },
+      { name: 'Entregas Pendentes', value: pendenteCount, color: COLORS.pendente },
+      { name: 'Entregas Em Trânsito', value: emTransitoCount, color: COLORS.em_transito },
+      { name: 'Entregas Concluídas', value: concluidaCount, color: COLORS.entregue },
     ];
 
-    return { total, entregue, chartData };
+    return { total, pendente: pendenteCount, emTransito: emTransitoCount, concluida: concluidaCount, chartData };
   };
 
   const { total, entregue, chartData } = calculateStatusData(entregas);

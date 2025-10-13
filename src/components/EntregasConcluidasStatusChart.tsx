@@ -15,6 +15,7 @@ import {
   YAxis,
   Tooltip,
   Area,
+  Legend,
 } from 'recharts';
 
 interface EntregasConcluidasStatusChartProps {
@@ -137,7 +138,7 @@ export const EntregasConcluidasStatusChart: React.FC<EntregasConcluidasStatusCha
               100% Entregues
             </Badge>
             <Badge variant="secondary" className="bg-neural/20 text-neural">
-              {totalEntregues} Entregas {/* CORRIGIDO: 'Entregas' em vez de 'Total' */}
+              {totalEntregues} Entregas Concluídas {/* CORRIGIDO: 'Entregas' em vez de 'Total' */}
             </Badge>
           </div>
         </div>
@@ -179,6 +180,16 @@ export const EntregasConcluidasStatusChart: React.FC<EntregasConcluidasStatusCha
                   itemStyle={{ color: 'hsl(var(--foreground))' }}
                   labelStyle={{ color: 'hsl(var(--primary))' }}
                 />
+                <Legend
+                  wrapperStyle={{ paddingTop: '10px' }}
+                  formatter={(value) => (
+                    <span className="text-sm flex items-center gap-2">
+                      <span className="font-semibold text-foreground">
+                        {value === 'pendente' ? 'Entregas Pendentes' : value === 'em_transito' ? 'Entregas Em Trânsito' : 'Entregas Concluídas'}
+                      </span>
+                    </span>
+                  )}
+                />
                 <defs>
                   <linearGradient id="gradientEntregas" x1="0" y1="0" x2="0" y2="1">
                     <stop offset="0%" stopColor="hsl(var(--success-green))" stopOpacity={0.4} />
@@ -201,7 +212,7 @@ export const EntregasConcluidasStatusChart: React.FC<EntregasConcluidasStatusCha
             <div className="flex items-center gap-3 p-3 bg-secondary/10 rounded-lg">
               <div className="w-4 h-4 rounded" style={{ backgroundColor: 'hsl(var(--success-green))' }} />
               <div>
-                <p className="text-sm font-medium">Total de Entregas</p>
+                <p className="text-sm font-medium">Total de Entregas Concluídas</p>
                 <p className="text-xs text-muted-foreground">{totalEntregues} entregas concluídas</p> {/* CORRIGIDO */}
               </div>
             </div>

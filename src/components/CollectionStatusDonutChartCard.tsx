@@ -43,7 +43,7 @@ export const CollectionStatusDonutChartCard: React.FC = () => {
   const dummyChartData = [
     { name: 'Coletas Pendentes', value: 1, color: COLORS.pendente },
     { name: 'Coletas Em Trânsito', value: 1, color: COLORS.agendada },
-    { name: 'Coletas Finalizadas', value: 1, color: COLORS.concluida },
+    { name: 'Coletas Concluídas', value: 1, color: COLORS.concluida },
   ];
   const totalCollections = dummyChartData.reduce((sum, entry) => sum + entry.value, 0);
 

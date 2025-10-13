@@ -202,7 +202,7 @@ export const EntregasAtivasStatusChart: React.FC<EntregasAtivasStatusChartProps>
                   formatter={(value) => (
                     <span className="text-sm flex items-center gap-2">
                       <span className="font-semibold text-foreground">
-                        {value === 'pendente' ? 'Pendentes' : value === 'em_transito' ? 'Em Trânsito' : 'Concluídas'}
+                        {value === 'pendente' ? 'Entregas Pendentes' : value === 'em_transito' ? 'Entregas Em Trânsito' : 'Entregas Concluídas'}
                       </span>
                     </span>
                   )}
@@ -227,7 +227,7 @@ export const EntregasAtivasStatusChart: React.FC<EntregasAtivasStatusChartProps>
                   stroke="hsl(var(--warning-yellow))"
                   fill="url(#gradientEmTransito)"
                   strokeWidth={2}
-                  name="Em Trânsito"
+                  name="Entregas Em Trânsito"
                   stackId="1"
                 />
                 <Area
@@ -236,7 +236,7 @@ export const EntregasAtivasStatusChart: React.FC<EntregasAtivasStatusChartProps>
                   stroke="hsl(var(--destructive))"
                   fill="url(#gradientPendente)"
                   strokeWidth={2}
-                  name="Pendentes"
+                  name="Entregas Pendentes"
                   stackId="1"
                 />
                 <Area
@@ -245,7 +245,7 @@ export const EntregasAtivasStatusChart: React.FC<EntregasAtivasStatusChartProps>
                   stroke="hsl(var(--success-green))"
                   fill="url(#gradientEntregues)"
                   strokeWidth={2}
-                  name="Concluídas"
+                  name="Entregas Concluídas"
                   stackId="1"
                 />
               </AreaChart>
@@ -256,7 +256,7 @@ export const EntregasAtivasStatusChart: React.FC<EntregasAtivasStatusChartProps>
             <div className="flex items-center gap-3 p-3 bg-secondary/10 rounded-lg">
               <div className="w-4 h-4 rounded" style={{ backgroundColor: 'hsl(var(--warning-yellow))' }} />
               <div>
-                <p className="text-sm font-medium">Em Trânsito</p>
+                <p className="text-sm font-medium">Entregas Em Trânsito</p>
                 <p className="text-xs text-muted-foreground">{totalEmTransito} itens a caminho</p>
               </div>
             </div>
@@ -264,7 +264,7 @@ export const EntregasAtivasStatusChart: React.FC<EntregasAtivasStatusChartProps>
             <div className="flex items-center gap-3 p-3 bg-secondary/10 rounded-lg">
               <div className="w-4 h-4 rounded" style={{ backgroundColor: 'hsl(var(--destructive))' }} />
               <div>
-                <p className="text-sm font-medium">Pendentes</p>
+                <p className="text-sm font-medium">Entregas Pendentes</p>
                 <p className="text-xs text-muted-foreground">{totalPendente} itens aguardando</p>
               </div>
             </div>
@@ -272,7 +272,7 @@ export const EntregasAtivasStatusChart: React.FC<EntregasAtivasStatusChartProps>
             <div className="flex items-center gap-3 p-3 bg-secondary/10 rounded-lg">
               <div className="w-4 h-4 rounded" style={{ backgroundColor: 'hsl(var(--success-green))' }} />
               <div>
-                <p className="text-sm font-medium">Concluídas</p>
+                <p className="text-sm font-medium">Entregas Concluídas</p>
                 <p className="text-xs text-muted-foreground">{totalEntregues} itens entregues</p>
               </div>
             </div>

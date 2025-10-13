@@ -196,7 +196,7 @@ export const ColetasStatusChart: React.FC<ColetasStatusChartProps> = ({ selected
                   formatter={(value) => (
                     <span className="text-sm flex items-center gap-2">
                       <span className="font-semibold text-foreground">
-                        {value === 'pendente' ? 'Pendentes' : value === 'em_transito' ? 'Em Trânsito' : 'Concluídas'}
+                        {value === 'pendente' ? 'Coletas Pendentes' : value === 'em_transito' ? 'Coletas Em Trânsito' : 'Coletas Concluídas'}
                       </span>
                     </span>
                   )}
@@ -221,7 +221,7 @@ export const ColetasStatusChart: React.FC<ColetasStatusChartProps> = ({ selected
                   stroke="hsl(var(--warning-yellow))"
                   fill="url(#gradientEmTransito)"
                   strokeWidth={2}
-                  name="Em Trânsito"
+                  name="Coletas Em Trânsito"
                   stackId="1"
                 />
                 <Area
@@ -230,7 +230,7 @@ export const ColetasStatusChart: React.FC<ColetasStatusChartProps> = ({ selected
                   stroke="hsl(var(--destructive))"
                   fill="url(#gradientPendente)"
                   strokeWidth={2}
-                  name="Pendentes"
+                  name="Coletas Pendentes"
                   stackId="1"
                 />
                 <Area
@@ -239,7 +239,7 @@ export const ColetasStatusChart: React.FC<ColetasStatusChartProps> = ({ selected
                   stroke="hsl(var(--success-green))"
                   fill="url(#gradientConcluidas)"
                   strokeWidth={2}
-                  name="Concluídas"
+                  name="Coletas Concluídas"
                   stackId="1"
                 />
               </AreaChart>
@@ -250,7 +250,7 @@ export const ColetasStatusChart: React.FC<ColetasStatusChartProps> = ({ selected
             <div className="flex items-center gap-3 p-3 bg-secondary/10 rounded-lg">
               <div className="w-4 h-4 rounded" style={{ backgroundColor: 'hsl(var(--warning-yellow))' }} />
               <div>
-                <p className="text-sm font-medium">Em Trânsito</p>
+                <p className="text-sm font-medium">Coletas Em Trânsito</p>
                 <p className="text-xs text-muted-foreground">{totalEmTransito} itens a caminho</p>
               </div>
             </div>
@@ -258,7 +258,7 @@ export const ColetasStatusChart: React.FC<ColetasStatusChartProps> = ({ selected
             <div className="flex items-center gap-3 p-3 bg-secondary/10 rounded-lg">
               <div className="w-4 h-4 rounded" style={{ backgroundColor: 'hsl(var(--destructive))' }} />
               <div>
-                <p className="text-sm font-medium">Pendentes</p>
+                <p className="text-sm font-medium">Coletas Pendentes</p>
                 <p className="text-xs text-muted-foreground">{totalPendente} itens aguardando</p>
               </div>
             </div>
@@ -266,7 +266,7 @@ export const ColetasStatusChart: React.FC<ColetasStatusChartProps> = ({ selected
             <div className="flex items-center gap-3 p-3 bg-secondary/10 rounded-lg">
               <div className="w-4 h-4 rounded" style={{ backgroundColor: 'hsl(var(--success-green))' }} />
               <div>
-                <p className="text-sm font-medium">Concluídas</p>
+                <p className="text-sm font-medium">Coletas Concluídas</p>
                 <p className="text-xs text-muted-foreground">{totalConcluidas} itens coletados</p>
               </div>
             </div>
