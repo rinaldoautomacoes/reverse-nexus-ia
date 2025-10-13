@@ -15,7 +15,7 @@ import {
   YAxis,
   Tooltip,
   Area,
-  Legend,
+  // Legend, // Removido
 } from 'recharts';
 import type { Tables } from "@/integrations/supabase/types"; // Import Tables type
 type Product = Tables<'products'>; // Import Product type
@@ -312,7 +312,7 @@ export const ColetasStatusChart: React.FC<ColetasStatusChartProps> = ({ selected
                   tickFormatter={(value) => value.toFixed(0)}
                 />
                 <Tooltip content={<CustomTooltip />} />
-                <Legend
+                {/* <Legend // Removido
                   wrapperStyle={{ paddingTop: '10px' }}
                   formatter={(value) => (
                     <span className="text-sm flex items-center gap-2">
@@ -321,7 +321,7 @@ export const ColetasStatusChart: React.FC<ColetasStatusChartProps> = ({ selected
                       </span>
                     </span>
                   )}
-                />
+                /> */}
                 <defs>
                   <linearGradient id="gradientEmTransito" x1="0" y1="0" x2="0" y2="1">
                     <stop offset="0%" stopColor="hsl(var(--warning-yellow))" stopOpacity={0.4} />

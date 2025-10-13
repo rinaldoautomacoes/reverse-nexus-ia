@@ -15,7 +15,7 @@ import {
   YAxis,
   Tooltip,
   Area,
-  Legend,
+  // Legend, // Removido
 } from 'recharts';
 import type { Tables } from "@/integrations/supabase/types"; // Import Tables type
 type Product = Tables<'products'>; // Import Product type
@@ -268,7 +268,7 @@ export const EntregasConcluidasStatusChart: React.FC<EntregasConcluidasStatusCha
                   tickFormatter={(value) => value.toFixed(0)}
                 />
                 <Tooltip content={<CustomTooltip />} />
-                <Legend
+                {/* <Legend // Removido
                   wrapperStyle={{ paddingTop: '10px' }}
                   formatter={(value) => (
                     <span className="text-sm flex items-center gap-2">
@@ -277,7 +277,7 @@ export const EntregasConcluidasStatusChart: React.FC<EntregasConcluidasStatusCha
                       </span>
                     </span>
                   )}
-                />
+                /> */}
                 <defs>
                   <linearGradient id="gradientEntregas" x1="0" y1="0" x2="0" y2="1">
                     <stop offset="0%" stopColor="hsl(var(--success-green))" stopOpacity={0.4} />
