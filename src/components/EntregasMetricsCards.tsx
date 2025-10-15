@@ -14,6 +14,7 @@ import { useAuth } from "@/hooks/use-auth";
 import type { Tables } from "@/integrations/supabase/types"; // Import Tables type
 
 type Coleta = Tables<'coletas'>;
+type Item = Tables<'items'>;
 type Product = Tables<'products'>; // Import Product type
 
 // Mapeamento de nomes de ícones para componentes Lucide React
@@ -32,6 +33,28 @@ interface EntregasMetricsCardsProps {
 export const EntregasMetricsCards: React.FC<EntregasMetricsCardsProps> = ({ selectedYear }) => {
   const { toast } = useToast();
   const { user } = useAuth();
+
+  // Fetch all products to get their descriptions (still needed for generateItemDescription)
+  const { data: products, isLoading: isLoadingProducts, error: productsError } = useQuery<Product[], Error>({
+    queryKey: ['allProducts', user?.id],
+    queryFn: async () => {
+      if (!user?.id) return [];
+      const { data, error } = await supabase
+        .from('products')
+        .select('code, description')
+        .eq('user_id', user.id);
+      if (error) throw new Error(error.message);
+      return data;
+    },
+    enabled: !!user?.id,
+  });
+
+  const productDescriptionsMap = new Map<string, string>();
+  products?.forEach(p => {
+    if (p.code && p.description) {
+      productDescriptionsMap.set(p.code, p.description);
+    }
+  });
 
   // Fetch all deliveries for the selected year and type 'entrega'
   const { data: entregas, isLoading: isLoadingEntregas, error: entregasError } = useQuery<Coleta[], Error>({
@@ -58,19 +81,21 @@ export const EntregasMetricsCards: React.FC<EntregasMetricsCardsProps> = ({ sele
     enabled: !!user?.id,
   });
 
-  // Fetch all products for the selected user
-  const { data: products, isLoading: isLoadingProducts, error: productsError } = useQuery<Product[], Error>({
-    queryKey: ['productsForMetrics', user?.id],
+  // Fetch items associated with the fetched entregas
+  const collectionIds = entregas?.map(e => e.id) || [];
+  const { data: items, isLoading: isLoadingItems, error: itemsError } = useQuery<Item[], Error>({
+    queryKey: ['itemsForEntregasMetrics', user?.id, collectionIds],
     queryFn: async () => {
-      if (!user?.id) return [];
+      if (!user?.id || collectionIds.length === 0) return [];
       const { data, error } = await supabase
-        .from('products')
-        .select('id') // Only need id for count
-        .eq('user_id', user.id);
+        .from('items')
+        .select('quantity, collection_id, name') // Added name (product code)
+        .eq('user_id', user.id)
+        .in('collection_id', collectionIds);
       if (error) throw new Error(error.message);
       return data;
     },
-    enabled: !!user?.id,
+    enabled: !!user?.id && collectionIds.length > 0,
   });
 
   useEffect(() => {
@@ -81,18 +106,46 @@ export const EntregasMetricsCards: React.FC<EntregasMetricsCardsProps> = ({ sele
         variant: "destructive",
       });
     }
+    if (itemsError) {
+      toast({
+        title: "Erro ao carregar dados dos itens",
+        description: itemsError.message,
+        variant: "destructive",
+      });
+    }
     if (productsError) {
       toast({
-        title: "Erro ao carregar dados dos produtos",
+        title: "Erro ao carregar descrições de produtos",
         description: productsError.message,
         variant: "destructive",
       });
     }
-  }, [entregasError, productsError, toast]);
+  }, [entregasError, itemsError, productsError, toast]);
 
-  const calculateEntregasMetrics = (entregasData: Coleta[] | undefined, productsData: Product[] | undefined) => {
+  // Helper function to generate item descriptions for tooltips/cards
+  const generateItemDescription = (itemCodeQuantities: Map<string, number>) => {
+    const descriptions: string[] = [];
+    itemCodeQuantities.forEach((quantity, code) => {
+      const description = productDescriptionsMap.get(code);
+      if (description) {
+        descriptions.push(`${quantity}x ${description}`);
+      } else {
+        descriptions.push(`${quantity}x Item Desconhecido`);
+      }
+    });
+
+    if (descriptions.length === 0) return "Nenhum item";
+    if (descriptions.length === 1) return descriptions[0];
+    if (descriptions.length === 2) return `${descriptions[0]} e ${descriptions[1]}`;
+    return `${descriptions[0]}, ${descriptions[1]} e outros`;
+  };
+
+  const calculateEntregasMetrics = (entregasData: Coleta[] | undefined, itemsData: Item[] | undefined) => {
     const totalEntregas = entregasData?.length || 0;
-    const totalProdutos = productsData?.length || 0;
+    
+    // Calculate total quantity of all items associated with 'entrega' type
+    const totalProductQuantity = itemsData?.reduce((sum, item) => sum + (item.quantity || 0), 0) || 0;
+
     const pendenteEntregas = entregasData?.filter(e => e.status_coleta === 'pendente').length || 0;
     const concluidaEntregas = entregasData?.filter(e => e.status_coleta === 'concluida').length || 0;
 
@@ -109,8 +162,8 @@ export const EntregasMetricsCards: React.FC<EntregasMetricsCardsProps> = ({ sele
       {
         id: 'total-produtos',
         title: 'Total Geral de Produtos',
-        value: totalProdutos.toString(),
-        description: 'Produtos cadastrados na base',
+        value: totalProductQuantity.toString(), // Use the sum of quantities
+        description: 'Itens cadastrados na base', // Updated description
         icon_name: 'Box',
         color: 'text-neural',
         bg_color: 'bg-neural/10',
@@ -136,9 +189,9 @@ export const EntregasMetricsCards: React.FC<EntregasMetricsCardsProps> = ({ sele
     ];
   };
 
-  const dashboardMetrics = calculateEntregasMetrics(entregas, products);
+  const dashboardMetrics = calculateEntregasMetrics(entregas, items); // Pass items to the calculation function
 
-  if (isLoadingEntregas || isLoadingProducts) {
+  if (isLoadingEntregas || isLoadingItems || isLoadingProducts) {
     return (
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         {[...Array(4)].map((_, i) => (
