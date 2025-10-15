@@ -3,8 +3,8 @@ import {
   Truck, 
   Clock, 
   CheckCircle,
-  AlertTriangle,
-  ListChecks // Ícone para 'Total de Entregas'
+  ListChecks, // Ícone para 'Total de Entregas'
+  Box // Ícone para 'Total de Produtos'
 } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -14,7 +14,6 @@ import { useAuth } from "@/hooks/use-auth";
 import type { Tables } from "@/integrations/supabase/types"; // Import Tables type
 
 type Coleta = Tables<'coletas'>;
-type Item = Tables<'items'>;
 type Product = Tables<'products'>; // Import Product type
 
 // Mapeamento de nomes de ícones para componentes Lucide React
@@ -22,8 +21,8 @@ const iconMap: { [key: string]: React.ElementType } = {
   Truck,
   Clock,
   CheckCircle,
-  AlertTriangle,
-  ListChecks
+  ListChecks,
+  Box
 };
 
 interface EntregasMetricsCardsProps {
@@ -34,29 +33,7 @@ export const EntregasMetricsCards: React.FC<EntregasMetricsCardsProps> = ({ sele
   const { toast } = useToast();
   const { user } = useAuth();
 
-  // NEW: Fetch all products to get their descriptions
-  const { data: products, isLoading: isLoadingProducts, error: productsError } = useQuery<Product[], Error>({
-    queryKey: ['allProducts', user?.id],
-    queryFn: async () => {
-      if (!user?.id) return [];
-      const { data, error } = await supabase
-        .from('products')
-        .select('code, description')
-        .eq('user_id', user.id);
-      if (error) throw new Error(error.message);
-      return data;
-    },
-    enabled: !!user?.id,
-  });
-
-  const productDescriptionsMap = new Map<string, string>();
-  products?.forEach(p => {
-    if (p.code && p.description) {
-      productDescriptionsMap.set(p.code, p.description);
-    }
-  });
-
-  // Fetch coletas for the selected year and type 'entrega'
+  // Fetch all deliveries for the selected year and type 'entrega'
   const { data: entregas, isLoading: isLoadingEntregas, error: entregasError } = useQuery<Coleta[], Error>({
     queryKey: ['entregasForMetrics', user?.id, selectedYear],
     queryFn: async () => {
@@ -67,7 +44,7 @@ export const EntregasMetricsCards: React.FC<EntregasMetricsCardsProps> = ({ sele
 
       const { data, error } = await supabase
         .from('coletas')
-        .select('id, status_coleta') // Only need id and status_coleta
+        .select('id, status_coleta') // Only need id and status_coleta for counts
         .eq('user_id', user.id)
         .eq('type', 'entrega')
         .gte('previsao_coleta', startDate)
@@ -81,21 +58,19 @@ export const EntregasMetricsCards: React.FC<EntregasMetricsCardsProps> = ({ sele
     enabled: !!user?.id,
   });
 
-  // Fetch items associated with the fetched entregas
-  const collectionIds = entregas?.map(c => c.id) || [];
-  const { data: items, isLoading: isLoadingItems, error: itemsError } = useQuery<Item[], Error>({
-    queryKey: ['itemsForEntregasMetrics', user?.id, collectionIds],
+  // Fetch all products for the selected user
+  const { data: products, isLoading: isLoadingProducts, error: productsError } = useQuery<Product[], Error>({
+    queryKey: ['productsForMetrics', user?.id],
     queryFn: async () => {
-      if (!user?.id || collectionIds.length === 0) return [];
+      if (!user?.id) return [];
       const { data, error } = await supabase
-        .from('items')
-        .select('quantity, collection_id, model, name') // Added model and name
-        .eq('user_id', user.id)
-        .in('collection_id', collectionIds);
+        .from('products')
+        .select('id') // Only need id for count
+        .eq('user_id', user.id);
       if (error) throw new Error(error.message);
       return data;
     },
-    enabled: !!user?.id && collectionIds.length > 0,
+    enabled: !!user?.id,
   });
 
   useEffect(() => {
@@ -106,105 +81,54 @@ export const EntregasMetricsCards: React.FC<EntregasMetricsCardsProps> = ({ sele
         variant: "destructive",
       });
     }
-    if (itemsError) {
+    if (productsError) {
       toast({
-        title: "Erro ao carregar dados dos itens",
-        description: itemsError.message,
-        variant: "destructive",
-      });
-    }
-    if (productsError) { // NEW: Error handling for products
-      toast({
-        title: "Erro ao carregar descrições de produtos",
+        title: "Erro ao carregar dados dos produtos",
         description: productsError.message,
         variant: "destructive",
       });
     }
-  }, [entregasError, itemsError, productsError, toast]);
+  }, [entregasError, productsError, toast]);
 
-  // Modified generateItemDescription
-  const generateItemDescription = (itemCodeQuantities: Map<string, number>) => {
-    const descriptions: string[] = [];
-    itemCodeQuantities.forEach((quantity, code) => {
-      const description = productDescriptionsMap.get(code);
-      if (description) {
-        descriptions.push(`${quantity}x ${description}`);
-      } else {
-        descriptions.push(`${quantity}x Item Desconhecido`); // Fallback to generic item if description not found
-      }
-    });
-
-    if (descriptions.length === 0) return "Nenhum item";
-    if (descriptions.length === 1) return descriptions[0];
-    if (descriptions.length === 2) return `${descriptions[0]} e ${descriptions[1]}`;
-    return `${descriptions[0]}, ${descriptions[1]} e outros`; // For more than 2 types
-  };
-
-  const calculateEntregasMetrics = (entregasData: Coleta[] | undefined, itemsData: Item[] | undefined) => {
-    const entregasMap = new Map(entregasData?.map(e => [e.id, e.status_coleta]));
-
-    let totalItemsCount = 0;
-    const pendenteItems: Map<string, number> = new Map();
-    const emTransitoItems: Map<string, number> = new Map();
-    const concluidaItems: Map<string, number> = new Map();
-
-    itemsData?.forEach(item => {
-      const collectionStatus = item.collection_id ? entregasMap.get(item.collection_id) : undefined;
-      const quantity = item.quantity || 0;
-      const productCode = item.name || 'Item Desconhecido'; // item.name is the product code
-
-      totalItemsCount += quantity;
-
-      switch (collectionStatus) {
-        case 'pendente':
-          pendenteItems.set(productCode, (pendenteItems.get(productCode) || 0) + quantity);
-          break;
-        case 'agendada': // 'agendada' is 'em trânsito' for entregas
-          emTransitoItems.set(productCode, (emTransitoItems.get(productCode) || 0) + quantity);
-          break;
-        case 'concluida':
-          concluidaItems.set(productCode, (concluidaItems.get(productCode) || 0) + quantity);
-          break;
-      }
-    });
-
-    const totalPendenteCount = Array.from(pendenteItems.values()).reduce((sum, q) => sum + q, 0);
-    const totalEmTransitoCount = Array.from(emTransitoItems.values()).reduce((sum, q) => sum + q, 0);
-    const totalConcluidaCount = Array.from(concluidaItems.values()).reduce((sum, q) => sum + q, 0);
+  const calculateEntregasMetrics = (entregasData: Coleta[] | undefined, productsData: Product[] | undefined) => {
+    const totalEntregas = entregasData?.length || 0;
+    const totalProdutos = productsData?.length || 0;
+    const pendenteEntregas = entregasData?.filter(e => e.status_coleta === 'pendente').length || 0;
+    const concluidaEntregas = entregasData?.filter(e => e.status_coleta === 'concluida').length || 0;
 
     return [
       {
-        id: 'total-items',
-        title: 'Total de Itens',
-        value: totalItemsCount.toString(),
-        description: generateItemDescription(new Map([...pendenteItems, ...emTransitoItems, ...concluidaItems])),
+        id: 'total-entregas',
+        title: 'Total Geral de Entregas',
+        value: totalEntregas.toString(),
+        description: 'Entregas registradas no ano',
         icon_name: 'ListChecks',
         color: 'text-primary',
         bg_color: 'bg-primary/10',
       },
       {
-        id: 'items-pendentes',
-        title: 'Itens Pendentes',
-        value: totalPendenteCount.toString(),
-        description: generateItemDescription(pendenteItems),
+        id: 'total-produtos',
+        title: 'Total Geral de Produtos',
+        value: totalProdutos.toString(),
+        description: 'Produtos cadastrados na base',
+        icon_name: 'Box',
+        color: 'text-neural',
+        bg_color: 'bg-neural/10',
+      },
+      {
+        id: 'entregas-pendentes',
+        title: 'Entregas Pendentes',
+        value: pendenteEntregas.toString(),
+        description: 'Aguardando agendamento ou início',
         icon_name: 'Clock',
         color: 'text-destructive',
         bg_color: 'bg-destructive/10',
       },
       {
-        id: 'items-em-transito',
-        title: 'Itens Em Trânsito',
-        value: totalEmTransitoCount.toString(),
-        description: generateItemDescription(emTransitoItems),
-        icon_name: 'Truck',
-        color: 'text-warning-yellow',
-        bg_color: 'bg-warning-yellow/10',
-      },
-      {
-        id: 'items-concluidos',
-        title: 'Itens Concluídos',
-        value: totalConcluidaCount.toString(),
-        description: generateItemDescription(concluidaItems),
+        id: 'entregas-concluidas',
+        title: 'Entregas Concluídas',
+        value: concluidaEntregas.toString(),
+        description: 'Entregas finalizadas e processadas',
         icon_name: 'CheckCircle',
         color: 'text-success-green',
         bg_color: 'bg-success-green/10',
@@ -212,9 +136,9 @@ export const EntregasMetricsCards: React.FC<EntregasMetricsCardsProps> = ({ sele
     ];
   };
 
-  const dashboardMetrics = calculateEntregasMetrics(entregas, items);
+  const dashboardMetrics = calculateEntregasMetrics(entregas, products);
 
-  if (isLoadingEntregas || isLoadingItems || isLoadingProducts) { // Add isLoadingProducts
+  if (isLoadingEntregas || isLoadingProducts) {
     return (
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         {[...Array(4)].map((_, i) => (
