@@ -3,7 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { ArrowLeft, PlusCircle, Edit, Trash2, Truck, Search, Clock, Package, CheckCircle, User, Phone, Mail, MapPin, Hash, Calendar as CalendarIcon } from "lucide-react";
+import { ArrowLeft, PlusCircle, Edit, Trash2, Truck, Search, Clock, Package, CheckCircle, User, Phone, Mail, MapPin, Hash, Calendar as CalendarIcon, Building } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -20,7 +20,10 @@ import { Calendar } from "@/components/ui/calendar";
 import { cn } from "@/lib/utils";
 import { AgendarEntrega } from "./AgendarEntrega"; // Importar o componente de agendamento
 
-type Entrega = Tables<'coletas'>; // Reutilizando o tipo 'coletas' para entregas
+type Entrega = Tables<'coletas'> & {
+  driver?: { name: string } | null;
+  transportadora?: { name: string } | null;
+}; // Reutilizando o tipo 'coletas' para entregas
 type EntregaUpdate = TablesUpdate<'coletas'>;
 
 interface EntregasAtivasProps {
@@ -48,7 +51,11 @@ export const EntregasAtivas: React.FC<EntregasAtivasProps> = ({ selectedYear }) 
 
       let query = supabase
         .from('coletas')
-        .select('*')
+        .select(`
+          *,
+          driver:drivers(name),
+          transportadora:transportadoras(name)
+        `)
         .eq('user_id', user.id)
         .eq('type', 'entrega') // Filtrar apenas entregas
         .neq('status_coleta', 'concluida') // Excluir entregas concluídas
@@ -67,7 +74,7 @@ export const EntregasAtivas: React.FC<EntregasAtivasProps> = ({ selectedYear }) 
 
       const { data, error } = await query;
       if (error) throw new Error(error.message);
-      return data;
+      return data as Entrega[];
     },
     enabled: !!user?.id,
   });
@@ -262,6 +269,12 @@ export const EntregasAtivas: React.FC<EntregasAtivasProps> = ({ selectedYear }) 
                         </div>
                         <div className="flex items-center gap-1">
                           <User className="h-3 w-3" /> Responsável: {entrega.responsavel || 'Não atribuído'}
+                        </div>
+                        <div className="flex items-center gap-1">
+                          <Truck className="h-3 w-3" /> Motorista: {entrega.driver?.name || 'Não atribuído'}
+                        </div>
+                        <div className="flex items-center gap-1">
+                          <Building className="h-3 w-3" /> Transportadora: {entrega.transportadora?.name || 'Não atribuída'}
                         </div>
                         <div className="flex items-center gap-1">
                           <Clock className="h-3 w-3" /> Status: <Badge className={getStatusBadgeColor(entrega.status_coleta)}>{getStatusText(entrega.status_coleta)}</Badge>

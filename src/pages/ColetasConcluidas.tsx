@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { ArrowLeft, Package, Search, CheckCircle, Calendar as CalendarIcon, User, MapPin, Hash } from "lucide-react";
+import { ArrowLeft, Package, Search, CheckCircle, Calendar as CalendarIcon, User, MapPin, Hash, Truck, Building } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -16,7 +16,10 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Calendar } from "@/components/ui/calendar";
 import { cn } from "@/lib/utils";
 
-type Coleta = Tables<'coletas'>;
+type Coleta = Tables<'coletas'> & {
+  driver?: { name: string } | null;
+  transportadora?: { name: string } | null;
+};
 
 interface ColetasConcluidasProps {
   selectedYear: string;
@@ -37,7 +40,11 @@ const ColetasConcluidas: React.FC<ColetasConcluidasProps> = ({ selectedYear }) =
 
       let query = supabase
         .from('coletas')
-        .select('*')
+        .select(`
+          *,
+          driver:drivers(name),
+          transportadora:transportadoras(name)
+        `)
         .eq('user_id', user.id)
         .eq('type', 'coleta') // Filtrar apenas coletas
         .eq('status_coleta', 'concluida') // Apenas coletas concluídas
@@ -58,7 +65,7 @@ const ColetasConcluidas: React.FC<ColetasConcluidasProps> = ({ selectedYear }) =
 
       const { data, error } = await query;
       if (error) throw new Error(error.message);
-      return data;
+      return data as Coleta[];
     },
     enabled: !!user?.id,
   });
@@ -200,6 +207,12 @@ const ColetasConcluidas: React.FC<ColetasConcluidasProps> = ({ selectedYear }) =
                         </div>
                         <div className="flex items-center gap-1">
                           <User className="h-3 w-3" /> Responsável: {coleta.responsavel || 'Não atribuído'}
+                        </div>
+                        <div className="flex items-center gap-1">
+                          <Truck className="h-3 w-3" /> Motorista: {coleta.driver?.name || 'Não atribuído'}
+                        </div>
+                        <div className="flex items-center gap-1">
+                          <Building className="h-3 w-3" /> Transportadora: {coleta.transportadora?.name || 'Não atribuída'}
                         </div>
                         <div className="flex items-center gap-1">
                           <CheckCircle className="h-3 w-3" /> Status: <Badge className={getStatusBadgeColor(coleta.status_coleta)}>{getStatusText(coleta.status_coleta)}</Badge>

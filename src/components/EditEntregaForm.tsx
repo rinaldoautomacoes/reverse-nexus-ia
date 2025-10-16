@@ -5,7 +5,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import type { Tables, TablesUpdate } from "@/integrations/supabase/types";
-import { Calendar as CalendarIcon, Package, Truck, UserPlus } from "lucide-react";
+import { Calendar as CalendarIcon, Package, Truck, UserPlus, Building } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
 import { cn } from "@/lib/utils";
@@ -14,12 +14,16 @@ import { ptBR } from "date-fns/locale";
 import { ClientCombobox } from "./ClientCombobox";
 import { ProductCombobox } from "./ProductCombobox";
 import { ResponsibleUserCombobox } from "./ResponsibleUserCombobox";
+import { DriverCombobox } from "./DriverCombobox"; // Importar DriverCombobox
+import { TransportadoraCombobox } from "./TransportadoraCombobox"; // Importar TransportadoraCombobox
 
 type Coleta = Tables<'coletas'>;
 type ColetaUpdate = TablesUpdate<'coletas'>;
 type Client = Tables<'clients'>;
 type Product = Tables<'products'>;
 type Profile = Tables<'profiles'>;
+type Driver = Tables<'drivers'>; // Adicionar tipo Driver
+type Transportadora = Tables<'transportadoras'>; // Adicionar tipo Transportadora
 
 interface EditEntregaFormProps {
   entrega: Coleta;
@@ -45,6 +49,8 @@ export const EditEntregaForm: React.FC<EditEntregaFormProps> = ({ entrega, onUpd
     responsible_user_id: entrega.responsible_user_id || null,
     client_id: entrega.client_id || null,
     type: entrega.type || 'entrega', // Manter o tipo
+    driver_id: entrega.driver_id || null, // Novo campo
+    transportadora_id: entrega.transportadora_id || null, // Novo campo
   });
 
   useEffect(() => {
@@ -64,6 +70,8 @@ export const EditEntregaForm: React.FC<EditEntregaFormProps> = ({ entrega, onUpd
       responsible_user_id: entrega.responsible_user_id || null,
       client_id: entrega.client_id || null,
       type: entrega.type || 'entrega',
+      driver_id: entrega.driver_id || null,
+      transportadora_id: entrega.transportadora_id || null,
     });
   }, [entrega]);
 
@@ -110,6 +118,20 @@ export const EditEntregaForm: React.FC<EditEntregaFormProps> = ({ entrega, onUpd
       ...prev,
       responsible_user_id: userProfile?.id || null,
       responsavel: userProfile ? `${userProfile.first_name || ''} ${userProfile.last_name || ''}`.trim() : null,
+    }));
+  };
+
+  const handleDriverSelect = (driver: Driver | null) => {
+    setFormData(prev => ({
+      ...prev,
+      driver_id: driver?.id || null,
+    }));
+  };
+
+  const handleTransportadoraSelect = (transportadora: Transportadora | null) => {
+    setFormData(prev => ({
+      ...prev,
+      transportadora_id: transportadora?.id || null,
     }));
   };
 
@@ -209,6 +231,26 @@ export const EditEntregaForm: React.FC<EditEntregaFormProps> = ({ entrega, onUpd
           disabled={isPending}
         />
       </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="space-y-2">
+          <Label htmlFor="driver">Motorista</Label>
+          <DriverCombobox
+            value={formData.driver_id}
+            onValueChange={(id) => handleInputChange("driver_id", id)}
+            onDriverSelect={handleDriverSelect}
+          />
+        </div>
+        <div className="space-y-2">
+          <Label htmlFor="transportadora">Transportadora</Label>
+          <TransportadoraCombobox
+            value={formData.transportadora_id}
+            onValueChange={(id) => handleInputChange("transportadora_id", id)}
+            onTransportadoraSelect={handleTransportadoraSelect}
+          />
+        </div>
+      </div>
+
       <div className="space-y-2">
         <Label htmlFor="responsible_user">Responsável pela Entrega</Label>
         <ResponsibleUserCombobox

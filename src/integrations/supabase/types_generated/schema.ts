@@ -71,6 +71,8 @@ export type PublicSchema = {
         cep_destino: string | null
         endereco_origem: string | null
         endereco_destino: string | null
+        driver_id: string | null
+        transportadora_id: string | null
       }
       Insert: {
         bairro?: string | null
@@ -104,6 +106,8 @@ export type PublicSchema = {
         cep_destino?: string | null
         endereco_origem?: string | null
         endereco_destino?: string | null
+        driver_id?: string | null
+        transportadora_id?: string | null
       }
       Update: {
         bairro?: string | null
@@ -137,6 +141,8 @@ export type PublicSchema = {
         cep_destino?: string | null
         endereco_origem?: string | null
         endereco_destino?: string | null
+        driver_id?: string | null
+        transportadora_id?: string | null
       }
       Relationships: [
         {
@@ -147,10 +153,24 @@ export type PublicSchema = {
           referencedColumns: ["id"]
         },
         {
+          foreignKeyName: "coletas_driver_id_fkey"
+          columns: ["driver_id"]
+          isOneToOne: false
+          referencedRelation: "drivers"
+          referencedColumns: ["id"]
+        },
+        {
           foreignKeyName: "coletas_responsible_user_id_fkey"
           columns: ["responsible_user_id"]
           isOneToOne: false
           referencedRelation: "profiles"
+          referencedColumns: ["id"]
+        },
+        {
+          foreignKeyName: "coletas_transportadora_id_fkey"
+          columns: ["transportadora_id"]
+          isOneToOne: false
+          referencedRelation: "transportadoras"
           referencedColumns: ["id"]
         },
       ]

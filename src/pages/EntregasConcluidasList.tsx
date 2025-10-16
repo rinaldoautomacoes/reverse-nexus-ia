@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { ArrowLeft, Truck, Search, CheckCircle, Calendar as CalendarIcon, User, MapPin, Hash } from "lucide-react";
+import { ArrowLeft, Truck, Search, CheckCircle, Calendar as CalendarIcon, User, MapPin, Hash, Package, Building } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -16,7 +16,10 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Calendar } from "@/components/ui/calendar";
 import { cn } from "@/lib/utils";
 
-type Entrega = Tables<'coletas'>; // Reutilizando o tipo 'coletas' para entregas
+type Entrega = Tables<'coletas'> & {
+  driver?: { name: string } | null;
+  transportadora?: { name: string } | null;
+}; // Reutilizando o tipo 'coletas' para entregas
 
 interface EntregasConcluidasListProps {
   selectedYear: string;
@@ -37,7 +40,11 @@ const EntregasConcluidasList: React.FC<EntregasConcluidasListProps> = ({ selecte
 
       let query = supabase
         .from('coletas')
-        .select('*')
+        .select(`
+          *,
+          driver:drivers(name),
+          transportadora:transportadoras(name)
+        `)
         .eq('user_id', user.id)
         .eq('type', 'entrega') // Filtrar apenas entregas
         .eq('status_coleta', 'concluida') // Apenas entregas concluídas
@@ -58,7 +65,7 @@ const EntregasConcluidasList: React.FC<EntregasConcluidasListProps> = ({ selecte
 
       const { data, error } = await query;
       if (error) throw new Error(error.message);
-      return data;
+      return data as Entrega[];
     },
     enabled: !!user?.id,
   });
@@ -200,6 +207,12 @@ const EntregasConcluidasList: React.FC<EntregasConcluidasListProps> = ({ selecte
                         </div>
                         <div className="flex items-center gap-1">
                           <User className="h-3 w-3" /> Responsável: {entrega.responsavel || 'Não atribuído'}
+                        </div>
+                        <div className="flex items-center gap-1">
+                          <Truck className="h-3 w-3" /> Motorista: {entrega.driver?.name || 'Não atribuído'}
+                        </div>
+                        <div className="flex items-center gap-1">
+                          <Building className="h-3 w-3" /> Transportadora: {entrega.transportadora?.name || 'Não atribuída'}
                         </div>
                         <div className="flex items-center gap-1">
                           <CheckCircle className="h-3 w-3" /> Status: <Badge className={getStatusBadgeColor(entrega.status_coleta)}>{getStatusText(entrega.status_coleta)}</Badge>

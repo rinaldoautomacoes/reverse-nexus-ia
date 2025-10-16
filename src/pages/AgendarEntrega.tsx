@@ -5,7 +5,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { ArrowLeft, Truck, Calendar as CalendarIcon, User, Phone, Mail, MapPin, Building, Briefcase, Loader2, Hash } from "lucide-react";
+import { ArrowLeft, Truck, Calendar as CalendarIcon, User, Phone, Mail, MapPin, Building, Briefcase, Loader2, Hash, Package } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -20,11 +20,15 @@ import { ptBR } from "date-fns/locale";
 import { ClientCombobox } from "@/components/ClientCombobox";
 import { ProductCombobox } from "@/components/ProductCombobox";
 import { ResponsibleUserCombobox } from "@/components/ResponsibleUserCombobox";
+import { DriverCombobox } from "@/components/DriverCombobox"; // Importar DriverCombobox
+import { TransportadoraCombobox } from "@/components/TransportadoraCombobox"; // Importar TransportadoraCombobox
 
 type ColetaInsert = TablesInsert<'coletas'>; // Reutilizando o tipo 'coletas' para entregas
 type Client = Tables<'clients'>;
 type Product = Tables<'products'>;
 type Profile = Tables<'profiles'>;
+type Driver = Tables<'drivers'>; // Adicionar tipo Driver
+type Transportadora = Tables<'transportadoras'>; // Adicionar tipo Transportadora
 
 export const AgendarEntrega = () => {
   const navigate = useNavigate();
@@ -62,6 +66,8 @@ export const AgendarEntrega = () => {
     cep_destino: "",
     endereco_origem: "",
     endereco_destino: "",
+    driver_id: null, // Novo campo
+    transportadora_id: null, // Novo campo
   });
 
   useEffect(() => {
@@ -145,6 +151,20 @@ export const AgendarEntrega = () => {
       ...prev,
       responsible_user_id: userProfile?.id || null,
       responsavel: userProfile ? `${userProfile.first_name || ''} ${userProfile.last_name || ''}`.trim() : null,
+    }));
+  };
+
+  const handleDriverSelect = (driver: Driver | null) => {
+    setFormData(prev => ({
+      ...prev,
+      driver_id: driver?.id || null,
+    }));
+  };
+
+  const handleTransportadoraSelect = (transportadora: Transportadora | null) => {
+    setFormData(prev => ({
+      ...prev,
+      transportadora_id: transportadora?.id || null,
     }));
   };
 
@@ -307,6 +327,25 @@ export const AgendarEntrega = () => {
                   onValueChange={(code) => handleInputChange("modelo_aparelho", code)}
                   onProductSelect={handleProductComboboxSelect}
                 />
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="driver">Motorista</Label>
+                  <DriverCombobox
+                    value={formData.driver_id}
+                    onValueChange={(id) => handleInputChange("driver_id", id)}
+                    onDriverSelect={handleDriverSelect}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="transportadora">Transportadora</Label>
+                  <TransportadoraCombobox
+                    value={formData.transportadora_id}
+                    onValueChange={(id) => handleInputChange("transportadora_id", id)}
+                    onTransportadoraSelect={handleTransportadoraSelect}
+                  />
+                </div>
               </div>
 
               <div className="space-y-2">

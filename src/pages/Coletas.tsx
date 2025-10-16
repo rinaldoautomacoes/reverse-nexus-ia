@@ -3,7 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { ArrowLeft, PlusCircle, Edit, Trash2, Package, Search, Clock, Truck, CheckCircle, User, Phone, Mail, MapPin, Hash, Calendar as CalendarIcon } from "lucide-react";
+import { ArrowLeft, PlusCircle, Edit, Trash2, Package, Search, Clock, Truck, CheckCircle, User, Phone, Mail, MapPin, Hash, Calendar as CalendarIcon, Building } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -20,7 +20,10 @@ import { Calendar } from "@/components/ui/calendar";
 import { cn } from "@/lib/utils";
 import { AgendarColeta } from "./AgendarColeta"; // Importar o componente de agendamento
 
-type Coleta = Tables<'coletas'>;
+type Coleta = Tables<'coletas'> & {
+  driver?: { name: string } | null;
+  transportadora?: { name: string } | null;
+};
 type ColetaUpdate = TablesUpdate<'coletas'>;
 
 interface ColetasProps {
@@ -48,7 +51,11 @@ export const Coletas: React.FC<ColetasProps> = ({ selectedYear }) => {
 
       let query = supabase
         .from('coletas')
-        .select('*')
+        .select(`
+          *,
+          driver:drivers(name),
+          transportadora:transportadoras(name)
+        `)
         .eq('user_id', user.id)
         .eq('type', 'coleta') // Filtrar apenas coletas
         .neq('status_coleta', 'concluida') // Excluir coletas concluídas
@@ -67,7 +74,7 @@ export const Coletas: React.FC<ColetasProps> = ({ selectedYear }) => {
 
       const { data, error } = await query;
       if (error) throw new Error(error.message);
-      return data;
+      return data as Coleta[];
     },
     enabled: !!user?.id,
   });
@@ -262,6 +269,12 @@ export const Coletas: React.FC<ColetasProps> = ({ selectedYear }) => {
                         </div>
                         <div className="flex items-center gap-1">
                           <User className="h-3 w-3" /> Responsável: {coleta.responsavel || 'Não atribuído'}
+                        </div>
+                        <div className="flex items-center gap-1">
+                          <Truck className="h-3 w-3" /> Motorista: {coleta.driver?.name || 'Não atribuído'}
+                        </div>
+                        <div className="flex items-center gap-1">
+                          <Building className="h-3 w-3" /> Transportadora: {coleta.transportadora?.name || 'Não atribuída'}
                         </div>
                         <div className="flex items-center gap-1">
                           <Clock className="h-3 w-3" /> Status: <Badge className={getStatusBadgeColor(coleta.status_coleta)}>{getStatusText(coleta.status_coleta)}</Badge>
