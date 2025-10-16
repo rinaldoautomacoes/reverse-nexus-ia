@@ -21,6 +21,7 @@ import {
   CalendarPlus,
   FileText, // Adicionado FileText para relatórios
   Home, // Adicionado ícone Home
+  Building, // Adicionado ícone Building para transportadoras
 } from 'lucide-react';
 import { useAuth } from '@/hooks/use-auth';
 import { supabase } from '@/integrations/supabase/client';
@@ -137,10 +138,16 @@ export const SidebarNav: React.FC<SidebarNavProps> = ({ selectedYear, setSelecte
       roles: ['standard', 'admin'],
     },
     {
-      label: 'Gerenciar Motoristas', // NOVO ITEM: Gerenciar Motoristas
-      icon: Truck, // Usando o ícone de caminhão para motoristas
+      label: 'Gerenciar Motoristas',
+      icon: Truck,
       path: '/driver-management',
-      roles: ['admin'], // Apenas administradores podem gerenciar motoristas
+      roles: ['admin'],
+    },
+    {
+      label: 'Gerenciar Transportadoras', // NOVO ITEM: Gerenciar Transportadoras
+      icon: Building,
+      path: '/transportadora-management',
+      roles: ['admin'], // Apenas administradores podem gerenciar transportadoras
     },
     {
       label: 'Gerenciar Clientes',

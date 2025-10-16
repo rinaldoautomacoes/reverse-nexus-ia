@@ -31,7 +31,8 @@ import { useState } from "react";
 import { SidebarNav } from "./components/SidebarNav";
 import { LandingPage } from "./pages/LandingPage";
 import { EntregasDashboardPage } from "./pages/EntregasDashboardPage";
-import { DriverManagement } from "./pages/DriverManagement"; // Adicionado esta importação
+import { DriverManagement } from "./pages/DriverManagement";
+import { TransportadoraManagement } from "./pages/TransportadoraManagement"; // Adicionado esta importação
 
 const queryClient = new QueryClient();
 
@@ -84,7 +85,8 @@ const AppLayout = () => {
             <Route path="/relatorios-entregas" element={<RelatoriosEntregas />} />
             <Route path="/product-management" element={<ProductManagement />} />
             <Route path="/roteirizacao" element={<Roteirizacao />} />
-            <Route path="/driver-management" element={<DriverManagement />} /> {/* Nova rota para Gerenciar Motoristas */}
+            <Route path="/driver-management" element={<DriverManagement />} />
+            <Route path="/transportadora-management" element={<TransportadoraManagement />} /> {/* Nova rota para Gerenciar Transportadoras */}
           </Route>
 
           <Route element={<ProtectedRoute allowedRoles={['admin']} />}>
