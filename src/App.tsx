@@ -2,15 +2,15 @@ import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route, useLocation } from "react-router-dom"; // Importar useLocation
+import { BrowserRouter, Routes, Route, useLocation } from "react-router-dom";
 import Index from "./pages/Index";
 import NotFound from "./pages/NotFound";
-import { AgendarColeta } from "./pages/AgendarColeta";
-import { AgendarEntrega } from "./pages/AgendarEntrega";
+// Removido: import { AgendarColeta } from "./pages/AgendarColeta";
+// Removido: import { AgendarEntrega } from "./pages/AgendarEntrega";
 import { Relatorios } from "./pages/Relatorios";
 import { RelatoriosEntregas } from "./pages/RelatoriosEntregas";
 import { Coletas } from "./pages/Coletas";
-import ColetasConcluidas from "./pages/ColetasConcluidas"; // Alterado para default import
+import ColetasConcluidas from "./pages/ColetasConcluidas";
 import { Auth } from "./pages/Auth";
 import { MetricsManagement } from "./pages/MetricsManagement";
 import { UserManagement } from "./pages/UserManagement";
@@ -18,7 +18,7 @@ import { ClientManagement } from "./pages/ClientManagement";
 import { ProductManagement } from "./pages/ProductManagement";
 import { EntregasAtivas } from "./pages/EntregasAtivas";
 import { EntregasConcluidasPage } from "./pages/EntregasConcluidasPage";
-import EntregasConcluidasList from "./pages/EntregasConcluidasList"; // Alterado para default import
+import EntregasConcluidasList from "./pages/EntregasConcluidasList";
 import { Debug } from "./pages/Debug";
 import Roteirizacao from "./pages/Roteirizacao";
 import { AuthProvider } from "./hooks/use-auth";
@@ -32,7 +32,7 @@ import { SidebarNav } from "./components/SidebarNav";
 import { LandingPage } from "./pages/LandingPage";
 import { EntregasDashboardPage } from "./pages/EntregasDashboardPage";
 import { DriverManagement } from "./pages/DriverManagement";
-import { TransportadoraManagement } from "./pages/TransportadoraManagement"; // Adicionado esta importação
+import { TransportadoraManagement } from "./pages/TransportadoraManagement";
 
 const queryClient = new QueryClient();
 
@@ -58,9 +58,9 @@ const AppLayout = () => {
   const isMobile = useIsMobile();
   const { mainContentMarginClass } = useSidebar();
   const [selectedYear, setSelectedYear] = useState<string>('2025');
-  const location = useLocation(); // Obter a localização atual
+  const location = useLocation();
 
-  const showSidebar = location.pathname !== '/auth'; // Condição para mostrar o sidebar
+  const showSidebar = location.pathname !== '/auth';
 
   return (
     <div className="flex min-h-screen bg-background ai-pattern">
@@ -75,8 +75,9 @@ const AppLayout = () => {
             <Route path="/" element={<LandingPage />} />
             <Route path="/coletas-dashboard" element={<Index selectedYear={selectedYear} />} />
             <Route path="/dashboard-entregas" element={<EntregasDashboardPage selectedYear={selectedYear} />} />
-            <Route path="/agendar-coleta" element={<AgendarColeta />} />
-            <Route path="/agendar-entrega" element={<AgendarEntrega />} />
+            {/* Rotas de agendamento agora são tratadas via diálogos nas páginas de listagem */}
+            {/* <Route path="/agendar-coleta" element={<AgendarColeta />} /> */}
+            {/* <Route path="/agendar-entrega" element={<AgendarEntrega />} /> */}
             <Route path="/coletas-ativas" element={<Coletas selectedYear={selectedYear} />} />
             <Route path="/coletas-concluidas" element={<ColetasConcluidas selectedYear={selectedYear} />} />
             <Route path="/entregas-ativas" element={<EntregasAtivas selectedYear={selectedYear} />} />
@@ -86,7 +87,7 @@ const AppLayout = () => {
             <Route path="/product-management" element={<ProductManagement />} />
             <Route path="/roteirizacao" element={<Roteirizacao />} />
             <Route path="/driver-management" element={<DriverManagement />} />
-            <Route path="/transportadora-management" element={<TransportadoraManagement />} /> {/* Nova rota para Gerenciar Transportadoras */}
+            <Route path="/transportadora-management" element={<TransportadoraManagement />} />
           </Route>
 
           <Route element={<ProtectedRoute allowedRoles={['admin']} />}>

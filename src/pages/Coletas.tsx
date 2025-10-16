@@ -3,7 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { ArrowLeft, PlusCircle, Edit, Trash2, Package, Search, Clock, Truck, CheckCircle, User, Phone, Mail, MapPin, Hash, Calendar as CalendarIcon, Building } from "lucide-react";
+import { ArrowLeft, PlusCircle, Edit, Trash2, Package, Search, Clock, Truck, CheckCircle, User, Phone, Mail, MapPin, Hash, Calendar as CalendarIcon, Building, MessageSquare, Send } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -18,13 +18,14 @@ import { ptBR } from "date-fns/locale";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
 import { cn } from "@/lib/utils";
-import { AgendarColeta } from "./AgendarColeta"; // Importar o componente de agendamento
+import { ColetaForm } from "@/components/ColetaForm"; // Importar o ColetaForm
+import { EditColetaDialog } from "@/components/EditColetaDialog"; // Importar o EditColetaDialog
 
 type Coleta = Tables<'coletas'> & {
   driver?: { name: string } | null;
   transportadora?: { name: string } | null;
 };
-type ColetaUpdate = TablesUpdate<'coletas'>;
+type ColetaInsert = TablesInsert<'coletas'>; // Adicionado para o diálogo de nova coleta
 
 interface ColetasProps {
   selectedYear: string;
@@ -39,6 +40,8 @@ export const Coletas: React.FC<ColetasProps> = ({ selectedYear }) => {
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [isStatusUpdateDialogOpen, setIsStatusUpdateDialogOpen] = useState(false);
   const [isEditResponsibleDialogOpen, setIsEditResponsibleDialogOpen] = useState(false);
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false); // Novo estado para o diálogo de edição
+  const [editingColeta, setEditingColeta] = useState<Coleta | null>(null); // Novo estado para a coleta sendo editada
   const [selectedCollectionForStatus, setSelectedCollectionForStatus] = useState<{ id: string; name: string; status: string } | null>(null);
   const [selectedCollectionForResponsible, setSelectedCollectionForResponsible] = useState<{ id: string; name: string; responsible_user_id: string | null } | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
@@ -79,6 +82,32 @@ export const Coletas: React.FC<ColetasProps> = ({ selectedYear }) => {
     enabled: !!user?.id,
   });
 
+  const addColetaMutation = useMutation({
+    mutationFn: async (newColeta: ColetaInsert) => {
+      if (!user?.id) {
+        throw new Error("Usuário não autenticado. Faça login para agendar coletas.");
+      }
+      const { data, error } = await supabase
+        .from('coletas')
+        .insert({ ...newColeta, user_id: user.id })
+        .select()
+        .single();
+      if (error) throw new Error(error.message);
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['coletasAtivas', user?.id] });
+      queryClient.invalidateQueries({ queryKey: ['dashboardColetasMetrics', user?.id] });
+      queryClient.invalidateQueries({ queryKey: ['collectionStatusChart', user?.id] });
+      queryClient.invalidateQueries({ queryKey: ['productStatusChart', user?.id] });
+      toast({ title: "Coleta Agendada!", description: "Nova coleta criada com sucesso." });
+      setIsAddDialogOpen(false); // Fechar o diálogo após o sucesso
+    },
+    onError: (err) => {
+      toast({ title: "Erro ao agendar coleta", description: err.message, variant: "destructive" });
+    },
+  });
+
   const deleteColetaMutation = useMutation({
     mutationFn: async (coletaId: string) => {
       const { error } = await supabase
@@ -103,6 +132,28 @@ export const Coletas: React.FC<ColetasProps> = ({ selectedYear }) => {
   const handleDeleteColeta = (id: string) => {
     if (window.confirm("Tem certeza que deseja excluir esta coleta? Esta ação não pode ser desfeita.")) {
       deleteColetaMutation.mutate(id);
+    }
+  };
+
+  const handleEditColeta = (coleta: Coleta) => {
+    setEditingColeta(coleta);
+    setIsEditDialogOpen(true);
+  };
+
+  const handleWhatsAppClick = (phone: string | null) => {
+    if (phone) {
+      const cleanedPhone = phone.replace(/\D/g, '');
+      window.open(`https://wa.me/${cleanedPhone}`, '_blank');
+    } else {
+      toast({ title: "Telefone não disponível", description: "O número de telefone para esta coleta não foi encontrado.", variant: "destructive" });
+    }
+  };
+
+  const handleEmailClick = (email: string | null) => {
+    if (email) {
+      window.open(`mailto:${email}`, '_blank');
+    } else {
+      toast({ title: "Email não disponível", description: "O endereço de e-mail para esta coleta não foi encontrado.", variant: "destructive" });
     }
   };
 
@@ -239,8 +290,11 @@ export const Coletas: React.FC<ColetasProps> = ({ selectedYear }) => {
                       Agendar Nova Coleta
                     </DialogTitle>
                   </DialogHeader>
-                  {/* Renderiza o componente AgendarColeta dentro do Dialog */}
-                  <AgendarColeta />
+                  <ColetaForm
+                    onSave={addColetaMutation.mutate}
+                    onCancel={() => setIsAddDialogOpen(false)}
+                    isPending={addColetaMutation.isPending}
+                  />
                 </DialogContent>
               </Dialog>
             </CardHeader>
@@ -282,6 +336,35 @@ export const Coletas: React.FC<ColetasProps> = ({ selectedYear }) => {
                       </div>
                     </div>
                     <div className="flex gap-2 flex-wrap justify-end">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="border-accent text-accent hover:bg-accent/10"
+                        onClick={() => handleEditColeta(coleta)}
+                      >
+                        <Edit className="mr-1 h-3 w-3" />
+                        Editar
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="border-success-green text-success-green hover:bg-success-green/10"
+                        onClick={() => handleWhatsAppClick(coleta.telefone)}
+                        disabled={!coleta.telefone}
+                      >
+                        <MessageSquare className="mr-1 h-3 w-3" />
+                        WhatsApp
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="border-neural text-neural hover:bg-neural/10"
+                        onClick={() => handleEmailClick(coleta.email)}
+                        disabled={!coleta.email}
+                      >
+                        <Send className="mr-1 h-3 w-3" />
+                        E-mail
+                      </Button>
                       <Button
                         variant="outline"
                         size="sm"
@@ -348,6 +431,17 @@ export const Coletas: React.FC<ColetasProps> = ({ selectedYear }) => {
           currentResponsibleUserId={selectedCollectionForResponsible.responsible_user_id}
           isOpen={isEditResponsibleDialogOpen}
           onClose={() => setIsEditResponsibleDialogOpen(false)}
+        />
+      )}
+
+      {editingColeta && (
+        <EditColetaDialog
+          coleta={editingColeta}
+          isOpen={isEditDialogOpen}
+          onClose={() => {
+            setIsEditDialogOpen(false);
+            setEditingColeta(null);
+          }}
         />
       )}
     </div>

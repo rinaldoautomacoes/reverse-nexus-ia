@@ -3,11 +3,11 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { ArrowLeft, PlusCircle, Edit, Trash2, Truck, Search, Clock, Package, CheckCircle, User, Phone, Mail, MapPin, Hash, Calendar as CalendarIcon, Building } from "lucide-react";
+import { ArrowLeft, PlusCircle, Edit, Trash2, Truck, Search, Clock, Package, CheckCircle, User, Phone, Mail, MapPin, Hash, Calendar as CalendarIcon, Building, MessageSquare, Send } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import type { Tables, TablesUpdate } from "@/integrations/supabase/types_generated";
+import type { Tables, TablesUpdate, TablesInsert } from "@/integrations/supabase/types_generated";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/use-auth";
 import { Badge } from "@/components/ui/badge";
@@ -18,13 +18,14 @@ import { ptBR } from "date-fns/locale";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
 import { cn } from "@/lib/utils";
-import { AgendarEntrega } from "./AgendarEntrega"; // Importar o componente de agendamento
+import { EntregaForm } from "@/components/EntregaForm"; // Importar o EntregaForm
+import { EditEntregaDialog } from "@/components/EditEntregaDialog"; // Importar o EditEntregaDialog
 
 type Entrega = Tables<'coletas'> & {
   driver?: { name: string } | null;
   transportadora?: { name: string } | null;
-}; // Reutilizando o tipo 'coletas' para entregas
-type EntregaUpdate = TablesUpdate<'coletas'>;
+};
+type EntregaInsert = TablesInsert<'coletas'>; // Adicionado para o diálogo de nova entrega
 
 interface EntregasAtivasProps {
   selectedYear: string;
@@ -39,6 +40,8 @@ export const EntregasAtivas: React.FC<EntregasAtivasProps> = ({ selectedYear }) 
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [isStatusUpdateDialogOpen, setIsStatusUpdateDialogOpen] = useState(false);
   const [isEditResponsibleDialogOpen, setIsEditResponsibleDialogOpen] = useState(false);
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false); // Novo estado para o diálogo de edição
+  const [editingEntrega, setEditingEntrega] = useState<Entrega | null>(null); // Novo estado para a entrega sendo editada
   const [selectedEntregaForStatus, setSelectedEntregaForStatus] = useState<{ id: string; name: string; status: string } | null>(null);
   const [selectedEntregaForResponsible, setSelectedEntregaForResponsible] = useState<{ id: string; name: string; responsible_user_id: string | null } | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
@@ -79,6 +82,32 @@ export const EntregasAtivas: React.FC<EntregasAtivasProps> = ({ selectedYear }) 
     enabled: !!user?.id,
   });
 
+  const addEntregaMutation = useMutation({
+    mutationFn: async (newEntrega: EntregaInsert) => {
+      if (!user?.id) {
+        throw new Error("Usuário não autenticado. Faça login para agendar entregas.");
+      }
+      const { data, error } = await supabase
+        .from('coletas') // Usar a tabela 'coletas' para entregas também
+        .insert({ ...newEntrega, user_id: user.id, type: 'entrega' }) // Garantir que o tipo é 'entrega'
+        .select()
+        .single();
+      if (error) throw new Error(error.message);
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['entregasAtivas', user?.id] });
+      queryClient.invalidateQueries({ queryKey: ['dashboardEntregasMetrics', user?.id] });
+      queryClient.invalidateQueries({ queryKey: ['entregasAtivasStatusChart', user?.id] });
+      queryClient.invalidateQueries({ queryKey: ['entregasAtivasStatusDonutChart', user?.id] });
+      toast({ title: "Entrega Agendada!", description: "Nova entrega criada com sucesso." });
+      setIsAddDialogOpen(false); // Fechar o diálogo após o sucesso
+    },
+    onError: (err) => {
+      toast({ title: "Erro ao agendar entrega", description: err.message, variant: "destructive" });
+    },
+  });
+
   const deleteEntregaMutation = useMutation({
     mutationFn: async (entregaId: string) => {
       const { error } = await supabase
@@ -103,6 +132,28 @@ export const EntregasAtivas: React.FC<EntregasAtivasProps> = ({ selectedYear }) 
   const handleDeleteEntrega = (id: string) => {
     if (window.confirm("Tem certeza que deseja excluir esta entrega? Esta ação não pode ser desfeita.")) {
       deleteEntregaMutation.mutate(id);
+    }
+  };
+
+  const handleEditEntrega = (entrega: Entrega) => {
+    setEditingEntrega(entrega);
+    setIsEditDialogOpen(true);
+  };
+
+  const handleWhatsAppClick = (phone: string | null) => {
+    if (phone) {
+      const cleanedPhone = phone.replace(/\D/g, '');
+      window.open(`https://wa.me/${cleanedPhone}`, '_blank');
+    } else {
+      toast({ title: "Telefone não disponível", description: "O número de telefone para esta entrega não foi encontrado.", variant: "destructive" });
+    }
+  };
+
+  const handleEmailClick = (email: string | null) => {
+    if (email) {
+      window.open(`mailto:${email}`, '_blank');
+    } else {
+      toast({ title: "Email não disponível", description: "O endereço de e-mail para esta entrega não foi encontrado.", variant: "destructive" });
     }
   };
 
@@ -239,8 +290,11 @@ export const EntregasAtivas: React.FC<EntregasAtivasProps> = ({ selectedYear }) 
                       Agendar Nova Entrega
                     </DialogTitle>
                   </DialogHeader>
-                  {/* Renderiza o componente AgendarEntrega dentro do Dialog */}
-                  <AgendarEntrega />
+                  <EntregaForm
+                    onSave={addEntregaMutation.mutate}
+                    onCancel={() => setIsAddDialogOpen(false)}
+                    isPending={addEntregaMutation.isPending}
+                  />
                 </DialogContent>
               </Dialog>
             </CardHeader>
@@ -282,6 +336,35 @@ export const EntregasAtivas: React.FC<EntregasAtivasProps> = ({ selectedYear }) 
                       </div>
                     </div>
                     <div className="flex gap-2 flex-wrap justify-end">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="border-accent text-accent hover:bg-accent/10"
+                        onClick={() => handleEditEntrega(entrega)}
+                      >
+                        <Edit className="mr-1 h-3 w-3" />
+                        Editar
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="border-success-green text-success-green hover:bg-success-green/10"
+                        onClick={() => handleWhatsAppClick(entrega.telefone)}
+                        disabled={!entrega.telefone}
+                      >
+                        <MessageSquare className="mr-1 h-3 w-3" />
+                        WhatsApp
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="border-neural text-neural hover:bg-neural/10"
+                        onClick={() => handleEmailClick(entrega.email)}
+                        disabled={!entrega.email}
+                      >
+                        <Send className="mr-1 h-3 w-3" />
+                        E-mail
+                      </Button>
                       <Button
                         variant="outline"
                         size="sm"
@@ -348,6 +431,17 @@ export const EntregasAtivas: React.FC<EntregasAtivasProps> = ({ selectedYear }) 
           currentResponsibleUserId={selectedEntregaForResponsible.responsible_user_id}
           isOpen={isEditResponsibleDialogOpen}
           onClose={() => setIsEditResponsibleDialogOpen(false)}
+        />
+      )}
+
+      {editingEntrega && (
+        <EditEntregaDialog
+          entrega={editingEntrega}
+          isOpen={isEditDialogOpen}
+          onClose={() => {
+            setIsEditDialogOpen(false);
+            setEditingEntrega(null);
+          }}
         />
       )}
     </div>
