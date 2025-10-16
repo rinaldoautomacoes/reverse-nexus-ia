@@ -142,10 +142,6 @@ export default {
                 'truck-slide': { // Novo keyframe para o caminhão
                     '0%': { transform: 'translateX(-150%)' }, // Começa bem à esquerda, fora da tela
                     '100%': { transform: 'translateX(150%)' } // Termina bem à direita, fora da tela
-                },
-                'heartbeat-pulse': { // Nova animação para a logo
-                    '0%, 100%': { transform: 'scale(1)', opacity: '0.9' },
-                    '50%': { transform: 'scale(1.05)', opacity: '1' },
                 }
 			},
 			animation: {
@@ -155,8 +151,7 @@ export default {
 				'pulse-glow': 'pulse-glow 2s ease-in-out infinite',
 				'slide-up': 'slide-up 0.5s ease-out',
 				'data-flow': 'data-flow 3s linear infinite',
-                'truck-slide': 'truck-slide 15s linear infinite', // Aplica a nova animação
-                'heartbeat-pulse': 'heartbeat-pulse 1.5s ease-in-out infinite' // Aplica a nova animação
+                'truck-slide': 'truck-slide 15s linear infinite' // Aplica a nova animação
 			}
 		}
 	},

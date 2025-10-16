@@ -9,18 +9,18 @@ import {
   CheckCircle,
   FileText,
   CalendarPlus,
+  Brain,
   User as UserIcon,
   Users,
   Rocket,
   Globe,
   Zap,
   Route,
-} from 'lucide-react'; // Removido Brain
+} from 'lucide-react';
 import heroBackground from "@/assets/hero-ai-logistics-dashboard.png";
 import { useAuth } from '@/hooks/use-auth';
 import { FeatureCards } from '@/components/FeatureCards';
-import { VideoCarousel } from '@/components/VideoCarousel';
-import heartbeatTruckLogo from "@/assets/heartbeat-truck-logo.png"; // Importa a nova logo
+import { VideoCarousel } from '@/components/VideoCarousel'; // Importar o novo componente
 
 export const LandingPage: React.FC = () => {
   const navigate = useNavigate();
@@ -134,17 +134,11 @@ export const LandingPage: React.FC = () => {
           <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-accent/10 rounded-full blur-3xl animate-pulse-glow animation-delay-200" />
         </div>
 
-        <div className="relative z-10 flex flex-col justify-start pt-6 px-6 lg:px-8">
+        <div className="relative z-10 flex flex-col justify-start pt-6 px-6 lg:px-8"> {/* Alterado pt-12 para pt-6 */}
           {/* Main title */}
-          <div className="flex items-center mb-4 animate-slide-up">
-            {/* Replaced Brain icon with new logo image and applied heartbeat animation */}
-            <div className="p-3 rounded-xl bg-gradient-primary glow-effect animate-heartbeat-pulse mr-4">
-              <img src={heartbeatTruckLogo} alt="LogiReverseIA Logo" className="w-8 h-8" />
-            </div>
-            <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold font-orbitron gradient-text">
-              Plataforma Logística 360
-            </h1>
-          </div>
+          <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold font-orbitron gradient-text mb-4 animate-slide-up">
+            Plataforma Logística 360
+          </h1>
           
           {/* Subtitle */}
           <p className="text-lg md:text-xl lg:text-2xl text-muted-foreground/90 mb-8 animate-slide-up animation-delay-200">
@@ -152,7 +146,7 @@ export const LandingPage: React.FC = () => {
           </p>
           
           {/* Routing Button */}
-          {/* Removido o bloco de roteirização daqui */}
+          {/* Removido o botão de roteirização daqui */}
         </div>
       </div>
 

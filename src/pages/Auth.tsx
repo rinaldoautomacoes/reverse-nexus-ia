@@ -4,11 +4,10 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Mail, Lock, Truck, Zap } from "lucide-react"; // Removido Brain
+import { Brain, Mail, Lock, Truck, Zap } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import type { User, Session } from '@supabase/supabase-js';
-import heartbeatTruckLogo from "@/assets/heartbeat-truck-logo.png"; // Importa a nova logo
 
 export const Auth = () => {
   const [user, setUser] = useState<User | null>(null);
@@ -104,9 +103,8 @@ export const Auth = () => {
           {/* Header */}
           <div className="text-center mb-8">
             <div className="flex items-center justify-center mb-4">
-              {/* Replaced Brain icon with new logo image and applied heartbeat animation */}
-              <div className="p-3 rounded-xl bg-gradient-primary glow-effect animate-heartbeat-pulse">
-                <img src={heartbeatTruckLogo} alt="LogiReverseIA Logo" className="w-8 h-8" />
+              <div className="p-3 rounded-xl bg-gradient-primary glow-effect">
+                <Brain className="w-8 h-8 text-white" />
               </div>
             </div>
             <h1 className="text-3xl font-bold font-orbitron gradient-text mb-2">
@@ -161,7 +159,6 @@ export const Auth = () => {
                       value={loginPassword}
                       onChange={(e) => setLoginPassword(e.target.value)}
                       required
-                      minLength={6}
                     />
                   </div>
                 </div>
