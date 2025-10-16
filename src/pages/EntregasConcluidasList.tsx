@@ -1,10 +1,10 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { ArrowLeft, Truck, Search, CheckCircle, Calendar as CalendarIcon, User, MapPin, Hash, Package, Building } from "lucide-react";
+import { ArrowLeft, Truck, Search, CheckCircle, Calendar as CalendarIcon, User, MapPin, Hash, Package, Building, MessageSquare, Send, Edit, Trash2, Clock } from "lucide-react";
 import { useNavigate } from "react-router-dom";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import type { Tables } from "@/integrations/supabase/types_generated";
 import { useToast } from "@/hooks/use-toast";
@@ -15,6 +15,9 @@ import { ptBR } from "date-fns/locale";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
 import { cn } from "@/lib/utils";
+import { EditEntregaDialog } from "@/components/EditEntregaDialog";
+import { CollectionStatusUpdateDialog } from "@/components/CollectionStatusUpdateDialog"; // Reutilizar para status de entrega
+import { EditResponsibleDialog } from "@/components/EditResponsibleDialog"; // Reutilizar para responsável de entrega
 
 type Entrega = Tables<'coletas'> & {
   driver?: { name: string } | null;
@@ -27,11 +30,18 @@ interface EntregasConcluidasListProps {
 
 const EntregasConcluidasList: React.FC<EntregasConcluidasListProps> = ({ selectedYear }) => {
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const { toast } = useToast();
   const { user } = useAuth();
 
   const [searchTerm, setSearchTerm] = useState("");
   const [filterDate, setFilterDate] = useState<Date | undefined>(undefined);
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const [editingEntrega, setEditingEntrega] = useState<Entrega | null>(null);
+  const [isStatusUpdateDialogOpen, setIsStatusUpdateDialogOpen] = useState(false);
+  const [selectedEntregaForStatus, setSelectedEntregaForStatus] = useState<{ id: string; name: string; status: string } | null>(null);
+  const [isEditResponsibleDialogOpen, setIsEditResponsibleDialogOpen] = useState(false);
+  const [selectedEntregaForResponsible, setSelectedEntregaForResponsible] = useState<{ id: string; name: string; responsible_user_id: string | null } | null>(null);
 
   const { data: entregas, isLoading: isLoadingEntregas, error: entregasError } = useQuery<Entrega[], Error>({
     queryKey: ['entregasConcluidas', user?.id, searchTerm, filterDate?.toISOString().split('T')[0], selectedYear],
@@ -69,6 +79,62 @@ const EntregasConcluidasList: React.FC<EntregasConcluidasListProps> = ({ selecte
     },
     enabled: !!user?.id,
   });
+
+  const deleteEntregaMutation = useMutation({
+    mutationFn: async (entregaId: string) => {
+      const { error } = await supabase
+        .from('coletas')
+        .delete()
+        .eq('id', entregaId)
+        .eq('user_id', user?.id); // RLS check
+      if (error) throw new Error(error.message);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['entregasConcluidas', user?.id] });
+      queryClient.invalidateQueries({ queryKey: ['dashboardEntregasMetrics', user?.id] });
+      queryClient.invalidateQueries({ queryKey: ['entregasAtivasStatusChart', user?.id] });
+      queryClient.invalidateQueries({ queryKey: ['entregasAtivasStatusDonutChart', user?.id] });
+      toast({ title: "Entrega Excluída!", description: "Entrega removida com sucesso." });
+    },
+    onError: (err) => {
+      toast({ title: "Erro ao excluir entrega", description: err.message, variant: "destructive" });
+    },
+  });
+
+  const handleDeleteEntrega = (id: string) => {
+    if (window.confirm("Tem certeza que deseja excluir esta entrega? Esta ação não pode ser desfeita.")) {
+      deleteEntregaMutation.mutate(id);
+    }
+  };
+
+  const handleEditEntrega = (entrega: Entrega) => {
+    setEditingEntrega(entrega);
+    setIsEditDialogOpen(true);
+  };
+
+  const handleWhatsAppClick = (entrega: Entrega) => {
+    if (entrega.telefone && entrega.parceiro && entrega.previsao_coleta) {
+      const cleanedPhone = entrega.telefone.replace(/\D/g, '');
+      const formattedDate = format(new Date(entrega.previsao_coleta), 'dd/MM/yyyy', { locale: ptBR });
+      const transportadoraName = entrega.transportadora?.name ? ` pela transportadora ${entrega.transportadora.name}` : '';
+      const message = `Olá ${entrega.parceiro},\n\nGostaríamos de confirmar sua entrega agendada para o dia ${formattedDate}${transportadoraName}.`;
+      window.open(`https://wa.me/${cleanedPhone}?text=${encodeURIComponent(message)}`, '_blank');
+    } else {
+      toast({ title: "Dados incompletos", description: "Telefone, nome do parceiro ou data de previsão da entrega não disponíveis.", variant: "destructive" });
+    }
+  };
+
+  const handleEmailClick = (entrega: Entrega) => {
+    if (entrega.email && entrega.parceiro && entrega.previsao_coleta) {
+      const formattedDate = format(new Date(entrega.previsao_coleta), 'dd/MM/yyyy', { locale: ptBR });
+      const transportadoraName = entrega.transportadora?.name ? ` pela transportadora ${entrega.transportadora.name}` : '';
+      const subject = encodeURIComponent(`Confirmação de Agendamento de Entrega - ${entrega.parceiro}`);
+      const body = encodeURIComponent(`Olá ${entrega.parceiro},\n\nGostaríamos de confirmar sua entrega agendada para o dia ${formattedDate}${transportadoraName}.\n\nAtenciosamente,\nSua Equipe de Logística`);
+      window.open(`mailto:${entrega.email}?subject=${subject}&body=${body}`, '_blank');
+    } else {
+      toast({ title: "Dados incompletos", description: "Email, nome do parceiro ou data de previsão da entrega não disponíveis.", variant: "destructive" });
+    }
+  };
 
   const getStatusBadgeColor = (status: string) => {
     switch (status) {
@@ -215,9 +281,74 @@ const EntregasConcluidasList: React.FC<EntregasConcluidasListProps> = ({ selecte
                           <Building className="h-3 w-3" /> Transportadora: {entrega.transportadora?.name || 'Não atribuída'}
                         </div>
                         <div className="flex items-center gap-1">
-                          <CheckCircle className="h-3 w-3" /> Status: <Badge className={getStatusBadgeColor(entrega.status_coleta)}>{getStatusText(entrega.status_coleta)}</Badge>
+                          <Clock className="h-3 w-3" /> Status: <Badge className={getStatusBadgeColor(entrega.status_coleta)}>{getStatusText(entrega.status_coleta)}</Badge>
                         </div>
                       </div>
+                    </div>
+                    <div className="flex gap-2 flex-wrap justify-end">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="border-accent text-accent hover:bg-accent/10"
+                        onClick={() => handleEditEntrega(entrega)}
+                      >
+                        <Edit className="mr-1 h-3 w-3" />
+                        Editar
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="border-success-green text-success-green hover:bg-success-green/10"
+                        onClick={() => handleWhatsAppClick(entrega)}
+                        disabled={!entrega.telefone || !entrega.parceiro || !entrega.previsao_coleta}
+                      >
+                        <MessageSquare className="mr-1 h-3 w-3" />
+                        WhatsApp
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="border-neural text-neural hover:bg-neural/10"
+                        onClick={() => handleEmailClick(entrega)}
+                        disabled={!entrega.email || !entrega.parceiro || !entrega.previsao_coleta}
+                      >
+                        <Send className="mr-1 h-3 w-3" />
+                        E-mail
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="border-accent text-accent hover:bg-accent/10"
+                        onClick={() => {
+                          setSelectedEntregaForStatus({ id: entrega.id, name: entrega.parceiro || 'Entrega', status: entrega.status_coleta });
+                          setIsStatusUpdateDialogOpen(true);
+                        }}
+                      >
+                        <Edit className="mr-1 h-3 w-3" />
+                        Status
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="border-primary text-primary hover:bg-primary/10"
+                        onClick={() => {
+                          setSelectedEntregaForResponsible({ id: entrega.id, name: entrega.parceiro || 'Entrega', responsible_user_id: entrega.responsible_user_id });
+                          setIsEditResponsibleDialogOpen(true);
+                        }}
+                      >
+                        <User className="mr-1 h-3 w-3" />
+                        Responsável
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="border-destructive text-destructive hover:bg-destructive/10"
+                        onClick={() => handleDeleteEntrega(entrega.id)}
+                        disabled={deleteEntregaMutation.isPending}
+                      >
+                        <Trash2 className="mr-1 h-3 w-3" />
+                        Excluir
+                      </Button>
                     </div>
                   </div>
                 ))
@@ -231,6 +362,37 @@ const EntregasConcluidasList: React.FC<EntregasConcluidasListProps> = ({ selecte
           </Card>
         </div>
       </div>
+
+      {selectedEntregaForStatus && (
+        <CollectionStatusUpdateDialog // Reutilizando o componente de status
+          collectionId={selectedEntregaForStatus.id}
+          collectionName={selectedEntregaForStatus.name}
+          currentCollectionStatus={selectedEntregaForStatus.status}
+          isOpen={isStatusUpdateDialogOpen}
+          onClose={() => setIsStatusUpdateDialogOpen(false)}
+        />
+      )}
+
+      {selectedEntregaForResponsible && (
+        <EditResponsibleDialog // Reutilizando o componente de responsável
+          collectionId={selectedEntregaForResponsible.id}
+          collectionName={selectedEntregaForResponsible.name}
+          currentResponsibleUserId={selectedEntregaForResponsible.responsible_user_id}
+          isOpen={isEditResponsibleDialogOpen}
+          onClose={() => setIsEditResponsibleDialogOpen(false)}
+        />
+      )}
+
+      {editingEntrega && (
+        <EditEntregaDialog
+          entrega={editingEntrega}
+          isOpen={isEditDialogOpen}
+          onClose={() => {
+            setIsEditDialogOpen(false);
+            setEditingEntrega(null);
+          }}
+        />
+      )}
     </div>
   );
 };

@@ -1,12 +1,12 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { ArrowLeft, Package, Search, CheckCircle, Calendar as CalendarIcon, User, MapPin, Hash, Truck, Building } from "lucide-react";
+import { ArrowLeft, Package, Search, CheckCircle, Calendar as CalendarIcon, User, MapPin, Hash, Truck, Building, MessageSquare, Send, Edit, Trash2, Clock } from "lucide-react";
 import { useNavigate } from "react-router-dom";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import type { Tables } from "@/integrations/supabase/types_generated";
+import type { Tables, TablesInsert } from "@/integrations/supabase/types_generated";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/use-auth";
 import { Badge } from "@/components/ui/badge";
@@ -15,6 +15,9 @@ import { ptBR } from "date-fns/locale";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
 import { cn } from "@/lib/utils";
+import { EditColetaDialog } from "@/components/EditColetaDialog";
+import { CollectionStatusUpdateDialog } from "@/components/CollectionStatusUpdateDialog";
+import { EditResponsibleDialog } from "@/components/EditResponsibleDialog";
 
 type Coleta = Tables<'coletas'> & {
   driver?: { name: string } | null;
@@ -27,11 +30,18 @@ interface ColetasConcluidasProps {
 
 const ColetasConcluidas: React.FC<ColetasConcluidasProps> = ({ selectedYear }) => {
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const { toast } = useToast();
   const { user } = useAuth();
 
   const [searchTerm, setSearchTerm] = useState("");
   const [filterDate, setFilterDate] = useState<Date | undefined>(undefined);
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const [editingColeta, setEditingColeta] = useState<Coleta | null>(null);
+  const [isStatusUpdateDialogOpen, setIsStatusUpdateDialogOpen] = useState(false);
+  const [selectedCollectionForStatus, setSelectedCollectionForStatus] = useState<{ id: string; name: string; status: string } | null>(null);
+  const [isEditResponsibleDialogOpen, setIsEditResponsibleDialogOpen] = useState(false);
+  const [selectedCollectionForResponsible, setSelectedCollectionForResponsible] = useState<{ id: string; name: string; responsible_user_id: string | null } | null>(null);
 
   const { data: coletas, isLoading: isLoadingColetas, error: coletasError } = useQuery<Coleta[], Error>({
     queryKey: ['coletasConcluidas', user?.id, searchTerm, filterDate?.toISOString().split('T')[0], selectedYear],
@@ -69,6 +79,62 @@ const ColetasConcluidas: React.FC<ColetasConcluidasProps> = ({ selectedYear }) =
     },
     enabled: !!user?.id,
   });
+
+  const deleteColetaMutation = useMutation({
+    mutationFn: async (coletaId: string) => {
+      const { error } = await supabase
+        .from('coletas')
+        .delete()
+        .eq('id', coletaId)
+        .eq('user_id', user?.id); // RLS check
+      if (error) throw new Error(error.message);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['coletasConcluidas', user?.id] });
+      queryClient.invalidateQueries({ queryKey: ['dashboardColetasMetrics', user?.id] });
+      queryClient.invalidateQueries({ queryKey: ['collectionStatusChart', user?.id] });
+      queryClient.invalidateQueries({ queryKey: ['productStatusChart', user?.id] });
+      toast({ title: "Coleta Excluída!", description: "Coleta removida com sucesso." });
+    },
+    onError: (err) => {
+      toast({ title: "Erro ao excluir coleta", description: err.message, variant: "destructive" });
+    },
+  });
+
+  const handleDeleteColeta = (id: string) => {
+    if (window.confirm("Tem certeza que deseja excluir esta coleta? Esta ação não pode ser desfeita.")) {
+      deleteColetaMutation.mutate(id);
+    }
+  };
+
+  const handleEditColeta = (coleta: Coleta) => {
+    setEditingColeta(coleta);
+    setIsEditDialogOpen(true);
+  };
+
+  const handleWhatsAppClick = (coleta: Coleta) => {
+    if (coleta.telefone && coleta.parceiro && coleta.previsao_coleta) {
+      const cleanedPhone = coleta.telefone.replace(/\D/g, '');
+      const formattedDate = format(new Date(coleta.previsao_coleta), 'dd/MM/yyyy', { locale: ptBR });
+      const transportadoraName = coleta.transportadora?.name ? ` pela transportadora ${coleta.transportadora.name}` : '';
+      const message = `Olá ${coleta.parceiro},\n\nGostaríamos de confirmar sua coleta agendada para o dia ${formattedDate}${transportadoraName}.`;
+      window.open(`https://wa.me/${cleanedPhone}?text=${encodeURIComponent(message)}`, '_blank');
+    } else {
+      toast({ title: "Dados incompletos", description: "Telefone, nome do parceiro ou data de previsão da coleta não disponíveis.", variant: "destructive" });
+    }
+  };
+
+  const handleEmailClick = (coleta: Coleta) => {
+    if (coleta.email && coleta.parceiro && coleta.previsao_coleta) {
+      const formattedDate = format(new Date(coleta.previsao_coleta), 'dd/MM/yyyy', { locale: ptBR });
+      const transportadoraName = coleta.transportadora?.name ? ` pela transportadora ${coleta.transportadora.name}` : '';
+      const subject = encodeURIComponent(`Confirmação de Agendamento de Coleta - ${coleta.parceiro}`);
+      const body = encodeURIComponent(`Olá ${coleta.parceiro},\n\nGostaríamos de confirmar sua coleta agendada para o dia ${formattedDate}${transportadoraName}.\n\nAtenciosamente,\nSua Equipe de Logística`);
+      window.open(`mailto:${coleta.email}?subject=${subject}&body=${body}`, '_blank');
+    } else {
+      toast({ title: "Dados incompletos", description: "Email, nome do parceiro ou data de previsão da coleta não disponíveis.", variant: "destructive" });
+    }
+  };
 
   const getStatusBadgeColor = (status: string) => {
     switch (status) {
@@ -215,9 +281,74 @@ const ColetasConcluidas: React.FC<ColetasConcluidasProps> = ({ selectedYear }) =
                           <Building className="h-3 w-3" /> Transportadora: {coleta.transportadora?.name || 'Não atribuída'}
                         </div>
                         <div className="flex items-center gap-1">
-                          <CheckCircle className="h-3 w-3" /> Status: <Badge className={getStatusBadgeColor(coleta.status_coleta)}>{getStatusText(coleta.status_coleta)}</Badge>
+                          <Clock className="h-3 w-3" /> Status: <Badge className={getStatusBadgeColor(coleta.status_coleta)}>{getStatusText(coleta.status_coleta)}</Badge>
                         </div>
                       </div>
+                    </div>
+                    <div className="flex gap-2 flex-wrap justify-end">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="border-accent text-accent hover:bg-accent/10"
+                        onClick={() => handleEditColeta(coleta)}
+                      >
+                        <Edit className="mr-1 h-3 w-3" />
+                        Editar
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="border-success-green text-success-green hover:bg-success-green/10"
+                        onClick={() => handleWhatsAppClick(coleta)}
+                        disabled={!coleta.telefone || !coleta.parceiro || !coleta.previsao_coleta}
+                      >
+                        <MessageSquare className="mr-1 h-3 w-3" />
+                        WhatsApp
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="border-neural text-neural hover:bg-neural/10"
+                        onClick={() => handleEmailClick(coleta)}
+                        disabled={!coleta.email || !coleta.parceiro || !coleta.previsao_coleta}
+                      >
+                        <Send className="mr-1 h-3 w-3" />
+                        E-mail
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="border-accent text-accent hover:bg-accent/10"
+                        onClick={() => {
+                          setSelectedCollectionForStatus({ id: coleta.id, name: coleta.parceiro || 'Coleta', status: coleta.status_coleta });
+                          setIsStatusUpdateDialogOpen(true);
+                        }}
+                      >
+                        <Edit className="mr-1 h-3 w-3" />
+                        Status
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="border-primary text-primary hover:bg-primary/10"
+                        onClick={() => {
+                          setSelectedCollectionForResponsible({ id: coleta.id, name: coleta.parceiro || 'Coleta', responsible_user_id: coleta.responsible_user_id });
+                          setIsEditResponsibleDialogOpen(true);
+                        }}
+                      >
+                        <User className="mr-1 h-3 w-3" />
+                        Responsável
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="border-destructive text-destructive hover:bg-destructive/10"
+                        onClick={() => handleDeleteColeta(coleta.id)}
+                        disabled={deleteColetaMutation.isPending}
+                      >
+                        <Trash2 className="mr-1 h-3 w-3" />
+                        Excluir
+                      </Button>
                     </div>
                   </div>
                 ))
@@ -231,6 +362,37 @@ const ColetasConcluidas: React.FC<ColetasConcluidasProps> = ({ selectedYear }) =
           </Card>
         </div>
       </div>
+
+      {selectedCollectionForStatus && (
+        <CollectionStatusUpdateDialog
+          collectionId={selectedCollectionForStatus.id}
+          collectionName={selectedCollectionForStatus.name}
+          currentCollectionStatus={selectedCollectionForStatus.status}
+          isOpen={isStatusUpdateDialogOpen}
+          onClose={() => setIsStatusUpdateDialogOpen(false)}
+        />
+      )}
+
+      {selectedCollectionForResponsible && (
+        <EditResponsibleDialog
+          collectionId={selectedCollectionForResponsible.id}
+          collectionName={selectedCollectionForResponsible.name}
+          currentResponsibleUserId={selectedCollectionForResponsible.responsible_user_id}
+          isOpen={isEditResponsibleDialogOpen}
+          onClose={() => setIsEditResponsibleDialogOpen(false)}
+        />
+      )}
+
+      {editingColeta && (
+        <EditColetaDialog
+          coleta={editingColeta}
+          isOpen={isEditDialogOpen}
+          onClose={() => {
+            setIsEditDialogOpen(false);
+            setEditingColeta(null);
+          }}
+        />
+      )}
     </div>
   );
 };
