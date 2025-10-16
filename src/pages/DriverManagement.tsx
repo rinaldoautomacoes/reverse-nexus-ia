@@ -7,7 +7,7 @@ import { ArrowLeft, PlusCircle, Edit, Trash2, Truck, Search, Phone, Car, Hash, C
 import { useNavigate } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import type { Tables, TablesInsert, TablesUpdate } from "@/integrations/supabase/types";
+import type { Tables, TablesInsert, TablesUpdate } from "@/integrations/supabase/types_generated";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/use-auth";
 import { DriverForm } from "@/components/DriverForm";
@@ -235,9 +235,9 @@ export const DriverManagement = () => {
                       Adicionar Novo Motorista
                     </DialogTitle>
                   </DialogHeader>
-                  <DriverForm 
-                    onSave={handleAddDriver} 
-                    onCancel={() => setIsAddDialogOpen(false)} 
+                  <DriverForm
+                    onSave={handleAddDriver}
+                    onCancel={() => setIsAddDialogOpen(false)}
                     isPending={addDriverMutation.isPending}
                   />
                 </DialogContent>

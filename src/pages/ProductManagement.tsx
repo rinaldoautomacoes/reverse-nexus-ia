@@ -7,7 +7,7 @@ import { ArrowLeft, PlusCircle, Edit, Trash2, Package, Search, Tag, Box, Hash, I
 import { useNavigate } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import type { Tables, TablesInsert, TablesUpdate } from "@/integrations/supabase/types";
+import type { Tables, TablesInsert, TablesUpdate } from "@/integrations/supabase/types_generated";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/use-auth";
 import { ProductForm } from "@/components/ProductForm";
@@ -164,7 +164,7 @@ export const ProductManagement = () => {
               Gerenciar Produtos
             </h1>
             <p className="text-muted-foreground">
-              Adicione, edite e remova os produtos da sua base.
+              Adicione, edite e remova os produtos do seu catálogo.
             </p>
           </div>
 
@@ -204,9 +204,9 @@ export const ProductManagement = () => {
                       Adicionar Novo Produto
                     </DialogTitle>
                   </DialogHeader>
-                  <ProductForm 
-                    onSave={handleAddProduct} 
-                    onCancel={() => setIsAddDialogOpen(false)} 
+                  <ProductForm
+                    onSave={handleAddProduct}
+                    onCancel={() => setIsAddDialogOpen(false)}
                     isPending={addProductMutation.isPending}
                   />
                 </DialogContent>
@@ -220,35 +220,26 @@ export const ProductManagement = () => {
                     className="flex flex-col lg:flex-row items-start lg:items-center justify-between p-4 rounded-lg border border-primary/10 bg-slate-darker/10 animate-slide-up"
                     style={{ animationDelay: `${index * 100}ms` }}
                   >
-                    <div className="flex-1 min-w-0 mb-3 lg:mb-0 flex items-center gap-4">
-                      {product.image_url && (
-                        <img 
-                          src={product.image_url} 
-                          alt={product.code} 
-                          className="w-16 h-16 object-cover rounded-md border border-border/50" 
-                        />
-                      )}
-                      <div>
-                        <h3 className="font-semibold text-lg flex items-center gap-2">
-                          <Tag className="h-4 w-4 text-muted-foreground" />
-                          {product.code}
-                        </h3>
-                        <p className="text-sm text-muted-foreground mt-1">
-                          {product.description || 'Sem descrição'}
-                        </p>
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-xs text-muted-foreground mt-2">
-                          {product.model && (
-                            <div className="flex items-center gap-1">
-                              <Box className="h-3 w-3" /> {product.model}
-                            </div>
-                          )}
-                          {product.serial_number && (
-                            <div className="flex items-center gap-1">
-                              <Hash className="h-3 w-3" /> {product.serial_number}
-                            </div>
-                          )}
-                        </div>
+                    <div className="flex-1 min-w-0 mb-3 lg:mb-0">
+                      <h3 className="font-semibold text-lg">{product.code}</h3>
+                      <p className="text-sm text-muted-foreground">{product.description}</p>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-sm text-muted-foreground mt-1">
+                        {product.model && (
+                          <div className="flex items-center gap-1">
+                            <Box className="h-3 w-3" /> {product.model}
+                          </div>
+                        )}
+                        {product.serial_number && (
+                          <div className="flex items-center gap-1">
+                            <Hash className="h-3 w-3" /> {product.serial_number}
+                          </div>
+                        )}
                       </div>
+                      {product.image_url && (
+                        <div className="mt-2">
+                          <img src={product.image_url} alt={product.code} className="w-16 h-16 object-cover rounded-md" />
+                        </div>
+                      )}
                     </div>
                     <div className="flex gap-2 flex-wrap justify-end">
                       <Dialog open={isEditDialogOpen && editingProduct?.id === product.id} onOpenChange={setIsEditDialogOpen}>

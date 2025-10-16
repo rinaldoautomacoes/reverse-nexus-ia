@@ -6,6 +6,12 @@ import { Badge } from "@/components/ui/badge";
 import { MapPin, User, Clock, Home, Flag, Edit, Gauge, Trash2, Loader2 } from "lucide-react"; // Added Trash2 and Loader2
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
+import type { Tables } from "@/integrations/supabase/types_generated";
+
+type Route = Tables<'routes'> & {
+  driver?: { name: string } | null;
+  stops?: Array<{ count: number }> | null;
+};
 
 interface RouteListProps {
   filters: {
@@ -15,7 +21,7 @@ interface RouteListProps {
   };
   selectedRouteId: string | null;
   onSelectRoute: (id: string | null) => void;
-  onEditRoute: (route: any) => void;
+  onEditRoute: (route: Route) => void;
   onDeleteRoute: (routeId: string) => void; // New prop for deleting
   isDeleting: boolean; // New prop to indicate if a deletion is in progress
 }
@@ -23,7 +29,7 @@ interface RouteListProps {
 export default function RouteList({ filters, selectedRouteId, onSelectRoute, onEditRoute, onDeleteRoute, isDeleting }: RouteListProps) {
   const { user } = useAuth();
 
-  const { data: routes, isLoading } = useQuery({
+  const { data: routes, isLoading } = useQuery<Route[], Error>({
     queryKey: ["routes-list", user?.id, filters],
     queryFn: async () => {
       if (!user?.id) return [];
@@ -50,7 +56,7 @@ export default function RouteList({ filters, selectedRouteId, onSelectRoute, onE
 
       const { data, error } = await query;
       if (error) throw error;
-      return data;
+      return data as Route[];
     },
     enabled: !!user?.id
   });
@@ -102,7 +108,7 @@ export default function RouteList({ filters, selectedRouteId, onSelectRoute, onE
 
   return (
     <div className="p-4 space-y-3">
-      {routes.map((route: any) => (
+      {routes.map((route) => (
         <Card
           key={route.id}
           className={cn(
@@ -133,47 +139,49 @@ export default function RouteList({ filters, selectedRouteId, onSelectRoute, onE
             )}
             {route.destination_address && (
               <div className="flex items-center gap-2">
-                <Flag className="h-4 w-4 text-ai" />
+                <Flag className="h-4 w-4 text-ai-purple" />
                 <span>Destino: {route.destination_address}</span>
               </div>
             )}
             {route.total_distance && (
               <div className="flex items-center gap-2">
-                <Gauge className="h-4 w-4 text-muted-foreground" />
-                <span>{route.total_distance.toFixed(2)} km</span>
+                <Gauge className="h-4 w-4 text-success-green" />
+                <span>Distância: {route.total_distance.toFixed(2)} km</span>
               </div>
             )}
             {route.estimated_duration && (
               <div className="flex items-center gap-2">
-                <Clock className="h-4 w-4 text-muted-foreground" />
-                <span>{Math.round(route.estimated_duration / 60)} min</span>
+                <Clock className="h-4 w-4 text-warning-yellow" />
+                <span>Duração Estimada: {(route.estimated_duration / 60).toFixed(0)} min</span>
               </div>
             )}
           </div>
-          <div className="mt-4 flex justify-end gap-2">
+          <div className="flex justify-end gap-2 mt-4">
             <Button
               variant="outline"
               size="sm"
               onClick={(e) => {
-                e.stopPropagation();
+                e.stopPropagation(); // Prevent card click from triggering
                 onEditRoute(route);
               }}
             >
-              <Edit className="mr-1 h-3 w-3" />
-              Editar Rota
+              <Edit className="mr-2 h-4 w-4" />
+              Editar
             </Button>
             <Button
-              variant="outline"
+              variant="destructive"
               size="sm"
-              className="border-destructive text-destructive hover:bg-destructive/10"
               onClick={(e) => {
-                e.stopPropagation();
+                e.stopPropagation(); // Prevent card click from triggering
                 onDeleteRoute(route.id);
               }}
               disabled={isDeleting}
             >
-              {isDeleting && <Loader2 className="mr-1 h-3 w-3 animate-spin" />}
-              <Trash2 className="mr-1 h-3 w-3" />
+              {isDeleting ? (
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              ) : (
+                <Trash2 className="mr-2 h-4 w-4" />
+              )}
               Excluir
             </Button>
           </div>

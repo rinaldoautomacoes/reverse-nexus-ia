@@ -2,180 +2,19 @@ import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { ArrowLeft, PlusCircle, Edit, Trash2, Gauge, TrendingUp, Package, Truck, Clock, CheckCircle, AlertTriangle } from "lucide-react";
+import { ArrowLeft, PlusCircle, Edit, Trash2, Gauge, Search, TrendingUp, Palette, Zap } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import type { Tables, TablesInsert, TablesUpdate } from "@/integrations/supabase/types";
+import type { Tables, TablesInsert, TablesUpdate } from "@/integrations/supabase/types_generated";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/use-auth";
+import { MetricForm } from "@/components/MetricForm"; // Assuming you have a MetricForm component
 
 type Metric = Tables<'metrics'>;
 type MetricInsert = TablesInsert<'metrics'>;
 type MetricUpdate = TablesUpdate<'metrics'>;
-
-const iconOptions = [
-  { value: 'Package', label: 'Pacote', icon: Package },
-  { value: 'Truck', label: 'Caminhão', icon: Truck },
-  { value: 'Clock', label: 'Relógio', icon: Clock },
-  { value: 'CheckCircle', label: 'Verificado', icon: CheckCircle },
-  { value: 'TrendingUp', label: 'Tendência de Alta', icon: TrendingUp },
-  { value: 'AlertTriangle', label: 'Alerta', icon: AlertTriangle },
-  { value: 'Gauge', label: 'Medidor', icon: Gauge },
-];
-
-const trendOptions = [
-  { value: 'up', label: 'Para Cima' },
-  { value: 'down', label: 'Para Baixo' },
-  { value: 'neutral', label: 'Neutro' },
-];
-
-const colorOptions = [
-  { value: 'text-primary', label: 'Primário' },
-  { value: 'text-accent', label: 'Destaque' },
-  { value: 'text-neural', label: 'Neural' },
-  { value: 'text-destructive', label: 'Destrutivo' },
-  { value: 'text-ai', label: 'IA' },
-  { value: 'text-warning-yellow', label: 'Amarelo Alerta' }, // Nova opção
-];
-
-const bgColorOptions = [
-  { value: 'bg-primary/10', label: 'Primário (Fundo)' },
-  { value: 'bg-accent/10', label: 'Destaque (Fundo)' },
-  { value: 'bg-neural/10', label: 'Neural (Fundo)' },
-  { value: 'bg-destructive/10', label: 'Destrutivo (Fundo)' },
-  { value: 'bg-ai/10', label: 'IA (Fundo)' },
-  { value: 'bg-warning-yellow/10', label: 'Amarelo Alerta (Fundo)' }, // Nova opção
-];
-
-const MetricForm = ({ initialData, onSave, onCancel }: { initialData?: Metric, onSave: (data: MetricInsert | MetricUpdate) => void, onCancel: () => void }) => {
-  const [formData, setFormData] = useState<MetricInsert | MetricUpdate>(initialData || {
-    title: '',
-    value: '',
-    change: '',
-    trend: 'up',
-    icon_name: 'Package',
-    color: 'text-primary',
-    bg_color: 'bg-primary/10',
-    user_id: '' // Will be set by the mutation
-  });
-
-  const handleInputChange = (field: keyof (MetricInsert | MetricUpdate), value: string | number) => {
-    setFormData(prev => ({ ...prev, [field]: value }));
-  };
-
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    onSave(formData);
-  };
-
-  return (
-    <form onSubmit={handleSubmit} className="space-y-4">
-      <div className="space-y-2">
-        <Label htmlFor="title">Título</Label>
-        <Input
-          id="title"
-          value={formData.title}
-          onChange={(e) => handleInputChange("title", e.target.value)}
-          required
-        />
-      </div>
-      <div className="grid grid-cols-2 gap-4">
-        <div className="space-y-2">
-          <Label htmlFor="value">Valor</Label>
-          <Input
-            id="value"
-            value={formData.value}
-            onChange={(e) => handleInputChange("value", e.target.value)}
-            required
-          />
-        </div>
-        <div className="space-y-2">
-          <Label htmlFor="change">Mudança</Label>
-          <Input
-            id="change"
-            value={formData.change}
-            onChange={(e) => handleInputChange("change", e.target.value)}
-            required
-          />
-        </div>
-      </div>
-      <div className="space-y-2">
-        <Label htmlFor="trend">Tendência</Label>
-        <Select value={formData.trend} onValueChange={(value) => handleInputChange("trend", value)}>
-          <SelectTrigger>
-            <SelectValue placeholder="Selecione a tendência" />
-          </SelectTrigger>
-          <SelectContent>
-            {trendOptions.map(option => (
-              <SelectItem key={option.value} value={option.value}>{option.label}</SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-      </div>
-      <div className="space-y-2">
-        <Label htmlFor="icon_name">Ícone</Label>
-        <Select value={formData.icon_name} onValueChange={(value) => handleInputChange("icon_name", value)}>
-          <SelectTrigger>
-            <SelectValue placeholder="Selecione o ícone" />
-          </SelectTrigger>
-          <SelectContent>
-            {iconOptions.map(option => (
-              <SelectItem key={option.value} value={option.value}>
-                <div className="flex items-center gap-2">
-                  <option.icon className="h-4 w-4" /> {option.label}
-                </div>
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-      </div>
-      <div className="grid grid-cols-2 gap-4">
-        <div className="space-y-2">
-          <Label htmlFor="color">Cor do Ícone</Label>
-          <Select value={formData.color} onValueChange={(value) => handleInputChange("color", value)}>
-            <SelectTrigger>
-              <SelectValue placeholder="Selecione a cor" />
-            </SelectTrigger>
-            <SelectContent>
-              {colorOptions.map(option => (
-                <SelectItem key={option.value} value={option.value}>
-                  <span className={`${option.value}`}>{option.label}</span>
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-        <div className="space-y-2">
-          <Label htmlFor="bg_color">Cor de Fundo do Ícone</Label>
-          <Select value={formData.bg_color} onValueChange={(value) => handleInputChange("bg_color", value)}>
-            <SelectTrigger>
-              <SelectValue placeholder="Selecione a cor de fundo" />
-            </SelectTrigger>
-            <SelectContent>
-              {bgColorOptions.map(option => (
-                <SelectItem key={option.value} value={option.value}>
-                  <span>{option.label}</span>
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-      </div>
-      <div className="flex gap-2 justify-end pt-4">
-        <Button type="button" variant="outline" onClick={onCancel}>
-          Cancelar
-        </Button>
-        <Button type="submit" className="bg-gradient-primary hover:bg-gradient-primary/80">
-          {initialData ? "Salvar Alterações" : "Adicionar Métrica"}
-        </Button>
-      </div>
-    </form>
-  );
-};
 
 export const MetricsManagement = () => {
   const navigate = useNavigate();
@@ -186,15 +25,17 @@ export const MetricsManagement = () => {
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [editingMetric, setEditingMetric] = useState<Metric | null>(null);
+  const [searchTerm, setSearchTerm] = useState("");
 
-  const { data: metrics, isLoading, error } = useQuery<Metric[], Error>({
+  const { data: metrics, isLoading: isLoadingMetrics, error: metricsError } = useQuery<Metric[], Error>({
     queryKey: ['metrics', user?.id],
     queryFn: async () => {
       if (!user?.id) return [];
       const { data, error } = await supabase
         .from('metrics')
         .select('*')
-        .eq('user_id', user.id);
+        .eq('user_id', user.id)
+        .order('title', { ascending: true });
       if (error) throw new Error(error.message);
       return data;
     },
@@ -203,9 +44,12 @@ export const MetricsManagement = () => {
 
   const addMetricMutation = useMutation({
     mutationFn: async (newMetric: MetricInsert) => {
+      if (!user?.id) {
+        throw new Error("Usuário não autenticado. Faça login para adicionar métricas.");
+      }
       const { data, error } = await supabase
         .from('metrics')
-        .insert({ ...newMetric, user_id: user!.id })
+        .insert({ ...newMetric, user_id: user.id })
         .select()
         .single();
       if (error) throw new Error(error.message);
@@ -274,7 +118,22 @@ export const MetricsManagement = () => {
     }
   };
 
-  if (isLoading) {
+  const filteredMetrics = metrics?.filter(metric =>
+    metric.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    metric.value.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    metric.change.toLowerCase().includes(searchTerm.toLowerCase())
+  ) || [];
+
+  // Mapeamento de nomes de ícones para componentes Lucide React
+  const iconMap: { [key: string]: React.ElementType } = {
+    Gauge,
+    TrendingUp,
+    Palette,
+    Zap,
+    // Adicione outros ícones conforme necessário
+  };
+
+  if (isLoadingMetrics) {
     return (
       <div className="min-h-screen bg-background ai-pattern p-6 flex items-center justify-center">
         <div className="text-center">
@@ -285,11 +144,11 @@ export const MetricsManagement = () => {
     );
   }
 
-  if (error) {
+  if (metricsError) {
     return (
       <div className="min-h-screen bg-background ai-pattern p-6">
         <div className="max-w-6xl mx-auto text-center text-destructive">
-          <p>Erro ao carregar métricas: {error.message}</p>
+          <p>Erro ao carregar métricas: {metricsError.message}</p>
         </div>
       </div>
     );
@@ -318,6 +177,22 @@ export const MetricsManagement = () => {
           </div>
 
           <Card className="card-futuristic">
+            <CardContent className="p-6">
+              <div className="flex flex-col md:flex-row gap-4">
+                <div className="flex-1 relative">
+                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
+                  <Input
+                    placeholder="Buscar por título, valor ou mudança..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    className="pl-10"
+                  />
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card className="card-futuristic">
             <CardHeader className="flex flex-row items-center justify-between">
               <CardTitle className="flex items-center gap-2">
                 <Gauge className="h-5 w-5 text-primary" />
@@ -330,39 +205,44 @@ export const MetricsManagement = () => {
                     Nova Métrica
                   </Button>
                 </DialogTrigger>
-                <DialogContent className="sm:max-w-[500px] bg-card border-primary/20">
+                <DialogContent className="sm:max-w-[600px] bg-card border-primary/20">
                   <DialogHeader>
                     <DialogTitle className="flex items-center gap-2 gradient-text">
                       <Gauge className="h-5 w-5" />
                       Adicionar Nova Métrica
                     </DialogTitle>
                   </DialogHeader>
-                  <MetricForm onSave={handleAddMetric} onCancel={() => setIsAddDialogOpen(false)} />
+                  <MetricForm
+                    onSave={handleAddMetric}
+                    onCancel={() => setIsAddDialogOpen(false)}
+                    isPending={addMetricMutation.isPending}
+                  />
                 </DialogContent>
               </Dialog>
             </CardHeader>
             <CardContent className="space-y-4">
-              {metrics && metrics.length > 0 ? (
-                metrics.map((metric, index) => {
-                  const Icon = iconOptions.find(opt => opt.value === metric.icon_name)?.icon || Gauge;
+              {filteredMetrics && filteredMetrics.length > 0 ? (
+                filteredMetrics.map((metric, index) => {
+                  const Icon = iconMap[metric.icon_name];
                   return (
                     <div
                       key={metric.id}
-                      className="flex items-center justify-between p-4 rounded-lg border border-primary/10 bg-slate-darker/10 animate-slide-up"
+                      className="flex flex-col lg:flex-row items-start lg:items-center justify-between p-4 rounded-lg border border-primary/10 bg-slate-darker/10 animate-slide-up"
                       style={{ animationDelay: `${index * 100}ms` }}
                     >
-                      <div className="flex items-center gap-3">
-                        <div className={`p-2 rounded-lg ${metric.bg_color}`}>
-                          <Icon className={`h-4 w-4 ${metric.color}`} />
-                        </div>
-                        <div>
-                          <h3 className="font-semibold">{metric.title}</h3>
-                          <p className="text-sm text-muted-foreground">
-                            {metric.value} ({metric.change}) - Tendência: {metric.trend}
-                          </p>
+                      <div className="flex-1 min-w-0 mb-3 lg:mb-0">
+                        <h3 className="font-semibold text-lg flex items-center gap-2">
+                          {Icon && <Icon className={`h-5 w-5 ${metric.color}`} />}
+                          {metric.title}
+                        </h3>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-sm text-muted-foreground mt-1">
+                          <p>Valor: <span className="font-bold text-foreground">{metric.value}</span></p>
+                          <p>Mudança: <span className={`font-bold ${metric.trend === 'up' ? 'text-success-green' : 'text-destructive'}`}>{metric.change}</span></p>
+                          <p>Cor: <span className={metric.color}>{metric.color}</span></p>
+                          <p>Fundo: <span className={metric.bg_color}>{metric.bg_color}</span></p>
                         </div>
                       </div>
-                      <div className="flex gap-2">
+                      <div className="flex gap-2 flex-wrap justify-end">
                         <Dialog open={isEditDialogOpen && editingMetric?.id === metric.id} onOpenChange={setIsEditDialogOpen}>
                           <DialogTrigger asChild>
                             <Button
@@ -378,7 +258,7 @@ export const MetricsManagement = () => {
                               Editar
                             </Button>
                           </DialogTrigger>
-                          <DialogContent className="sm:max-w-[500px] bg-card border-primary/20">
+                          <DialogContent className="sm:max-w-[600px] bg-card border-primary/20">
                             <DialogHeader>
                               <DialogTitle className="flex items-center gap-2 gradient-text">
                                 <Gauge className="h-5 w-5" />
@@ -393,6 +273,7 @@ export const MetricsManagement = () => {
                                   setIsEditDialogOpen(false);
                                   setEditingMetric(null);
                                 }}
+                                isPending={updateMetricMutation.isPending}
                               />
                             )}
                           </DialogContent>
@@ -402,6 +283,7 @@ export const MetricsManagement = () => {
                           size="sm"
                           className="border-destructive text-destructive hover:bg-destructive/10"
                           onClick={() => handleDeleteMetric(metric.id)}
+                          disabled={deleteMetricMutation.isPending}
                         >
                           <Trash2 className="mr-1 h-3 w-3" />
                           Excluir

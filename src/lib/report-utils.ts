@@ -1,493 +1,156 @@
-import 'jspdf-autotable'; // Importar jspdf-autotable primeiro para garantir que o plugin seja aplicado
-import jsPDF from 'jspdf';
-import html2canvas from 'html2canvas';
 import { supabase } from "@/integrations/supabase/client";
-import type { Tables } from "@/integrations/supabase/types";
+import type { Tables } from "@/integrations/supabase/types_generated";
 import { format } from "date-fns";
-import { ptBR } from "date-fns/locale";
-import * as XLSX from 'xlsx';
+import { jsPDF } from "jspdf";
+import 'jspdf-autotable';
 
-declare module 'jspdf' {
-  interface jsPDF {
-    autoTable: (options: any) => jsPDF;
-    lastAutoTable: any;
-  }
-}
-
+type Report = Tables<'reports'>;
 type Coleta = Tables<'coletas'>;
-type Item = Tables<'items'>;
 
-interface ReportData {
-  id?: string;
-  title: string;
-  start_date: string | null; // NOVO CAMPO
-  end_date: string | null;   // NOVO CAMPO
-  type: string;
-  format: string;
-  status: string;
-  description: string | null;
-  collection_status_filter: string | null;
-  collection_type_filter?: string | null;
-}
+export const generateReport = async (report: Report, userId: string) => {
+  try {
+    let query = supabase
+      .from('coletas')
+      .select('*')
+      .eq('user_id', userId);
 
-interface MonthlyPerformanceData {
-  month: string;
-  totalColetas: number;
-  totalItems: number;
-}
-
-// Função auxiliar para buscar dados comuns a todos os formatos
-const fetchReportData = async (reportData: ReportData, userId: string) => {
-  let coletasQuery = supabase
-    .from('coletas')
-    .select('id, parceiro, endereco, previsao_coleta, status_coleta, qtd_aparelhos_solicitado, modelo_aparelho, observacao, created_at, type') // Adicionado 'type'
-    .eq('user_id', userId);
-
-  if (reportData.collection_status_filter && reportData.collection_status_filter !== 'todos') {
-    coletasQuery = coletasQuery.eq('status_coleta', reportData.collection_status_filter);
-  }
-  
-  if (reportData.collection_type_filter && reportData.collection_type_filter !== 'todos') {
-    coletasQuery = coletasQuery.eq('type', reportData.collection_type_filter); // Aplicar filtro de tipo
-  }
-
-  // Aplicar filtros de data
-  if (reportData.start_date) {
-    coletasQuery = coletasQuery.gte('created_at', reportData.start_date);
-  }
-  if (reportData.end_date) {
-    coletasQuery = coletasQuery.lte('created_at', reportData.end_date);
-  }
-
-  const { data: coletas, error: coletasError } = await coletasQuery;
-  if (coletasError) throw coletasError;
-
-  let itemsQuery = supabase
-    .from('items')
-    .select('name, description, quantity, status, model, collection_id, created_at')
-    .eq('user_id', userId);
-
-  // Se houver filtro de tipo de coleta, precisamos filtrar os itens com base nas coletas correspondentes
-  if (reportData.collection_type_filter && reportData.collection_type_filter !== 'todos' && coletas) {
-    const relevantCollectionIds = coletas.filter(c => c.type === reportData.collection_type_filter).map(c => c.id);
-    itemsQuery = itemsQuery.in('collection_id', relevantCollectionIds);
-  }
-
-  // Aplicar filtros de data para itens também
-  if (reportData.start_date) {
-    itemsQuery = itemsQuery.gte('created_at', reportData.start_date);
-  }
-  if (reportData.end_date) {
-    itemsQuery = itemsQuery.lte('created_at', reportData.end_date);
-  }
-
-  const { data: items, error: itemsError } = await itemsQuery;
-  if (itemsError) throw itemsError;
-
-  const itemsByCollection = new Map<string, any[]>();
-  items?.forEach(item => {
-    if (item.collection_id) {
-      if (!itemsByCollection.has(item.collection_id)) {
-        itemsByCollection.set(item.collection_id, []);
-      }
-      itemsByCollection.get(item.collection_id)?.push(item);
+    if (report.collection_type_filter && report.collection_type_filter !== 'todos') {
+      query = query.eq('type', report.collection_type_filter);
     }
+
+    if (report.collection_status_filter && report.collection_status_filter !== 'todos') {
+      query = query.eq('status_coleta', report.collection_status_filter);
+    }
+
+    if (report.start_date) {
+      query = query.gte('created_at', report.start_date);
+    }
+    if (report.end_date) {
+      query = query.lte('created_at', report.end_date + 'T23:59:59.999Z'); // Inclui o dia inteiro
+    }
+
+    const { data: coletas, error } = await query.order('created_at', { ascending: false });
+
+    if (error) {
+      throw new Error(`Erro ao buscar dados para o relatório: ${error.message}`);
+    }
+
+    if (!coletas || coletas.length === 0) {
+      throw new Error("Nenhum dado encontrado para os critérios do relatório.");
+    }
+
+    if (report.format === 'pdf') {
+      generatePdfReport(report, coletas);
+    } else if (report.format === 'csv') {
+      generateCsvReport(report, coletas);
+    } else {
+      throw new Error("Formato de relatório não suportado.");
+    }
+
+    // Atualizar o status do relatório para 'concluido'
+    await supabase
+      .from('reports')
+      .update({ status: 'concluido' })
+      .eq('id', report.id);
+
+  } catch (error: any) {
+    console.error("Erro ao gerar relatório:", error.message);
+    // Atualizar o status do relatório para 'erro'
+    await supabase
+      .from('reports')
+      .update({ status: 'erro', description: `Erro: ${error.message}` })
+      .eq('id', report.id);
+    throw error; // Re-throw para que o chamador possa lidar com o erro
+  }
+};
+
+const generatePdfReport = (report: Report, data: Coleta[]) => {
+  const doc = new jsPDF();
+
+  doc.setFontSize(18);
+  doc.text(report.title, 14, 22);
+
+  doc.setFontSize(11);
+  doc.setTextColor(100);
+  doc.text(`Descrição: ${report.description || 'N/A'}`, 14, 30);
+  doc.text(`Período: ${format(new Date(report.start_date!), 'dd/MM/yyyy')} - ${format(new Date(report.end_date!), 'dd/MM/yyyy')}`, 14, 36);
+  doc.text(`Tipo: ${report.collection_type_filter === 'coleta' ? 'Coletas' : report.collection_type_filter === 'entrega' ? 'Entregas' : 'Todos'}`, 14, 42);
+  doc.text(`Status: ${report.collection_status_filter === 'pendente' ? 'Pendente' : report.collection_status_filter === 'agendada' ? 'Agendada/Em Trânsito' : report.collection_status_filter === 'concluida' ? 'Concluída' : 'Todos'}`, 14, 48);
+
+  const tableColumn = [
+    "ID", "Tipo", "Parceiro", "Endereço", "Previsão", "Qtd.", "Modelo", "Status", "Responsável"
+  ];
+  const tableRows: any[] = [];
+
+  data.forEach(item => {
+    const rowData = [
+      item.id.substring(0, 8),
+      item.type === 'coleta' ? 'Coleta' : 'Entrega',
+      item.parceiro || 'N/A',
+      item.endereco || 'N/A',
+      item.previsao_coleta ? format(new Date(item.previsao_coleta), 'dd/MM/yyyy') : 'N/A',
+      item.qtd_aparelhos_solicitado || 0,
+      item.modelo_aparelho || 'N/A',
+      item.status_coleta === 'pendente' ? 'Pendente' : item.status_coleta === 'agendada' ? 'Em Trânsito' : 'Concluída',
+      item.responsavel || 'N/A',
+    ];
+    tableRows.push(rowData);
   });
 
-  return { coletas, itemsByCollection, allItems: items };
+  (doc as any).autoTable(tableColumn, tableRows, { startY: 60 });
+  doc.save(`${report.title.replace(/\s/g, '_')}_${format(new Date(), 'yyyyMMdd_HHmmss')}.pdf`);
 };
 
-// --- PDF Report Generation ---
-const generatePdfReport = async (reportData: ReportData, userId: string, performanceChartData: MonthlyPerformanceData[]) => {
-  const { coletas, itemsByCollection } = await fetchReportData(reportData, userId);
+const generateCsvReport = (report: Report, data: Coleta[]) => {
+  const headers = [
+    "ID", "Tipo", "Parceiro", "CNPJ", "Contato", "Telefone", "Email", "Endereço", "CEP", "Bairro", "Cidade", "UF", "Localidade",
+    "Previsão Coleta/Entrega", "Qtd. Aparelhos Solicitado", "Modelo Aparelho", "Status Coleta", "Status Unidade",
+    "NF GLBL", "NF Método", "Observação", "Responsável", "ID Responsável", "ID Cliente", "Contrato", "Criado Em"
+  ];
 
-  const pdf = new jsPDF();
-  let currentY = 30;
+  const rows = data.map(item => [
+    `"${item.id}"`,
+    `"${item.type === 'coleta' ? 'Coleta' : 'Entrega'}"`,
+    `"${item.parceiro || ''}"`,
+    `"${item.cnpj || ''}"`,
+    `"${item.contato || ''}"`,
+    `"${item.telefone || ''}"`,
+    `"${item.email || ''}"`,
+    `"${item.endereco || ''}"`,
+    `"${item.cep || ''}"`,
+    `"${item.bairro || ''}"`,
+    `"${item.cidade || ''}"`,
+    `"${item.uf || ''}"`,
+    `"${item.localidade || ''}"`,
+    `"${item.previsao_coleta ? format(new Date(item.previsao_coleta), 'dd/MM/yyyy') : ''}"`,
+    `"${item.qtd_aparelhos_solicitado || 0}"`,
+    `"${item.modelo_aparelho || ''}"`,
+    `"${item.status_coleta || ''}"`,
+    `"${item.status_unidade || ''}"`,
+    `"${item.nf_glbl || ''}"`,
+    `"${item.nf_metodo || ''}"`,
+    `"${item.observacao || ''}"`,
+    `"${item.responsavel || ''}"`,
+    `"${item.responsible_user_id || ''}"`,
+    `"${item.client_id || ''}"`,
+    `"${item.contrato || ''}"`,
+    `"${item.created_at ? format(new Date(item.created_at), 'dd/MM/yyyy HH:mm:ss') : ''}"`,
+  ].join(','));
 
-  pdf.setFontSize(20);
-  pdf.setTextColor(0, 245, 255);
-  pdf.text('LogiReverseIA - Relatório', 20, currentY);
-  currentY += 20;
-  
-  pdf.setFontSize(16);
-  pdf.setTextColor(0, 0, 0);
-  pdf.text(reportData.title, 20, currentY);
-  currentY += 20;
-  
-  pdf.setFontSize(12);
-  pdf.text(`Período: ${reportData.start_date ? format(new Date(reportData.start_date), "dd/MM/yyyy", { locale: ptBR }) : 'N/A'} a ${reportData.end_date ? format(new Date(reportData.end_date), "dd/MM/yyyy", { locale: ptBR }) : 'N/A'}`, 20, currentY);
-  currentY += 10;
-  pdf.text(`Tipo: ${reportData.type}`, 20, currentY);
-  currentY += 10;
-  pdf.text(`Status do Relatório: ${reportData.status}`, 20, currentY);
-  currentY += 10;
-  pdf.text(`Filtro de Status: ${reportData.collection_status_filter === 'todos' ? 'Todos' : reportData.collection_status_filter}`, 20, currentY);
-  currentY += 10;
-  pdf.text(`Tipo de Registro: ${reportData.collection_type_filter === 'todos' ? 'Coletas e Entregas' : reportData.collection_type_filter === 'coleta' ? 'Coletas' : 'Entregas'}`, 20, currentY); // Adicionado tipo de registro
-  currentY += 10;
-  pdf.text(`Data de Geração: ${format(new Date(), "dd/MM/yyyy", { locale: ptBR })}`, 20, currentY);
-  currentY += 20;
-  
-  if (reportData.description) {
-    pdf.text('Descrição:', 20, currentY);
-    currentY += 10;
-    const splitText = pdf.splitTextToSize(reportData.description, 170);
-    pdf.text(splitText, 20, currentY);
-    currentY += (splitText.length * 7) + 10;
-  }
-  
-  if (currentY > 250) {
-    pdf.addPage();
-    currentY = 30;
-  }
+  const csvContent = [
+    headers.join(','),
+    ...rows
+  ].join('\n');
 
-  // Adicionar dados do gráfico de performance
-  pdf.setFontSize(16);
-  pdf.setTextColor(0, 0, 0);
-  pdf.text('Performance Mensal:', 20, currentY);
-  currentY += 15;
-
-  if (performanceChartData && performanceChartData.length > 0) {
-    const headers = [['Mês', 'Total Coletas', 'Total Itens']];
-    const tableData = performanceChartData.map(d => [d.month, d.totalColetas.toString(), d.totalItems.toString()]);
-    
-    pdf.autoTable({
-      startY: currentY,
-      head: headers,
-      body: tableData,
-      theme: 'grid',
-      styles: { fontSize: 10, cellPadding: 2, overflow: 'linebreak' },
-      headStyles: { fillColor: [0, 245, 255], textColor: [0, 0, 0] },
-      margin: { left: 20, right: 20 },
-      didDrawPage: function (data) { { /* currentY = data.cursor?.y || currentY; */ } }
-    });
-    currentY = (pdf as any).lastAutoTable.finalY + 10;
-  } else {
-    pdf.setFontSize(12);
-    pdf.text('Nenhum dado de performance mensal disponível.', 20, currentY);
-    currentY += 10;
-  }
-
-  if (currentY > 250) {
-    pdf.addPage();
-    currentY = 30;
-  }
-  pdf.setFontSize(16);
-  pdf.setTextColor(0, 0, 0);
-  pdf.text('Detalhes dos Registros:', 20, currentY); // Título genérico
-  currentY += 15;
-
-  if (coletas && coletas.length > 0) {
-    coletas.forEach((coleta, index) => {
-      if (currentY > 250) {
-        pdf.addPage();
-        currentY = 30;
-      }
-
-      pdf.setFontSize(12);
-      pdf.setTextColor(0, 0, 0);
-      pdf.text(`${coleta.type === 'coleta' ? 'Coleta' : 'Entrega'} #${index + 1} - Cliente: ${coleta.parceiro || 'N/A'}`, 20, currentY); // Exibir tipo
-      currentY += 8;
-      pdf.setFontSize(10);
-      pdf.text(`  Endereço: ${coleta.endereco || 'N/A'}`, 25, currentY);
-      currentY += 6;
-      pdf.text(`  Data Prevista: ${coleta.previsao_coleta ? format(new Date(coleta.previsao_coleta), "dd/MM/yyyy", { locale: ptBR }) : 'N/A'}`, 25, currentY);
-      currentY += 6;
-      pdf.text(`  Status: ${coleta.status_coleta || 'N/A'}`, 25, currentY);
-      currentY += 6;
-      pdf.text(`  Qtd. Aparelhos Solicitados: ${coleta.qtd_aparelhos_solicitado || 0}`, 25, currentY);
-      currentY += 6;
-      pdf.text(`  Tipo de Material: ${coleta.modelo_aparelho || 'N/A'}`, 25, currentY);
-      currentY += 6;
-      if (coleta.observacao) {
-        const splitColetaObs = pdf.splitTextToSize(`  Observação: ${coleta.observacao}`, 160);
-        pdf.text(splitColetaObs, 25, currentY);
-        currentY += (splitColetaObs.length * 5);
-      }
-
-      const associatedItems = itemsByCollection.get(coleta.id);
-      if (associatedItems && associatedItems.length > 0) {
-        pdf.setFontSize(11);
-        pdf.setTextColor(50, 50, 50);
-        pdf.text('  Itens do Registro:', 30, currentY + 4); // Título genérico
-        currentY += 10;
-        pdf.setFontSize(9);
-        associatedItems.forEach((item) => {
-          if (currentY > 260) {
-            pdf.addPage();
-            currentY = 30;
-          }
-          pdf.text(`  - Nome: ${item.name} (Qtd: ${item.quantity}, Status: ${item.status})`, 35, currentY);
-          currentY += 5;
-          if (item.description) {
-            const splitItemDesc = pdf.splitTextToSize(`    Descrição: ${item.description}`, 150);
-            pdf.text(splitItemDesc, 40, currentY);
-            currentY += (splitItemDesc.length * 4);
-          }
-        });
-      }
-      currentY += 10;
-    });
-  } else {
-    pdf.setFontSize(12);
-    pdf.text('Nenhum registro encontrado para os filtros aplicados.', 20, currentY);
-    currentY += 10;
-  }
-    
-  if (currentY > 270) {
-    pdf.addPage();
-    currentY = 280;
-  } else {
-    currentY = 280;
-  }
-  pdf.setFontSize(8);
-  pdf.setTextColor(128, 128, 128);
-  pdf.text('Gerado automaticamente por LogiReverseIA', 20, currentY);
-  pdf.text(`ID do Relatório: LR-${reportData.id || Date.now()}`, 20, currentY + 5);
-  
-  const fileName = `${reportData.title.replace(/\s+/g, '_')}_${Date.now()}.pdf`;
-  pdf.save(fileName);
-};
-
-// --- Excel Report Generation ---
-const generateExcelReport = async (reportData: ReportData, userId: string, performanceChartData: MonthlyPerformanceData[]) => {
-  const { coletas, itemsByCollection } = await fetchReportData(reportData, userId);
-
-  const data: any[][] = [];
-
-  // Add report header
-  data.push([reportData.title]);
-  data.push([`Período: ${reportData.start_date ? format(new Date(reportData.start_date), "dd/MM/yyyy", { locale: ptBR }) : 'N/A'} a ${reportData.end_date ? format(new Date(reportData.end_date), "dd/MM/yyyy", { locale: ptBR }) : 'N/A'}`]);
-  data.push([`Tipo: ${reportData.type}`]);
-  data.push([`Status do Relatório: ${reportData.status}`]);
-  data.push([`Filtro de Status: ${reportData.collection_status_filter === 'todos' ? 'Todos' : reportData.collection_status_filter}`]);
-  data.push([`Tipo de Registro: ${reportData.collection_type_filter === 'todos' ? 'Coletas e Entregas' : reportData.collection_type_filter === 'coleta' ? 'Coletas' : 'Entregas'}`]); // Adicionado tipo de registro
-  data.push([`Data de Geração: ${format(new Date(), "dd/MM/yyyy", { locale: ptBR })}`]);
-  if (reportData.description) {
-    data.push(['Descrição:', reportData.description]);
-  }
-  data.push([]); // Empty row for spacing
-
-  // Adicionar dados do gráfico de performance
-  data.push(['Performance Mensal:']);
-  if (performanceChartData && performanceChartData.length > 0) {
-    data.push(['Mês', 'Total Coletas', 'Total Itens']);
-    performanceChartData.forEach(d => {
-      data.push([d.month, d.totalColetas, d.totalItems]);
-    });
-  } else {
-    data.push(['Nenhum dado de performance mensal disponível.']);
-  }
-  data.push([]); // Empty row for spacing
-
-  data.push(['Detalhes dos Registros:']); // Título genérico
-  data.push([]);
-
-  if (coletas && coletas.length > 0) {
-    coletas.forEach((coleta, index) => {
-      data.push([`${coleta.type === 'coleta' ? 'Coleta' : 'Entrega'} #${index + 1}`]); // Exibir tipo
-      data.push(['Cliente:', coleta.parceiro || 'N/A']);
-      data.push(['Endereço:', coleta.endereco || 'N/A']);
-      data.push(['Data Prevista:', coleta.previsao_coleta ? format(new Date(coleta.previsao_coleta), "dd/MM/yyyy", { locale: ptBR }) : 'N/A']);
-      data.push(['Status:', coleta.status_coleta || 'N/A']);
-      data.push(['Qtd. Aparelhos Solicitados:', coleta.qtd_aparelhos_solicitado || 0]);
-      data.push(['Tipo de Material:', coleta.modelo_aparelho || 'N/A']);
-      if (coleta.observacao) {
-        data.push(['Observação:', coleta.observacao]);
-      }
-
-      const associatedItems = itemsByCollection.get(coleta.id);
-      if (associatedItems && associatedItems.length > 0) {
-        data.push(['', 'Itens do Registro:']); // Título genérico
-        data.push(['', 'Nome do Item', 'Quantidade', 'Status do Item', 'Descrição do Item']);
-        associatedItems.forEach((item) => {
-          data.push([
-            '',
-            item.name,
-            item.quantity,
-            item.status,
-            item.description || 'N/A'
-          ]);
-        });
-      }
-      data.push([]); // Space between collections
-    });
-  } else {
-    data.push(['Nenhum registro encontrado para os filtros aplicados.']);
-  }
-
-  const ws = XLSX.utils.aoa_to_sheet(data);
-  const wb = XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(wb, ws, "Relatório"); // Nome genérico
-  
-  const fileName = `${reportData.title.replace(/\s+/g, '_')}_${Date.now()}.xlsx`;
-  XLSX.writeFile(wb, fileName);
-};
-
-// --- Word (HTML-based) Report Generation ---
-const generateWordReport = async (reportData: ReportData, userId: string, performanceChartData: MonthlyPerformanceData[]) => {
-  const { coletas, itemsByCollection } = await fetchReportData(reportData, userId);
-
-  let htmlContent = `
-    <!DOCTYPE html>
-    <html>
-    <head>
-        <meta charset="UTF-8">
-        <title>${reportData.title}</title>
-        <style>
-            body { font-family: Arial, sans-serif; margin: 20px; }
-            h1 { color: #00F5FF; font-size: 24px; }
-            h2 { font-size: 18px; margin-top: 20px; }
-            h3 { font-size: 16px; margin-top: 15px; }
-            p { font-size: 12px; line-height: 1.5; }
-            strong { font-weight: bold; }
-            table { width: 100%; border-collapse: collapse; margin-top: 10px; }
-            th, td { border: 1px solid #ccc; padding: 8px; text-align: left; }
-            th { background-color: #f2f2f2; }
-            .section-title { margin-top: 30px; border-bottom: 1px solid #eee; padding-bottom: 5px; }
-        </style>
-    </head>
-    <body>
-        <h1>LogiReverseIA - Relatório</h1>
-        <h2>${reportData.title}</h2>
-        <p><strong>Período:</strong> ${reportData.start_date ? format(new Date(reportData.start_date), "dd/MM/yyyy", { locale: ptBR }) : 'N/A'} a ${reportData.end_date ? format(new Date(reportData.end_date), "dd/MM/yyyy", { locale: ptBR }) : 'N/A'}</p>
-        <p><strong>Tipo:</strong> ${reportData.type}</p>
-        <p><strong>Status do Relatório:</strong> ${reportData.status}</p>
-        <p><strong>Filtro de Status:</strong> ${reportData.collection_status_filter === 'todos' ? 'Todos' : reportData.collection_status_filter}</p>
-        <p><strong>Tipo de Registro:</strong> ${reportData.collection_type_filter === 'todos' ? 'Coletas e Entregas' : reportData.collection_type_filter === 'coleta' ? 'Coletas' : 'Entregas'}</p> <!-- Adicionado tipo de registro -->
-        <p><strong>Data de Geração:</strong> ${format(new Date(), "dd/MM/yyyy", { locale: ptBR })}</p>
-  `;
-
-  if (reportData.description) {
-    htmlContent += `<p><strong>Descrição:</strong> ${reportData.description}</p>`;
-  }
-
-  // Adicionar dados do gráfico de performance
-  htmlContent += `
-        <h2 class="section-title">Performance Mensal:</h2>
-  `;
-  if (performanceChartData && performanceChartData.length > 0) {
-    htmlContent += `
-      <table>
-        <thead>
-          <tr>
-            <th>Mês</th>
-            <th>Total Coletas</th>
-            <th>Total Itens</th>
-          </tr>
-        </thead>
-        <tbody>
-    `;
-    performanceChartData.forEach(d => {
-      htmlContent += `
-        <tr>
-          <td>${d.month}</td>
-          <td>${d.totalColetas}</td>
-          <td>${d.totalItems}</td>
-        </tr>
-      `;
-    });
-    htmlContent += `
-        </tbody>
-      </table>
-      <br>
-    `;
-  } else {
-    htmlContent += `<p>Nenhum dado de performance mensal disponível.</p><br>`;
-  }
-
-  htmlContent += `
-        <h2 class="section-title">Detalhes dos Registros:</h2>
-  `; // Título genérico
-
-  if (coletas && coletas.length > 0) {
-    coletas.forEach((coleta, index) => {
-      htmlContent += `
-        <h3>${coleta.type === 'coleta' ? 'Coleta' : 'Entrega'} #${index + 1} - Cliente: ${coleta.parceiro || 'N/A'}</h3> <!-- Exibir tipo -->
-        <p><strong>Endereço:</strong> ${coleta.endereco || 'N/A'}</p>
-        <p><strong>Data Prevista:</strong> ${coleta.previsao_coleta ? format(new Date(coleta.previsao_coleta), "dd/MM/yyyy", { locale: ptBR }) : 'N/A'}</p>
-        <p><strong>Status:</strong> ${coleta.status_coleta || 'N/A'}</p>
-        <p><strong>Qtd. Aparelhos Solicitados:</strong> ${coleta.qtd_aparelhos_solicitado || 0}</p>
-        <p><strong>Tipo de Material:</strong> ${coleta.modelo_aparelho || 'N/A'}</p>
-      `;
-      if (coleta.observacao) {
-        htmlContent += `<p><strong>Observação:</strong> ${coleta.observacao}</p>`;
-      }
-
-      const associatedItems = itemsByCollection.get(coleta.id);
-      if (associatedItems && associatedItems.length > 0) {
-        htmlContent += `
-          <h4>Itens do Registro:</h4>
-          <table>
-            <thead>
-              <tr>
-                <th>Nome do Item</th>
-                <th>Quantidade</th>
-                <th>Status do Item</th>
-                <th>Descrição do Item</th>
-              </tr>
-            </thead>
-            <tbody>
-        `;
-        associatedItems.forEach((item) => {
-          htmlContent += `
-            <tr>
-              <td>${item.name}</td>
-              <td>${item.quantity}</td>
-              <td>${item.status}</td>
-              <td>${item.description || 'N/A'}</td>
-            </tr>
-          `;
-        });
-        htmlContent += `
-            </tbody>
-          </table>
-        `;
-      }
-      htmlContent += `<br>`; // Space between collections
-    });
-  } else {
-    htmlContent += `<p>Nenhum registro encontrado para os filtros aplicados.</p>`;
-  }
-
-  htmlContent += `
-        <div style="margin-top: 50px; font-size: 10px; color: #808080;">
-            <p>Gerado automaticamente por LogiReverseIA</p>
-            <p>ID do Relatório: LR-${reportData.id || Date.now()}</p>
-        </div>
-    </body>
-    </html>
-  `;
-
-  const fileName = `${reportData.title.replace(/\s+/g, '_')}_${Date.now()}.doc`;
-  const blob = new Blob([htmlContent], { type: 'application/msword' });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = url;
-  a.download = fileName;
-  document.body.appendChild(a);
-  a.click();
-  document.body.removeChild(a);
-  URL.revokeObjectURL(url);
-};
-
-// Main function to generate report based on format
-export const generateReport = async (reportData: ReportData, userId: string, performanceChartData: MonthlyPerformanceData[]) => {
-  if (!reportData.format) {
-    throw new Error("Formato do relatório não especificado.");
-  }
-
-  switch (reportData.format) {
-    case 'PDF':
-      await generatePdfReport(reportData, userId, performanceChartData);
-      break;
-    case 'Excel':
-      await generateExcelReport(reportData, userId, performanceChartData);
-      break;
-    case 'Word':
-      await generateWordReport(reportData, userId, performanceChartData);
-      break;
-    default:
-      throw new Error(`Formato de relatório '${reportData.format}' não suportado.`);
+  const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+  const link = document.createElement('a');
+  if (link.download !== undefined) {
+    const url = URL.createObjectURL(blob);
+    link.setAttribute('href', url);
+    link.setAttribute('download', `${report.title.replace(/\s/g, '_')}_${format(new Date(), 'yyyyMMdd_HHmmss')}.csv`);
+    link.style.visibility = 'hidden';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
   }
 };

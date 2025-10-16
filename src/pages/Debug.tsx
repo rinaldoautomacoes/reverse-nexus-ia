@@ -1,139 +1,198 @@
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { useAuth } from "@/hooks/use-auth";
+import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { useNavigate } from "react-router-dom";
-import { CheckCircle, XCircle, User, Database, ArrowLeft } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { useAuth } from "@/hooks/use-auth";
+import { useToast } from "@/hooks/use-toast";
+import type { Tables, TablesInsert, TablesUpdate } from "@/integrations/supabase/types_generated";
+
+type Profile = Tables<'profiles'>;
+type ProfileInsert = TablesInsert<'profiles'>;
+type ProfileUpdate = TablesUpdate<'profiles'>;
 
 export const Debug = () => {
-  const { user, session, profile, isLoading } = useAuth();
-  const navigate = useNavigate();
+  const { user, profile, isLoading } = useAuth();
+  const { toast } = useToast();
+  const [newRole, setNewRole] = useState<string>('');
+  const [newFirstName, setNewFirstName] = useState<string>('');
+  const [newLastName, setNewLastName] = useState<string>('');
+  const [newPhoneNumber, setNewPhoneNumber] = useState<string>('');
+  const [avatarFile, setAvatarFile] = useState<File | null>(null);
+  const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
 
-  const handleLogout = async () => {
-    await supabase.auth.signOut();
+  useEffect(() => {
+    if (profile) {
+      setNewRole(profile.role);
+      setNewFirstName(profile.first_name || '');
+      setNewLastName(profile.last_name || '');
+      setNewPhoneNumber(profile.phone_number || '');
+      setAvatarUrl(profile.avatar_url || null);
+    }
+  }, [profile]);
+
+  const handleUpdateProfile = async () => {
+    if (!user) {
+      toast({ title: "Erro", description: "Usuário não autenticado.", variant: "destructive" });
+      return;
+    }
+
+    let updatedAvatarUrl = avatarUrl;
+    if (avatarFile) {
+      const fileExt = avatarFile.name.split('.').pop();
+      const fileName = `${user.id}-${Math.random()}.${fileExt}`;
+      const filePath = `avatars/${fileName}`;
+
+      const { error: uploadError } = await supabase.storage
+        .from('avatars')
+        .upload(filePath, avatarFile);
+
+      if (uploadError) {
+        toast({ title: "Erro no upload do avatar", description: uploadError.message, variant: "destructive" });
+        return;
+      }
+
+      const { data: publicUrlData } = supabase.storage
+        .from('avatars')
+        .getPublicUrl(filePath);
+      updatedAvatarUrl = publicUrlData.publicUrl;
+    }
+
+    const { error } = await supabase
+      .from('profiles')
+      .update({
+        role: newRole,
+        first_name: newFirstName,
+        last_name: newLastName,
+        phone_number: newPhoneNumber,
+        avatar_url: updatedAvatarUrl,
+        updated_at: new Date().toISOString(),
+      })
+      .eq('id', user.id);
+
+    if (error) {
+      toast({ title: "Erro ao atualizar perfil", description: error.message, variant: "destructive" });
+    } else {
+      toast({ title: "Sucesso", description: "Perfil atualizado com sucesso!" });
+      // Força um refresh do perfil no contexto de autenticação
+      window.location.reload();
+    }
   };
+
+  const handleAvatarChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files[0]) {
+      setAvatarFile(e.target.files[0]);
+      setAvatarUrl(URL.createObjectURL(e.target.files[0]));
+    }
+  };
+
+  if (isLoading) {
+    return <div className="p-4">Carregando...</div>;
+  }
 
   return (
     <div className="min-h-screen bg-background ai-pattern p-6">
-      <div className="max-w-4xl mx-auto space-y-6">
-        <div className="flex items-center gap-4 mb-6">
-          <Button variant="outline" onClick={() => navigate('/')}>
-            <ArrowLeft className="w-4 h-4 mr-2" />
-            Voltar
-          </Button>
-          <h1 className="text-3xl font-bold">Debug Dashboard</h1>
-        </div>
+      <div className="max-w-2xl mx-auto space-y-6">
+        <h1 className="text-3xl font-bold gradient-text">Debug & Admin Tools</h1>
 
-        {/* Authentication Status */}
-        <Card>
+        <Card className="card-futuristic">
           <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <User className="w-5 h-5" />
-              Estado da Autenticação
-            </CardTitle>
+            <CardTitle>Informações do Usuário</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-2">
+            <p><strong>ID:</strong> {user?.id}</p>
+            <p><strong>Email:</strong> {user?.email}</p>
+            <p><strong>Role (do perfil):</strong> {profile?.role}</p>
+            <p><strong>Primeiro Nome:</strong> {profile?.first_name}</p>
+            <p><strong>Último Nome:</strong> {profile?.last_name}</p>
+            <p><strong>Telefone:</strong> {profile?.phone_number}</p>
+            <p><strong>Avatar URL:</strong> {profile?.avatar_url}</p>
+            {profile?.avatar_url && (
+              <img src={profile.avatar_url} alt="Avatar" className="w-24 h-24 rounded-full object-cover" />
+            )}
+          </CardContent>
+        </Card>
+
+        <Card className="card-futuristic">
+          <CardHeader>
+            <CardTitle>Atualizar Perfil</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <p className="text-sm font-medium">Status de Carregamento:</p>
-                <Badge variant={isLoading ? "secondary" : "outline"}>
-                  {isLoading ? "Carregando..." : "Carregado"}
-                </Badge>
-              </div>
-              <div className="space-y-2">
-                <p className="text-sm font-medium">Usuário Logado:</p>
-                <Badge variant={user ? "default" : "destructive"}>
-                  {user ? <CheckCircle className="w-3 h-3 mr-1" /> : <XCircle className="w-3 h-3 mr-1" />}
-                  {user ? "Sim" : "Não"}
-                </Badge>
-              </div>
+            <div>
+              <Label htmlFor="firstName">Primeiro Nome</Label>
+              <Input
+                id="firstName"
+                value={newFirstName}
+                onChange={(e) => setNewFirstName(e.target.value)}
+              />
             </div>
-
-            {user && (
-              <div className="space-y-2">
-                <p className="text-sm font-medium">Dados do Usuário:</p>
-                <div className="bg-muted p-3 rounded-lg">
-                  <pre className="text-xs overflow-auto">
-                    {JSON.stringify({
-                      id: user.id,
-                      email: user.email,
-                      created_at: user.created_at
-                    }, null, 2)}
-                  </pre>
-                </div>
-              </div>
-            )}
-
-            {profile && (
-              <div className="space-y-2">
-                <p className="text-sm font-medium">Perfil do Usuário:</p>
-                <div className="bg-muted p-3 rounded-lg">
-                  <pre className="text-xs overflow-auto">
-                    {JSON.stringify(profile, null, 2)}
-                  </pre>
-                </div>
-              </div>
-            )}
-
-            {session && (
-              <div className="space-y-2">
-                <p className="text-sm font-medium">Sessão:</p>
-                <div className="bg-muted p-3 rounded-lg">
-                  <pre className="text-xs overflow-auto">
-                    {JSON.stringify({
-                      access_token: session.access_token ? "Presente" : "Ausente",
-                      refresh_token: session.refresh_token ? "Presente" : "Ausente",
-                      expires_at: session.expires_at,
-                      token_type: session.token_type
-                    }, null, 2)}
-                  </pre>
-                </div>
-              </div>
-            )}
-
-            {user && (
-              <Button onClick={handleLogout} variant="destructive">
-                Fazer Logout
-              </Button>
-            )}
+            <div>
+              <Label htmlFor="lastName">Último Nome</Label>
+              <Input
+                id="lastName"
+                value={newLastName}
+                onChange={(e) => setNewLastName(e.target.value)}
+              />
+            </div>
+            <div>
+              <Label htmlFor="phoneNumber">Telefone</Label>
+              <Input
+                id="phoneNumber"
+                value={newPhoneNumber}
+                onChange={(e) => setNewPhoneNumber(e.target.value)}
+              />
+            </div>
+            <div>
+              <Label htmlFor="role">Role</Label>
+              <Input
+                id="role"
+                value={newRole}
+                onChange={(e) => setNewRole(e.target.value)}
+                placeholder="standard ou admin"
+              />
+            </div>
+            <div>
+              <Label htmlFor="avatar">Avatar</Label>
+              <Input
+                id="avatar"
+                type="file"
+                accept="image/*"
+                onChange={handleAvatarChange}
+              />
+              {avatarUrl && (
+                <img src={avatarUrl} alt="Avatar Preview" className="mt-2 w-24 h-24 rounded-full object-cover" />
+              )}
+            </div>
+            <Button onClick={handleUpdateProfile}>Atualizar Perfil</Button>
           </CardContent>
         </Card>
 
-        {/* Database Connection */}
-        <Card>
+        <Card className="card-futuristic">
           <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Database className="w-5 h-5" />
-              Conexão com Supabase
-            </CardTitle>
+            <CardTitle>Raw User Data (Supabase Auth)</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="space-y-2">
-              <p className="text-sm font-medium">URL do Supabase:</p>
-              <p className="text-xs font-mono bg-muted p-2 rounded">
-                {import.meta.env.VITE_SUPABASE_URL}
-              </p>
-            </div>
+            <Textarea
+              readOnly
+              value={JSON.stringify(user, null, 2)}
+              rows={10}
+              className="font-mono text-xs"
+            />
           </CardContent>
         </Card>
 
-        {/* Environment Info */}
-        <Card>
+        <Card className="card-futuristic">
           <CardHeader>
-            <CardTitle>Informações do Ambiente</CardTitle>
+            <CardTitle>Raw Profile Data (Supabase Public)</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="grid grid-cols-2 gap-4 text-sm">
-              <div>
-                <p className="font-medium">Ambiente:</p>
-                <p className="text-muted-foreground">{import.meta.env.MODE}</p>
-              </div>
-              <div>
-                <p className="font-medium">URL Atual:</p>
-                <p className="text-muted-foreground break-all">{window.location.href}</p>
-              </div>
-            </div>
+            <Textarea
+              readOnly
+              value={JSON.stringify(profile, null, 2)}
+              rows={10}
+              className="font-mono text-xs"
+            />
           </CardContent>
         </Card>
       </div>

@@ -1,134 +1,160 @@
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
-import { ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import RouteMap from "@/components/RouteMap";
-import RouteList from "@/components/RouteList";
-import RouteFilters from "@/components/RouteFilters";
-import GenerateRouteDialog from "@/components/GenerateRouteDialog";
-import { EditRouteDialog } from "@/components/EditRouteDialog";
-import type { Tables } from "@/integrations/supabase/types";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { ArrowLeft, PlusCircle, Map, Route as RouteIcon, Loader2, Trash2, Edit } from "lucide-react";
+import { useNavigate } from "react-router-dom";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import type { Tables, TablesInsert, TablesUpdate } from "@/integrations/supabase/types_generated";
+import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/use-auth";
-import { useToast } from "@/hooks/use-toast"; // Importação corrigida para o hook useToast
+import RouteFilters from "@/components/RouteFilters";
+import RouteList from "@/components/RouteList";
+import { CreateRouteDialog } from "@/components/CreateRouteDialog"; // Assuming this component exists
+import { EditRouteDialog } from "@/components/EditRouteDialog"; // Assuming this component exists
 
-type Route = Tables<'routes'>;
+type Route = Tables<'routes'> & {
+  driver?: { name: string } | null;
+  stops?: Array<{ count: number }> | null;
+};
+type RouteInsert = TablesInsert<'routes'>;
+type RouteUpdate = TablesUpdate<'routes'>;
 
 export default function Roteirizacao() {
   const navigate = useNavigate();
-  const { user } = useAuth();
   const queryClient = useQueryClient();
-  const { toast } = useToast(); // Usando o hook useToast
+  const { toast } = useToast();
+  const { user } = useAuth();
 
-  const [selectedRoute, setSelectedRoute] = useState<string | null>(null);
+  const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const [editingRoute, setEditingRoute] = useState<Route | null>(null);
+  const [selectedRouteId, setSelectedRouteId] = useState<string | null>(null);
   const [filters, setFilters] = useState({
     date: new Date().toISOString().split('T')[0],
     driverId: "all",
-    status: "all"
+    status: "all",
   });
-  const [isGenerateDialogOpen, setIsGenerateDialogOpen] = useState(false);
-  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
-  const [editingRouteData, setEditingRouteData] = useState<Route | null>(null);
-
-  const handleEditRoute = (route: Route) => {
-    setEditingRouteData(route);
-    setIsEditDialogOpen(true);
-  };
 
   const deleteRouteMutation = useMutation({
     mutationFn: async (routeId: string) => {
-      if (!user?.id) throw new Error("User not authenticated");
       const { error } = await supabase
-        .from("routes")
+        .from('routes')
         .delete()
-        .eq("id", routeId)
-        .eq("user_id", user.id); // RLS check
-      if (error) throw error;
+        .eq('id', routeId)
+        .eq('user_id', user?.id); // RLS check
+      if (error) throw new Error(error.message);
     },
     onSuccess: () => {
-      toast({ title: "Rota excluída!", description: "A rota foi removida com sucesso." });
-      queryClient.invalidateQueries({ queryKey: ["routes"] });
-      queryClient.invalidateQueries({ queryKey: ["routes-list"] });
-      setSelectedRoute(null); // Desseleciona a rota após a exclusão
+      queryClient.invalidateQueries({ queryKey: ['routes-list', user?.id] });
+      toast({ title: "Rota Excluída!", description: "Rota removida com sucesso." });
+      setSelectedRouteId(null); // Clear selected route after deletion
     },
-    onError: (error) => {
-      toast({ title: "Erro ao excluir rota", description: error.message, variant: "destructive" });
-    }
+    onError: (err) => {
+      toast({ title: "Erro ao excluir rota", description: err.message, variant: "destructive" });
+    },
   });
 
-  const handleDeleteRoute = (routeId: string) => {
-    if (window.confirm("Tem certeza que deseja excluir esta rota? Esta ação é irreversível.")) {
-      deleteRouteMutation.mutate(routeId);
+  const handleDeleteRoute = (id: string) => {
+    if (window.confirm("Tem certeza que deseja excluir esta rota? Esta ação não pode ser desfeita.")) {
+      deleteRouteMutation.mutate(id);
     }
   };
 
+  const handleEditRoute = (route: Route) => {
+    setEditingRoute(route);
+    setIsEditDialogOpen(true);
+  };
+
   return (
-    <div className="flex flex-col h-screen bg-background">
-      {/* Header */}
-      <header className="sticky top-0 z-50 border-b bg-card shadow-sm">
-        <div className="flex items-center justify-between px-4 py-3">
-          <div className="flex items-center gap-3">
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={() => navigate(-1)}
-            >
-              <ArrowLeft className="h-5 w-5" />
-            </Button>
-            <h1 className="text-2xl font-bold text-foreground">
-              Roteirização de Rotas
+    <div className="min-h-screen bg-background ai-pattern p-6">
+      <div className="max-w-7xl mx-auto">
+        <Button
+          onClick={() => navigate('/')}
+          variant="ghost"
+          className="mb-6 text-primary hover:bg-primary/10"
+        >
+          <ArrowLeft className="mr-2 h-4 w-4" />
+          Voltar ao Dashboard
+        </Button>
+
+        <div className="space-y-6">
+          <div className="text-center">
+            <h1 className="text-4xl font-bold font-orbitron gradient-text mb-4">
+              Roteirização Inteligente
             </h1>
+            <p className="text-muted-foreground">
+              Crie, otimize e gerencie suas rotas de coleta e entrega.
+            </p>
           </div>
-          <Button onClick={() => setIsGenerateDialogOpen(true)}>
-            Gerar Rota
-          </Button>
-        </div>
-      </header>
 
-      {/* Main Content */}
-      <div className="flex flex-1 overflow-hidden">
-        {/* Map Section */}
-        <div className="flex-1 relative">
-          <RouteMap 
-            selectedRouteId={selectedRoute}
-            filters={filters}
-          />
-        </div>
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            {/* Coluna de Filtros e Lista de Rotas */}
+            <div className="lg:col-span-1 space-y-6">
+              <Card className="card-futuristic">
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2 text-xl">
+                    <RouteIcon className="h-5 w-5 text-primary" />
+                    Filtros de Rotas
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <RouteFilters filters={filters} onFiltersChange={setFilters} />
+                </CardContent>
+              </Card>
 
-        {/* Sidebar */}
-        <aside className="w-96 border-l bg-card overflow-hidden flex flex-col">
-          <div className="p-4 border-b">
-            <RouteFilters 
-              filters={filters}
-              onFiltersChange={setFilters}
-            />
+              <Card className="card-futuristic">
+                <CardHeader className="flex flex-row items-center justify-between">
+                  <CardTitle className="flex items-center gap-2">
+                    <RouteIcon className="h-5 w-5 text-primary" />
+                    Minhas Rotas
+                  </CardTitle>
+                  <CreateRouteDialog isOpen={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen} />
+                </CardHeader>
+                <CardContent className="p-0">
+                  <RouteList
+                    filters={filters}
+                    selectedRouteId={selectedRouteId}
+                    onSelectRoute={setSelectedRouteId}
+                    onEditRoute={handleEditRoute}
+                    onDeleteRoute={handleDeleteRoute}
+                    isDeleting={deleteRouteMutation.isPending}
+                  />
+                </CardContent>
+              </Card>
+            </div>
+
+            {/* Coluna do Mapa (Placeholder) */}
+            <div className="lg:col-span-2">
+              <Card className="card-futuristic h-full flex flex-col">
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2 text-xl">
+                    <Map className="h-5 w-5 text-primary" />
+                    Visualização do Mapa
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="flex-1 flex items-center justify-center">
+                  <div className="text-center text-muted-foreground">
+                    <Map className="h-24 w-24 mx-auto mb-4" />
+                    <p>Mapa interativo da rota selecionada.</p>
+                    <p className="text-sm">Selecione uma rota na lista para visualizar.</p>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
           </div>
-          <div className="flex-1 overflow-auto">
-            <RouteList 
-              filters={filters}
-              selectedRouteId={selectedRoute}
-              onSelectRoute={setSelectedRoute}
-              onEditRoute={handleEditRoute}
-              onDeleteRoute={handleDeleteRoute}
-              isDeleting={deleteRouteMutation.isPending}
-            />
-          </div>
-        </aside>
+        </div>
       </div>
 
-      {/* Generate Route Dialog */}
-      <GenerateRouteDialog 
-        open={isGenerateDialogOpen}
-        onOpenChange={setIsGenerateDialogOpen}
-      />
-
-      {/* Edit Route Dialog */}
-      {editingRouteData && (
+      {editingRoute && (
         <EditRouteDialog
-          open={isEditDialogOpen}
+          isOpen={isEditDialogOpen}
           onOpenChange={setIsEditDialogOpen}
-          route={editingRouteData}
+          route={editingRoute}
+          onRouteUpdated={() => {
+            queryClient.invalidateQueries({ queryKey: ['routes-list', user?.id] });
+            setEditingRoute(null);
+          }}
         />
       )}
     </div>

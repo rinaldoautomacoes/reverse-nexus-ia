@@ -1,321 +1,100 @@
 import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { ArrowLeft, TrendingUp, BarChart3, Download, FileText, Calendar, Filter, Edit, Trash2, Search, Truck } from "lucide-react";
+import { ArrowLeft, FileText, Search, Download, Loader2, CheckCircle, XCircle, Clock } from "lucide-react";
 import { useNavigate } from "react-router-dom";
-import { CreateReportDialog } from "@/components/CreateReportDialog";
-import { ReportForm } from "@/components/ReportForm";
-import { useToast } from "@/hooks/use-toast";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import type { Tables, TablesInsert, TablesUpdate } from "@/integrations/supabase/types";
+import type { Tables } from "@/integrations/supabase/types_generated";
+import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/use-auth";
-import { generateReport } from "@/lib/report-utils";
-import { PerformanceChart } from "@/components/PerformanceChart";
-import { format, parseISO, startOfMonth } from "date-fns";
+import { CreateReportDialog } from "@/components/CreateReportDialog";
+import { Badge } from "@/components/ui/badge";
+import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import { useEffect } from "react";
+import { generateReport } from "@/lib/report-utils";
 
-type Coleta = Tables<'coletas'>;
-type Item = Tables<'items'>;
 type Report = Tables<'reports'>;
-type ReportInsert = TablesInsert<'reports'>;
-type ReportUpdate = TablesUpdate<'reports'>;
 
 export const RelatoriosEntregas = () => {
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const { toast } = useToast();
   const { user } = useAuth();
-  const queryClient = useQueryClient();
 
   const [searchTerm, setSearchTerm] = useState("");
-  const [statusFilter, setStatusFilter] = useState("todos");
-  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
-  const [editingReport, setEditingReport] = useState<Report | null>(null);
-  const [selectedYear, setSelectedYear] = useState<string>('2025'); // Mantido para o dashboard, mas não para o filtro de relatório
+  const [generatingReportId, setGeneratingReportId] = useState<string | null>(null);
 
-  // --- Fetching Metrics ---
-  const { data: entregasData, isLoading: isLoadingEntregas, error: entregasError } = useQuery<Coleta[], Error>({
-    queryKey: ['entregasForReports', user?.id, selectedYear],
-    queryFn: async () => {
-      if (!user?.id) return [];
-      const startDate = `${selectedYear}-01-01`;
-      const endDate = `${parseInt(selectedYear) + 1}-01-01`;
-      let query = supabase
-        .from('coletas')
-        .select('*')
-        .eq('user_id', user.id)
-        .eq('type', 'entrega') // FILTRAR POR TIPO 'entrega'
-        .gte('created_at', startDate)
-        .lt('created_at', endDate);
-      
-      const { data, error } = await query;
-      if (error) throw new Error(error.message);
-      return data;
-    },
-    enabled: !!user?.id,
-  });
-
-  const { data: itemsData, isLoading: isLoadingItems, error: itemsError } = useQuery<Item[], Error>({
-    queryKey: ['itemsForReportsEntregas', user?.id, selectedYear],
-    queryFn: async () => {
-      if (!user?.id) return [];
-      const startDate = `${selectedYear}-01-01`;
-      const endDate = `${parseInt(selectedYear) + 1}-01-01`;
-      let query = supabase
-        .from('items')
-        .select('*')
-        .eq('user_id', user.id)
-        .gte('created_at', startDate)
-        .lt('created_at', endDate);
-      
-      // Se houver filtro de tipo de entrega, precisamos filtrar os itens com base nas entregas correspondentes
-      if (entregasData) {
-        const relevantCollectionIds = entregasData.filter(c => c.type === 'entrega').map(c => c.id);
-        query = query.in('collection_id', relevantCollectionIds);
-      }
-
-      const { data, error } = await query;
-      if (error) throw new Error(error.message);
-      return data;
-    },
-    enabled: !!user?.id,
-  });
-
-  // Processar dados para o gráfico de performance
-  const processPerformanceChartData = (entregas: Coleta[] | undefined, items: Item[] | undefined) => {
-    const monthlyDataMap = new Map<string, { totalEntregas: number; totalItems: number }>();
-    const allMonths: string[] = [];
-    const currentYear = parseInt(selectedYear);
-
-    for (let i = 0; i < 12; i++) {
-      const month = startOfMonth(new Date(currentYear, i));
-      const monthKey = format(month, 'MMM', { locale: ptBR });
-      allMonths.push(monthKey);
-      monthlyDataMap.set(monthKey, { totalEntregas: 0, totalItems: 0 });
-    }
-
-    entregas?.forEach(entrega => {
-      if (entrega.created_at) {
-        const entregaDate = parseISO(entrega.created_at);
-        const monthKey = format(startOfMonth(entregaDate), 'MMM', { locale: ptBR });
-        if (monthlyDataMap.has(monthKey)) {
-          monthlyDataMap.get(monthKey)!.totalEntregas += 1;
-        }
-      }
-    });
-
-    items?.forEach(item => {
-      if (item.created_at) {
-        const itemDate = parseISO(item.created_at);
-        const monthKey = format(startOfMonth(itemDate), 'MMM', { locale: ptBR });
-        if (monthlyDataMap.has(monthKey)) {
-          monthlyDataMap.get(monthKey)!.totalItems += item.quantity;
-        }
-      }
-    });
-
-    return allMonths.map(monthKey => ({
-      month: monthKey,
-      totalColetas: monthlyDataMap.get(monthKey)?.totalEntregas || 0, // Renomeado para totalColetas para compatibilidade com PerformanceChart
-      totalItems: monthlyDataMap.get(monthKey)?.totalItems || 0,
-    }));
-  };
-
-  const performanceChartData = processPerformanceChartData(entregasData, itemsData);
-
-  const calculateMetrics = (entregas: Coleta[] | undefined, items: Item[] | undefined) => {
-    if (!user?.id || (!entregas && !items)) {
-      return [
-        { titulo: "Entregas Finalizadas", valor: "0", unidade: "", variacao: "0%" },
-        { titulo: "Itens Entregues", valor: "0", unidade: "itens", variacao: "0%" },
-        { titulo: "Total Geral Itens", valor: "0", unidade: "itens", variacao: "0%" },
-        { titulo: "Eficiência IA", valor: "94.2%", unidade: "", variacao: "+8%" }, // Placeholder
-      ];
-    }
-
-    const totalEntregasFinalizadas = entregas?.filter(c => c.status_coleta === 'concluida').length || 0;
-    const totalItensEntregues = items?.filter(item => item.status === 'processado').reduce((sum, item) => sum + item.quantity, 0) || 0;
-    const totalGeralItens = items?.reduce((sum, item) => sum + item.quantity, 0) || 0;
-
-    return [
-      { titulo: "Entregas Finalizadas", valor: totalEntregasFinalizadas.toString(), unidade: "", variacao: "+12%" }, // Placeholder de variação
-      { titulo: "Itens Entregues", valor: totalItensEntregues.toString(), unidade: "itens", variacao: "+15%" }, // Placeholder de variação
-      { titulo: "Total Geral Itens", valor: totalGeralItens.toString(), unidade: "itens", variacao: "+10%" }, // Placeholder de variação
-      { titulo: "Eficiência IA", valor: "94.2%", unidade: "", variacao: "+8%" }, // Placeholder
-    ];
-  };
-
-  const dashboardMetrics = calculateMetrics(entregasData, itemsData);
-
-  // --- Fetching Reports ---
   const { data: reports, isLoading: isLoadingReports, error: reportsError } = useQuery<Report[], Error>({
-    queryKey: ['reportsEntregas', user?.id, statusFilter],
+    queryKey: ['reportsEntregas', user?.id],
     queryFn: async () => {
       if (!user?.id) return [];
-      let query = supabase
+      const { data, error } = await supabase
         .from('reports')
         .select('*')
         .eq('user_id', user.id)
-        .eq('collection_type_filter', 'entrega'); // Filtrar relatórios que são especificamente para 'entrega'
-      
-      if (statusFilter !== "todos") {
-        query = query.eq('status', statusFilter);
-      }
-
-      const { data, error } = await query;
+        .eq('type', 'entrega') // Filtrar apenas relatórios de entrega
+        .order('created_at', { ascending: false });
       if (error) throw new Error(error.message);
       return data;
     },
     enabled: !!user?.id,
   });
 
-  // --- Mutations for Reports ---
-  const updateReportMutation = useMutation({
-    mutationFn: async (updatedReport: ReportUpdate) => {
-      const { data, error } = await supabase
-        .from('reports')
-        .update(updatedReport)
-        .eq('id', updatedReport.id as string)
-        .select()
-        .single();
-      if (error) throw new Error(error.message);
-      return data;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['reportsEntregas', user?.id] });
-      toast({ title: "Relatório atualizado!", description: "As informações do relatório foram atualizadas com sucesso." });
-      setIsEditDialogOpen(false);
-      setEditingReport(null);
-    },
-    onError: (err) => {
-      toast({ title: "Erro ao atualizar relatório", description: err.message, variant: "destructive" });
-    },
-  });
-
-  const deleteReportMutation = useMutation({
-    mutationFn: async (reportId: string) => {
-      const { error } = await supabase
-        .from('reports')
-        .delete()
-        .eq('id', reportId);
-      if (error) throw new Error(error.message);
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['reportsEntregas', user?.id] });
-      toast({ title: "Relatório excluído!", description: "O relatório foi removido com sucesso." });
-    },
-    onError: (err) => {
-      toast({ title: "Erro ao excluir relatório", description: err.message, variant: "destructive" });
-    },
-  });
-
-  // Nova mutação para atualizar o status do relatório após o download
-  const updateReportStatusMutation = useMutation({
-    mutationFn: async ({ reportId, newStatus }: { reportId: string; newStatus: string }) => {
-      const { data, error } = await supabase
-        .from('reports')
-        .update({ status: newStatus })
-        .eq('id', reportId)
-        .select()
-        .single();
-      if (error) throw new Error(error.message);
-      return data;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['reportsEntregas', user?.id] });
-    },
-    onError: (err) => {
-      toast({ title: "Erro ao atualizar status do relatório", description: err.message, variant: "destructive" });
-    },
-  });
-
-  const handleUpdateReport = (data: ReportUpdate) => {
-    updateReportMutation.mutate(data);
-  };
-
-  const handleDeleteReport = (id: string) => {
-    if (window.confirm("Tem certeza que deseja excluir este relatório?")) {
-      deleteReportMutation.mutate(id);
-    }
-  };
-
-  const handleDownload = async (report: Report) => {
+  const handleGenerateReportClick = async (report: Report) => {
     if (!user?.id) {
-      toast({
-        title: "Erro de autenticação",
-        description: "Você precisa estar logado para baixar relatórios.",
-        variant: "destructive"
-      });
+      toast({ title: "Erro", description: "Usuário não autenticado.", variant: "destructive" });
       return;
     }
-
+    setGeneratingReportId(report.id);
     try {
-      // Gerar o relatório usando a nova função e o formato do relatório
-      await generateReport({ ...report, collection_type_filter: 'entrega' }, user.id, performanceChartData); // Passar performanceChartData e o filtro de tipo
-
-      // Se a geração do relatório for bem-sucedida e o status não for 'Pronto', atualizá-lo
-      if (report.status !== 'Pronto') {
-        await updateReportStatusMutation.mutateAsync({ reportId: report.id, newStatus: 'Pronto' });
-      }
-
-      toast({
-        title: "Download Iniciado",
-        description: `O download do relatório "${report.title}" foi iniciado.`,
-      });
+      await generateReport(report, user.id);
+      toast({ title: "Relatório Gerado!", description: `O relatório "${report.title}" foi gerado com sucesso.` });
     } catch (error: any) {
-      toast({
-        title: "Erro ao gerar relatório",
-        description: error.message || "Não foi possível gerar o relatório. Tente novamente.",
-        variant: "destructive",
-      });
-      // Opcionalmente, atualiza o status para 'Falha' se a geração falhar
-      if (report.status !== 'Falha') {
-        updateReportStatusMutation.mutate({ reportId: report.id, newStatus: 'Falha' });
-      }
+      toast({ title: "Erro ao Gerar Relatório", description: error.message, variant: "destructive" });
+    } finally {
+      setGeneratingReportId(null);
+      queryClient.invalidateQueries({ queryKey: ['reportsEntregas', user?.id] }); // Invalida para atualizar o status
     }
   };
 
-  const getStatusColor = (status: string | null) => {
+  const filteredReports = reports?.filter(report =>
+    report.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    report.description?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    report.type.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    report.status.toLowerCase().includes(searchTerm.toLowerCase())
+  ) || [];
+
+  const getStatusBadge = (status: string) => {
     switch (status) {
-      case 'Pronto':
-        return 'bg-primary/20 text-primary';
-      case 'Gerando':
-        return 'bg-accent/20 text-accent';
-      case 'Falha':
-        return 'bg-destructive/20 text-destructive';
+      case 'pendente':
+        return <Badge variant="outline" className="bg-warning-yellow/20 text-warning-yellow"><Clock className="h-3 w-3 mr-1" /> Pendente</Badge>;
+      case 'concluido':
+        return <Badge variant="outline" className="bg-success-green/20 text-success-green"><CheckCircle className="h-3 w-3 mr-1" /> Concluído</Badge>;
+      case 'erro':
+        return <Badge variant="outline" className="bg-destructive/20 text-destructive"><XCircle className="h-3 w-3 mr-1" /> Erro</Badge>;
       default:
-        return 'bg-muted/20 text-muted-foreground';
+        return <Badge variant="outline">{status}</Badge>;
     }
   };
 
-  const filteredReports = reports?.filter(report => {
-    const matchesSearch = (report.title?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                           report.description?.toLowerCase().includes(searchTerm.toLowerCase())); // Removido filtro por período
-    const matchesStatus = statusFilter === "todos" || report.status === statusFilter;
-    return matchesSearch && matchesStatus;
-  }) || [];
-
-  if (isLoadingEntregas || isLoadingItems || isLoadingReports) {
+  if (isLoadingReports) {
     return (
       <div className="min-h-screen bg-background ai-pattern p-6 flex items-center justify-center">
         <div className="text-center">
           <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin mx-auto mb-2" />
-          <p className="text-sm text-muted-foreground">Carregando dados de relatórios de entregas...</p>
+          <p className="text-sm text-muted-foreground">Carregando relatórios...</p>
         </div>
       </div>
     );
   }
 
-  if (entregasError || itemsError || reportsError) {
+  if (reportsError) {
     return (
       <div className="min-h-screen bg-background ai-pattern p-6">
         <div className="max-w-6xl mx-auto text-center text-destructive">
-          <p>Erro ao carregar dados: {entregasError?.message || itemsError?.message || reportsError?.message}</p>
+          <p>Erro ao carregar relatórios: {reportsError.message}</p>
         </div>
       </div>
     );
@@ -324,9 +103,9 @@ export const RelatoriosEntregas = () => {
   return (
     <div className="min-h-screen bg-background ai-pattern p-6">
       <div className="max-w-6xl mx-auto">
-        <Button 
-          onClick={() => navigate('/dashboard-entregas')} 
-          variant="ghost" 
+        <Button
+          onClick={() => navigate('/dashboard-entregas')}
+          variant="ghost"
           className="mb-6 text-primary hover:bg-primary/10"
         >
           <ArrowLeft className="mr-2 h-4 w-4" />
@@ -336,161 +115,68 @@ export const RelatoriosEntregas = () => {
         <div className="space-y-6">
           <div className="text-center">
             <h1 className="text-4xl font-bold font-orbitron gradient-text mb-4">
-              Relatório de Entregas
+              Relatórios de Entregas
             </h1>
             <p className="text-muted-foreground">
-              Análises inteligentes e insights automatizados para suas entregas
+              Visualize e gere relatórios detalhados das suas entregas.
             </p>
           </div>
 
-          {/* Métricas Rápidas */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-            {dashboardMetrics.map((metrica, index) => (
-              <Card key={index} className="card-futuristic">
-                <CardContent className="p-4">
-                  <div className="space-y-2">
-                    <p className="text-sm text-muted-foreground">{metrica.titulo}</p>
-                    <div className="flex items-end justify-between">
-                      <div>
-                        <p className="text-2xl font-bold">{metrica.valor}</p>
-                        <p className="text-xs text-muted-foreground">{metrica.unidade}</p>
-                      </div>
-                      <Badge 
-                        variant="secondary" 
-                        className={metrica.variacao.startsWith('+') ? 'text-accent' : 'text-neural'}
-                      >
-                        {metrica.variacao}
-                      </Badge>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-
-          {/* Gráfico Principal */}
-          <PerformanceChart data={performanceChartData} selectedYear={selectedYear} />
-
-          {/* Lista de Relatórios */}
           <Card className="card-futuristic">
-            <CardHeader>
-              <div className="flex items-center justify-between">
-                <CardTitle className="flex items-center gap-2">
-                  <FileText className="h-5 w-5 text-primary" />
-                  Relatórios Disponíveis
-                </CardTitle>
-                <div className="flex gap-2">
-                  <div className="relative">
-                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
-                    <Input
-                      placeholder="Buscar relatório..."
-                      value={searchTerm}
-                      onChange={(e) => setSearchTerm(e.target.value)}
-                      className="pl-10 w-48"
-                    />
-                  </div>
-                  <Select value={statusFilter} onValueChange={setStatusFilter}>
-                    <SelectTrigger className="w-40">
-                      <Filter className="mr-2 h-4 w-4" />
-                      <SelectValue placeholder="Filtrar" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="todos">Todos</SelectItem>
-                      <SelectItem value="Pronto">Pronto</SelectItem>
-                      <SelectItem value="Gerando">Gerando</SelectItem>
-                      <SelectItem value="Falha">Falha</SelectItem>
-                    </SelectContent>
-                  </Select>
-                  <CreateReportDialog collectionTypeFilter="entrega" />
+            <CardContent className="p-6">
+              <div className="flex flex-col md:flex-row gap-4">
+                <div className="flex-1 relative">
+                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
+                  <Input
+                    placeholder="Buscar por título, descrição ou status..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    className="pl-10"
+                  />
                 </div>
               </div>
+            </CardContent>
+          </Card>
+
+          <Card className="card-futuristic">
+            <CardHeader className="flex flex-row items-center justify-between">
+              <CardTitle className="flex items-center gap-2">
+                <FileText className="h-5 w-5 text-primary" />
+                Meus Relatórios de Entregas
+              </CardTitle>
+              <CreateReportDialog collectionTypeFilter="entrega" />
             </CardHeader>
             <CardContent className="space-y-4">
-              {filteredReports.length > 0 ? (
+              {filteredReports && filteredReports.length > 0 ? (
                 filteredReports.map((report, index) => (
-                  <div key={report.id} className="flex items-center justify-between p-4 rounded-lg border border-primary/10 bg-slate-darker/10">
-                    <div className="flex flex-col gap-1">
-                      <h3 className="font-semibold">{report.title}</h3>
-                      <div className="flex items-center gap-4 text-sm text-muted-foreground">
-                        <span>
-                          {report.start_date ? format(parseISO(report.start_date), "dd/MM/yyyy", { locale: ptBR }) : 'N/A'} - {report.end_date ? format(parseISO(report.end_date), "dd/MM/yyyy", { locale: ptBR }) : 'N/A'}
-                        </span>
-                        <Badge variant="secondary" className="text-xs">
-                          {report.type}
-                        </Badge>
-                        <span>{report.format}</span>
-                        {report.collection_status_filter && report.collection_status_filter !== 'todos' && (
-                          <Badge variant="secondary" className="text-xs bg-neural/20 text-neural">
-                            Entregas: {report.collection_status_filter}
-                          </Badge>
-                        )}
+                  <div
+                    key={report.id}
+                    className="flex flex-col lg:flex-row items-start lg:items-center justify-between p-4 rounded-lg border border-primary/10 bg-slate-darker/10 animate-slide-up"
+                    style={{ animationDelay: `${index * 100}ms` }}
+                  >
+                    <div className="flex-1 min-w-0 mb-3 lg:mb-0">
+                      <h3 className="font-semibold text-lg">{report.title}</h3>
+                      <p className="text-sm text-muted-foreground">{report.description}</p>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-sm text-muted-foreground mt-1">
+                        <p>Período: {report.start_date ? format(new Date(report.start_date), 'dd/MM/yyyy', { locale: ptBR }) : 'N/A'} - {report.end_date ? format(new Date(report.end_date), 'dd/MM/yyyy', { locale: ptBR }) : 'N/A'}</p>
+                        <p>Formato: <Badge variant="secondary">{report.format.toUpperCase()}</Badge></p>
+                        <p>Status: {getStatusBadge(report.status)}</p>
                       </div>
                     </div>
-                    
-                    <div className="flex items-center gap-3">
-                      <Badge 
-                        variant={report.status === 'Pronto' ? 'default' : 'secondary'}
-                        className={getStatusColor(report.status)}
+                    <div className="flex gap-2 flex-wrap justify-end">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="border-primary text-primary hover:bg-primary/10"
+                        onClick={() => handleGenerateReportClick(report)}
+                        disabled={generatingReportId === report.id}
                       >
-                        {report.status}
-                      </Badge>
-                      <Button 
-                        size="sm" 
-                        disabled={report.status === 'Falha' || (updateReportStatusMutation.isPending && updateReportStatusMutation.variables?.reportId === report.id)}
-                        className="bg-gradient-primary hover:bg-gradient-primary/80 glow-effect"
-                        onClick={() => handleDownload(report)}
-                      >
-                        {updateReportStatusMutation.isPending && updateReportStatusMutation.variables?.reportId === report.id ? (
-                          <div className="w-4 h-4 border-2 border-primary-foreground border-t-transparent rounded-full animate-spin mr-2" />
+                        {generatingReportId === report.id ? (
+                          <Loader2 className="mr-1 h-3 w-3 animate-spin" />
                         ) : (
-                          <Download className="mr-2 h-4 w-4" />
+                          <Download className="mr-1 h-3 w-3" />
                         )}
-                        Download
-                      </Button>
-                      <Dialog open={isEditDialogOpen && editingReport?.id === report.id} onOpenChange={setIsEditDialogOpen}>
-                        <DialogTrigger asChild>
-                          <Button 
-                            size="sm" 
-                            variant="outline" 
-                            className="border-accent text-accent hover:bg-accent/10"
-                            onClick={() => {
-                              setEditingReport(report);
-                              setIsEditDialogOpen(true);
-                            }}
-                          >
-                            <Edit className="mr-1 h-3 w-3" />
-                            Editar
-                          </Button>
-                        </DialogTrigger>
-                        <DialogContent className="sm:max-w-[500px] bg-card border-primary/20">
-                          <DialogHeader>
-                            <DialogTitle className="flex items-center gap-2 gradient-text">
-                              <FileText className="h-5 w-5" />
-                              Editar Relatório
-                            </DialogTitle>
-                          </DialogHeader>
-                          {editingReport && editingReport.id === report.id && (
-                            <ReportForm 
-                              initialData={editingReport}
-                              onSave={handleUpdateReport}
-                              onCancel={() => {
-                                setIsEditDialogOpen(false);
-                                setEditingReport(null);
-                              }}
-                              isPending={updateReportMutation.isPending}
-                            />
-                          )}
-                        </DialogContent>
-                      </Dialog>
-                      <Button 
-                        variant="outline" 
-                        size="sm" 
-                        className="border-destructive text-destructive hover:bg-destructive/10"
-                        onClick={() => handleDeleteReport(report.id)}
-                        disabled={deleteReportMutation.isPending}
-                      >
-                        <Trash2 className="mr-1 h-3 w-3" />
-                        Excluir
+                        Gerar {report.format.toUpperCase()}
                       </Button>
                     </div>
                   </div>
@@ -498,10 +184,8 @@ export const RelatoriosEntregas = () => {
               ) : (
                 <div className="p-12 text-center text-muted-foreground">
                   <FileText className="h-12 w-12 mx-auto mb-4" />
-                  <h3 className="text-lg font-semibold mb-2">Nenhum relatório encontrado</h3>
-                  <p className="text-muted-foreground">
-                    Crie seu primeiro relatório para começar.
-                  </p>
+                  <p>Nenhum relatório de entrega encontrado.</p>
+                  <p className="text-sm">Crie um novo relatório para começar.</p>
                 </div>
               )}
             </CardContent>

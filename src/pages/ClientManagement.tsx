@@ -3,14 +3,14 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { ArrowLeft, PlusCircle, Edit, Trash2, User, Search, Filter, Phone, Mail, MapPin, UserPlus } from "lucide-react"; // Adicionado UserPlus
+import { ArrowLeft, PlusCircle, Edit, Trash2, User, Search, Phone, Mail, MapPin, Building, Briefcase } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import type { Tables, TablesInsert, TablesUpdate } from "@/integrations/supabase/types";
+import type { Tables, TablesInsert, TablesUpdate } from "@/integrations/supabase/types_generated";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/use-auth";
-import { ClientForm } from "@/components/ClientForm"; // Importar o novo formulário
+import { ClientForm } from "@/components/ClientForm";
 
 type Client = Tables<'clients'>;
 type ClientInsert = TablesInsert<'clients'>;
@@ -113,7 +113,7 @@ export const ClientManagement = () => {
   };
 
   const handleDeleteClient = (id: string) => {
-    if (window.confirm("Tem certeza que deseja excluir este cliente? Todas as coletas associadas também serão afetadas.")) {
+    if (window.confirm("Tem certeza que deseja excluir este cliente?")) {
       deleteClientMutation.mutate(id);
     }
   };
@@ -122,7 +122,8 @@ export const ClientManagement = () => {
     client.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
     client.contact_person?.toLowerCase().includes(searchTerm.toLowerCase()) ||
     client.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    client.phone?.toLowerCase().includes(searchTerm.toLowerCase())
+    client.phone?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    client.cnpj?.toLowerCase().includes(searchTerm.toLowerCase())
   ) || [];
 
   if (isLoadingClients) {
@@ -174,13 +175,12 @@ export const ClientManagement = () => {
                 <div className="flex-1 relative">
                   <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
                   <Input
-                    placeholder="Buscar por nome, contato, email ou telefone..."
+                    placeholder="Buscar por nome, contato, email, telefone ou CNPJ..."
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
                     className="pl-10"
                   />
                 </div>
-                {/* Filtro de status não é necessário para clientes, mas pode ser adicionado se houver um campo de status no futuro */}
               </div>
             </CardContent>
           </Card>
@@ -201,13 +201,13 @@ export const ClientManagement = () => {
                 <DialogContent className="sm:max-w-[600px] bg-card border-primary/20">
                   <DialogHeader>
                     <DialogTitle className="flex items-center gap-2 gradient-text">
-                      <UserPlus className="h-5 w-5" />
+                      <User className="h-5 w-5" />
                       Adicionar Novo Cliente
                     </DialogTitle>
                   </DialogHeader>
-                  <ClientForm 
-                    onSave={handleAddClient} 
-                    onCancel={() => setIsAddDialogOpen(false)} 
+                  <ClientForm
+                    onSave={handleAddClient}
+                    onCancel={() => setIsAddDialogOpen(false)}
                     isPending={addClientMutation.isPending}
                   />
                 </DialogContent>
@@ -226,7 +226,7 @@ export const ClientManagement = () => {
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-sm text-muted-foreground mt-1">
                         {client.contact_person && (
                           <div className="flex items-center gap-1">
-                            <User className="h-3 w-3" /> {client.contact_person}
+                            <Briefcase className="h-3 w-3" /> {client.contact_person}
                           </div>
                         )}
                         {client.phone && (
@@ -237,6 +237,11 @@ export const ClientManagement = () => {
                         {client.email && (
                           <div className="flex items-center gap-1">
                             <Mail className="h-3 w-3" /> {client.email}
+                          </div>
+                        )}
+                        {client.cnpj && (
+                          <div className="flex items-center gap-1">
+                            <Building className="h-3 w-3" /> {client.cnpj}
                           </div>
                         )}
                         {client.address && (
