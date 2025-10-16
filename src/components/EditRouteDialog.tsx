@@ -10,7 +10,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/use-auth";
 import { toast } from "@/hooks/use-toast";
-import type { Tables, TablesUpdate } from "@/integrations/supabase/types";
+import type { Tables, TablesUpdate } from "@/integrations/supabase/types_generated";
 import RouteMap from "./RouteMap"; // Import the map component
 import axios from "axios"; // Import axios
 
@@ -19,17 +19,18 @@ type RouteUpdate = TablesUpdate<'routes'>;
 type Driver = Tables<'drivers'>;
 
 interface EditRouteDialogProps {
-  open: boolean;
+  isOpen: boolean;
   onOpenChange: (open: boolean) => void;
   route: Route | null; // The route to edit
+  onRouteUpdated: () => void; // Callback after successful update
 }
 
-export const EditRouteDialog: React.FC<EditRouteDialogProps> = ({ open, onOpenChange, route }) => {
+export const EditRouteDialog: React.FC<EditRouteDialogProps> = ({ isOpen, onOpenChange, route, onRouteUpdated }) => {
   const { user } = useAuth();
   const queryClient = useQueryClient();
   const [formData, setFormData] = useState<RouteUpdate | null>(null);
   const [isFetchingAddress, setIsFetchingAddress] = useState(false); // For address geocoding
-  const [isCalculatingRoute, setIsCalculatingRoute] = useState(false); // Novo estado para cálculo da rota
+  const [isCalculatingRoute, setIsCalculatingRoute] = useState(false); // State for route calculation
 
   useEffect(() => {
     if (route) {
@@ -66,7 +67,7 @@ export const EditRouteDialog: React.FC<EditRouteDialogProps> = ({ open, onOpenCh
       if (error) throw new Error(error.message);
       return data;
     },
-    enabled: !!user?.id && open,
+    enabled: !!user?.id && isOpen,
   });
 
   const updateRouteMutation = useMutation({
@@ -117,6 +118,7 @@ export const EditRouteDialog: React.FC<EditRouteDialogProps> = ({ open, onOpenCh
       toast({ title: "Rota atualizada!", description: "As informações da rota foram salvas com sucesso." });
       queryClient.invalidateQueries({ queryKey: ["routes"] });
       queryClient.invalidateQueries({ queryKey: ["routes-list"] });
+      onRouteUpdated(); // Call the callback
       onOpenChange(false);
     },
     onError: (error) => {
@@ -138,7 +140,7 @@ export const EditRouteDialog: React.FC<EditRouteDialogProps> = ({ open, onOpenCh
   const isFormDisabled = updateRouteMutation.isPending || isFetchingAddress || isCalculatingRoute;
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <Dialog open={isOpen} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[800px] bg-card border-primary/20">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2 gradient-text">
@@ -273,7 +275,8 @@ export const EditRouteDialog: React.FC<EditRouteDialogProps> = ({ open, onOpenCh
           <div className="space-y-2 border-t border-border/30 pt-4">
             <Label>Visualização da Rota</Label>
             <div className="h-64 w-full rounded-lg overflow-hidden border border-border/50">
-              <RouteMap selectedRouteId={route.id} filters={{ date: route.date, driverId: route.driver_id || 'all', status: route.status }} />
+              {/* Ensure RouteMap receives correct props and is enabled */}
+              {route.id && <RouteMap selectedRouteId={route.id} filters={{ date: route.date, driverId: route.driver_id || 'all', status: route.status }} />}
             </div>
           </div>
 

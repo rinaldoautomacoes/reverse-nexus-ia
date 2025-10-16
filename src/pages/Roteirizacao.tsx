@@ -10,8 +10,9 @@ import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/use-auth";
 import RouteFilters from "@/components/RouteFilters";
 import RouteList from "@/components/RouteList";
-import { CreateRouteDialog } from "@/components/CreateRouteDialog"; // Assuming this component exists
-import { EditRouteDialog } from "@/components/EditRouteDialog"; // Assuming this component exists
+import { CreateRouteDialog } from "@/components/CreateRouteDialog";
+import { EditRouteDialog } from "@/components/EditRouteDialog";
+import RouteMap from "@/components/RouteMap"; // Import RouteMap
 
 type Route = Tables<'routes'> & {
   driver?: { name: string } | null;
@@ -109,7 +110,10 @@ export default function Roteirizacao() {
                     <RouteIcon className="h-5 w-5 text-primary" />
                     Minhas Rotas
                   </CardTitle>
-                  <CreateRouteDialog isOpen={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen} />
+                  <Button size="sm" className="bg-gradient-primary hover:bg-gradient-primary/80" onClick={() => setIsCreateDialogOpen(true)}>
+                    <PlusCircle className="mr-2 h-4 w-4" />
+                    Gerar Rota
+                  </Button>
                 </CardHeader>
                 <CardContent className="p-0">
                   <RouteList
@@ -124,7 +128,7 @@ export default function Roteirizacao() {
               </Card>
             </div>
 
-            {/* Coluna do Mapa (Placeholder) */}
+            {/* Coluna do Mapa */}
             <div className="lg:col-span-2">
               <Card className="card-futuristic h-full flex flex-col">
                 <CardHeader>
@@ -133,18 +137,16 @@ export default function Roteirizacao() {
                     Visualização do Mapa
                   </CardTitle>
                 </CardHeader>
-                <CardContent className="flex-1 flex items-center justify-center">
-                  <div className="text-center text-muted-foreground">
-                    <Map className="h-24 w-24 mx-auto mb-4" />
-                    <p>Mapa interativo da rota selecionada.</p>
-                    <p className="text-sm">Selecione uma rota na lista para visualizar.</p>
-                  </div>
+                <CardContent className="flex-1 p-0">
+                  <RouteMap selectedRouteId={selectedRouteId} filters={filters} />
                 </CardContent>
               </Card>
             </div>
           </div>
         </div>
       </div>
+
+      <CreateRouteDialog isOpen={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen} />
 
       {editingRoute && (
         <EditRouteDialog
