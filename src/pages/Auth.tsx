@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Brain, Mail, Lock, Truck, Zap } from "lucide-react";
+import { Mail, Lock, Truck, Zap } from "lucide-react"; // 'Brain' removido
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import type { User, Session } from '@supabase/supabase-js';
@@ -103,8 +103,9 @@ export const Auth = () => {
           {/* Header */}
           <div className="text-center mb-8">
             <div className="flex items-center justify-center mb-4">
-              <div className="p-3 rounded-xl bg-gradient-primary glow-effect">
-                <Brain className="w-8 h-8 text-white" />
+              {/* Substituído o ícone Brain pela nova imagem */}
+              <div className="flex items-center justify-center"> 
+                <img src="/heart-truck-logo.png" alt="LogiReverseIA Logo" className="w-24 h-24" />
               </div>
             </div>
             <h1 className="text-3xl font-bold font-orbitron gradient-text mb-2">
