@@ -3,7 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { ArrowLeft, PlusCircle, Edit, Trash2, Building, Search, Phone, Mail, MapPin, Hash } from "lucide-react";
+import { ArrowLeft, PlusCircle, Edit, Trash2, Building, Search, Phone, Mail, MapPin, Hash, User as UserIcon } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -226,7 +226,7 @@ export const TransportadoraManagement = () => {
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-sm text-muted-foreground mt-1">
                         {transportadora.contact_person && (
                           <div className="flex items-center gap-1">
-                            <User className="h-3 w-3" /> {transportadora.contact_person}
+                            <UserIcon className="h-3 w-3" /> {transportadora.contact_person}
                           </div>
                         )}
                         {transportadora.phone && (
