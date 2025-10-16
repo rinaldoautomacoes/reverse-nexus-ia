@@ -144,7 +144,8 @@ export const EntregasAtivas: React.FC<EntregasAtivasProps> = ({ selectedYear }) 
     if (entrega.telefone && entrega.parceiro && entrega.previsao_coleta) {
       const cleanedPhone = entrega.telefone.replace(/\D/g, '');
       const formattedDate = format(new Date(entrega.previsao_coleta), 'dd/MM/yyyy', { locale: ptBR });
-      const message = `Olá ${entrega.parceiro},\n\nGostaríamos de confirmar sua entrega agendada para o dia ${formattedDate}.`;
+      const transportadoraName = entrega.transportadora?.name ? ` pela transportadora ${entrega.transportadora.name}` : '';
+      const message = `Olá ${entrega.parceiro},\n\nGostaríamos de confirmar sua entrega agendada para o dia ${formattedDate}${transportadoraName}.`;
       window.open(`https://wa.me/${cleanedPhone}?text=${encodeURIComponent(message)}`, '_blank');
     } else {
       toast({ title: "Dados incompletos", description: "Telefone, nome do parceiro ou data de previsão da entrega não disponíveis.", variant: "destructive" });
@@ -154,8 +155,9 @@ export const EntregasAtivas: React.FC<EntregasAtivasProps> = ({ selectedYear }) 
   const handleEmailClick = (entrega: Entrega) => {
     if (entrega.email && entrega.parceiro && entrega.previsao_coleta) {
       const formattedDate = format(new Date(entrega.previsao_coleta), 'dd/MM/yyyy', { locale: ptBR });
+      const transportadoraName = entrega.transportadora?.name ? ` pela transportadora ${entrega.transportadora.name}` : '';
       const subject = encodeURIComponent(`Confirmação de Agendamento de Entrega - ${entrega.parceiro}`);
-      const body = encodeURIComponent(`Olá ${entrega.parceiro},\n\nGostaríamos de confirmar sua entrega agendada para o dia ${formattedDate}.\n\nAtenciosamente,\nSua Equipe de Logística`);
+      const body = encodeURIComponent(`Olá ${entrega.parceiro},\n\nGostaríamos de confirmar sua entrega agendada para o dia ${formattedDate}${transportadoraName}.\n\nAtenciosamente,\nSua Equipe de Logística`);
       window.open(`mailto:${entrega.email}?subject=${subject}&body=${body}`, '_blank');
     } else {
       toast({ title: "Dados incompletos", description: "Email, nome do parceiro ou data de previsão da entrega não disponíveis.", variant: "destructive" });

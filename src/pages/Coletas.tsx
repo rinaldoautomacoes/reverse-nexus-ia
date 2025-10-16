@@ -144,7 +144,8 @@ export const Coletas: React.FC<ColetasProps> = ({ selectedYear }) => {
     if (coleta.telefone && coleta.parceiro && coleta.previsao_coleta) {
       const cleanedPhone = coleta.telefone.replace(/\D/g, '');
       const formattedDate = format(new Date(coleta.previsao_coleta), 'dd/MM/yyyy', { locale: ptBR });
-      const message = `Olá ${coleta.parceiro},\n\nGostaríamos de confirmar sua coleta agendada para o dia ${formattedDate}.`;
+      const transportadoraName = coleta.transportadora?.name ? ` pela transportadora ${coleta.transportadora.name}` : '';
+      const message = `Olá ${coleta.parceiro},\n\nGostaríamos de confirmar sua coleta agendada para o dia ${formattedDate}${transportadoraName}.`;
       window.open(`https://wa.me/${cleanedPhone}?text=${encodeURIComponent(message)}`, '_blank');
     } else {
       toast({ title: "Dados incompletos", description: "Telefone, nome do parceiro ou data de previsão da coleta não disponíveis.", variant: "destructive" });
@@ -154,8 +155,9 @@ export const Coletas: React.FC<ColetasProps> = ({ selectedYear }) => {
   const handleEmailClick = (coleta: Coleta) => {
     if (coleta.email && coleta.parceiro && coleta.previsao_coleta) {
       const formattedDate = format(new Date(coleta.previsao_coleta), 'dd/MM/yyyy', { locale: ptBR });
+      const transportadoraName = coleta.transportadora?.name ? ` pela transportadora ${coleta.transportadora.name}` : '';
       const subject = encodeURIComponent(`Confirmação de Agendamento de Coleta - ${coleta.parceiro}`);
-      const body = encodeURIComponent(`Olá ${coleta.parceiro},\n\nGostaríamos de confirmar sua coleta agendada para o dia ${formattedDate}.\n\nAtenciosamente,\nSua Equipe de Logística`);
+      const body = encodeURIComponent(`Olá ${coleta.parceiro},\n\nGostaríamos de confirmar sua coleta agendada para o dia ${formattedDate}${transportadoraName}.\n\nAtenciosamente,\nSua Equipe de Logística`);
       window.open(`mailto:${coleta.email}?subject=${subject}&body=${body}`, '_blank');
     } else {
       toast({ title: "Dados incompletos", description: "Email, nome do parceiro ou data de previsão da coleta não disponíveis.", variant: "destructive" });
