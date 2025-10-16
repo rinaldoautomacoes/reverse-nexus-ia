@@ -72,7 +72,7 @@ export const SidebarNav: React.FC<SidebarNavProps> = ({ selectedYear, setSelecte
     {
       label: 'Agendar Coleta',
       icon: Package,
-      path: '/agendar-coleta',
+      path: '/agendar-coleta', // Rota reintroduzida
       roles: ['standard', 'admin'],
     },
     {
@@ -106,7 +106,7 @@ export const SidebarNav: React.FC<SidebarNavProps> = ({ selectedYear, setSelecte
     {
       label: 'Agendar Entrega',
       icon: CalendarPlus,
-      path: '/agendar-entrega',
+      path: '/agendar-entrega', // Rota reintroduzida
       roles: ['standard', 'admin'],
     },
     {

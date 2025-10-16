@@ -5,8 +5,8 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, useLocation } from "react-router-dom";
 import Index from "./pages/Index";
 import NotFound from "./pages/NotFound";
-// Removido: import { AgendarColeta } from "./pages/AgendarColeta";
-// Removido: import { AgendarEntrega } from "./pages/AgendarEntrega";
+import { AgendarColetaPage } from "./pages/AgendarColetaPage"; // Reintroduzido
+import { AgendarEntregaPage } from "./pages/AgendarEntregaPage"; // Reintroduzido
 import { Relatorios } from "./pages/Relatorios";
 import { RelatoriosEntregas } from "./pages/RelatoriosEntregas";
 import { Coletas } from "./pages/Coletas";
@@ -75,9 +75,8 @@ const AppLayout = () => {
             <Route path="/" element={<LandingPage />} />
             <Route path="/coletas-dashboard" element={<Index selectedYear={selectedYear} />} />
             <Route path="/dashboard-entregas" element={<EntregasDashboardPage selectedYear={selectedYear} />} />
-            {/* Rotas de agendamento agora são tratadas via diálogos nas páginas de listagem */}
-            {/* <Route path="/agendar-coleta" element={<AgendarColeta />} /> */}
-            {/* <Route path="/agendar-entrega" element={<AgendarEntrega />} /> */}
+            <Route path="/agendar-coleta" element={<AgendarColetaPage />} /> {/* Rota reintroduzida */}
+            <Route path="/agendar-entrega" element={<AgendarEntregaPage />} /> {/* Rota reintroduzida */}
             <Route path="/coletas-ativas" element={<Coletas selectedYear={selectedYear} />} />
             <Route path="/coletas-concluidas" element={<ColetasConcluidas selectedYear={selectedYear} />} />
             <Route path="/entregas-ativas" element={<EntregasAtivas selectedYear={selectedYear} />} />
