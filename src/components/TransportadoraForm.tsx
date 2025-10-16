@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Building, User, Phone, Mail, MapPin, Hash, Loader2 } from "lucide-react";
+import { Building, User as UserIcon, Phone, Mail, MapPin, Hash, Loader2 } from "lucide-react"; // Renomeado User para UserIcon
 import type { TablesInsert, TablesUpdate } from "@/integrations/supabase/types";
 
 type TransportadoraInsert = TablesInsert<'transportadoras'>;
@@ -77,7 +77,7 @@ export const TransportadoraForm: React.FC<TransportadoraFormProps> = ({ initialD
         <div className="space-y-2">
           <Label htmlFor="contact_person">Pessoa de Contato</Label>
           <div className="relative">
-            <User className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+            <UserIcon className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" /> {/* Usando UserIcon */}
             <Input
               id="contact_person"
               placeholder="Nome do contato principal"
