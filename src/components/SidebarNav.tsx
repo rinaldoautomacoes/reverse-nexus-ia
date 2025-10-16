@@ -21,6 +21,7 @@ import {
   CalendarPlus,
   FileText, // Adicionado FileText para relatórios
   Home, // Adicionado ícone Home
+  Car, // Adicionado ícone Car para Gerenciar Motoristas
 } from 'lucide-react';
 import { useAuth } from '@/hooks/use-auth';
 import { supabase } from '@/integrations/supabase/client';
@@ -135,6 +136,12 @@ export const SidebarNav: React.FC<SidebarNavProps> = ({ selectedYear, setSelecte
       icon: Route,
       path: '/roteirizacao',
       roles: ['standard', 'admin'],
+    },
+    {
+      label: 'Gerenciar Motoristas', // NOVO ITEM: Gerenciar Motoristas
+      icon: Car,
+      path: '/driver-management',
+      roles: ['admin'],
     },
     {
       label: 'Gerenciar Clientes',
@@ -439,51 +446,5 @@ export const SidebarNav: React.FC<SidebarNavProps> = ({ selectedYear, setSelecte
         )}
       </div>
     </div>
-  );
-
-  return isMobile ? (
-    <Sheet open={isSheetOpen} onOpenChange={setIsSheetOpen}>
-      <SheetTrigger asChild>
-        <Button
-          variant="ghost"
-          size="icon"
-          className="absolute top-4 left-4 z-50 md:hidden"
-        >
-          <Menu className="h-6 w-6" />
-        </Button>
-      </SheetTrigger>
-      <SheetContent side="left" className="p-0 w-64 bg-sidebar text-sidebar-foreground border-r border-sidebar-border">
-        {renderNavContent(false)}
-      </SheetContent>
-    </Sheet>
-  ) : (
-    <aside
-      className={cn(
-        "fixed left-0 top-0 h-full bg-sidebar text-sidebar-foreground border-r border-sidebar-border z-40 flex flex-col transition-all duration-300 ease-in-out",
-        sidebarWidthClass
-      )}
-    >
-      {/* Header com o botão de toggle */}
-      <div className="flex items-center justify-between p-4 h-16">
-        {!isSidebarOpen && (
-          <h2 className="text-xl font-bold font-orbitron gradient-text text-center w-full">
-            GL
-          </h2>
-        )}
-        <Button
-          variant="ghost"
-          size="icon"
-          onClick={toggleSidebar}
-          className={cn(
-            "rounded-full hover:bg-sidebar-accent hover:text-sidebar-accent-foreground",
-            isSidebarOpen ? "ml-auto" : "mx-auto"
-          )}
-        >
-          {isSidebarOpen ? <ChevronLeft className="h-5 w-5" /> : <ChevronRight className="h-5 w-5" />}
-        </Button>
-      </div>
-      {/* Conteúdo principal da navegação */}
-      {renderNavContent(!isSidebarOpen)}
-    </aside>
   );
 };

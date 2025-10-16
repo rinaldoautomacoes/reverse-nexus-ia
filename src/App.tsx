@@ -30,7 +30,8 @@ import { cn } from "./lib/utils";
 import { useState } from "react";
 import { SidebarNav } from "./components/SidebarNav";
 import { LandingPage } from "./pages/LandingPage";
-import { EntregasDashboardPage } from "./pages/EntregasDashboardPage"; // Adicionado esta importação
+import { EntregasDashboardPage } from "./pages/EntregasDashboardPage";
+import { DriverManagement } from "./pages/DriverManagement"; // Importar a nova página
 
 const queryClient = new QueryClient();
 
@@ -89,6 +90,7 @@ const AppLayout = () => {
             <Route path="/metrics-management" element={<MetricsManagement />} />
             <Route path="/user-management" element={<UserManagement />} />
             <Route path="/client-management" element={<ClientManagement />} />
+            <Route path="/driver-management" element={<DriverManagement />} /> {/* NOVA ROTA */}
           </Route>
           
           <Route path="*" element={<NotFound />} />
