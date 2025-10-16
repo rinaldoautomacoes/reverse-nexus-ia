@@ -140,20 +140,25 @@ export const Coletas: React.FC<ColetasProps> = ({ selectedYear }) => {
     setIsEditDialogOpen(true);
   };
 
-  const handleWhatsAppClick = (phone: string | null) => {
-    if (phone) {
-      const cleanedPhone = phone.replace(/\D/g, '');
-      window.open(`https://wa.me/${cleanedPhone}`, '_blank');
+  const handleWhatsAppClick = (coleta: Coleta) => {
+    if (coleta.telefone && coleta.parceiro && coleta.previsao_coleta) {
+      const cleanedPhone = coleta.telefone.replace(/\D/g, '');
+      const formattedDate = format(new Date(coleta.previsao_coleta), 'dd/MM/yyyy', { locale: ptBR });
+      const message = `Olá ${coleta.parceiro},\n\nGostaríamos de confirmar sua coleta agendada para o dia ${formattedDate}.`;
+      window.open(`https://wa.me/${cleanedPhone}?text=${encodeURIComponent(message)}`, '_blank');
     } else {
-      toast({ title: "Telefone não disponível", description: "O número de telefone para esta coleta não foi encontrado.", variant: "destructive" });
+      toast({ title: "Dados incompletos", description: "Telefone, nome do parceiro ou data de previsão da coleta não disponíveis.", variant: "destructive" });
     }
   };
 
-  const handleEmailClick = (email: string | null) => {
-    if (email) {
-      window.open(`mailto:${email}`, '_blank');
+  const handleEmailClick = (coleta: Coleta) => {
+    if (coleta.email && coleta.parceiro && coleta.previsao_coleta) {
+      const formattedDate = format(new Date(coleta.previsao_coleta), 'dd/MM/yyyy', { locale: ptBR });
+      const subject = encodeURIComponent(`Confirmação de Agendamento de Coleta - ${coleta.parceiro}`);
+      const body = encodeURIComponent(`Olá ${coleta.parceiro},\n\nGostaríamos de confirmar sua coleta agendada para o dia ${formattedDate}.\n\nAtenciosamente,\nSua Equipe de Logística`);
+      window.open(`mailto:${coleta.email}?subject=${subject}&body=${body}`, '_blank');
     } else {
-      toast({ title: "Email não disponível", description: "O endereço de e-mail para esta coleta não foi encontrado.", variant: "destructive" });
+      toast({ title: "Dados incompletos", description: "Email, nome do parceiro ou data de previsão da coleta não disponíveis.", variant: "destructive" });
     }
   };
 
@@ -349,8 +354,8 @@ export const Coletas: React.FC<ColetasProps> = ({ selectedYear }) => {
                         variant="outline"
                         size="sm"
                         className="border-success-green text-success-green hover:bg-success-green/10"
-                        onClick={() => handleWhatsAppClick(coleta.telefone)}
-                        disabled={!coleta.telefone}
+                        onClick={() => handleWhatsAppClick(coleta)}
+                        disabled={!coleta.telefone || !coleta.parceiro || !coleta.previsao_coleta}
                       >
                         <MessageSquare className="mr-1 h-3 w-3" />
                         WhatsApp
@@ -359,8 +364,8 @@ export const Coletas: React.FC<ColetasProps> = ({ selectedYear }) => {
                         variant="outline"
                         size="sm"
                         className="border-neural text-neural hover:bg-neural/10"
-                        onClick={() => handleEmailClick(coleta.email)}
-                        disabled={!coleta.email}
+                        onClick={() => handleEmailClick(coleta)}
+                        disabled={!coleta.email || !coleta.parceiro || !coleta.previsao_coleta}
                       >
                         <Send className="mr-1 h-3 w-3" />
                         E-mail

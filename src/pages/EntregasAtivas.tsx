@@ -140,20 +140,25 @@ export const EntregasAtivas: React.FC<EntregasAtivasProps> = ({ selectedYear }) 
     setIsEditDialogOpen(true);
   };
 
-  const handleWhatsAppClick = (phone: string | null) => {
-    if (phone) {
-      const cleanedPhone = phone.replace(/\D/g, '');
-      window.open(`https://wa.me/${cleanedPhone}`, '_blank');
+  const handleWhatsAppClick = (entrega: Entrega) => {
+    if (entrega.telefone && entrega.parceiro && entrega.previsao_coleta) {
+      const cleanedPhone = entrega.telefone.replace(/\D/g, '');
+      const formattedDate = format(new Date(entrega.previsao_coleta), 'dd/MM/yyyy', { locale: ptBR });
+      const message = `Olá ${entrega.parceiro},\n\nGostaríamos de confirmar sua entrega agendada para o dia ${formattedDate}.`;
+      window.open(`https://wa.me/${cleanedPhone}?text=${encodeURIComponent(message)}`, '_blank');
     } else {
-      toast({ title: "Telefone não disponível", description: "O número de telefone para esta entrega não foi encontrado.", variant: "destructive" });
+      toast({ title: "Dados incompletos", description: "Telefone, nome do parceiro ou data de previsão da entrega não disponíveis.", variant: "destructive" });
     }
   };
 
-  const handleEmailClick = (email: string | null) => {
-    if (email) {
-      window.open(`mailto:${email}`, '_blank');
+  const handleEmailClick = (entrega: Entrega) => {
+    if (entrega.email && entrega.parceiro && entrega.previsao_coleta) {
+      const formattedDate = format(new Date(entrega.previsao_coleta), 'dd/MM/yyyy', { locale: ptBR });
+      const subject = encodeURIComponent(`Confirmação de Agendamento de Entrega - ${entrega.parceiro}`);
+      const body = encodeURIComponent(`Olá ${entrega.parceiro},\n\nGostaríamos de confirmar sua entrega agendada para o dia ${formattedDate}.\n\nAtenciosamente,\nSua Equipe de Logística`);
+      window.open(`mailto:${entrega.email}?subject=${subject}&body=${body}`, '_blank');
     } else {
-      toast({ title: "Email não disponível", description: "O endereço de e-mail para esta entrega não foi encontrado.", variant: "destructive" });
+      toast({ title: "Dados incompletos", description: "Email, nome do parceiro ou data de previsão da entrega não disponíveis.", variant: "destructive" });
     }
   };
 
@@ -349,8 +354,8 @@ export const EntregasAtivas: React.FC<EntregasAtivasProps> = ({ selectedYear }) 
                         variant="outline"
                         size="sm"
                         className="border-success-green text-success-green hover:bg-success-green/10"
-                        onClick={() => handleWhatsAppClick(entrega.telefone)}
-                        disabled={!entrega.telefone}
+                        onClick={() => handleWhatsAppClick(entrega)}
+                        disabled={!entrega.telefone || !entrega.parceiro || !entrega.previsao_coleta}
                       >
                         <MessageSquare className="mr-1 h-3 w-3" />
                         WhatsApp
@@ -359,8 +364,8 @@ export const EntregasAtivas: React.FC<EntregasAtivasProps> = ({ selectedYear }) 
                         variant="outline"
                         size="sm"
                         className="border-neural text-neural hover:bg-neural/10"
-                        onClick={() => handleEmailClick(entrega.email)}
-                        disabled={!entrega.email}
+                        onClick={() => handleEmailClick(entrega)}
+                        disabled={!entrega.email || !entrega.parceiro || !entrega.previsao_coleta}
                       >
                         <Send className="mr-1 h-3 w-3" />
                         E-mail
