@@ -137,6 +137,12 @@ export const SidebarNav: React.FC<SidebarNavProps> = ({ selectedYear, setSelecte
       roles: ['standard', 'admin'],
     },
     {
+      label: 'Gerenciar Motoristas', // NOVO ITEM: Gerenciar Motoristas
+      icon: Truck, // Usando o ícone de caminhão para motoristas
+      path: '/driver-management',
+      roles: ['admin'], // Apenas administradores podem gerenciar motoristas
+    },
+    {
       label: 'Gerenciar Clientes',
       icon: UserIcon,
       path: '/client-management',
