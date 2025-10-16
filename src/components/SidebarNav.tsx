@@ -70,14 +70,8 @@ export const SidebarNav: React.FC<SidebarNavProps> = ({ selectedYear, setSelecte
       roles: ['standard', 'admin'],
     },
     {
-      label: 'Agendar Coleta',
+      label: 'Coletas Ativas (Agendar)', // Rota e label atualizados
       icon: Package,
-      path: '/agendar-coleta',
-      roles: ['standard', 'admin'],
-    },
-    {
-      label: 'Coletas Ativas',
-      icon: ListChecks,
       path: '/coletas-ativas',
       roles: ['standard', 'admin'],
     },
@@ -104,13 +98,7 @@ export const SidebarNav: React.FC<SidebarNavProps> = ({ selectedYear, setSelecte
       roles: ['standard', 'admin'],
     },
     {
-      label: 'Agendar Entrega',
-      icon: CalendarPlus,
-      path: '/agendar-entrega',
-      roles: ['standard', 'admin'],
-    },
-    {
-      label: 'Entregas Ativas',
+      label: 'Entregas Ativas (Agendar)', // Rota e label atualizados
       icon: Truck,
       path: '/entregas-ativas',
       roles: ['standard', 'admin'],
