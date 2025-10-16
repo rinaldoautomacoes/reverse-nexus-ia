@@ -4,11 +4,10 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Mail, Lock, Truck, Zap } from "lucide-react";
+import { Brain, Mail, Lock, Truck, Zap } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import type { User, Session } from '@supabase/supabase-js';
-import { HeartTruckLogo } from "@/components/HeartTruckLogo"; // Importar o novo componente da logo
 
 export const Auth = () => {
   const [user, setUser] = useState<User | null>(null);
@@ -104,8 +103,9 @@ export const Auth = () => {
           {/* Header */}
           <div className="text-center mb-8">
             <div className="flex items-center justify-center mb-4">
-              {/* Usando o novo componente HeartTruckLogo */}
-              <HeartTruckLogo width={96} height={96} />
+              <div className="p-3 rounded-xl bg-gradient-primary glow-effect">
+                <Brain className="w-8 h-8 text-white" />
+              </div>
             </div>
             <h1 className="text-3xl font-bold font-orbitron gradient-text mb-2">
               Gestão Logística
