@@ -5,7 +5,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { ArrowLeft, Package, Calendar as CalendarIcon, User, Phone, Mail, MapPin, Building, Briefcase, Loader2, Hash, Truck } from "lucide-react";
+import { ArrowLeft, Package, Calendar as CalendarIcon, User, Phone, Mail, MapPin, Building, Briefcase, Loader2, Hash, Truck, DollarSign } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -72,6 +72,7 @@ export const ColetaForm: React.FC<ColetaFormProps> = ({ initialData, onSave, onC
     endereco_destino: "",
     driver_id: null,
     transportadora_id: null,
+    freight_value: null, // Novo campo
   });
 
   useEffect(() => {
@@ -110,6 +111,7 @@ export const ColetaForm: React.FC<ColetaFormProps> = ({ initialData, onSave, onC
         endereco_destino: "",
         driver_id: null,
         transportadora_id: null,
+        freight_value: null, // Resetar também o valor do frete
       });
     }
   }, [initialData, user?.id]);
@@ -327,6 +329,23 @@ export const ColetaForm: React.FC<ColetaFormProps> = ({ initialData, onSave, onC
             value={formData.transportadora_id}
             onValueChange={(id) => handleInputChange("transportadora_id", id)}
             onTransportadoraSelect={handleTransportadoraSelect}
+          />
+        </div>
+      </div>
+
+      <div className="space-y-2">
+        <Label htmlFor="freight_value">Valor do Frete</Label>
+        <div className="relative">
+          <DollarSign className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+          <Input
+            id="freight_value"
+            type="number"
+            step="0.01"
+            placeholder="0.00"
+            className="pl-10"
+            value={formData.freight_value || ''}
+            onChange={(e) => handleInputChange("freight_value", parseFloat(e.target.value) || null)}
+            disabled={isPending}
           />
         </div>
       </div>

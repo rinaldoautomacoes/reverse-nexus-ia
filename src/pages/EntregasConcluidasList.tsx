@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { ArrowLeft, Truck, Search, CheckCircle, Calendar as CalendarIcon, User, MapPin, Hash, Package, Building, MessageSquare, Send, Edit, Trash2, Clock } from "lucide-react";
+import { ArrowLeft, Truck, Search, CheckCircle, Calendar as CalendarIcon, User, MapPin, Hash, Package, Building, MessageSquare, Send, Edit, Trash2, Clock, DollarSign } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -279,6 +279,9 @@ const EntregasConcluidasList: React.FC<EntregasConcluidasListProps> = ({ selecte
                         </div>
                         <div className="flex items-center gap-1">
                           <Building className="h-3 w-3" /> Transportadora: {entrega.transportadora?.name || 'Não atribuída'}
+                        </div>
+                        <div className="flex items-center gap-1">
+                          <DollarSign className="h-3 w-3" /> Frete: {entrega.freight_value ? `R$ ${entrega.freight_value.toFixed(2)}` : 'N/A'}
                         </div>
                         <div className="flex items-center gap-1">
                           <Clock className="h-3 w-3" /> Status: <Badge className={getStatusBadgeColor(entrega.status_coleta)}>{getStatusText(entrega.status_coleta)}</Badge>
