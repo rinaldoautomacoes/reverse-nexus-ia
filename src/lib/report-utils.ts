@@ -1,8 +1,8 @@
-import jsPDF from "jspdf"; // Alterado de '{ jsPDF }' para 'jsPDF'
+import { jsPDF } from "jspdf"; // Alterado para named import
 import 'jspdf-autotable';
-import { supabase } from "@/integrations/supabase/client";
-import type { Tables } from "@/integrations/supabase/types_generated";
-import { format } from "date-fns";
+
+// Debugging: Verificar se autoTable está no protótipo do jsPDF
+console.log('jsPDF.prototype.autoTable (antes da instância):', (jsPDF.prototype as any).autoTable);
 
 type Report = Tables<'reports'>;
 type Coleta = Tables<'coletas'>;
@@ -66,6 +66,8 @@ export const generateReport = async (report: Report, userId: string) => {
 
 const generatePdfReport = (report: Report, data: Coleta[]) => {
   const doc = new jsPDF();
+  // Debugging: Verificar se autoTable está na instância do doc
+  console.log('doc.autoTable (depois da instância):', (doc as any).autoTable);
 
   doc.setFontSize(18);
   doc.text(report.title, 14, 22);
