@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -94,7 +94,9 @@ export const EntregaForm: React.FC<EntregaFormProps> = ({ initialData, onSave, o
 
   useEffect(() => {
     if (initialData) {
-      setFormData(initialData);
+      // Destructure initialData to separate direct columns from joined relations
+      const { driver, transportadora, ...restOfEntregaData } = initialData;
+      setFormData(restOfEntregaData); // Only set direct columns
       setCepOrigemInput(initialData.cep_origem || '');
       setEnderecoOrigemInput(initialData.endereco_origem || '');
       setCepDestinoInput(initialData.cep_destino || '');
@@ -145,9 +147,9 @@ export const EntregaForm: React.FC<EntregaFormProps> = ({ initialData, onSave, o
     }
   }, [initialData, user?.id]);
 
-  const handleInputChange = (field: keyof (ColetaInsert | ColetaUpdate), value: string | number | null) => {
+  const handleInputChange = useCallback((field: keyof (ColetaInsert | ColetaUpdate), value: string | number | null) => {
     setFormData(prev => ({ ...prev, [field]: value }));
-  };
+  }, []);
 
   const fetchAddressByCep = async (cep: string, isOrigin: boolean) => {
     const setFetching = isOrigin ? setIsFetchingOriginAddress : setIsFetchingDestinationAddress;
@@ -211,7 +213,7 @@ export const EntregaForm: React.FC<EntregaFormProps> = ({ initialData, onSave, o
     }
   };
 
-  const handleClientComboboxSelect = (client: Client | null) => {
+  const handleClientComboboxSelect = useCallback((client: Client | null) => {
     if (client) {
       setFormData(prev => ({
         ...prev,
@@ -239,43 +241,28 @@ export const EntregaForm: React.FC<EntregaFormProps> = ({ initialData, onSave, o
         contato: '',
       }));
     }
-  };
+  }, [handleInputChange]);
 
-  const handleProductComboboxSelect = (product: Product | null) => {
+  const handleProductComboboxSelect = useCallback((product: Product | null) => {
     if (product) {
-      setFormData(prev => ({
-        ...prev,
-        modelo_aparelho: product.code,
-      }));
+      handleInputChange("modelo_aparelho", product.code);
     } else {
-      setFormData(prev => ({
-        ...prev,
-        modelo_aparelho: "",
-      }));
+      handleInputChange("modelo_aparelho", "");
     }
-  };
+  }, [handleInputChange]);
 
-  const handleResponsibleUserSelect = (userProfile: Profile | null) => {
-    setFormData(prev => ({
-      ...prev,
-      responsible_user_id: userProfile?.id || null,
-      responsavel: userProfile ? `${userProfile.first_name || ''} ${userProfile.last_name || ''}`.trim() : null,
-    }));
-  };
+  const handleResponsibleUserSelect = useCallback((userProfile: Profile | null) => {
+    handleInputChange("responsible_user_id", userProfile?.id || null);
+    handleInputChange("responsavel", userProfile ? `${userProfile.first_name || ''} ${userProfile.last_name || ''}`.trim() : null);
+  }, [handleInputChange]);
 
-  const handleDriverSelect = (driver: Driver | null) => {
-    setFormData(prev => ({
-      ...prev,
-      driver_id: driver?.id || null,
-    }));
-  };
+  const handleDriverSelect = useCallback((driver: Driver | null) => {
+    handleInputChange("driver_id", driver?.id || null);
+  }, [handleInputChange]);
 
-  const handleTransportadoraSelect = (transportadora: Transportadora | null) => {
-    setFormData(prev => ({
-      ...prev,
-      transportadora_id: transportadora?.id || null,
-    }));
-  };
+  const handleTransportadoraSelect = useCallback((transportadora: Transportadora | null) => {
+    handleInputChange("transportadora_id", transportadora?.id || null);
+  }, [handleInputChange]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -401,7 +388,10 @@ export const EntregaForm: React.FC<EntregaFormProps> = ({ initialData, onSave, o
               placeholder="Endereço completo de origem"
               className="pl-10"
               value={enderecoOrigemInput}
-              onChange={(e) => setEnderecoOrigemInput(e.target.value)}
+              onChange={(e) => {
+                setEnderecoOrigemInput(e.target.value);
+                handleInputChange("endereco_origem", e.target.value);
+              }}
               disabled={isPending || isFetchingOriginAddress}
             />
           </div>
@@ -439,7 +429,10 @@ export const EntregaForm: React.FC<EntregaFormProps> = ({ initialData, onSave, o
               placeholder="Endereço completo para entrega"
               className="pl-10"
               value={enderecoDestinoInput}
-              onChange={(e) => setEnderecoDestinoInput(e.target.value)}
+              onChange={(e) => {
+                setEnderecoDestinoInput(e.target.value);
+                handleInputChange("endereco_destino", e.target.value);
+              }}
               required
               disabled={isPending || isFetchingDestinationAddress}
             />

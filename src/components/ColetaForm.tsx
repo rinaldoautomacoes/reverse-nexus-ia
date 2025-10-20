@@ -84,7 +84,9 @@ export const ColetaForm: React.FC<ColetaFormProps> = ({ initialData, onSave, onC
 
   useEffect(() => {
     if (initialData) {
-      setFormData(initialData);
+      // Destructure initialData to separate direct columns from joined relations
+      const { driver, transportadora, ...restOfColetaData } = initialData;
+      setFormData(restOfColetaData); // Only set direct columns
     } else {
       setFormData({
         parceiro: "",
