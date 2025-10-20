@@ -1,6 +1,6 @@
 import { jsPDF } from "jspdf";
-import 'jspdf-autotable';
-import { supabase } from "@/integrations/supabase/client"; // Adicionado: Importa o cliente Supabase
+import 'jspdf-autotable'; // Mantido aqui para clareza, mas o principal será em main.tsx
+import { supabase } from "@/integrations/supabase/client";
 import type { Tables } from "@/integrations/supabase/types_generated";
 import { format } from "date-fns";
 
@@ -87,7 +87,7 @@ const generatePdfReport = (report: Report, data: Coleta[]) => {
       item.id.substring(0, 8),
       item.type === 'coleta' ? 'Coleta' : 'Entrega',
       item.parceiro || 'N/A',
-      item.client_control || 'N/A', // Novo campo
+      item.client_control || 'N/A',
       item.endereco || 'N/A',
       item.previsao_coleta ? format(new Date(item.previsao_coleta), 'dd/MM/yyyy') : 'N/A',
       item.qtd_aparelhos_solicitado || 0,
@@ -113,7 +113,7 @@ const generateCsvReport = (report: Report, data: Coleta[]) => {
     `"${item.id}"`,
     `"${item.type === 'coleta' ? 'Coleta' : 'Entrega'}"`,
     `"${item.parceiro || ''}"`,
-    `"${item.client_control || ''}"`, // Novo campo
+    `"${item.client_control || ''}"`,
     `"${item.cnpj || ''}"`,
     `"${item.contato || ''}"`,
     `"${item.telefone || ''}"`,
