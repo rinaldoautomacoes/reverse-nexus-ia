@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { ArrowLeft, FileText, Search, Download, Loader2, CheckCircle, XCircle, Clock } from "lucide-react";
+import { ArrowLeft, FileText, Search, Download, Loader2, CheckCircle, XCircle, Clock, Edit, Trash2 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -10,6 +10,7 @@ import type { Tables } from "@/integrations/supabase/types_generated";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/use-auth";
 import { CreateReportDialog } from "@/components/CreateReportDialog";
+import { EditReportDialog } from "@/components/EditReportDialog"; // Importar o novo diálogo
 import { Badge } from "@/components/ui/badge";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
@@ -25,6 +26,8 @@ export const Relatorios = () => {
 
   const [searchTerm, setSearchTerm] = useState("");
   const [generatingReportId, setGeneratingReportId] = useState<string | null>(null);
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false); // Estado para o diálogo de edição
+  const [editingReport, setEditingReport] = useState<Report | null>(null); // Estado para o relatório sendo editado
 
   const { data: reports, isLoading: isLoadingReports, error: reportsError } = useQuery<Report[], Error>({
     queryKey: ['reports', user?.id],
@@ -42,6 +45,24 @@ export const Relatorios = () => {
     enabled: !!user?.id,
   });
 
+  const deleteReportMutation = useMutation({
+    mutationFn: async (reportId: string) => {
+      const { error } = await supabase
+        .from('reports')
+        .delete()
+        .eq('id', reportId)
+        .eq('user_id', user?.id); // RLS check
+      if (error) throw new Error(error.message);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['reports', user?.id] });
+      toast({ title: "Relatório Excluído!", description: "Relatório removido com sucesso." });
+    },
+    onError: (err) => {
+      toast({ title: "Erro ao excluir relatório", description: err.message, variant: "destructive" });
+    },
+  });
+
   const handleGenerateReportClick = async (report: Report) => {
     if (!user?.id) {
       toast({ title: "Erro", description: "Usuário não autenticado.", variant: "destructive" });
@@ -56,6 +77,17 @@ export const Relatorios = () => {
     } finally {
       setGeneratingReportId(null);
       queryClient.invalidateQueries({ queryKey: ['reports', user?.id] }); // Invalida para atualizar o status
+    }
+  };
+
+  const handleEditReport = (report: Report) => {
+    setEditingReport(report);
+    setIsEditDialogOpen(true);
+  };
+
+  const handleDeleteReport = (id: string) => {
+    if (window.confirm("Tem certeza que deseja excluir este relatório? Esta ação não pode ser desfeita.")) {
+      deleteReportMutation.mutate(id);
     }
   };
 
@@ -167,6 +199,15 @@ export const Relatorios = () => {
                       <Button
                         variant="outline"
                         size="sm"
+                        className="border-accent text-accent hover:bg-accent/10"
+                        onClick={() => handleEditReport(report)}
+                      >
+                        <Edit className="mr-1 h-3 w-3" />
+                        Editar
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
                         className="border-primary text-primary hover:bg-primary/10"
                         onClick={() => handleGenerateReportClick(report)}
                         disabled={generatingReportId === report.id}
@@ -177,6 +218,16 @@ export const Relatorios = () => {
                           <Download className="mr-1 h-3 w-3" />
                         )}
                         Gerar {report.format.toUpperCase()}
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="border-destructive text-destructive hover:bg-destructive/10"
+                        onClick={() => handleDeleteReport(report.id)}
+                        disabled={deleteReportMutation.isPending}
+                      >
+                        <Trash2 className="mr-1 h-3 w-3" />
+                        Excluir
                       </Button>
                     </div>
                   </div>
@@ -192,6 +243,17 @@ export const Relatorios = () => {
           </Card>
         </div>
       </div>
+
+      {editingReport && (
+        <EditReportDialog
+          report={editingReport}
+          isOpen={isEditDialogOpen}
+          onClose={() => {
+            setIsEditDialogOpen(false);
+            setEditingReport(null);
+          }}
+        />
+      )}
     </div>
   );
 };
