@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { ArrowLeft, Package, Search, CheckCircle, Calendar as CalendarIcon, User, MapPin, Hash, Truck, Building, MessageSquare, Send, Edit, Trash2, Clock, DollarSign, Tag } from "lucide-react";
+import { ArrowLeft, Package, Search, CheckCircle, Calendar as CalendarIcon, User, MapPin, Hash, Truck, Building, MessageSquare, Send, Edit, Trash2, Clock, DollarSign, Tag, Home, Flag } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -64,7 +64,7 @@ const ColetasConcluidas: React.FC<ColetasConcluidasProps> = ({ selectedYear }) =
 
       if (searchTerm) {
         query = query.or(
-          `parceiro.ilike.%${searchTerm}%,endereco.ilike.%${searchTerm}%,modelo_aparelho.ilike.%${searchTerm}%,responsavel.ilike.%${searchTerm}%,unique_number.ilike.%${searchTerm}%`
+          `parceiro.ilike.%${searchTerm}%,endereco_origem.ilike.%${searchTerm}%,endereco_destino.ilike.%${searchTerm}%,modelo_aparelho.ilike.%${searchTerm}%,responsavel.ilike.%${searchTerm}%,unique_number.ilike.%${searchTerm}%`
         );
       }
 
@@ -261,10 +261,17 @@ const ColetasConcluidas: React.FC<ColetasConcluidasProps> = ({ selectedYear }) =
                       <p className="text-sm text-muted-foreground flex items-center gap-1">
                         <Tag className="h-3 w-3" /> {coleta.unique_number}
                       </p>
-                      <p className="text-sm text-muted-foreground flex items-center gap-1">
-                        <MapPin className="h-3 w-3" /> {coleta.endereco}
-                      </p>
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-sm text-muted-foreground mt-1">
+                        {coleta.endereco_origem && (
+                          <div className="flex items-center gap-1">
+                            <Home className="h-3 w-3" /> Origem: {coleta.endereco_origem}
+                          </div>
+                        )}
+                        {coleta.endereco_destino && (
+                          <div className="flex items-center gap-1">
+                            <Flag className="h-3 w-3" /> Destino: {coleta.endereco_destino}
+                          </div>
+                        )}
                         <div className="flex items-center gap-1">
                           <CalendarIcon className="h-3 w-3" /> Concluída em: {coleta.previsao_coleta ? format(new Date(coleta.previsao_coleta), 'dd/MM/yyyy', { locale: ptBR }) : 'N/A'}
                         </div>

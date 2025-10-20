@@ -5,7 +5,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { ArrowLeft, Truck, Calendar as CalendarIcon, User, Phone, Mail, MapPin, Building, Briefcase, Loader2, Hash, Package, DollarSign, Tag } from "lucide-react";
+import { ArrowLeft, Truck, Calendar as CalendarIcon, User, Phone, Mail, MapPin, Building, Briefcase, Loader2, Hash, Package, DollarSign, Tag, Home, Flag } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -22,6 +22,7 @@ import { ProductCombobox } from "@/components/ProductCombobox";
 import { ResponsibleUserCombobox } from "@/components/ResponsibleUserCombobox";
 import { DriverCombobox } from "@/components/DriverCombobox";
 import { TransportadoraCombobox } from "@/components/TransportadoraCombobox";
+import axios from "axios";
 
 type ColetaInsert = TablesInsert<'coletas'>;
 type ColetaUpdate = TablesUpdate<'coletas'>;
@@ -40,10 +41,11 @@ interface EntregaFormProps {
 
 export const EntregaForm: React.FC<EntregaFormProps> = ({ initialData, onSave, onCancel, isPending }) => {
   const { user } = useAuth();
+  const { toast } = useToast();
 
   const [formData, setFormData] = useState<ColetaInsert | ColetaUpdate>(initialData || {
     parceiro: "",
-    endereco: "",
+    endereco: "", // This will be mapped to endereco_destino for display purposes
     previsao_coleta: format(new Date(), 'yyyy-MM-dd'),
     qtd_aparelhos_solicitado: 1,
     modelo_aparelho: "",
@@ -57,7 +59,7 @@ export const EntregaForm: React.FC<EntregaFormProps> = ({ initialData, onSave, o
     client_id: null,
     type: "entrega",
     user_id: user?.id || "",
-    cep: "",
+    cep: "", // This will be mapped to cep_destino for display purposes
     bairro: "",
     cidade: "",
     uf: "",
@@ -73,14 +75,25 @@ export const EntregaForm: React.FC<EntregaFormProps> = ({ initialData, onSave, o
     driver_id: null,
     transportadora_id: null,
     freight_value: null,
-    unique_number: generateUniqueNumber('ENT'), // Gerar número único para novas entregas
+    unique_number: generateUniqueNumber('ENT'),
   });
+
+  const [cepOrigemInput, setCepOrigemInput] = useState(initialData?.cep_origem || '');
+  const [enderecoOrigemInput, setEnderecoOrigemInput] = useState(initialData?.endereco_origem || '');
+  const [cepDestinoInput, setCepDestinoInput] = useState(initialData?.cep_destino || '');
+  const [enderecoDestinoInput, setEnderecoDestinoInput] = useState(initialData?.endereco_destino || '');
+
+  const [isFetchingOriginAddress, setIsFetchingOriginAddress] = useState(false);
+  const [isFetchingDestinationAddress, setIsFetchingDestinationAddress] = useState(false);
 
   useEffect(() => {
     if (initialData) {
       setFormData(initialData);
+      setCepOrigemInput(initialData.cep_origem || '');
+      setEnderecoOrigemInput(initialData.endereco_origem || '');
+      setCepDestinoInput(initialData.cep_destino || '');
+      setEnderecoDestinoInput(initialData.endereco_destino || '');
     } else {
-      // Reset form for new entry if no initialData is provided
       setFormData({
         parceiro: "",
         endereco: "",
@@ -113,13 +126,79 @@ export const EntregaForm: React.FC<EntregaFormProps> = ({ initialData, onSave, o
         driver_id: null,
         transportadora_id: null,
         freight_value: null,
-        unique_number: generateUniqueNumber('ENT'), // Gerar novo número único
+        unique_number: generateUniqueNumber('ENT'),
       });
+      setCepOrigemInput('');
+      setEnderecoOrigemInput('');
+      setCepDestinoInput('');
+      setEnderecoDestinoInput('');
     }
   }, [initialData, user?.id]);
 
   const handleInputChange = (field: keyof (ColetaInsert | ColetaUpdate), value: string | number | null) => {
     setFormData(prev => ({ ...prev, [field]: value }));
+  };
+
+  const fetchAddressByCep = async (cep: string, isOrigin: boolean) => {
+    const setFetching = isOrigin ? setIsFetchingOriginAddress : setIsFetchingDestinationAddress;
+    const setCepInput = isOrigin ? setCepOrigemInput : setCepDestinoInput;
+    const setAddressInput = isOrigin ? setEnderecoOrigemInput : setEnderecoDestinoInput;
+    const setAddressFormData = isOrigin ? (addr: string) => handleInputChange("endereco_origem", addr) : (addr: string) => handleInputChange("endereco_destino", addr);
+    const setLatFormData = isOrigin ? (lat: number | null) => handleInputChange("origin_lat", lat) : (lat: number | null) => handleInputChange("destination_lat", lat);
+    const setLngFormData = isOrigin ? (lng: number | null) => handleInputChange("origin_lng", lng) : (lng: number | null) => handleInputChange("destination_lng", lng);
+
+    setFetching(true);
+    setAddressInput("");
+    setAddressFormData("");
+    setLatFormData(null);
+    setLngFormData(null);
+
+    try {
+      const cleanedCep = cep.replace(/\D/g, '');
+      if (cleanedCep.length !== 8) {
+        toast({ title: "CEP Inválido", description: "Por favor, insira um CEP com 8 dígitos.", variant: "destructive" });
+        return;
+      }
+
+      const { data } = await axios.get(`https://viacep.com.br/ws/${cleanedCep}/json/`);
+
+      if (data.erro) {
+        toast({ title: "CEP Não Encontrado", description: "Não foi possível encontrar o endereço para o CEP informado.", variant: "destructive" });
+        return;
+      }
+
+      const fullAddress = `${data.logradouro}, ${data.bairro}, ${data.localidade} - ${data.uf}`;
+      setAddressInput(fullAddress);
+      setAddressFormData(fullAddress);
+
+      // Update the main 'endereco' field for backward compatibility/display if it's the destination
+      if (!isOrigin) {
+        handleInputChange("endereco", fullAddress);
+        handleInputChange("cep", cleanedCep);
+      }
+
+      const mapboxAccessToken = localStorage.getItem("mapbox_token");
+      if (mapboxAccessToken) {
+        const geoResponse = await axios.get(
+          `https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(fullAddress)}.json?access_token=${mapboxAccessToken}`
+        );
+        if (geoResponse.data.features && geoResponse.data.features.length > 0) {
+          const [lng, lat] = geoResponse.data.features[0].center;
+          setLatFormData(lat);
+          setLngFormData(lng);
+        } else {
+          toast({ title: "Geocodificação Falhou", description: "Não foi possível obter as coordenadas para o endereço.", variant: "destructive" });
+        }
+      } else {
+        toast({ title: "Token Mapbox Ausente", description: "Insira seu token Mapbox para geocodificação.", variant: "destructive" });
+      }
+
+    } catch (error) {
+      console.error("Erro ao buscar endereço ou geocodificar:", error);
+      toast({ title: "Erro na Busca de Endereço", description: "Ocorreu um erro ao buscar o endereço. Tente novamente.", variant: "destructive" });
+    } finally {
+      setFetching(false);
+    }
   };
 
   const handleClientComboboxSelect = (client: Client | null) => {
@@ -129,18 +208,23 @@ export const EntregaForm: React.FC<EntregaFormProps> = ({ initialData, onSave, o
         parceiro: client.name,
         telefone: client.phone || '',
         email: client.email || '',
-        endereco: client.address || '',
         cnpj: client.cnpj || '',
         contato: client.contact_person || '',
         client_id: client.id,
       }));
+      // If client has an address, pre-fill destination address and CEP
+      if (client.address) {
+        setEnderecoDestinoInput(client.address);
+        handleInputChange("endereco_destino", client.address);
+        // Attempt to reverse geocode address to get CEP if needed, or leave CEP blank for manual entry
+        // For now, just set the address. User can manually enter CEP to trigger lookup.
+      }
     } else {
       setFormData(prev => ({
         ...prev,
         client_id: null,
         telefone: '',
         email: '',
-        endereco: '',
         cnpj: '',
         contato: '',
       }));
@@ -185,7 +269,16 @@ export const EntregaForm: React.FC<EntregaFormProps> = ({ initialData, onSave, o
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    onSave(formData);
+    onSave({
+      ...formData,
+      cep_origem: cepOrigemInput,
+      endereco_origem: enderecoOrigemInput,
+      cep_destino: cepDestinoInput,
+      endereco_destino: enderecoDestinoInput,
+      // Ensure the main 'endereco' and 'cep' fields are consistent with destination for entregas
+      endereco: enderecoDestinoInput,
+      cep: cepDestinoInput,
+    });
   };
 
   return (
@@ -258,19 +351,79 @@ export const EntregaForm: React.FC<EntregaFormProps> = ({ initialData, onSave, o
         </div>
       </div>
 
-      <div className="space-y-2">
-        <Label htmlFor="endereco">Endereço de Entrega *</Label>
-        <div className="relative">
-          <MapPin className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-          <Input
-            id="endereco"
-            placeholder="Endereço completo para entrega"
-            className="pl-10"
-            value={formData.endereco || ''}
-            onChange={(e) => handleInputChange("endereco", e.target.value)}
-            required
-            disabled={isPending}
-          />
+      {/* Campos de Origem */}
+      <div className="space-y-2 border-t border-border/30 pt-4">
+        <h3 className="text-lg font-semibold flex items-center gap-2 text-primary">
+          <Home className="h-5 w-5" /> Origem da Entrega
+        </h3>
+        <div className="space-y-2">
+          <Label htmlFor="cep_origem">CEP de Origem</Label>
+          <div className="relative">
+            <MapPin className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+            <Input
+              id="cep_origem"
+              placeholder="Ex: 01000-000"
+              className="pl-10"
+              value={cepOrigemInput}
+              onChange={(e) => setCepOrigemInput(e.target.value)}
+              onBlur={() => fetchAddressByCep(cepOrigemInput, true)}
+              disabled={isPending || isFetchingOriginAddress}
+            />
+            {isFetchingOriginAddress && <Loader2 className="absolute right-3 top-3 h-4 w-4 animate-spin text-primary" />}
+          </div>
+        </div>
+        <div className="space-y-2">
+          <Label htmlFor="endereco_origem">Endereço de Origem</Label>
+          <div className="relative">
+            <MapPin className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+            <Input
+              id="endereco_origem"
+              placeholder="Endereço completo de origem"
+              className="pl-10"
+              value={enderecoOrigemInput}
+              onChange={(e) => setEnderecoOrigemInput(e.target.value)}
+              disabled={isPending || isFetchingOriginAddress}
+            />
+          </div>
+        </div>
+      </div>
+
+      {/* Campos de Destino */}
+      <div className="space-y-2 border-t border-border/30 pt-4">
+        <h3 className="text-lg font-semibold flex items-center gap-2 text-accent">
+          <Flag className="h-5 w-5" /> Destino da Entrega
+        </h3>
+        <div className="space-y-2">
+          <Label htmlFor="cep_destino">CEP de Destino *</Label>
+          <div className="relative">
+            <MapPin className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+            <Input
+              id="cep_destino"
+              placeholder="Ex: 02000-000"
+              className="pl-10"
+              value={cepDestinoInput}
+              onChange={(e) => setCepDestinoInput(e.target.value)}
+              onBlur={() => fetchAddressByCep(cepDestinoInput, false)}
+              required
+              disabled={isPending || isFetchingDestinationAddress}
+            />
+            {isFetchingDestinationAddress && <Loader2 className="absolute right-3 top-3 h-4 w-4 animate-spin text-accent" />}
+          </div>
+        </div>
+        <div className="space-y-2">
+          <Label htmlFor="endereco_destino">Endereço de Destino *</Label>
+          <div className="relative">
+            <MapPin className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+            <Input
+              id="endereco_destino"
+              placeholder="Endereço completo para entrega"
+              className="pl-10"
+              value={enderecoDestinoInput}
+              onChange={(e) => setEnderecoDestinoInput(e.target.value)}
+              required
+              disabled={isPending || isFetchingDestinationAddress}
+            />
+          </div>
         </div>
       </div>
 
@@ -399,9 +552,9 @@ export const EntregaForm: React.FC<EntregaFormProps> = ({ initialData, onSave, o
         <Button
           type="submit"
           className="bg-gradient-primary hover:bg-gradient-primary/80 glow-effect"
-          disabled={isPending}
+          disabled={isPending || isFetchingOriginAddress || isFetchingDestinationAddress}
         >
-          {isPending ? (
+          {isPending || isFetchingOriginAddress || isFetchingDestinationAddress ? (
             <Loader2 className="mr-2 h-4 w-4 animate-spin" />
           ) : (
             <Truck className="mr-2 h-4 w-4" />
