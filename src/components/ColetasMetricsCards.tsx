@@ -81,7 +81,7 @@ export const ColetasMetricsCards: React.FC<ColetasMetricsCardsProps> = ({ select
     enabled: !!user?.id,
   });
 
-  // Fetch items associated with the fetched coletas
+  // Fetch items associated with the fetched coletas (kept for potential future use or other metrics)
   const collectionIds = coletas?.map(c => c.id) || [];
   const { data: items, isLoading: isLoadingItems, error: itemsError } = useQuery<Item[], Error>({
     queryKey: ['itemsForColetasMetrics', user?.id, collectionIds],
@@ -96,6 +96,30 @@ export const ColetasMetricsCards: React.FC<ColetasMetricsCardsProps> = ({ select
       return data;
     },
     enabled: !!user?.id && collectionIds.length > 0,
+  });
+
+  // NEW: Fetch all items for the selected year, regardless of collection type
+  const { data: allUserItems, isLoading: isLoadingAllItems, error: allItemsError } = useQuery<Item[], Error>({
+    queryKey: ['allItemsForColetasMetrics', user?.id, selectedYear],
+    queryFn: async () => {
+      if (!user?.id) return [];
+
+      const startDate = `${selectedYear}-01-01T00:00:00Z`;
+      const endDate = `${parseInt(selectedYear) + 1}-01-01T00:00:00Z`;
+
+      const { data, error } = await supabase
+        .from('items')
+        .select('quantity, name') // Select quantity and name (product code)
+        .eq('user_id', user.id)
+        .gte('created_at', startDate)
+        .lt('created_at', endDate);
+      
+      if (error) {
+        throw new Error(error.message);
+      }
+      return data;
+    },
+    enabled: !!user?.id,
   });
 
   useEffect(() => {
@@ -120,7 +144,14 @@ export const ColetasMetricsCards: React.FC<ColetasMetricsCardsProps> = ({ select
         variant: "destructive",
       });
     }
-  }, [coletasError, itemsError, productsError, toast]);
+    if (allItemsError) {
+      toast({
+        title: "Erro ao carregar dados de todos os itens",
+        description: allItemsError.message,
+        variant: "destructive",
+      });
+    }
+  }, [coletasError, itemsError, productsError, allItemsError, toast]);
 
   // Helper function to generate item descriptions for tooltips/cards
   const generateItemDescription = (itemCodeQuantities: Map<string, number>) => {
@@ -140,11 +171,11 @@ export const ColetasMetricsCards: React.FC<ColetasMetricsCardsProps> = ({ select
     return `${descriptions[0]}, ${descriptions[1]} e outros`;
   };
 
-  const calculateColetasMetrics = (coletasData: Coleta[] | undefined, itemsData: Item[] | undefined) => {
+  const calculateColetasMetrics = (coletasData: Coleta[] | undefined, itemsData: Item[] | undefined, allItemsData: Item[] | undefined) => {
     const totalColetas = coletasData?.length || 0;
     
     // Calculate total quantity of all items associated with 'coleta' type
-    const totalProductQuantity = itemsData?.reduce((sum, item) => sum + (item.quantity || 0), 0) || 0;
+    const totalProductQuantity = allItemsData?.reduce((sum, item) => sum + (item.quantity || 0), 0) || 0;
 
     const pendenteColetas = coletasData?.filter(c => c.status_coleta === 'pendente').length || 0;
     const concluidaColetas = coletasData?.filter(c => c.status_coleta === 'concluida').length || 0;
@@ -189,9 +220,9 @@ export const ColetasMetricsCards: React.FC<ColetasMetricsCardsProps> = ({ select
     ];
   };
 
-  const dashboardMetrics = calculateColetasMetrics(coletas, items); // Pass items to the calculation function
+  const dashboardMetrics = calculateColetasMetrics(coletas, items, allUserItems); // Pass allUserItems to the calculation function
 
-  if (isLoadingColetas || isLoadingItems || isLoadingProducts) {
+  if (isLoadingColetas || isLoadingItems || isLoadingProducts || isLoadingAllItems) {
     return (
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         {[...Array(4)].map((_, i) => (

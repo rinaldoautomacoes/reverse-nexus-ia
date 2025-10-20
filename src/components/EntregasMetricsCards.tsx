@@ -81,7 +81,7 @@ export const EntregasMetricsCards: React.FC<EntregasMetricsCardsProps> = ({ sele
     enabled: !!user?.id,
   });
 
-  // Fetch items associated with the fetched entregas
+  // Fetch items associated with the fetched entregas (kept for potential future use or other metrics)
   const collectionIds = entregas?.map(e => e.id) || [];
   const { data: items, isLoading: isLoadingItems, error: itemsError } = useQuery<Item[], Error>({
     queryKey: ['itemsForEntregasMetrics', user?.id, collectionIds],
@@ -96,6 +96,30 @@ export const EntregasMetricsCards: React.FC<EntregasMetricsCardsProps> = ({ sele
       return data;
     },
     enabled: !!user?.id && collectionIds.length > 0,
+  });
+
+  // NEW: Fetch all items for the selected year, regardless of collection type
+  const { data: allUserItems, isLoading: isLoadingAllItems, error: allItemsError } = useQuery<Item[], Error>({
+    queryKey: ['allItemsForEntregasMetrics', user?.id, selectedYear],
+    queryFn: async () => {
+      if (!user?.id) return [];
+
+      const startDate = `${selectedYear}-01-01T00:00:00Z`;
+      const endDate = `${parseInt(selectedYear) + 1}-01-01T00:00:00Z`;
+
+      const { data, error } = await supabase
+        .from('items')
+        .select('quantity, name') // Select quantity and name (product code)
+        .eq('user.id', user.id)
+        .gte('created_at', startDate)
+        .lt('created_at', endDate);
+      
+      if (error) {
+        throw new Error(error.message);
+      }
+      return data;
+    },
+    enabled: !!user?.id,
   });
 
   useEffect(() => {
@@ -120,7 +144,14 @@ export const EntregasMetricsCards: React.FC<EntregasMetricsCardsProps> = ({ sele
         variant: "destructive",
       });
     }
-  }, [entregasError, itemsError, productsError, toast]);
+    if (allItemsError) {
+      toast({
+        title: "Erro ao carregar dados de todos os itens",
+        description: allItemsError.message,
+        variant: "destructive",
+      });
+    }
+  }, [entregasError, itemsError, productsError, allItemsError, toast]);
 
   // Helper function to generate item descriptions for tooltips/cards
   const generateItemDescription = (itemCodeQuantities: Map<string, number>) => {
@@ -140,11 +171,11 @@ export const EntregasMetricsCards: React.FC<EntregasMetricsCardsProps> = ({ sele
     return `${descriptions[0]}, ${descriptions[1]} e outros`;
   };
 
-  const calculateEntregasMetrics = (entregasData: Coleta[] | undefined, itemsData: Item[] | undefined) => {
+  const calculateEntregasMetrics = (entregasData: Coleta[] | undefined, itemsData: Item[] | undefined, allItemsData: Item[] | undefined) => {
     const totalEntregas = entregasData?.length || 0;
     
-    // Calculate total quantity of all items associated with 'entrega' type
-    const totalProductQuantity = itemsData?.reduce((sum, item) => sum + (item.quantity || 0), 0) || 0;
+    // Calculate total quantity of all items for the user and year from allItemsData
+    const totalProductQuantity = allItemsData?.reduce((sum, item) => sum + (item.quantity || 0), 0) || 0;
 
     const pendenteEntregas = entregasData?.filter(e => e.status_coleta === 'pendente').length || 0;
     const concluidaEntregas = entregasData?.filter(e => e.status_coleta === 'concluida').length || 0;
@@ -189,9 +220,9 @@ export const EntregasMetricsCards: React.FC<EntregasMetricsCardsProps> = ({ sele
     ];
   };
 
-  const dashboardMetrics = calculateEntregasMetrics(entregas, items); // Pass items to the calculation function
+  const dashboardMetrics = calculateEntregasMetrics(entregas, items, allUserItems); // Pass allUserItems to the calculation function
 
-  if (isLoadingEntregas || isLoadingItems || isLoadingProducts) {
+  if (isLoadingEntregas || isLoadingItems || isLoadingProducts || isLoadingAllItems) {
     return (
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         {[...Array(4)].map((_, i) => (
