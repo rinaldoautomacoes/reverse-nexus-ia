@@ -1,8 +1,10 @@
-import { jsPDF } from "jspdf";
-import 'jspdf-autotable'; // Mantido aqui para clareza, mas o principal será em main.tsx
+import { jsPDF } from "jspdf"; // Importa jsPDF diretamente
 import { supabase } from "@/integrations/supabase/client";
 import type { Tables } from "@/integrations/supabase/types_generated";
 import { format } from "date-fns";
+
+// Importa jspdf-autotable aqui para garantir que ele estenda o jsPDF no escopo do módulo
+import 'jspdf-autotable'; 
 
 type Report = Tables<'reports'>;
 type Coleta = Tables<'coletas'>;
@@ -65,6 +67,8 @@ export const generateReport = async (report: Report, userId: string) => {
 };
 
 const generatePdfReport = (report: Report, data: Coleta[]) => {
+  // A importação de 'jspdf-autotable' no topo deste arquivo já deve ter estendido o jsPDF.
+  // Criamos a instância de jsPDF aqui, que já deve ter o método autoTable.
   const doc = new jsPDF();
 
   doc.setFontSize(18);
