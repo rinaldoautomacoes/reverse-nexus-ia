@@ -1,4 +1,4 @@
-import { jsPDF } from "jspdf"; // Importa jsPDF primeiro
+import jsPDF from "jspdf"; // Alterado para default import
 import 'jspdf-autotable'; // Em seguida, importa o plugin para que ele estenda o jsPDF já carregado
 import { supabase } from "@/integrations/supabase/client";
 import type { Tables } from "@/integrations/supabase/types_generated";
