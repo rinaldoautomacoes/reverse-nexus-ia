@@ -5,7 +5,7 @@ import { FileText } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import type { TablesInsert } from "@/integrations/supabase/types";
+import type { TablesInsert } from "@/integrations/supabase/types_generated";
 import { useAuth } from "@/hooks/use-auth";
 import { ReportForm } from "./ReportForm"; // Importar o novo ReportForm
 import { generateReport } from "@/lib/report-utils"; // Importar a função de geração de relatório do utilitário
@@ -57,6 +57,9 @@ export const CreateReportDialog: React.FC<CreateReportDialogProps> = ({ collecti
     addReportMutation.mutate(data as ReportInsert);
   };
 
+  // Determine the report type based on the collectionTypeFilter
+  const reportType = collectionTypeFilter === 'todos' ? 'geral' : collectionTypeFilter;
+
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
@@ -80,7 +83,10 @@ export const CreateReportDialog: React.FC<CreateReportDialogProps> = ({ collecti
           onSave={handleSaveReport} 
           onCancel={() => setOpen(false)} 
           isPending={addReportMutation.isPending} 
-          initialData={{ collection_type_filter: collectionTypeFilter }} // Passa o filtro inicial
+          initialData={{ 
+            collection_type_filter: collectionTypeFilter,
+            type: reportType // Explicitly set the report type
+          }} 
         />
       </DialogContent>
     </Dialog>

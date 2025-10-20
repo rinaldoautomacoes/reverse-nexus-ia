@@ -23,7 +23,7 @@ interface ReportFormProps {
 }
 
 export const ReportForm: React.FC<ReportFormProps> = ({ initialData, onSave, onCancel, isPending }) => {
-  const [formData, setFormData] = useState<ReportInsert | ReportUpdate>(initialData || {
+  const [formData, setFormData] = useState<ReportInsert | ReportUpdate>(() => ({
     title: "",
     description: "",
     type: "coleta", // Default to 'coleta'
@@ -34,11 +34,15 @@ export const ReportForm: React.FC<ReportFormProps> = ({ initialData, onSave, onC
     collection_type_filter: "todos", // Default filter
     collection_status_filter: "todos", // Default filter
     user_id: "", // Will be filled by mutation
-  });
+    ...initialData, // Merge initialData last to override defaults
+  }));
 
   useEffect(() => {
     if (initialData) {
-      setFormData(initialData);
+      setFormData(prev => ({
+        ...prev,
+        ...initialData,
+      }));
     }
   }, [initialData]);
 
