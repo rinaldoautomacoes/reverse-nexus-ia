@@ -1,8 +1,8 @@
+import jsPDF from "jspdf"; // Alterado de '{ jsPDF }' para 'jsPDF'
+import 'jspdf-autotable';
 import { supabase } from "@/integrations/supabase/client";
 import type { Tables } from "@/integrations/supabase/types_generated";
 import { format } from "date-fns";
-import { jsPDF } from "jspdf";
-import 'jspdf-autotable';
 
 type Report = Tables<'reports'>;
 type Coleta = Tables<'coletas'>;
