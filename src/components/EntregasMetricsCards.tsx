@@ -110,7 +110,7 @@ export const EntregasMetricsCards: React.FC<EntregasMetricsCardsProps> = ({ sele
       const { data, error } = await supabase
         .from('items')
         .select('quantity, name') // Select quantity and name (product code)
-        .eq('user.id', user.id)
+        .eq('user_id', user.id) // Corrected from 'user.id' to 'user_id'
         .gte('created_at', startDate)
         .lt('created_at', endDate);
       
