@@ -1,10 +1,8 @@
-import { jsPDF } from "jspdf"; // Importa jsPDF diretamente
+import 'jspdf-autotable'; // Importa o plugin primeiro para garantir que estenda jsPDF
+import { jsPDF } from "jspdf"; // Agora importa jsPDF, que já deve ter sido estendido
 import { supabase } from "@/integrations/supabase/client";
 import type { Tables } from "@/integrations/supabase/types_generated";
 import { format } from "date-fns";
-
-// Importa jspdf-autotable aqui para garantir que ele estenda o jsPDF no escopo do módulo
-import 'jspdf-autotable'; 
 
 type Report = Tables<'reports'>;
 type Coleta = Tables<'coletas'>;
@@ -67,9 +65,7 @@ export const generateReport = async (report: Report, userId: string) => {
 };
 
 const generatePdfReport = (report: Report, data: Coleta[]) => {
-  // A importação de 'jspdf-autotable' no topo deste arquivo já deve ter estendido o jsPDF.
-  // Criamos a instância de jsPDF aqui, que já deve ter o método autoTable.
-  const doc = new jsPDF();
+  const doc = new jsPDF(); // A instância de jsPDF agora deve ter autoTable
 
   doc.setFontSize(18);
   doc.text(report.title, 14, 22);
@@ -79,7 +75,7 @@ const generatePdfReport = (report: Report, data: Coleta[]) => {
   doc.text(`Descrição: ${report.description || 'N/A'}`, 14, 30);
   doc.text(`Período: ${format(new Date(report.start_date!), 'dd/MM/yyyy')} - ${format(new Date(report.end_date!), 'dd/MM/yyyy')}`, 14, 36);
   doc.text(`Tipo: ${report.collection_type_filter === 'coleta' ? 'Coletas' : report.collection_type_filter === 'entrega' ? 'Entregas' : 'Todos'}`, 14, 42);
-  doc.text(`Status: ${report.collection_status_filter === 'pendente' ? 'Pendente' : report.collection_status_filter === 'agendada' ? 'Agendada/Em Trânsito' : report.collection_status_filter === 'concluida' ? 'Concluída' : 'Todos'}`, 14, 48);
+  doc.text(`Status: ${report.collection_status_filter === 'pendente' ? 'Pendente' : report.collection_status_filter === 'agendada' ? 'Em Trânsito' : report.collection_status_filter === 'concluida' ? 'Concluída' : 'Todos'}`, 14, 48);
 
   const tableColumn = [
     "ID", "Tipo", "Parceiro", "Controle Cliente", "Endereço", "Previsão", "Qtd.", "Modelo", "Status", "Responsável"
