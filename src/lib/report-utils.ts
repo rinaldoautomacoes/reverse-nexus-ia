@@ -78,7 +78,7 @@ const generatePdfReport = (report: Report, data: Coleta[]) => {
   doc.text(`Status: ${report.collection_status_filter === 'pendente' ? 'Pendente' : report.collection_status_filter === 'agendada' ? 'Agendada/Em Trânsito' : report.collection_status_filter === 'concluida' ? 'Concluída' : 'Todos'}`, 14, 48);
 
   const tableColumn = [
-    "ID", "Tipo", "Parceiro", "Endereço", "Previsão", "Qtd.", "Modelo", "Status", "Responsável"
+    "ID", "Tipo", "Parceiro", "Controle Cliente", "Endereço", "Previsão", "Qtd.", "Modelo", "Status", "Responsável"
   ];
   const tableRows: any[] = [];
 
@@ -87,6 +87,7 @@ const generatePdfReport = (report: Report, data: Coleta[]) => {
       item.id.substring(0, 8),
       item.type === 'coleta' ? 'Coleta' : 'Entrega',
       item.parceiro || 'N/A',
+      item.client_control || 'N/A', // Novo campo
       item.endereco || 'N/A',
       item.previsao_coleta ? format(new Date(item.previsao_coleta), 'dd/MM/yyyy') : 'N/A',
       item.qtd_aparelhos_solicitado || 0,
@@ -103,7 +104,7 @@ const generatePdfReport = (report: Report, data: Coleta[]) => {
 
 const generateCsvReport = (report: Report, data: Coleta[]) => {
   const headers = [
-    "ID", "Tipo", "Parceiro", "CNPJ", "Contato", "Telefone", "Email", "Endereço", "CEP", "Bairro", "Cidade", "UF", "Localidade",
+    "ID", "Tipo", "Parceiro", "Controle Cliente", "CNPJ", "Contato", "Telefone", "Email", "Endereço", "CEP", "Bairro", "Cidade", "UF", "Localidade",
     "Previsão Coleta/Entrega", "Qtd. Aparelhos Solicitado", "Modelo Aparelho", "Status Coleta", "Status Unidade",
     "NF GLBL", "NF Método", "Observação", "Responsável", "ID Responsável", "ID Cliente", "Contrato", "Criado Em"
   ];
@@ -112,6 +113,7 @@ const generateCsvReport = (report: Report, data: Coleta[]) => {
     `"${item.id}"`,
     `"${item.type === 'coleta' ? 'Coleta' : 'Entrega'}"`,
     `"${item.parceiro || ''}"`,
+    `"${item.client_control || ''}"`, // Novo campo
     `"${item.cnpj || ''}"`,
     `"${item.contato || ''}"`,
     `"${item.telefone || ''}"`,

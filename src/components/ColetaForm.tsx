@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Loader2, Package, Tag } from "lucide-react";
+import { Loader2, Package, Tag, ClipboardList } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/use-auth";
 import { generateUniqueNumber } from "@/lib/utils";
@@ -76,6 +76,7 @@ export const ColetaForm: React.FC<ColetaFormProps> = ({ initialData, onSave, onC
     origin_lng: null,
     destination_lat: null,
     destination_lng: null,
+    client_control: "", // Novo campo
   });
 
   // State for fetching status from address lookup hooks
@@ -125,6 +126,7 @@ export const ColetaForm: React.FC<ColetaFormProps> = ({ initialData, onSave, onC
         origin_lng: null,
         destination_lat: null,
         destination_lng: null,
+        client_control: "", // Novo campo
       });
     }
   }, [initialData, user?.id]);
@@ -194,17 +196,33 @@ export const ColetaForm: React.FC<ColetaFormProps> = ({ initialData, onSave, onC
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
-      <div className="space-y-2">
-        <Label htmlFor="unique_number">Número Único da Coleta</Label>
-        <div className="relative">
-          <Tag className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-          <Input
-            id="unique_number"
-            value={formData.unique_number || ''}
-            readOnly
-            className="pl-10 bg-muted/50"
-            disabled={isPending}
-          />
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="space-y-2">
+          <Label htmlFor="unique_number">Número Único da Coleta</Label>
+          <div className="relative">
+            <Tag className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+            <Input
+              id="unique_number"
+              value={formData.unique_number || ''}
+              readOnly
+              className="pl-10 bg-muted/50"
+              disabled={isPending}
+            />
+          </div>
+        </div>
+        <div className="space-y-2">
+          <Label htmlFor="client_control">Controle do Cliente</Label>
+          <div className="relative">
+            <ClipboardList className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+            <Input
+              id="client_control"
+              placeholder="Ex: OS-12345, Pedido-987"
+              className="pl-10"
+              value={formData.client_control || ''}
+              onChange={(e) => handleInputChange("client_control", e.target.value)}
+              disabled={isPending}
+            />
+          </div>
         </div>
       </div>
 

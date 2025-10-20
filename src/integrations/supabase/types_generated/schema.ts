@@ -79,6 +79,7 @@ export type PublicSchema = {
         origin_lng: number | null
         destination_lat: number | null
         destination_lng: number | null
+        client_control: string | null
       }
       Insert: {
         bairro?: string | null
@@ -120,6 +121,7 @@ export type PublicSchema = {
         origin_lng?: number | null
         destination_lat?: number | null
         destination_lng?: number | null
+        client_control?: string | null
       }
       Update: {
         bairro?: string | null
@@ -161,6 +163,7 @@ export type PublicSchema = {
         origin_lng?: number | null
         destination_lat?: number | null
         destination_lng?: number | null
+        client_control?: string | null
       }
       Relationships: [
         {

@@ -3,7 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { ArrowLeft, PlusCircle, Edit, Trash2, Package, Search, Clock, Truck, CheckCircle, User, Phone, Mail, MapPin, Hash, Calendar as CalendarIcon, Building, MessageSquare, Send, DollarSign, Tag, Home, Flag } from "lucide-react";
+import { ArrowLeft, PlusCircle, Edit, Trash2, Package, Search, Clock, Truck, CheckCircle, User, Phone, Mail, MapPin, Hash, Calendar as CalendarIcon, Building, MessageSquare, Send, DollarSign, Tag, Home, Flag, ClipboardList } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -66,7 +66,7 @@ export const Coletas: React.FC<ColetasProps> = ({ selectedYear }) => {
 
       if (searchTerm) {
         query = query.or(
-          `parceiro.ilike.%${searchTerm}%,endereco_origem.ilike.%${searchTerm}%,endereco_destino.ilike.%${searchTerm}%,modelo_aparelho.ilike.%${searchTerm}%,status_coleta.ilike.%${searchTerm}%,unique_number.ilike.%${searchTerm}%`
+          `parceiro.ilike.%${searchTerm}%,endereco_origem.ilike.%${searchTerm}%,endereco_destino.ilike.%${searchTerm}%,modelo_aparelho.ilike.%${searchTerm}%,status_coleta.ilike.%${searchTerm}%,unique_number.ilike.%${searchTerm}%,client_control.ilike.%${searchTerm}%`
         );
       }
 
@@ -239,7 +239,7 @@ export const Coletas: React.FC<ColetasProps> = ({ selectedYear }) => {
                 <div className="flex-1 relative">
                   <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
                   <Input
-                    placeholder="Buscar por parceiro, endereço, modelo, status ou número único..."
+                    placeholder="Buscar por parceiro, endereço, modelo, status, número único ou controle do cliente..."
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
                     className="pl-10"
@@ -317,6 +317,11 @@ export const Coletas: React.FC<ColetasProps> = ({ selectedYear }) => {
                       <h3 className="font-semibold text-lg">{coleta.parceiro}</h3>
                       <p className="text-sm text-muted-foreground flex items-center gap-1">
                         <Tag className="h-3 w-3" /> {coleta.unique_number}
+                        {coleta.client_control && (
+                          <span className="ml-2 flex items-center gap-1">
+                            <ClipboardList className="h-3 w-3" /> {coleta.client_control}
+                          </span>
+                        )}
                       </p>
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-sm text-muted-foreground mt-1">
                         {coleta.endereco_origem && (
