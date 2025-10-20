@@ -73,6 +73,12 @@ export type PublicSchema = {
         endereco_destino: string | null
         driver_id: string | null
         transportadora_id: string | null
+        freight_value: number | null
+        unique_number: string | null
+        origin_lat: number | null
+        origin_lng: number | null
+        destination_lat: number | null
+        destination_lng: number | null
       }
       Insert: {
         bairro?: string | null
@@ -108,6 +114,12 @@ export type PublicSchema = {
         endereco_destino?: string | null
         driver_id?: string | null
         transportadora_id?: string | null
+        freight_value?: number | null
+        unique_number?: string | null
+        origin_lat?: number | null
+        origin_lng?: number | null
+        destination_lat?: number | null
+        destination_lng?: number | null
       }
       Update: {
         bairro?: string | null
@@ -143,6 +155,12 @@ export type PublicSchema = {
         endereco_destino?: string | null
         driver_id?: string | null
         transportadora_id?: string | null
+        freight_value?: number | null
+        unique_number?: string | null
+        origin_lat?: number | null
+        origin_lng?: number | null
+        destination_lat?: number | null
+        destination_lng?: number | null
       }
       Relationships: [
         {
