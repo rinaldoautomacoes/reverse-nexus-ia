@@ -6,7 +6,7 @@ import type { Tables, TablesUpdate } from "@/integrations/supabase/types_generat
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/use-auth";
 import { Package, Edit } from "lucide-react";
-import { ColetaForm } from "./ColetaForm"; // Importar o ColetaForm
+import { ColetaForm } from "./ColetaForm";
 
 type Coleta = Tables<'coletas'>;
 type ColetaUpdate = TablesUpdate<'coletas'>;
@@ -31,7 +31,7 @@ export const EditColetaDialog: React.FC<EditColetaDialogProps> = ({ coleta, isOp
         .from('coletas')
         .update(updatedColeta)
         .eq('id', updatedColeta.id as string)
-        .eq('user_id', user.id) // RLS check
+        .eq('user_id', user.id)
         .select()
         .single();
       if (error) throw new Error(error.message);

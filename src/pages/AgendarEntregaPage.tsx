@@ -9,6 +9,7 @@ import type { TablesInsert } from "@/integrations/supabase/types_generated";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/use-auth";
 import { EntregaForm } from "@/components/EntregaForm";
+import { generateUniqueNumber } from "@/lib/utils"; // Importar a função de geração
 
 type EntregaInsert = TablesInsert<'coletas'>; // Reutilizando o tipo 'coletas' para entregas
 

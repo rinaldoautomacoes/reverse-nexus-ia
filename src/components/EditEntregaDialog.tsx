@@ -6,9 +6,9 @@ import type { Tables, TablesUpdate } from "@/integrations/supabase/types_generat
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/use-auth";
 import { Truck, Edit } from "lucide-react";
-import { EntregaForm } from "./EntregaForm"; // Importar o EntregaForm
+import { EntregaForm } from "./EntregaForm";
 
-type Entrega = Tables<'coletas'>; // Reutilizando o tipo 'coletas' para entregas
+type Entrega = Tables<'coletas'>;
 type EntregaUpdate = TablesUpdate<'coletas'>;
 
 interface EditEntregaDialogProps {
@@ -31,7 +31,7 @@ export const EditEntregaDialog: React.FC<EditEntregaDialogProps> = ({ entrega, i
         .from('coletas')
         .update(updatedEntrega)
         .eq('id', updatedEntrega.id as string)
-        .eq('user_id', user.id) // RLS check
+        .eq('user_id', user.id)
         .select()
         .single();
       if (error) throw new Error(error.message);

@@ -3,11 +3,11 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { ArrowLeft, PlusCircle, Edit, Trash2, Package, Search, Clock, Truck, CheckCircle, User, Phone, Mail, MapPin, Hash, Calendar as CalendarIcon, Building, MessageSquare, Send, DollarSign } from "lucide-react";
+import { ArrowLeft, PlusCircle, Edit, Trash2, Package, Search, Clock, Truck, CheckCircle, User, Phone, Mail, MapPin, Hash, Calendar as CalendarIcon, Building, MessageSquare, Send, DollarSign, Tag } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import type { Tables, TablesUpdate } from "@/integrations/supabase/types_generated";
+import type { Tables, TablesUpdate, TablesInsert } from "@/integrations/supabase/types_generated";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/use-auth";
 import { Badge } from "@/components/ui/badge";
@@ -18,14 +18,14 @@ import { ptBR } from "date-fns/locale";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
 import { cn } from "@/lib/utils";
-import { ColetaForm } from "@/components/ColetaForm"; // Importar o ColetaForm
-import { EditColetaDialog } from "@/components/EditColetaDialog"; // Importar o EditColetaDialog
+import { ColetaForm } from "@/components/ColetaForm";
+import { EditColetaDialog } from "@/components/EditColetaDialog";
 
 type Coleta = Tables<'coletas'> & {
   driver?: { name: string } | null;
   transportadora?: { name: string } | null;
 };
-type ColetaInsert = TablesInsert<'coletas'>; // Adicionado para o diálogo de nova coleta
+type ColetaInsert = TablesInsert<'coletas'>;
 
 interface ColetasProps {
   selectedYear: string;
@@ -40,8 +40,8 @@ export const Coletas: React.FC<ColetasProps> = ({ selectedYear }) => {
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [isStatusUpdateDialogOpen, setIsStatusUpdateDialogOpen] = useState(false);
   const [isEditResponsibleDialogOpen, setIsEditResponsibleDialogOpen] = useState(false);
-  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false); // Novo estado para o diálogo de edição
-  const [editingColeta, setEditingColeta] = useState<Coleta | null>(null); // Novo estado para a coleta sendo editada
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const [editingColeta, setEditingColeta] = useState<Coleta | null>(null);
   const [selectedCollectionForStatus, setSelectedCollectionForStatus] = useState<{ id: string; name: string; status: string } | null>(null);
   const [selectedCollectionForResponsible, setSelectedCollectionForResponsible] = useState<{ id: string; name: string; responsible_user_id: string | null } | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
@@ -60,13 +60,13 @@ export const Coletas: React.FC<ColetasProps> = ({ selectedYear }) => {
           transportadora:transportadoras(name)
         `)
         .eq('user_id', user.id)
-        .eq('type', 'coleta') // Filtrar apenas coletas
-        .neq('status_coleta', 'concluida') // Excluir coletas concluídas
+        .eq('type', 'coleta')
+        .neq('status_coleta', 'concluida')
         .order('previsao_coleta', { ascending: true });
 
       if (searchTerm) {
         query = query.or(
-          `parceiro.ilike.%${searchTerm}%,endereco.ilike.%${searchTerm}%,modelo_aparelho.ilike.%${searchTerm}%,status_coleta.ilike.%${searchTerm}%`
+          `parceiro.ilike.%${searchTerm}%,endereco.ilike.%${searchTerm}%,modelo_aparelho.ilike.%${searchTerm}%,status_coleta.ilike.%${searchTerm}%,unique_number.ilike.%${searchTerm}%`
         );
       }
 
@@ -101,7 +101,7 @@ export const Coletas: React.FC<ColetasProps> = ({ selectedYear }) => {
       queryClient.invalidateQueries({ queryKey: ['collectionStatusChart', user?.id] });
       queryClient.invalidateQueries({ queryKey: ['productStatusChart', user?.id] });
       toast({ title: "Coleta Agendada!", description: "Nova coleta criada com sucesso." });
-      setIsAddDialogOpen(false); // Fechar o diálogo após o sucesso
+      setIsAddDialogOpen(false);
     },
     onError: (err) => {
       toast({ title: "Erro ao agendar coleta", description: err.message, variant: "destructive" });
@@ -114,7 +114,7 @@ export const Coletas: React.FC<ColetasProps> = ({ selectedYear }) => {
         .from('coletas')
         .delete()
         .eq('id', coletaId)
-        .eq('user_id', user?.id); // RLS check
+        .eq('user_id', user?.id);
       if (error) throw new Error(error.message);
     },
     onSuccess: () => {
@@ -145,7 +145,7 @@ export const Coletas: React.FC<ColetasProps> = ({ selectedYear }) => {
       const cleanedPhone = coleta.telefone.replace(/\D/g, '');
       const formattedDate = format(new Date(coleta.previsao_coleta), 'dd/MM/yyyy', { locale: ptBR });
       const transportadoraName = coleta.transportadora?.name ? ` pela transportadora ${coleta.transportadora.name}` : '';
-      const message = `Olá ${coleta.parceiro},\n\nGostaríamos de confirmar sua coleta agendada para o dia ${formattedDate}${transportadoraName}.`;
+      const message = `Olá ${coleta.parceiro},\n\nGostaríamos de confirmar sua coleta agendada para o dia ${formattedDate}${transportadoraName}. Número da Coleta: ${coleta.unique_number}.`;
       window.open(`https://wa.me/${cleanedPhone}?text=${encodeURIComponent(message)}`, '_blank');
     } else {
       toast({ title: "Dados incompletos", description: "Telefone, nome do parceiro ou data de previsão da coleta não disponíveis.", variant: "destructive" });
@@ -156,8 +156,8 @@ export const Coletas: React.FC<ColetasProps> = ({ selectedYear }) => {
     if (coleta.email && coleta.parceiro && coleta.previsao_coleta) {
       const formattedDate = format(new Date(coleta.previsao_coleta), 'dd/MM/yyyy', { locale: ptBR });
       const transportadoraName = coleta.transportadora?.name ? ` pela transportadora ${coleta.transportadora.name}` : '';
-      const subject = encodeURIComponent(`Confirmação de Agendamento de Coleta - ${coleta.parceiro}`);
-      const body = encodeURIComponent(`Olá ${coleta.parceiro},\n\nGostaríamos de confirmar sua coleta agendada para o dia ${formattedDate}${transportadoraName}.\n\nAtenciosamente,\nSua Equipe de Logística`);
+      const subject = encodeURIComponent(`Confirmação de Agendamento de Coleta - ${coleta.parceiro} - ${coleta.unique_number}`);
+      const body = encodeURIComponent(`Olá ${coleta.parceiro},\n\nGostaríamos de confirmar sua coleta agendada para o dia ${formattedDate}${transportadoraName}. Número da Coleta: ${coleta.unique_number}.\n\nAtenciosamente,\nSua Equipe de Logística`);
       window.open(`mailto:${coleta.email}?subject=${subject}&body=${body}`, '_blank');
     } else {
       toast({ title: "Dados incompletos", description: "Email, nome do parceiro ou data de previsão da coleta não disponíveis.", variant: "destructive" });
@@ -167,11 +167,11 @@ export const Coletas: React.FC<ColetasProps> = ({ selectedYear }) => {
   const getStatusBadgeColor = (status: string) => {
     switch (status) {
       case 'pendente':
-        return 'bg-destructive/20 text-destructive'; // ai-purple
+        return 'bg-destructive/20 text-destructive';
       case 'agendada':
-        return 'bg-warning-yellow/20 text-warning-yellow'; // amarelo
+        return 'bg-warning-yellow/20 text-warning-yellow';
       case 'concluida':
-        return 'bg-success-green/20 text-success-green'; // neon-cyan
+        return 'bg-success-green/20 text-success-green';
       default:
         return 'bg-muted/20 text-muted-foreground';
     }
@@ -239,7 +239,7 @@ export const Coletas: React.FC<ColetasProps> = ({ selectedYear }) => {
                 <div className="flex-1 relative">
                   <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
                   <Input
-                    placeholder="Buscar por parceiro, endereço, modelo ou status..."
+                    placeholder="Buscar por parceiro, endereço, modelo, status ou número único..."
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
                     className="pl-10"
@@ -315,6 +315,9 @@ export const Coletas: React.FC<ColetasProps> = ({ selectedYear }) => {
                   >
                     <div className="flex-1 min-w-0 mb-3 lg:mb-0">
                       <h3 className="font-semibold text-lg">{coleta.parceiro}</h3>
+                      <p className="text-sm text-muted-foreground flex items-center gap-1">
+                        <Tag className="h-3 w-3" /> {coleta.unique_number}
+                      </p>
                       <p className="text-sm text-muted-foreground flex items-center gap-1">
                         <MapPin className="h-3 w-3" /> {coleta.endereco}
                       </p>

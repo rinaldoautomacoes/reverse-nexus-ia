@@ -3,7 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { ArrowLeft, PlusCircle, Edit, Trash2, Truck, Search, Clock, Package, CheckCircle, User, Phone, Mail, MapPin, Hash, Calendar as CalendarIcon, Building, MessageSquare, Send, DollarSign } from "lucide-react";
+import { ArrowLeft, PlusCircle, Edit, Trash2, Truck, Search, Clock, Package, CheckCircle, User, Phone, Mail, MapPin, Hash, Calendar as CalendarIcon, Building, MessageSquare, Send, DollarSign, Tag } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -11,21 +11,21 @@ import type { Tables, TablesUpdate, TablesInsert } from "@/integrations/supabase
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/use-auth";
 import { Badge } from "@/components/ui/badge";
-import { CollectionStatusUpdateDialog } from "@/components/CollectionStatusUpdateDialog"; // Reutilizar para status de entrega
-import { EditResponsibleDialog } from "@/components/EditResponsibleDialog"; // Reutilizar para responsável de entrega
+import { CollectionStatusUpdateDialog } from "@/components/CollectionStatusUpdateDialog";
+import { EditResponsibleDialog } from "@/components/EditResponsibleDialog";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
 import { cn } from "@/lib/utils";
-import { EntregaForm } from "@/components/EntregaForm"; // Importar o EntregaForm
-import { EditEntregaDialog } from "@/components/EditEntregaDialog"; // Importar o EditEntregaDialog
+import { EntregaForm } from "@/components/EntregaForm";
+import { EditEntregaDialog } from "@/components/EditEntregaDialog";
 
 type Entrega = Tables<'coletas'> & {
   driver?: { name: string } | null;
   transportadora?: { name: string } | null;
 };
-type EntregaInsert = TablesInsert<'coletas'>; // Adicionado para o diálogo de nova entrega
+type EntregaInsert = TablesInsert<'coletas'>;
 
 interface EntregasAtivasProps {
   selectedYear: string;
@@ -40,8 +40,8 @@ export const EntregasAtivas: React.FC<EntregasAtivasProps> = ({ selectedYear }) 
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [isStatusUpdateDialogOpen, setIsStatusUpdateDialogOpen] = useState(false);
   const [isEditResponsibleDialogOpen, setIsEditResponsibleDialogOpen] = useState(false);
-  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false); // Novo estado para o diálogo de edição
-  const [editingEntrega, setEditingEntrega] = useState<Entrega | null>(null); // Novo estado para a entrega sendo editada
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const [editingEntrega, setEditingEntrega] = useState<Entrega | null>(null);
   const [selectedEntregaForStatus, setSelectedEntregaForStatus] = useState<{ id: string; name: string; status: string } | null>(null);
   const [selectedEntregaForResponsible, setSelectedEntregaForResponsible] = useState<{ id: string; name: string; responsible_user_id: string | null } | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
@@ -60,13 +60,13 @@ export const EntregasAtivas: React.FC<EntregasAtivasProps> = ({ selectedYear }) 
           transportadora:transportadoras(name)
         `)
         .eq('user_id', user.id)
-        .eq('type', 'entrega') // Filtrar apenas entregas
-        .neq('status_coleta', 'concluida') // Excluir entregas concluídas
+        .eq('type', 'entrega')
+        .neq('status_coleta', 'concluida')
         .order('previsao_coleta', { ascending: true });
 
       if (searchTerm) {
         query = query.or(
-          `parceiro.ilike.%${searchTerm}%,endereco.ilike.%${searchTerm}%,modelo_aparelho.ilike.%${searchTerm}%,status_coleta.ilike.%${searchTerm}%`
+          `parceiro.ilike.%${searchTerm}%,endereco.ilike.%${searchTerm}%,modelo_aparelho.ilike.%${searchTerm}%,status_coleta.ilike.%${searchTerm}%,unique_number.ilike.%${searchTerm}%`
         );
       }
 
@@ -88,8 +88,8 @@ export const EntregasAtivas: React.FC<EntregasAtivasProps> = ({ selectedYear }) 
         throw new Error("Usuário não autenticado. Faça login para agendar entregas.");
       }
       const { data, error } = await supabase
-        .from('coletas') // Usar a tabela 'coletas' para entregas também
-        .insert({ ...newEntrega, user_id: user.id, type: 'entrega' }) // Garantir que o tipo é 'entrega'
+        .from('coletas')
+        .insert({ ...newEntrega, user_id: user.id, type: 'entrega' })
         .select()
         .single();
       if (error) throw new Error(error.message);
@@ -101,7 +101,7 @@ export const EntregasAtivas: React.FC<EntregasAtivasProps> = ({ selectedYear }) 
       queryClient.invalidateQueries({ queryKey: ['entregasAtivasStatusChart', user?.id] });
       queryClient.invalidateQueries({ queryKey: ['entregasAtivasStatusDonutChart', user?.id] });
       toast({ title: "Entrega Agendada!", description: "Nova entrega criada com sucesso." });
-      setIsAddDialogOpen(false); // Fechar o diálogo após o sucesso
+      setIsAddDialogOpen(false);
     },
     onError: (err) => {
       toast({ title: "Erro ao agendar entrega", description: err.message, variant: "destructive" });
@@ -114,7 +114,7 @@ export const EntregasAtivas: React.FC<EntregasAtivasProps> = ({ selectedYear }) 
         .from('coletas')
         .delete()
         .eq('id', entregaId)
-        .eq('user_id', user?.id); // RLS check
+        .eq('user_id', user?.id);
       if (error) throw new Error(error.message);
     },
     onSuccess: () => {
@@ -145,7 +145,7 @@ export const EntregasAtivas: React.FC<EntregasAtivasProps> = ({ selectedYear }) 
       const cleanedPhone = entrega.telefone.replace(/\D/g, '');
       const formattedDate = format(new Date(entrega.previsao_coleta), 'dd/MM/yyyy', { locale: ptBR });
       const transportadoraName = entrega.transportadora?.name ? ` pela transportadora ${entrega.transportadora.name}` : '';
-      const message = `Olá ${entrega.parceiro},\n\nGostaríamos de confirmar sua entrega agendada para o dia ${formattedDate}${transportadoraName}.`;
+      const message = `Olá ${entrega.parceiro},\n\nGostaríamos de confirmar sua entrega agendada para o dia ${formattedDate}${transportadoraName}. Número da Entrega: ${entrega.unique_number}.`;
       window.open(`https://wa.me/${cleanedPhone}?text=${encodeURIComponent(message)}`, '_blank');
     } else {
       toast({ title: "Dados incompletos", description: "Telefone, nome do parceiro ou data de previsão da entrega não disponíveis.", variant: "destructive" });
@@ -156,8 +156,8 @@ export const EntregasAtivas: React.FC<EntregasAtivasProps> = ({ selectedYear }) 
     if (entrega.email && entrega.parceiro && entrega.previsao_coleta) {
       const formattedDate = format(new Date(entrega.previsao_coleta), 'dd/MM/yyyy', { locale: ptBR });
       const transportadoraName = entrega.transportadora?.name ? ` pela transportadora ${entrega.transportadora.name}` : '';
-      const subject = encodeURIComponent(`Confirmação de Agendamento de Entrega - ${entrega.parceiro}`);
-      const body = encodeURIComponent(`Olá ${entrega.parceiro},\n\nGostaríamos de confirmar sua entrega agendada para o dia ${formattedDate}${transportadoraName}.\n\nAtenciosamente,\nSua Equipe de Logística`);
+      const subject = encodeURIComponent(`Confirmação de Agendamento de Entrega - ${entrega.parceiro} - ${entrega.unique_number}`);
+      const body = encodeURIComponent(`Olá ${entrega.parceiro},\n\nGostaríamos de confirmar sua entrega agendada para o dia ${formattedDate}${transportadoraName}. Número da Entrega: ${entrega.unique_number}.\n\nAtenciosamente,\nSua Equipe de Logística`);
       window.open(`mailto:${entrega.email}?subject=${subject}&body=${body}`, '_blank');
     } else {
       toast({ title: "Dados incompletos", description: "Email, nome do parceiro ou data de previsão da entrega não disponíveis.", variant: "destructive" });
@@ -167,11 +167,11 @@ export const EntregasAtivas: React.FC<EntregasAtivasProps> = ({ selectedYear }) 
   const getStatusBadgeColor = (status: string) => {
     switch (status) {
       case 'pendente':
-        return 'bg-destructive/20 text-destructive'; // ai-purple
+        return 'bg-destructive/20 text-destructive';
       case 'agendada':
-        return 'bg-warning-yellow/20 text-warning-yellow'; // amarelo
+        return 'bg-warning-yellow/20 text-warning-yellow';
       case 'concluida':
-        return 'bg-success-green/20 text-success-green'; // neon-cyan
+        return 'bg-success-green/20 text-success-green';
       default:
         return 'bg-muted/20 text-muted-foreground';
     }
@@ -239,7 +239,7 @@ export const EntregasAtivas: React.FC<EntregasAtivasProps> = ({ selectedYear }) 
                 <div className="flex-1 relative">
                   <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
                   <Input
-                    placeholder="Buscar por parceiro, endereço, modelo ou status..."
+                    placeholder="Buscar por parceiro, endereço, modelo, status ou número único..."
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
                     className="pl-10"
@@ -315,6 +315,9 @@ export const EntregasAtivas: React.FC<EntregasAtivasProps> = ({ selectedYear }) 
                   >
                     <div className="flex-1 min-w-0 mb-3 lg:mb-0">
                       <h3 className="font-semibold text-lg">{entrega.parceiro}</h3>
+                      <p className="text-sm text-muted-foreground flex items-center gap-1">
+                        <Tag className="h-3 w-3" /> {entrega.unique_number}
+                      </p>
                       <p className="text-sm text-muted-foreground flex items-center gap-1">
                         <MapPin className="h-3 w-3" /> {entrega.endereco}
                       </p>
@@ -425,7 +428,7 @@ export const EntregasAtivas: React.FC<EntregasAtivasProps> = ({ selectedYear }) 
       </div>
 
       {selectedEntregaForStatus && (
-        <CollectionStatusUpdateDialog // Reutilizando o componente de status
+        <CollectionStatusUpdateDialog
           collectionId={selectedEntregaForStatus.id}
           collectionName={selectedEntregaForStatus.name}
           currentCollectionStatus={selectedEntregaForStatus.status}
@@ -435,7 +438,7 @@ export const EntregasAtivas: React.FC<EntregasAtivasProps> = ({ selectedYear }) 
       )}
 
       {selectedEntregaForResponsible && (
-        <EditResponsibleDialog // Reutilizando o componente de responsável
+        <EditResponsibleDialog
           collectionId={selectedEntregaForResponsible.id}
           collectionName={selectedEntregaForResponsible.name}
           currentResponsibleUserId={selectedEntregaForResponsible.responsible_user_id}

@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { ArrowLeft, Package, Search, CheckCircle, Calendar as CalendarIcon, User, MapPin, Hash, Truck, Building, MessageSquare, Send, Edit, Trash2, Clock, DollarSign } from "lucide-react";
+import { ArrowLeft, Package, Search, CheckCircle, Calendar as CalendarIcon, User, MapPin, Hash, Truck, Building, MessageSquare, Send, Edit, Trash2, Clock, DollarSign, Tag } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -56,15 +56,15 @@ const ColetasConcluidas: React.FC<ColetasConcluidasProps> = ({ selectedYear }) =
           transportadora:transportadoras(name)
         `)
         .eq('user_id', user.id)
-        .eq('type', 'coleta') // Filtrar apenas coletas
-        .eq('status_coleta', 'concluida') // Apenas coletas concluídas
+        .eq('type', 'coleta')
+        .eq('status_coleta', 'concluida')
         .gte('created_at', `${selectedYear}-01-01T00:00:00Z`)
         .lte('created_at', `${selectedYear}-12-31T23:59:59Z`)
         .order('previsao_coleta', { ascending: false });
 
       if (searchTerm) {
         query = query.or(
-          `parceiro.ilike.%${searchTerm}%,endereco.ilike.%${searchTerm}%,modelo_aparelho.ilike.%${searchTerm}%,responsavel.ilike.%${searchTerm}%`
+          `parceiro.ilike.%${searchTerm}%,endereco.ilike.%${searchTerm}%,modelo_aparelho.ilike.%${searchTerm}%,responsavel.ilike.%${searchTerm}%,unique_number.ilike.%${searchTerm}%`
         );
       }
 
@@ -86,7 +86,7 @@ const ColetasConcluidas: React.FC<ColetasConcluidasProps> = ({ selectedYear }) =
         .from('coletas')
         .delete()
         .eq('id', coletaId)
-        .eq('user_id', user?.id); // RLS check
+        .eq('user_id', user?.id);
       if (error) throw new Error(error.message);
     },
     onSuccess: () => {
@@ -117,7 +117,7 @@ const ColetasConcluidas: React.FC<ColetasConcluidasProps> = ({ selectedYear }) =
       const cleanedPhone = coleta.telefone.replace(/\D/g, '');
       const formattedDate = format(new Date(coleta.previsao_coleta), 'dd/MM/yyyy', { locale: ptBR });
       const transportadoraName = coleta.transportadora?.name ? ` pela transportadora ${coleta.transportadora.name}` : '';
-      const message = `Olá ${coleta.parceiro},\n\nGostaríamos de confirmar sua coleta agendada para o dia ${formattedDate}${transportadoraName}.`;
+      const message = `Olá ${coleta.parceiro},\n\nGostaríamos de confirmar sua coleta agendada para o dia ${formattedDate}${transportadoraName}. Número da Coleta: ${coleta.unique_number}.`;
       window.open(`https://wa.me/${cleanedPhone}?text=${encodeURIComponent(message)}`, '_blank');
     } else {
       toast({ title: "Dados incompletos", description: "Telefone, nome do parceiro ou data de previsão da coleta não disponíveis.", variant: "destructive" });
@@ -128,8 +128,8 @@ const ColetasConcluidas: React.FC<ColetasConcluidasProps> = ({ selectedYear }) =
     if (coleta.email && coleta.parceiro && coleta.previsao_coleta) {
       const formattedDate = format(new Date(coleta.previsao_coleta), 'dd/MM/yyyy', { locale: ptBR });
       const transportadoraName = coleta.transportadora?.name ? ` pela transportadora ${coleta.transportadora.name}` : '';
-      const subject = encodeURIComponent(`Confirmação de Agendamento de Coleta - ${coleta.parceiro}`);
-      const body = encodeURIComponent(`Olá ${coleta.parceiro},\n\nGostaríamos de confirmar sua coleta agendada para o dia ${formattedDate}${transportadoraName}.\n\nAtenciosamente,\nSua Equipe de Logística`);
+      const subject = encodeURIComponent(`Confirmação de Agendamento de Coleta - ${coleta.parceiro} - ${coleta.unique_number}`);
+      const body = encodeURIComponent(`Olá ${coleta.parceiro},\n\nGostaríamos de confirmar sua coleta agendada para o dia ${formattedDate}${transportadoraName}. Número da Coleta: ${coleta.unique_number}.\n\nAtenciosamente,\nSua Equipe de Logística`);
       window.open(`mailto:${coleta.email}?subject=${subject}&body=${body}`, '_blank');
     } else {
       toast({ title: "Dados incompletos", description: "Email, nome do parceiro ou data de previsão da coleta não disponíveis.", variant: "destructive" });
@@ -139,7 +139,7 @@ const ColetasConcluidas: React.FC<ColetasConcluidasProps> = ({ selectedYear }) =
   const getStatusBadgeColor = (status: string) => {
     switch (status) {
       case 'concluida':
-        return 'bg-success-green/20 text-success-green'; // neon-cyan
+        return 'bg-success-green/20 text-success-green';
       default:
         return 'bg-muted/20 text-muted-foreground';
     }
@@ -203,7 +203,7 @@ const ColetasConcluidas: React.FC<ColetasConcluidasProps> = ({ selectedYear }) =
                 <div className="flex-1 relative">
                   <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
                   <Input
-                    placeholder="Buscar por parceiro, endereço, modelo ou responsável..."
+                    placeholder="Buscar por parceiro, endereço, modelo, responsável ou número único..."
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
                     className="pl-10"
@@ -258,6 +258,9 @@ const ColetasConcluidas: React.FC<ColetasConcluidasProps> = ({ selectedYear }) =
                   >
                     <div className="flex-1 min-w-0 mb-3 lg:mb-0">
                       <h3 className="font-semibold text-lg">{coleta.parceiro}</h3>
+                      <p className="text-sm text-muted-foreground flex items-center gap-1">
+                        <Tag className="h-3 w-3" /> {coleta.unique_number}
+                      </p>
                       <p className="text-sm text-muted-foreground flex items-center gap-1">
                         <MapPin className="h-3 w-3" /> {coleta.endereco}
                       </p>

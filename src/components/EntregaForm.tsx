@@ -5,7 +5,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { ArrowLeft, Truck, Calendar as CalendarIcon, User, Phone, Mail, MapPin, Building, Briefcase, Loader2, Hash, Package, DollarSign } from "lucide-react";
+import { ArrowLeft, Truck, Calendar as CalendarIcon, User, Phone, Mail, MapPin, Building, Briefcase, Loader2, Hash, Package, DollarSign, Tag } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -14,7 +14,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/use-auth";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
-import { cn } from "@/lib/utils";
+import { cn, generateUniqueNumber } from "@/lib/utils";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { ClientCombobox } from "@/components/ClientCombobox";
@@ -72,7 +72,8 @@ export const EntregaForm: React.FC<EntregaFormProps> = ({ initialData, onSave, o
     endereco_destino: "",
     driver_id: null,
     transportadora_id: null,
-    freight_value: null, // Novo campo
+    freight_value: null,
+    unique_number: generateUniqueNumber('ENT'), // Gerar número único para novas entregas
   });
 
   useEffect(() => {
@@ -111,7 +112,8 @@ export const EntregaForm: React.FC<EntregaFormProps> = ({ initialData, onSave, o
         endereco_destino: "",
         driver_id: null,
         transportadora_id: null,
-        freight_value: null, // Resetar também o valor do frete
+        freight_value: null,
+        unique_number: generateUniqueNumber('ENT'), // Gerar novo número único
       });
     }
   }, [initialData, user?.id]);
@@ -188,6 +190,20 @@ export const EntregaForm: React.FC<EntregaFormProps> = ({ initialData, onSave, o
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
+      <div className="space-y-2">
+        <Label htmlFor="unique_number">Número Único da Entrega</Label>
+        <div className="relative">
+          <Tag className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+          <Input
+            id="unique_number"
+            value={formData.unique_number || ''}
+            readOnly
+            className="pl-10 bg-muted/50"
+            disabled={isPending}
+          />
+        </div>
+      </div>
+
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div className="space-y-2">
           <Label htmlFor="parceiro">Cliente *</Label>
