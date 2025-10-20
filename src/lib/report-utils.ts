@@ -1,5 +1,5 @@
-import 'jspdf-autotable'; // Importa o plugin primeiro para garantir que estenda jsPDF
-import { jsPDF } from "jspdf"; // Agora importa jsPDF, que já deve ter sido estendido
+import { jsPDF } from "jspdf"; // Importa jsPDF primeiro
+import 'jspdf-autotable'; // Em seguida, importa o plugin para que ele estenda o jsPDF já carregado
 import { supabase } from "@/integrations/supabase/client";
 import type { Tables } from "@/integrations/supabase/types_generated";
 import { format } from "date-fns";
@@ -75,7 +75,7 @@ const generatePdfReport = (report: Report, data: Coleta[]) => {
   doc.text(`Descrição: ${report.description || 'N/A'}`, 14, 30);
   doc.text(`Período: ${format(new Date(report.start_date!), 'dd/MM/yyyy')} - ${format(new Date(report.end_date!), 'dd/MM/yyyy')}`, 14, 36);
   doc.text(`Tipo: ${report.collection_type_filter === 'coleta' ? 'Coletas' : report.collection_type_filter === 'entrega' ? 'Entregas' : 'Todos'}`, 14, 42);
-  doc.text(`Status: ${report.collection_status_filter === 'pendente' ? 'Pendente' : report.collection_status_filter === 'agendada' ? 'Em Trânsito' : report.collection_status_filter === 'concluida' ? 'Concluída' : 'Todos'}`, 14, 48);
+  doc.text(`Status: ${report.collection_status_filter === 'pendente' ? 'Pendente' : report.collection_status_filter === 'agendada' ? 'Em Trânsito' : 'Concluída'}`, 14, 48);
 
   const tableColumn = [
     "ID", "Tipo", "Parceiro", "Controle Cliente", "Endereço", "Previsão", "Qtd.", "Modelo", "Status", "Responsável"
