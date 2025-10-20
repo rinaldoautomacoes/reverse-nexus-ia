@@ -55,6 +55,38 @@ export const ReportForm: React.FC<ReportFormProps> = ({ initialData, onSave, onC
     onSave(formData);
   };
 
+  // Determine available options based on initialData.type and initialData.collection_type_filter
+  const isForColetaReports = formData.type === 'coleta' || initialData?.type === 'coleta';
+  const isForEntregaReports = formData.type === 'entrega' || initialData?.type === 'entrega';
+
+  const reportTypeOptions = [];
+  if (isForColetaReports) {
+    reportTypeOptions.push({ value: "coleta", label: "Coletas" });
+    reportTypeOptions.push({ value: "geral", label: "Geral" }); // Geral pode ser útil para ambos
+  } else if (isForEntregaReports) {
+    reportTypeOptions.push({ value: "entrega", label: "Entregas" });
+    reportTypeOptions.push({ value: "geral", label: "Geral" }); // Geral pode ser útil para ambos
+  } else {
+    // Default if not specifically for coleta or entrega (e.g., on a general report creation page)
+    reportTypeOptions.push({ value: "coleta", label: "Coletas" });
+    reportTypeOptions.push({ value: "entrega", label: "Entregas" });
+    reportTypeOptions.push({ value: "geral", label: "Geral" });
+  }
+
+  const collectionTypeFilterOptions = [];
+  if (isForColetaReports) {
+    collectionTypeFilterOptions.push({ value: "todos", label: "Todos" });
+    collectionTypeFilterOptions.push({ value: "coleta", label: "Coleta" });
+  } else if (isForEntregaReports) {
+    collectionTypeFilterOptions.push({ value: "todos", label: "Todos" });
+    collectionTypeFilterOptions.push({ value: "entrega", label: "Entrega" });
+  } else {
+    // Default
+    collectionTypeFilterOptions.push({ value: "todos", label: "Todos" });
+    collectionTypeFilterOptions.push({ value: "coleta", label: "Coleta" });
+    collectionTypeFilterOptions.push({ value: "entrega", label: "Entrega" });
+  }
+
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
       <div className="space-y-2">
@@ -93,9 +125,11 @@ export const ReportForm: React.FC<ReportFormProps> = ({ initialData, onSave, onC
               <SelectValue placeholder="Selecionar tipo" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="coleta">Coletas</SelectItem>
-              <SelectItem value="entrega">Entregas</SelectItem>
-              <SelectItem value="geral">Geral</SelectItem>
+              {reportTypeOptions.map(option => (
+                <SelectItem key={option.value} value={option.value}>
+                  {option.label}
+                </SelectItem>
+              ))}
             </SelectContent>
           </Select>
         </div>
@@ -186,9 +220,11 @@ export const ReportForm: React.FC<ReportFormProps> = ({ initialData, onSave, onC
               <SelectValue placeholder="Todos" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="todos">Todos</SelectItem>
-              <SelectItem value="coleta">Coleta</SelectItem>
-              <SelectItem value="entrega">Entrega</SelectItem>
+              {collectionTypeFilterOptions.map(option => (
+                <SelectItem key={option.value} value={option.value}>
+                  {option.label}
+                </SelectItem>
+              ))}
             </SelectContent>
           </Select>
         </div>
