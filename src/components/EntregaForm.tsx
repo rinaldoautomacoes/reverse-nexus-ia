@@ -31,6 +31,8 @@ type Product = Tables<'products'>;
 type Profile = Tables<'profiles'>;
 type Driver = Tables<'drivers'>;
 type Transportadora = Tables<'transportadoras'>;
+type ItemInsert = TablesInsert<'items'>;
+type ItemUpdate = TablesUpdate<'items'>;
 
 interface EntregaFormProps {
   initialData?: ColetaUpdate;
@@ -76,6 +78,10 @@ export const EntregaForm: React.FC<EntregaFormProps> = ({ initialData, onSave, o
     transportadora_id: null,
     freight_value: null,
     unique_number: generateUniqueNumber('ENT'),
+    origin_lat: null,
+    origin_lng: null,
+    destination_lat: null,
+    destination_lng: null,
   });
 
   const [cepOrigemInput, setCepOrigemInput] = useState(initialData?.cep_origem || '');
@@ -127,6 +133,10 @@ export const EntregaForm: React.FC<EntregaFormProps> = ({ initialData, onSave, o
         transportadora_id: null,
         freight_value: null,
         unique_number: generateUniqueNumber('ENT'),
+        origin_lat: null,
+        origin_lng: null,
+        destination_lat: null,
+        destination_lng: null,
       });
       setCepOrigemInput('');
       setEnderecoOrigemInput('');
@@ -267,9 +277,14 @@ export const EntregaForm: React.FC<EntregaFormProps> = ({ initialData, onSave, o
     }));
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    onSave({
+    if (!user?.id) {
+      toast({ title: "Erro de autenticação", description: "Usuário não logado.", variant: "destructive" });
+      return;
+    }
+
+    const dataToSave = {
       ...formData,
       cep_origem: cepOrigemInput,
       endereco_origem: enderecoOrigemInput,
@@ -278,7 +293,12 @@ export const EntregaForm: React.FC<EntregaFormProps> = ({ initialData, onSave, o
       // Ensure the main 'endereco' and 'cep' fields are consistent with destination for entregas
       endereco: enderecoDestinoInput,
       cep: cepDestinoInput,
-    });
+      user_id: user.id, // Ensure user_id is always set
+    };
+
+    // Call the parent onSave, which will handle the actual Supabase insert/update for 'coletas'
+    // The parent mutation will then invalidate queries, including those for 'items'.
+    onSave(dataToSave);
   };
 
   return (

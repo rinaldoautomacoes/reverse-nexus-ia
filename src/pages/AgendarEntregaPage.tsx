@@ -12,6 +12,7 @@ import { EntregaForm } from "@/components/EntregaForm";
 import { generateUniqueNumber } from "@/lib/utils"; // Importar a função de geração
 
 type EntregaInsert = TablesInsert<'coletas'>; // Reutilizando o tipo 'coletas' para entregas
+type ItemInsert = TablesInsert<'items'>;
 
 export const AgendarEntregaPage: React.FC = () => {
   const navigate = useNavigate();
@@ -24,19 +25,44 @@ export const AgendarEntregaPage: React.FC = () => {
       if (!user?.id) {
         throw new Error("Usuário não autenticado. Faça login para agendar entregas.");
       }
-      const { data, error } = await supabase
+      
+      // 1. Insert the new entrega
+      const { data: insertedEntrega, error: entregaError } = await supabase
         .from('coletas') // Usar a tabela 'coletas' para entregas também
         .insert({ ...newEntrega, user_id: user.id, type: 'entrega' }) // Garantir que o tipo é 'entrega'
         .select()
         .single();
-      if (error) throw new Error(error.message);
-      return data;
+      
+      if (entregaError) throw new Error(entregaError.message);
+
+      // 2. If a product model and quantity are provided, insert into 'items' table
+      if (insertedEntrega.modelo_aparelho && insertedEntrega.qtd_aparelhos_solicitado && insertedEntrega.qtd_aparelhos_solicitado > 0) {
+        const newItem: ItemInsert = {
+          user_id: user.id,
+          collection_id: insertedEntrega.id,
+          name: insertedEntrega.modelo_aparelho, // Using modelo_aparelho as item name/code
+          quantity: insertedEntrega.qtd_aparelhos_solicitado,
+          status: insertedEntrega.status_coleta || 'agendada', // Inherit status from entrega
+          // description: 'Item da entrega', // Optional: add a default description
+          // model: insertedEntrega.modelo_aparelho, // Optional: if item model is different from name
+        };
+        const { error: itemError } = await supabase.from('items').insert(newItem);
+        if (itemError) {
+          console.error("Erro ao inserir item na tabela 'items':", itemError.message);
+          // Decide whether to throw this error or just log it.
+          // For now, we'll let the entrega creation succeed even if item creation fails.
+          // toast({ title: "Aviso", description: `Entrega agendada, mas houve um erro ao registrar o item: ${itemError.message}`, variant: "warning" });
+        }
+      }
+
+      return insertedEntrega;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['entregasAtivas', user?.id] });
       queryClient.invalidateQueries({ queryKey: ['dashboardEntregasMetrics', user?.id] });
       queryClient.invalidateQueries({ queryKey: ['entregasAtivasStatusChart', user?.id] });
       queryClient.invalidateQueries({ queryKey: ['entregasAtivasStatusDonutChart', user?.id] });
+      queryClient.invalidateQueries({ queryKey: ['itemsForEntregasMetrics', user?.id] }); // Invalidate items query
       toast({ title: "Entrega Agendada!", description: "Nova entrega criada com sucesso." });
       navigate('/entregas-ativas'); // Redireciona para a lista de entregas ativas
     },

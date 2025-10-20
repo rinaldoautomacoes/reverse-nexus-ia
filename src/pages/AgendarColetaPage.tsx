@@ -12,6 +12,7 @@ import { ColetaForm } from "@/components/ColetaForm";
 import { generateUniqueNumber } from "@/lib/utils"; // Importar a função de geração
 
 type ColetaInsert = TablesInsert<'coletas'>;
+type ItemInsert = TablesInsert<'items'>;
 
 export const AgendarColetaPage: React.FC = () => {
   const navigate = useNavigate();
@@ -24,19 +25,44 @@ export const AgendarColetaPage: React.FC = () => {
       if (!user?.id) {
         throw new Error("Usuário não autenticado. Faça login para agendar coletas.");
       }
-      const { data, error } = await supabase
+      
+      // 1. Insert the new coleta
+      const { data: insertedColeta, error: coletaError } = await supabase
         .from('coletas')
         .insert({ ...newColeta, user_id: user.id, type: 'coleta' })
         .select()
         .single();
-      if (error) throw new Error(error.message);
-      return data;
+      
+      if (coletaError) throw new Error(coletaError.message);
+
+      // 2. If a product model and quantity are provided, insert into 'items' table
+      if (insertedColeta.modelo_aparelho && insertedColeta.qtd_aparelhos_solicitado && insertedColeta.qtd_aparelhos_solicitado > 0) {
+        const newItem: ItemInsert = {
+          user_id: user.id,
+          collection_id: insertedColeta.id,
+          name: insertedColeta.modelo_aparelho, // Using modelo_aparelho as item name/code
+          quantity: insertedColeta.qtd_aparelhos_solicitado,
+          status: insertedColeta.status_coleta || 'pendente', // Inherit status from coleta
+          // description: 'Item da coleta', // Optional: add a default description
+          // model: insertedColeta.modelo_aparelho, // Optional: if item model is different from name
+        };
+        const { error: itemError } = await supabase.from('items').insert(newItem);
+        if (itemError) {
+          console.error("Erro ao inserir item na tabela 'items':", itemError.message);
+          // Decide whether to throw this error or just log it.
+          // For now, we'll let the coleta creation succeed even if item creation fails.
+          // toast({ title: "Aviso", description: `Coleta agendada, mas houve um erro ao registrar o item: ${itemError.message}`, variant: "warning" });
+        }
+      }
+
+      return insertedColeta;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['coletasAtivas', user?.id] });
       queryClient.invalidateQueries({ queryKey: ['dashboardColetasMetrics', user?.id] });
       queryClient.invalidateQueries({ queryKey: ['collectionStatusChart', user?.id] });
       queryClient.invalidateQueries({ queryKey: ['productStatusChart', user?.id] });
+      queryClient.invalidateQueries({ queryKey: ['itemsForColetasMetrics', user?.id] }); // Invalidate items query
       toast({ title: "Coleta Agendada!", description: "Nova coleta criada com sucesso." });
       navigate('/coletas-ativas'); // Redireciona para a lista de coletas ativas
     },
