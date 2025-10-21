@@ -1,8 +1,8 @@
 import jsPDF from "jspdf";
-import 'jspdf-autotable'; // Garante que o plugin seja carregado no contexto deste arquivo
+import html2canvas from "html2canvas"; // Importar html2canvas
 
-// A atribuição explícita de autoTable foi removida, pois window.jsPDF.API não está definido
-// O plugin jspdf-autotable deve estender jsPDF automaticamente ao ser importado.
+// Removido o import de 'jspdf-autotable' e qualquer atribuição explícita,
+// pois não será mais utilizado para a geração de PDF.
 
 import { supabase } from "@/integrations/supabase/client";
 import type { Tables } from "@/integrations/supabase/types_generated";
@@ -12,7 +12,7 @@ import { ptBR } from "date-fns/locale";
 type Report = Tables<'reports'>;
 type Coleta = Tables<'coletas'>;
 
-export const generateReport = async (report: Report, userId: string) => {
+export const generateReport = async (report: Report, userId: string) => { // Função agora é assíncrona
   try {
     let query = supabase
       .from('coletas')
@@ -48,7 +48,7 @@ export const generateReport = async (report: Report, userId: string) => {
     const fileName = `${report.title.replace(/\s/g, '_')}_${format(new Date(), 'yyyyMMdd_HHmmss')}`;
 
     if (report.format === 'pdf') {
-      const pdfBlob = generatePdfReportContent(report, coletas);
+      const pdfBlob = await generatePdfReportContent(report, coletas); // Aguarda a função assíncrona
       const { publicUrl, uploadError } = await uploadFileToStorage(userId, fileName + '.pdf', pdfBlob, 'application/pdf');
       if (uploadError) throw uploadError;
       reportUrl = publicUrl;
@@ -97,18 +97,13 @@ const uploadFileToStorage = async (userId: string, fileName: string, fileBlob: B
   return { publicUrl: publicUrlData.publicUrl, uploadError: null };
 };
 
-const generatePdfReportContent = (report: Report, data: Coleta[]): Blob => {
-  console.log("generatePdfReportContent: Iniciando geração de PDF.");
-  console.log("jsPDF.prototype.autoTable antes da instância:", (jsPDF.prototype as any).autoTable);
-
+const generatePdfReportContent = async (report: Report, data: Coleta[]): Promise<Blob> => { // Função agora é assíncrona
   const doc = new jsPDF();
-  console.log("generatePdfReportContent: Instância jsPDF criada.", doc);
-  console.log("doc.autoTable após a instância:", (doc as any).autoTable);
-
   const pageWidth = doc.internal.pageSize.getWidth();
   const pageHeight = doc.internal.pageSize.getHeight();
   const margin = 14;
 
+  // Cabeçalho do PDF
   doc.setFontSize(10);
   doc.setTextColor(150);
   doc.text("LogiReverseIA", margin, margin + 4);
@@ -146,55 +141,80 @@ const generatePdfReportContent = (report: Report, data: Coleta[]): Blob => {
   doc.text(`Status Filtrado: ${report.collection_status_filter === 'pendente' ? 'Pendente' : report.collection_status_filter === 'agendada' ? 'Em Trânsito' : report.collection_status_filter === 'concluida' ? 'Concluída' : 'Todos'}`, margin, currentY);
   currentY += 10;
 
-  const tableColumn = [
-    "Nº Coleta", "Cliente", "Endereço de Coleta", "Responsável", "Material", "Qtd.", "Status", "Observações"
-  ];
-  const tableRows: any[] = [];
+  // Criar um div temporário para renderizar a tabela com html2canvas
+  const tempDiv = document.createElement('div');
+  tempDiv.style.position = 'absolute';
+  tempDiv.style.left = '-9999px'; // Esconder fora da tela
+  tempDiv.style.width = `${pageWidth - 2 * margin}px`; // Corresponder à largura do PDF
+  tempDiv.style.padding = '0';
+  tempDiv.style.margin = '0';
+  document.body.appendChild(tempDiv);
+
+  // Construir o conteúdo da tabela HTML
+  let tableHtml = `
+    <style>
+      table { width: 100%; border-collapse: collapse; margin-top: 10px; font-family: sans-serif; font-size: 10px; }
+      th, td { border: 1px solid #ddd; padding: 4px; text-align: left; }
+      th { background-color: #f2f2f2; font-weight: bold; }
+      tr:nth-child(even) { background-color: #f9f9f9; }
+    </style>
+    <table>
+      <thead>
+        <tr>
+          <th>Nº Coleta</th>
+          <th>Cliente</th>
+          <th>Endereço de Coleta</th>
+          <th>Responsável</th>
+          <th>Material</th>
+          <th>Qtd.</th>
+          <th>Status</th>
+          <th>Observações</th>
+        </tr>
+      </thead>
+      <tbody>
+  `;
 
   data.forEach(item => {
-    const rowData = [
-      item.unique_number || item.id.substring(0, 8),
-      item.parceiro || 'N/A',
-      item.endereco_origem || 'N/A',
-      item.responsavel || 'N/A',
-      item.modelo_aparelho || 'N/A',
-      (item.qtd_aparelhos_solicitado || 0).toString(),
-      item.status_coleta === 'pendente' ? 'Pendente' : item.status_coleta === 'agendada' ? 'Em Trânsito' : 'Concluída',
-      item.observacao || 'N/A',
-    ];
-    tableRows.push(rowData);
+    tableHtml += `
+      <tr>
+        <td>${item.unique_number || item.id.substring(0, 8)}</td>
+        <td>${item.parceiro || 'N/A'}</td>
+        <td>${item.endereco_origem || 'N/A'}</td>
+        <td>${item.responsavel || 'N/A'}</td>
+        <td>${item.modelo_aparelho || 'N/A'}</td>
+        <td>${(item.qtd_aparelhos_solicitado || 0).toString()}</td>
+        <td>${item.status_coleta === 'pendente' ? 'Pendente' : item.status_coleta === 'agendada' ? 'Em Trânsito' : 'Concluída'}</td>
+        <td>${item.observacao || 'N/A'}</td>
+      </tr>
+    `;
+  });
+  tableHtml += `</tbody></table>`;
+  tempDiv.innerHTML = tableHtml;
+
+  // Usar html2canvas para renderizar o div em um canvas
+  const canvas = await html2canvas(tempDiv, {
+    scale: 2, // Aumentar a escala para melhor resolução
+    useCORS: true,
   });
 
-  (doc as any).autoTable({
-    head: [tableColumn],
-    body: tableRows,
-    startY: currentY,
-    theme: 'grid',
-    styles: {
-      fontSize: 8,
-      cellPadding: 2,
-      valign: 'middle',
-      overflow: 'linebreak',
-    },
-    headStyles: {
-      fillColor: [230, 230, 230],
-      textColor: [50, 50, 50],
-      fontStyle: 'bold',
-    },
-    alternateRowStyles: {
-      fillColor: [245, 245, 245],
-    },
-    margin: { left: margin, right: margin },
-    didDrawPage: function (data: any) {
-      doc.setFontSize(9);
-      doc.setTextColor(100);
-      doc.text("LogiReverseIA | Contato: contato@logireverseia.com", margin, pageHeight - margin);
-      doc.text(`Página ${data.pageNumber} de ${data.pageCount}`, pageWidth - margin, pageHeight - margin, { align: "right" });
-    }
-  });
-  console.log("generatePdfReportContent: autoTable executado.");
+  const imgData = canvas.toDataURL('image/png');
+  const imgWidth = pageWidth - 2 * margin;
+  const imgHeight = (canvas.height * imgWidth) / canvas.width;
 
-  const finalY = (doc as any).autoTable.previous.finalY;
+  // Adicionar a imagem ao PDF
+  doc.addImage(imgData, 'PNG', margin, currentY, imgWidth, imgHeight);
+
+  // Remover o div temporário
+  document.body.removeChild(tempDiv);
+
+  // Rodapé do PDF
+  doc.setFontSize(9);
+  doc.setTextColor(100);
+  doc.text("LogiReverseIA | Contato: contato@logireverseia.com", margin, pageHeight - margin);
+  doc.text(`Página 1 de 1`, pageWidth - margin, pageHeight - margin, { align: "right" }); // Simplificado para uma única página
+
+  // Assinatura (ajustar posição com base na altura da imagem)
+  const finalY = currentY + imgHeight;
   if (finalY + 40 < pageHeight - margin) {
     doc.setDrawColor(150);
     doc.line(margin + 20, finalY + 30, margin + 80, finalY + 30);
@@ -210,7 +230,6 @@ const generatePdfReportContent = (report: Report, data: Coleta[]): Blob => {
     doc.text("Assinatura do Responsável", margin + 20, margin + 35);
   }
 
-  console.log("generatePdfReportContent: Finalizando geração de PDF.");
   return doc.output('blob');
 };
 
