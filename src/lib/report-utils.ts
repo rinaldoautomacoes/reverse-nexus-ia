@@ -9,6 +9,16 @@ import { ptBR } from "date-fns/locale";
 type Report = Tables<'reports'>;
 type Coleta = Tables<'coletas'>;
 
+// RGB values for futuristic theme
+const COLOR_BACKGROUND_DARK = [13, 15, 18]; // hsl(225 15% 6%)
+const COLOR_FOREGROUND_LIGHT = [242, 255, 255]; // hsl(180 100% 95%)
+const COLOR_PRIMARY_NEON_CYAN = [0, 255, 255]; // hsl(180 100% 50%)
+const COLOR_ACCENT_NEURAL_BLUE = [0, 102, 255]; // hsl(220 100% 60%) - using this for warning-yellow too
+const COLOR_DESTRUCTIVE_DEEP_BLUE = [20, 20, 204]; // hsl(240 80% 40%) - for pendente
+const COLOR_SUCCESS_GREEN = [0, 255, 255]; // hsl(180 100% 50%) - same as neon-cyan
+const COLOR_MUTED_FOREGROUND = [180, 180, 180]; // A lighter gray for muted text
+const COLOR_BORDER = [50, 50, 50]; // Darker border for elements
+
 export const generateReport = async (report: Report, userId: string) => {
   try {
     let query = supabase
@@ -101,18 +111,26 @@ const generatePdfReportContent = async (report: Report, data: Coleta[]): Promise
   const margin = 14;
   let currentY = margin;
 
+  // Set background for the entire page (simulated with a large rectangle)
+  doc.setFillColor(...COLOR_BACKGROUND_DARK);
+  doc.rect(0, 0, pageWidth, pageHeight, 'F');
+
   // Helper para adicionar nova página e cabeçalho/rodapé
   const addPageWithHeaderAndFooter = (pageNumber: number) => {
     doc.addPage();
+    doc.setFillColor(...COLOR_BACKGROUND_DARK);
+    doc.rect(0, 0, pageWidth, pageHeight, 'F'); // Redraw background for new page
     currentY = margin;
+    
+    // Header
     doc.setFontSize(10);
-    doc.setTextColor(150);
+    doc.setTextColor(...COLOR_MUTED_FOREGROUND);
     doc.text("LogiReverseIA", margin, currentY + 4);
     doc.setFontSize(9);
-    doc.setTextColor(100);
+    doc.setTextColor(...COLOR_MUTED_FOREGROUND);
     doc.text(`Gerado em: ${format(new Date(), 'dd/MM/yyyy HH:mm:ss', { locale: ptBR })}`, pageWidth - margin, currentY + 4, { align: "right" });
     currentY += 15;
-    doc.setDrawColor(200);
+    doc.setDrawColor(...COLOR_BORDER);
     doc.line(margin, currentY, pageWidth - margin, currentY);
     currentY += 10;
     
@@ -122,34 +140,34 @@ const generatePdfReportContent = async (report: Report, data: Coleta[]): Promise
 
   // Cabeçalho do PDF
   doc.setFontSize(10);
-  doc.setTextColor(150);
+  doc.setTextColor(...COLOR_MUTED_FOREGROUND);
   doc.text("LogiReverseIA", margin, currentY + 4);
 
   doc.setFontSize(22);
-  doc.setTextColor(20);
+  doc.setTextColor(...COLOR_PRIMARY_NEON_CYAN); // Main title color
   doc.setFont("helvetica", "bold");
   // Título dinâmico do relatório
   doc.text(`Relatório de ${report.type === 'coleta' ? 'Coleta' : report.type === 'entrega' ? 'Entrega' : 'Geral'}`, pageWidth / 2, currentY + 10, { align: "center" });
 
   doc.setFontSize(9);
-  doc.setTextColor(100);
+  doc.setTextColor(...COLOR_MUTED_FOREGROUND);
   doc.setFont("helvetica", "normal");
   const now = new Date();
   doc.text(`Gerado em: ${format(now, 'dd/MM/yyyy HH:mm:ss', { locale: ptBR })}`, pageWidth - margin, currentY + 4, { align: "right" });
 
   currentY += 15;
-  doc.setDrawColor(200);
+  doc.setDrawColor(...COLOR_BORDER);
   doc.line(margin, currentY, pageWidth - margin, currentY);
   currentY += 10;
 
   // Detalhes do Relatório
   doc.setFontSize(11);
-  doc.setTextColor(50);
+  doc.setTextColor(...COLOR_PRIMARY_NEON_CYAN);
   doc.setFont("helvetica", "bold");
   doc.text("Detalhes do Relatório:", margin, currentY);
   currentY += 7;
   doc.setFont("helvetica", "normal");
-  doc.setTextColor(80);
+  doc.setTextColor(...COLOR_FOREGROUND_LIGHT);
   doc.text(`Título: ${report.title}`, margin, currentY);
   currentY += 6;
   doc.text(`Descrição: ${report.description || 'N/A'}`, margin, currentY);
@@ -173,7 +191,7 @@ const generatePdfReportContent = async (report: Report, data: Coleta[]): Promise
 
   // Tabela de Dados (implementação manual)
   doc.setFontSize(10);
-  doc.setTextColor(50);
+  doc.setTextColor(...COLOR_PRIMARY_NEON_CYAN);
   doc.setFont("helvetica", "bold");
   doc.text("Dados das Coletas:", margin, currentY); // Mantido 'Coletas' aqui, pois o título principal já indica o tipo
   currentY += 7;
@@ -207,15 +225,15 @@ const generatePdfReportContent = async (report: Report, data: Coleta[]): Promise
   const cellPadding = 2;
 
   const drawTableHeader = () => {
-    doc.setFillColor(240, 240, 240); // Cor de fundo para o cabeçalho
+    doc.setFillColor(0, 102, 255); // Neural Blue for header background
     doc.rect(margin, currentY, usableWidth, headerHeight, 'F'); // Desenha o fundo do cabeçalho
-    doc.setDrawColor(200);
-    doc.setLineWidth(0.1);
+    doc.setDrawColor(...COLOR_PRIMARY_NEON_CYAN); // Neon Cyan border
+    doc.setLineWidth(0.2);
     doc.rect(margin, currentY, usableWidth, headerHeight, 'S'); // Desenha a borda do cabeçalho
 
     let currentX = margin;
     doc.setFontSize(8);
-    doc.setTextColor(0);
+    doc.setTextColor(255, 255, 255); // White text for header
     doc.setFont("helvetica", "bold");
     tableHeaders.forEach((header, i) => {
       doc.text(header, currentX + columnWidths[i] / 2, currentY + headerHeight / 2 + 1, { align: "center" });
@@ -230,7 +248,7 @@ const generatePdfReportContent = async (report: Report, data: Coleta[]): Promise
   drawTableHeader();
 
   doc.setFont("helvetica", "normal");
-  doc.setTextColor(50);
+  doc.setTextColor(...COLOR_FOREGROUND_LIGHT); // Light text for table content
 
   let pageNumber = 1;
 
@@ -262,15 +280,17 @@ const generatePdfReportContent = async (report: Report, data: Coleta[]): Promise
     }
 
     let currentX = margin;
-    doc.setDrawColor(200);
+    doc.setDrawColor(...COLOR_BORDER); // Subtle border for rows
     doc.setLineWidth(0.1);
     doc.setFontSize(8);
     
-    // Desenha o fundo da linha (opcional, para linhas alternadas)
-    // if (data.indexOf(item) % 2 === 0) {
-    //   doc.setFillColor(248, 248, 248);
-    //   doc.rect(margin, currentY, usableWidth, maxLineHeight + 2 * cellPadding, 'F');
-    // }
+    // Alternating row background
+    if (data.indexOf(item) % 2 === 0) {
+      doc.setFillColor(COLOR_BACKGROUND_DARK[0] + 5, COLOR_BACKGROUND_DARK[1] + 5, COLOR_BACKGROUND_DARK[2] + 5); // Slightly lighter dark for even rows
+    } else {
+      doc.setFillColor(COLOR_BACKGROUND_DARK[0], COLOR_BACKGROUND_DARK[1], COLOR_BACKGROUND_DARK[2]); // Original dark for odd rows
+    }
+    doc.rect(margin, currentY, usableWidth, maxLineHeight + 2 * cellPadding, 'F');
 
     rowData.forEach((cellText, i) => {
       doc.rect(currentX, currentY, columnWidths[i], maxLineHeight + 2 * cellPadding, 'S'); // Desenha a borda da célula
@@ -279,6 +299,21 @@ const generatePdfReportContent = async (report: Report, data: Coleta[]): Promise
       let textX = currentX + cellPadding;
       let textY = currentY + cellPadding + doc.getFontSize() / doc.internal.scaleFactor;
       let align: 'left' | 'center' | 'right' = 'left';
+
+      // Apply specific colors for status column
+      if (i === 6) { // Status column
+        if (cellText === 'Pendente') {
+          doc.setTextColor(...COLOR_DESTRUCTIVE_DEEP_BLUE);
+        } else if (cellText === 'Em Trânsito') {
+          doc.setTextColor(...COLOR_ACCENT_NEURAL_BLUE);
+        } else if (cellText === 'Concluída') {
+          doc.setTextColor(...COLOR_SUCCESS_GREEN);
+        } else {
+          doc.setTextColor(...COLOR_FOREGROUND_LIGHT);
+        }
+      } else {
+        doc.setTextColor(...COLOR_FOREGROUND_LIGHT);
+      }
 
       if (i === 5 || i === 6 || i === 7) { // Qtd, Status, Previsão (centralizado)
         textX = currentX + columnWidths[i] / 2;
@@ -293,20 +328,21 @@ const generatePdfReportContent = async (report: Report, data: Coleta[]): Promise
 
   // Rodapé para a última página
   doc.setFontSize(9);
-  doc.setTextColor(100);
+  doc.setTextColor(...COLOR_MUTED_FOREGROUND);
   doc.text("LogiReverseIA | Contato: contato@logireverseia.com", margin, pageHeight - margin);
   doc.text(`Página ${doc.internal.getNumberOfPages()}`, pageWidth - margin, pageHeight - margin, { align: "right" });
 
   // Adicionar espaço para assinatura do responsável
   let signatureY = currentY + 20;
   if (signatureY + 30 > pageHeight - margin) { // Se não houver espaço, adiciona nova página
-    doc.addPage();
-    signatureY = margin + 20;
+    addPageWithHeaderAndFooter(++pageNumber); // Use the helper to add a new page
+    signatureY = currentY; // Reset signatureY to the new currentY after header
   }
-  doc.setDrawColor(150);
+  doc.setDrawColor(...COLOR_PRIMARY_NEON_CYAN); // Neon line for signature
+  doc.setLineWidth(0.5);
   doc.line(margin + 20, signatureY, margin + 80, signatureY);
   doc.setFontSize(10);
-  doc.setTextColor(50);
+  doc.setTextColor(...COLOR_FOREGROUND_LIGHT);
   doc.text("Assinatura do Responsável", margin + 20, signatureY + 5);
 
   return doc.output('blob');
