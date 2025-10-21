@@ -1,5 +1,5 @@
 import jsPDF from "jspdf"; // Import jsPDF first
-import 'jspdf-autotable'; // Then ensure the plugin is loaded
+// import 'jspdf-autotable'; // Removido: O plugin já é importado em src/main.tsx
 
 import { supabase } from "@/integrations/supabase/client";
 import type { Tables } from "@/integrations/supabase/types_generated";
