@@ -14,7 +14,7 @@ const COLOR_BACKGROUND_WHITE = [255, 255, 255]; // Fundo branco
 const COLOR_BACKGROUND_ALT_ROW = [245, 245, 245]; // Um cinza muito claro para linhas alternadas
 const COLOR_FOREGROUND_DARK = [30, 30, 30]; // Texto escuro para legibilidade no fundo branco
 const COLOR_PRIMARY_NEON_CYAN = [0, 255, 255]; // hsl(180 100% 50%) - Azul neon
-const COLOR_ACCENT_NEON_GREEN = [0, 255, 100]; // Um verde neon vibrante para cabeçalhos
+const COLOR_NEON_BLUE_GRADIENT_END = [0, 150, 255]; // Um azul mais escuro para o fim do degradê
 const COLOR_DESTRUCTIVE_RED = [220, 38, 38]; // Vermelho para 'Pendente' (destructive)
 const COLOR_WARNING_ORANGE = [251, 191, 36]; // Laranja para 'Em Trânsito' (warning-yellow)
 const COLOR_SUCCESS_GREEN = [34, 197, 94]; // Verde para 'Concluída' (success-green)
@@ -227,8 +227,20 @@ const generatePdfReportContent = async (report: Report, data: Coleta[]): Promise
   const cellPadding = 2;
 
   const drawTableHeader = () => {
-    doc.setFillColor(...COLOR_ACCENT_NEON_GREEN); // Neon Green for header background
-    doc.rect(margin, currentY, usableWidth, headerHeight, 'F'); // Desenha o fundo do cabeçalho
+    // Simulate gradient fill for the header background
+    const gradientStart = COLOR_PRIMARY_NEON_CYAN; // [0, 255, 255]
+    const gradientEnd = COLOR_NEON_BLUE_GRADIENT_END; // [0, 150, 255]
+    const numSteps = 10; // Number of steps for a smoother gradient simulation
+    const stepWidth = usableWidth / numSteps;
+
+    for (let i = 0; i < numSteps; i++) {
+      const r = gradientStart[0] + (gradientEnd[0] - gradientStart[0]) * (i / (numSteps - 1));
+      const g = gradientStart[1] + (gradientEnd[1] - gradientStart[1]) * (i / (numSteps - 1));
+      const b = gradientStart[2] + (gradientEnd[2] - gradientStart[2]) * (i / (numSteps - 1));
+      doc.setFillColor(r, g, b);
+      doc.rect(margin + (i * stepWidth), currentY, stepWidth, headerHeight, 'F');
+    }
+
     doc.setDrawColor(...COLOR_PRIMARY_NEON_CYAN); // Neon Cyan border
     doc.setLineWidth(0.2);
     doc.rect(margin, currentY, usableWidth, headerHeight, 'S'); // Desenha a borda do cabeçalho
