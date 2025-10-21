@@ -1,4 +1,4 @@
-import jsPDF from "jspdf";
+import { jsPDF } from "jspdf"; // Alterado para importação nomeada
 import 'jspdf-autotable'; // Garante que o plugin seja carregado no contexto deste arquivo
 
 import { supabase } from "@/integrations/supabase/client";
@@ -96,11 +96,11 @@ const uploadFileToStorage = async (userId: string, fileName: string, fileBlob: B
 
 const generatePdfReportContent = (report: Report, data: Coleta[]): Blob => {
   console.log("generatePdfReportContent: Iniciando geração de PDF.");
-  console.log("jsPDF.prototype.autoTable antes da instância:", (jsPDF.prototype as any).autoTable); // Log de depuração
+  console.log("jsPDF.prototype.autoTable antes da instância:", (jsPDF.prototype as any).autoTable);
 
   const doc = new jsPDF();
   console.log("generatePdfReportContent: Instância jsPDF criada.", doc);
-  console.log("doc.autoTable após a instância:", (doc as any).autoTable); // Log de depuração
+  console.log("doc.autoTable após a instância:", (doc as any).autoTable);
 
   const pageWidth = doc.internal.pageSize.getWidth();
   const pageHeight = doc.internal.pageSize.getHeight();
