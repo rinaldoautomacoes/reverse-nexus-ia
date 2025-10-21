@@ -192,14 +192,14 @@ const generatePdfReportContent = async (report: Report, data: Coleta[]): Promise
   const usableWidth = pageWidth - 2 * margin;
   // Ajuste das larguras das colunas para melhor visualização
   const columnWidths = [
-    usableWidth * 0.12, // Nº Coleta/Entrega (aumentado)
-    usableWidth * 0.15, // Cliente
-    usableWidth * 0.23, // Endereço Origem (ajustado)
-    usableWidth * 0.22, // Endereço Destino (ajustado)
-    usableWidth * 0.08, // Material (ajustado)
-    usableWidth * 0.04, // Qtd (ajustado)
-    usableWidth * 0.08, // Status (aumentado)
-    usableWidth * 0.08, // Previsão Coleta/Entrega (aumentado)
+    usableWidth * 0.12, // Nº Coleta/Entrega (mantido)
+    usableWidth * 0.15, // Cliente (mantido)
+    usableWidth * 0.20, // Endereço Origem (reduzido de 0.23)
+    usableWidth * 0.19, // Endereço Destino (reduzido de 0.22)
+    usableWidth * 0.08, // Material (mantido)
+    usableWidth * 0.04, // Qtd (mantido)
+    usableWidth * 0.10, // Status (aumentado de 0.08)
+    usableWidth * 0.12, // Previsão Coleta/Entrega (aumentado de 0.08)
   ];
   
   const rowHeight = 8;
