@@ -222,7 +222,7 @@ export const Relatorios = () => {
                           size="sm"
                           className="border-primary text-primary hover:bg-primary/10"
                           onClick={() => handleGenerateReportClick(report)}
-                          disabled={generatingReportId === report.id || report.status === 'pendente'}
+                          disabled={generatingReportId === report.id || report.status === 'concluido'}
                         >
                           {generatingReportId === report.id ? (
                             <Loader2 className="mr-1 h-3 w-3 animate-spin" />
