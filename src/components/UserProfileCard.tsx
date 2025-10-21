@@ -40,7 +40,7 @@ export const UserProfileCard: React.FC<UserProfileCardProps> = ({ isCollapsed })
       </Avatar>
       {!isCollapsed && (
         <div className="flex-1">
-          <p className="font-semibold text-sm">{displayName}</p>
+          <p className="font-semibold text-sm text-neon-cyan">{displayName}</p>
           <p className="text-xs text-muted-foreground">{displayRole}</p>
         </div>
       )}
