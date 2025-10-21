@@ -1,4 +1,4 @@
-import { jsPDF } from "jspdf"; // Alterado para importação nomeada
+import jsPDF from "jspdf"; // Revertido para importação padrão
 import 'jspdf-autotable'; // Garante que o plugin seja carregado no contexto deste arquivo
 
 import { supabase } from "@/integrations/supabase/client";
