@@ -1,5 +1,6 @@
 import jsPDF from "jspdf";
-import html2canvas from "html2canvas";
+import html2canvas from "html2canvas"; // Manter import para caso de uso futuro, mas não será usado para a tabela
+import "jspdf-autotable"; // Importar o plugin jspdf-autotable
 
 import { supabase } from "@/integrations/supabase/client";
 import type { Tables } from "@/integrations/supabase/types_generated";
@@ -102,10 +103,9 @@ const generatePdfReportContent = async (report: Report, data: Coleta[]): Promise
   let currentY = margin;
 
   // Cabeçalho do PDF
-  // Logotipo da empresa (placeholder, pois não temos um arquivo de logo)
   doc.setFontSize(10);
   doc.setTextColor(150);
-  doc.text("LogiReverseIA", margin, currentY + 4); // Nome da empresa como placeholder para logo
+  doc.text("LogiReverseIA", margin, currentY + 4);
 
   doc.setFontSize(22);
   doc.setTextColor(20);
@@ -118,7 +118,7 @@ const generatePdfReportContent = async (report: Report, data: Coleta[]): Promise
   const now = new Date();
   doc.text(`Gerado em: ${format(now, 'dd/MM/yyyy HH:mm:ss', { locale: ptBR })}`, pageWidth - margin, currentY + 4, { align: "right" });
 
-  currentY += 15; // Espaço após o cabeçalho
+  currentY += 15;
   doc.setDrawColor(200);
   doc.line(margin, currentY, pageWidth - margin, currentY);
   currentY += 10;
@@ -142,122 +142,68 @@ const generatePdfReportContent = async (report: Report, data: Coleta[]): Promise
   doc.text(`Status Filtrado: ${report.collection_status_filter === 'pendente' ? 'Pendente' : report.collection_status_filter === 'agendada' ? 'Em Trânsito' : report.collection_status_filter === 'concluida' ? 'Concluída' : 'Todos'}`, margin, currentY);
   currentY += 10;
 
-  // Criar um div temporário para renderizar a tabela com html2canvas
-  const tempDiv = document.createElement('div');
-  tempDiv.style.position = 'absolute';
-  tempDiv.style.left = '-9999px'; // Esconder fora da tela
-  tempDiv.style.width = `${pageWidth - 2 * margin}px`; // Corresponder à largura do PDF
-  tempDiv.style.padding = '0';
-  tempDiv.style.margin = '0';
-  document.body.appendChild(tempDiv);
+  // Tabela de Dados com jspdf-autotable
+  const tableHeaders = [
+    ["Nº Coleta", "Cliente", "Endereço de Origem", "Endereço de Destino", "Material", "Qtd", "Status", "Previsão"]
+  ];
 
-  // Construir o conteúdo da tabela HTML
-  let tableHtml = `
-    <style>
-      table { width: 100%; border-collapse: collapse; margin-top: 10px; font-family: 'Inter', sans-serif; font-size: 9px; }
-      th, td { border: 1px solid #e0e0e0; padding: 5px; text-align: left; vertical-align: top; }
-      th { background-color: #f8f8f8; font-weight: bold; color: #333; }
-      tr:nth-child(even) { background-color: #fdfdfd; }
-      .status-pendente { color: #dc2626; font-weight: bold; } /* destructive */
-      .status-agendada { color: #f59e0b; font-weight: bold; } /* warning-yellow */
-      .status-concluida { color: #10b981; font-weight: bold; } /* success-green */
-    </style>
-    <table>
-      <thead>
-        <tr>
-          <th>Nº Coleta</th>
-          <th>Cliente</th>
-          <th>Endereço de Coleta</th>
-          <th>Responsável</th>
-          <th>Tipo de Material</th>
-          <th>Quantidade</th>
-          <th>Status</th>
-          <th>Observações</th>
-        </tr>
-      </thead>
-      <tbody>
-  `;
+  const tableRows = data.map(item => [
+    item.unique_number || item.id.substring(0, 8),
+    item.parceiro || 'N/A',
+    item.endereco_origem || 'N/A',
+    item.endereco_destino || 'N/A',
+    item.modelo_aparelho || 'N/A',
+    (item.qtd_aparelhos_solicitado || 0).toString(),
+    item.status_coleta === 'pendente' ? 'Pendente' : item.status_coleta === 'agendada' ? 'Em Trânsito' : item.status_coleta === 'concluida' ? 'Concluída' : 'N/A',
+    item.previsao_coleta ? format(new Date(item.previsao_coleta), 'dd/MM/yyyy', { locale: ptBR }) : 'N/A',
+  ]);
 
-  data.forEach(item => {
-    const statusClass = item.status_coleta ? `status-${item.status_coleta}` : '';
-    const statusText = item.status_coleta === 'pendente' ? 'Pendente' : item.status_coleta === 'agendada' ? 'Em Trânsito' : item.status_coleta === 'concluida' ? 'Concluída' : 'N/A';
-
-    tableHtml += `
-      <tr>
-        <td>${item.unique_number || item.id.substring(0, 8)}</td>
-        <td>${item.parceiro || 'N/A'}</td>
-        <td>${item.endereco_origem || 'N/A'}</td>
-        <td>${item.responsavel || 'N/A'}</td>
-        <td>${item.modelo_aparelho || 'N/A'}</td>
-        <td>${(item.qtd_aparelhos_solicitado || 0).toString()}</td>
-        <td class="${statusClass}">${statusText}</td>
-        <td>${item.observacao || 'N/A'}</td>
-      </tr>
-    `;
-  });
-  tableHtml += `</tbody></table>`;
-  tempDiv.innerHTML = tableHtml;
-
-  // Usar html2canvas para renderizar o div em um canvas
-  const canvas = await html2canvas(tempDiv, {
-    scale: 2, // Aumentar a escala para melhor resolução
-    useCORS: true,
-    windowWidth: document.documentElement.offsetWidth, // Captura a largura total da janela
-    windowHeight: document.documentElement.offsetHeight, // Captura a altura total da janela
-  });
-
-  const imgData = canvas.toDataURL('image/png');
-  const imgWidth = pageWidth - 2 * margin;
-  let imgHeight = (canvas.height * imgWidth) / canvas.width;
-  let pageHeightLeft = pageHeight - currentY - margin;
-
-  let pageNum = 1;
-  let position = currentY;
-
-  // Adicionar a imagem ao PDF, dividindo em várias páginas se necessário
-  if (imgHeight > pageHeightLeft) {
-    const totalPages = Math.ceil(imgHeight / pageHeightLeft);
-    for (let i = 0; i < totalPages; i++) {
-      const sliceHeight = Math.min(imgHeight, pageHeightLeft);
-      const imgSlice = document.createElement('canvas');
-      imgSlice.width = canvas.width;
-      imgSlice.height = (sliceHeight * canvas.width) / imgWidth;
-      const sliceCtx = imgSlice.getContext('2d');
-      if (sliceCtx) {
-        sliceCtx.drawImage(canvas, 0, i * (pageHeightLeft * canvas.width / imgWidth), canvas.width, imgSlice.height, 0, 0, imgSlice.width, imgSlice.height);
-      }
-      const sliceDataUrl = imgSlice.toDataURL('image/png');
-      
-      if (i > 0) {
-        doc.addPage();
-        position = margin; // Reset position for new page
-      }
-      doc.addImage(sliceDataUrl, 'PNG', margin, position, imgWidth, sliceHeight);
-      position += sliceHeight;
-      imgHeight -= sliceHeight;
-
+  (doc as any).autoTable({
+    startY: currentY,
+    head: tableHeaders,
+    body: tableRows,
+    theme: 'grid', // 'striped', 'grid', 'plain'
+    styles: {
+      fontSize: 8,
+      cellPadding: 2,
+      valign: 'middle',
+      overflow: 'linebreak',
+      lineColor: [200, 200, 200],
+      lineWidth: 0.1,
+      textColor: [50, 50, 50],
+    },
+    headStyles: {
+      fillColor: [240, 240, 240],
+      textColor: [0, 0, 0],
+      fontStyle: 'bold',
+      halign: 'center',
+    },
+    bodyStyles: {
+      halign: 'left',
+    },
+    columnStyles: {
+      0: { cellWidth: 20 }, // Nº Coleta
+      1: { cellWidth: 30 }, // Cliente
+      2: { cellWidth: 40 }, // Endereço Origem
+      3: { cellWidth: 40 }, // Endereço Destino
+      4: { cellWidth: 25 }, // Material
+      5: { cellWidth: 15, halign: 'center' }, // Qtd
+      6: { cellWidth: 20, halign: 'center' }, // Status
+      7: { cellWidth: 20, halign: 'center' }, // Previsão
+    },
+    didDrawPage: (dataHook: any) => {
       // Rodapé para cada página
       doc.setFontSize(9);
       doc.setTextColor(100);
       doc.text("LogiReverseIA | Contato: contato@logireverseia.com", margin, pageHeight - margin);
-      doc.text(`Página ${i + 1} de ${totalPages}`, pageWidth - margin, pageHeight - margin, { align: "right" });
-    }
-  } else {
-    doc.addImage(imgData, 'PNG', margin, currentY, imgWidth, imgHeight);
-    position = currentY + imgHeight;
+      doc.text(`Página ${dataHook.pageNumber}`, pageWidth - margin, pageHeight - margin, { align: "right" });
+    },
+  });
 
-    // Rodapé para a única página
-    doc.setFontSize(9);
-    doc.setTextColor(100);
-    doc.text("LogiReverseIA | Contato: contato@logireverseia.com", margin, pageHeight - margin);
-    doc.text(`Página 1 de 1`, pageWidth - margin, pageHeight - margin, { align: "right" });
-  }
-
-  // Remover o div temporário
-  document.body.removeChild(tempDiv);
+  currentY = (doc as any).autoTable.previous.finalY + 20; // Posição após a tabela
 
   // Adicionar espaço para assinatura do responsável
-  let signatureY = position + 20;
+  let signatureY = currentY;
   if (signatureY + 30 > pageHeight - margin) { // Se não houver espaço, adiciona nova página
     doc.addPage();
     signatureY = margin + 20;
@@ -267,7 +213,6 @@ const generatePdfReportContent = async (report: Report, data: Coleta[]): Promise
   doc.setFontSize(10);
   doc.setTextColor(50);
   doc.text("Assinatura do Responsável", margin + 20, signatureY + 5);
-
 
   return doc.output('blob');
 };
