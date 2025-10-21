@@ -1,6 +1,6 @@
-import jsPDF from "jspdf";
+import { jsPDF } from "jspdf"; // Importar jsPDF diretamente aqui
 import html2canvas from "html2canvas"; // Manter import para caso de uso futuro, mas não será usado para a tabela
-import "jspdf-autotable"; // Importar o plugin jspdf-autotable
+import "jspdf-autotable"; // Importar o plugin jspdf-autotable diretamente aqui
 
 import { supabase } from "@/integrations/supabase/client";
 import type { Tables } from "@/integrations/supabase/types_generated";
