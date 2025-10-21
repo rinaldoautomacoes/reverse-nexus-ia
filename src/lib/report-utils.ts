@@ -45,10 +45,10 @@ export const generateReport = async (report: Report, userId: string) => {
     const fileName = `${report.title.replace(/\s/g, '_')}_${format(new Date(), 'yyyyMMdd_HHmmss')}`;
 
     if (report.format === 'pdf') {
-      const pdfBlob = generatePdfReportContent(report, coletas);
-      const { publicUrl, uploadError } = await uploadFileToStorage(userId, fileName + '.pdf', pdfBlob, 'application/pdf');
-      if (uploadError) throw uploadError;
-      reportUrl = publicUrl;
+      // For PDF, generate and open directly in browser
+      generatePdfReportContent(report, coletas);
+      // No upload to storage for PDF, set report_url to null
+      reportUrl = null; 
     } else if (report.format === 'csv') {
       const csvBlob = generateCsvReportContent(report, coletas);
       const { publicUrl, uploadError } = await uploadFileToStorage(userId, fileName + '.csv', csvBlob, 'text/csv;charset=utf-8;');
@@ -58,7 +58,7 @@ export const generateReport = async (report: Report, userId: string) => {
       throw new Error("Formato de relatório não suportado.");
     }
 
-    // Atualizar o status do relatório para 'concluido' e salvar a URL
+    // Atualizar o status do relatório para 'concluido' e salvar a URL (ou null para PDF)
     await supabase
       .from('reports')
       .update({ status: 'concluido', report_url: reportUrl })
@@ -96,7 +96,7 @@ const uploadFileToStorage = async (userId: string, fileName: string, fileBlob: B
   return { publicUrl: publicUrlData.publicUrl, uploadError: null };
 };
 
-const generatePdfReportContent = (report: Report, data: Coleta[]): Blob => {
+const generatePdfReportContent = (report: Report, data: Coleta[]) => {
   console.log("generatePdfReportContent: Iniciando geração de PDF.");
   const doc = new jsPDF();
   console.log("generatePdfReportContent: Instância jsPDF criada.", doc);
@@ -106,7 +106,6 @@ const generatePdfReportContent = (report: Report, data: Coleta[]): Blob => {
   const margin = 14; // Margem padrão
 
   // --- Cabeçalho ---
-  // Placeholder para Logotipo da Empresa
   doc.setFontSize(10);
   doc.setTextColor(150);
   doc.text("LogiReverseIA", margin, margin + 4); // Nome da empresa como placeholder de logo
@@ -147,12 +146,13 @@ const generatePdfReportContent = (report: Report, data: Coleta[]): Blob => {
   doc.text(`Status Filtrado: ${report.collection_status_filter === 'pendente' ? 'Pendente' : report.collection_status_filter === 'agendada' ? 'Em Trânsito' : report.collection_status_filter === 'concluida' ? 'Concluída' : 'Todos'}`, margin, currentY);
   currentY += 10;
 
-  // --- Tabela de Dados ---
+  // --- Tabela de Dados (Manual) ---
   const tableColumn = [
     "Nº Coleta", "Cliente", "Endereço de Coleta", "Responsável", "Material", "Qtd.", "Status", "Observações"
   ];
-  const tableRows: any[] = [];
+  const columnWidths = [20, 30, 45, 25, 25, 10, 15, 12]; // Total 182mm for pageWidth - 2*margin
 
+  const tableRows: any[] = [];
   data.forEach(item => {
     const rowData = [
       item.unique_number || item.id.substring(0, 8),
@@ -160,52 +160,68 @@ const generatePdfReportContent = (report: Report, data: Coleta[]): Blob => {
       item.endereco_origem || 'N/A',
       item.responsavel || 'N/A',
       item.modelo_aparelho || 'N/A',
-      item.qtd_aparelhos_solicitado || 0,
+      (item.qtd_aparelhos_solicitado || 0).toString(),
       item.status_coleta === 'pendente' ? 'Pendente' : item.status_coleta === 'agendada' ? 'Em Trânsito' : 'Concluída',
       item.observacao || 'N/A',
     ];
     tableRows.push(rowData);
   });
 
-  console.log("generatePdfReportContent: Verificando doc.autoTable antes da chamada:", typeof (doc as any).autoTable);
-  (doc as any).autoTable({
-    head: [tableColumn],
-    body: tableRows,
-    startY: currentY,
-    theme: 'grid', // Estilo de grade para a tabela
-    styles: {
-      fontSize: 8,
-      cellPadding: 2,
-      valign: 'middle',
-      overflow: 'linebreak',
-    },
-    headStyles: {
-      fillColor: [230, 230, 230], // Cinza claro
-      textColor: [50, 50, 50],
-      fontStyle: 'bold',
-    },
-    alternateRowStyles: {
-      fillColor: [245, 245, 245], // Cinza mais claro para linhas alternadas
-    },
-    margin: { left: margin, right: margin },
-    didDrawPage: function (data: any) {
-      // Rodapé em cada página
-      doc.setFontSize(9);
-      doc.setTextColor(100);
-      doc.text("LogiReverseIA | Contato: contato@logireverseia.com", margin, pageHeight - margin);
-      doc.text(`Página ${data.pageNumber} de ${data.pageCount}`, pageWidth - margin, pageHeight - margin, { align: "right" });
+  // Draw table headers
+  let currentX = margin;
+  const headerHeight = 7;
+  doc.setFontSize(9);
+  doc.setFont("helvetica", "bold");
+  doc.setFillColor(230, 230, 230); // Light gray background for header
+  doc.setTextColor(50, 50, 50);
+
+  tableColumn.forEach((header, i) => {
+    doc.rect(currentX, currentY, columnWidths[i], headerHeight, 'F'); // Draw filled rectangle for header cell
+    doc.text(header, currentX + 1, currentY + headerHeight / 2 + 1.5); // Text inside cell
+    currentX += columnWidths[i];
+  });
+  currentY += headerHeight; // Move Y down after header
+  doc.setDrawColor(200); // Reset draw color for lines
+
+  // Draw table rows
+  doc.setFontSize(8);
+  doc.setFont("helvetica", "normal");
+  const rowHeight = 7; // Fixed row height for simplicity
+  tableRows.forEach((row, rowIndex) => {
+    currentX = margin; // Reset X for each row
+    doc.setFillColor(rowIndex % 2 === 0 ? 255 : 245, 245, 245); // Alternate row colors
+
+    row.forEach((cellText: string, colIndex: number) => {
+      doc.rect(currentX, currentY, columnWidths[colIndex], rowHeight, 'F'); // Draw filled rectangle for cell
+      // Basic text truncation if it exceeds cell width
+      const textWidth = doc.getStringUnitWidth(cellText) * doc.internal.getFontSize() / doc.internal.scaleFactor;
+      const availableWidth = columnWidths[colIndex] - 2; // 2 for padding
+      const displayCellText = textWidth > availableWidth ? doc.splitTextToSize(cellText, availableWidth)[0] + '...' : cellText;
+      
+      doc.text(displayCellText, currentX + 1, currentY + rowHeight / 2 + 1.5); // Text inside cell
+      currentX += columnWidths[colIndex];
+    });
+    currentY += rowHeight; // Move Y down after row
+
+    // Add new page if content exceeds page height
+    if (currentY + rowHeight + margin > pageHeight) {
+      doc.addPage();
+      currentY = margin; // Reset Y for new page
+      // Redraw header on new page if desired, or just continue content
+      // For simplicity, not redrawing header on subsequent pages here.
     }
   });
-  console.log("generatePdfReportContent: autoTable executado.");
+
+  // Draw outer border for the table
+  doc.rect(margin, margin + 25 + 10, pageWidth - 2 * margin, currentY - (margin + 25 + 10), 'S'); // Adjust Y start for border
 
   // Espaço para assinatura
-  const finalY = (doc as any).autoTable.previous.finalY;
-  if (finalY + 40 < pageHeight - margin) { // Verifica se há espaço na página atual
+  if (currentY + 40 < pageHeight - margin) { // Verifica se há espaço na página atual
     doc.setDrawColor(150);
-    doc.line(margin + 20, finalY + 30, margin + 80, finalY + 30);
+    doc.line(margin + 20, currentY + 30, margin + 80, currentY + 30);
     doc.setFontSize(10);
     doc.setTextColor(50);
-    doc.text("Assinatura do Responsável", margin + 20, finalY + 35);
+    doc.text("Assinatura do Responsável", margin + 20, currentY + 35);
   } else { // Adiciona uma nova página se não houver espaço
     doc.addPage();
     doc.setDrawColor(150);
@@ -216,7 +232,7 @@ const generatePdfReportContent = (report: Report, data: Coleta[]): Blob => {
   }
 
   console.log("generatePdfReportContent: Finalizando geração de PDF.");
-  return doc.output('blob'); // Retorna o PDF como Blob
+  doc.output('dataurlnewwindow'); // Abre o PDF em uma nova aba
 };
 
 const generateCsvReportContent = (report: Report, data: Coleta[]): Blob => {
