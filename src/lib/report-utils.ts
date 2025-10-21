@@ -40,18 +40,27 @@ export const generateReport = async (report: Report, userId: string) => {
       throw new Error("Nenhum dado encontrado para os critérios do relatório.");
     }
 
+    let reportUrl: string | null = null;
+    const fileName = `${report.title.replace(/\s/g, '_')}_${format(new Date(), 'yyyyMMdd_HHmmss')}`;
+
     if (report.format === 'pdf') {
-      generatePdfReport(report, coletas);
+      const pdfBlob = generatePdfReportContent(report, coletas);
+      const { publicUrl, uploadError } = await uploadFileToStorage(userId, fileName + '.pdf', pdfBlob, 'application/pdf');
+      if (uploadError) throw uploadError;
+      reportUrl = publicUrl;
     } else if (report.format === 'csv') {
-      generateCsvReport(report, coletas);
+      const csvBlob = generateCsvReportContent(report, coletas);
+      const { publicUrl, uploadError } = await uploadFileToStorage(userId, fileName + '.csv', csvBlob, 'text/csv;charset=utf-8;');
+      if (uploadError) throw uploadError;
+      reportUrl = publicUrl;
     } else {
       throw new Error("Formato de relatório não suportado.");
     }
 
-    // Atualizar o status do relatório para 'concluido'
+    // Atualizar o status do relatório para 'concluido' e salvar a URL
     await supabase
       .from('reports')
-      .update({ status: 'concluido' })
+      .update({ status: 'concluido', report_url: reportUrl })
       .eq('id', report.id);
 
   } catch (error: any) {
@@ -65,7 +74,28 @@ export const generateReport = async (report: Report, userId: string) => {
   }
 };
 
-const generatePdfReport = (report: Report, data: Coleta[]) => {
+const uploadFileToStorage = async (userId: string, fileName: string, fileBlob: Blob, contentType: string) => {
+  const filePath = `${userId}/${fileName}`;
+  const { error: uploadError } = await supabase.storage
+    .from('reports-files') // Nome do bucket
+    .upload(filePath, fileBlob, {
+      cacheControl: '3600',
+      upsert: true,
+      contentType: contentType,
+    });
+
+  if (uploadError) {
+    return { publicUrl: null, uploadError: new Error(`Erro ao fazer upload do arquivo: ${uploadError.message}`) };
+  }
+
+  const { data: publicUrlData } = supabase.storage
+    .from('reports-files')
+    .getPublicUrl(filePath);
+  
+  return { publicUrl: publicUrlData.publicUrl, uploadError: null };
+};
+
+const generatePdfReportContent = (report: Report, data: Coleta[]): Blob => {
   const doc = new jsPDF();
 
   const pageWidth = doc.internal.pageSize.getWidth();
@@ -180,10 +210,10 @@ const generatePdfReport = (report: Report, data: Coleta[]) => {
     doc.text("Assinatura do Responsável", margin + 20, margin + 35);
   }
 
-  doc.save(`${report.title.replace(/\s/g, '_')}_${format(new Date(), 'yyyyMMdd_HHmmss')}.pdf`);
+  return doc.output('blob'); // Retorna o PDF como Blob
 };
 
-const generateCsvReport = (report: Report, data: Coleta[]) => {
+const generateCsvReportContent = (report: Report, data: Coleta[]): Blob => {
   const headers = [
     "ID", "Tipo", "Parceiro", "Controle Cliente", "CNPJ", "Contato", "Telefone", "Email", "Endereço", "CEP", "Bairro", "Cidade", "UF", "Localidade",
     "Previsão Coleta/Entrega", "Qtd. Aparelhos Solicitado", "Modelo Aparelho", "Status Coleta", "Status Unidade",
@@ -225,15 +255,5 @@ const generateCsvReport = (report: Report, data: Coleta[]) => {
     ...rows
   ].join('\n');
 
-  const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-  const link = document.createElement('a');
-  if (link.download !== undefined) {
-    const url = URL.createObjectURL(blob);
-    link.setAttribute('href', url);
-    link.setAttribute('download', `${report.title.replace(/\s/g, '_')}_${format(new Date(), 'yyyyMMdd_HHmmss')}.csv`);
-    link.style.visibility = 'hidden';
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-  }
+  return new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
 };

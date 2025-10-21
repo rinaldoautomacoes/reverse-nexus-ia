@@ -205,20 +205,33 @@ export const Relatorios = () => {
                         <Edit className="mr-1 h-3 w-3" />
                         Editar
                       </Button>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        className="border-primary text-primary hover:bg-primary/10"
-                        onClick={() => handleGenerateReportClick(report)}
-                        disabled={generatingReportId === report.id}
-                      >
-                        {generatingReportId === report.id ? (
-                          <Loader2 className="mr-1 h-3 w-3 animate-spin" />
-                        ) : (
-                          <Download className="mr-1 h-3 w-3" />
-                        )}
-                        Gerar {report.format.toUpperCase()}
-                      </Button>
+                      {report.report_url && report.status === 'concluido' ? (
+                        <a href={report.report_url} target="_blank" rel="noopener noreferrer">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="border-success-green text-success-green hover:bg-success-green/10"
+                          >
+                            <Download className="mr-1 h-3 w-3" />
+                            Download
+                          </Button>
+                        </a>
+                      ) : (
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="border-primary text-primary hover:bg-primary/10"
+                          onClick={() => handleGenerateReportClick(report)}
+                          disabled={generatingReportId === report.id || report.status === 'pendente'}
+                        >
+                          {generatingReportId === report.id ? (
+                            <Loader2 className="mr-1 h-3 w-3 animate-spin" />
+                          ) : (
+                            <Download className="mr-1 h-3 w-3" />
+                          )}
+                          Gerar {report.format.toUpperCase()}
+                        </Button>
+                      )}
                       <Button
                         variant="outline"
                         size="sm"
