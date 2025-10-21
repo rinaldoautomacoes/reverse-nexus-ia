@@ -1,8 +1,9 @@
-import jsPDF from "jspdf"; // Alterado para default import
-import 'jspdf-autotable'; // Em seguida, importa o plugin para que ele estenda o jsPDF já carregado
+import jsPDF from "jspdf";
+import 'jspdf-autotable';
 import { supabase } from "@/integrations/supabase/client";
 import type { Tables } from "@/integrations/supabase/types_generated";
 import { format } from "date-fns";
+import { ptBR } from "date-fns/locale"; // Importar locale para formatação de data
 
 type Report = Tables<'reports'>;
 type Coleta = Tables<'coletas'>;
@@ -65,40 +66,120 @@ export const generateReport = async (report: Report, userId: string) => {
 };
 
 const generatePdfReport = (report: Report, data: Coleta[]) => {
-  const doc = new jsPDF(); // A instância de jsPDF agora deve ter autoTable
+  const doc = new jsPDF();
 
-  doc.setFontSize(18);
-  doc.text(report.title, 14, 22);
+  const pageWidth = doc.internal.pageSize.getWidth();
+  const pageHeight = doc.internal.pageSize.getHeight();
+  const margin = 14; // Margem padrão
 
-  doc.setFontSize(11);
+  // --- Cabeçalho ---
+  // Placeholder para Logotipo da Empresa
+  doc.setFontSize(10);
+  doc.setTextColor(150);
+  doc.text("LogiReverseIA", margin, margin + 4); // Nome da empresa como placeholder de logo
+
+  doc.setFontSize(22);
+  doc.setTextColor(20);
+  doc.setFont("helvetica", "bold");
+  doc.text("Relatório de Coleta", pageWidth / 2, margin + 10, { align: "center" });
+
+  // Data e Hora da Geração
+  doc.setFontSize(9);
   doc.setTextColor(100);
-  doc.text(`Descrição: ${report.description || 'N/A'}`, 14, 30);
-  doc.text(`Período: ${format(new Date(report.start_date!), 'dd/MM/yyyy')} - ${format(new Date(report.end_date!), 'dd/MM/yyyy')}`, 14, 36);
-  doc.text(`Tipo: ${report.collection_type_filter === 'coleta' ? 'Coletas' : report.collection_type_filter === 'entrega' ? 'Entregas' : 'Todos'}`, 14, 42);
-  doc.text(`Status: ${report.collection_status_filter === 'pendente' ? 'Pendente' : report.collection_status_filter === 'agendada' ? 'Em Trânsito' : 'Concluída'}`, 14, 48);
+  doc.setFont("helvetica", "normal");
+  const now = new Date();
+  doc.text(`Gerado em: ${format(now, 'dd/MM/yyyy HH:mm:ss', { locale: ptBR })}`, pageWidth - margin, margin + 4, { align: "right" });
 
+  // Linha divisória
+  doc.setDrawColor(200);
+  doc.line(margin, margin + 15, pageWidth - margin, margin + 15);
+
+  // --- Informações do Relatório ---
+  let currentY = margin + 25;
+  doc.setFontSize(11);
+  doc.setTextColor(50);
+  doc.setFont("helvetica", "bold");
+  doc.text("Detalhes do Relatório:", margin, currentY);
+  currentY += 7;
+  doc.setFont("helvetica", "normal");
+  doc.setTextColor(80);
+  doc.text(`Título: ${report.title}`, margin, currentY);
+  currentY += 6;
+  doc.text(`Descrição: ${report.description || 'N/A'}`, margin, currentY);
+  currentY += 6;
+  doc.text(`Período: ${report.start_date ? format(new Date(report.start_date), 'dd/MM/yyyy', { locale: ptBR }) : 'N/A'} - ${report.end_date ? format(new Date(report.end_date), 'dd/MM/yyyy', { locale: ptBR }) : 'N/A'}`, margin, currentY);
+  currentY += 6;
+  doc.text(`Tipo de Coleta/Entrega: ${report.collection_type_filter === 'coleta' ? 'Coleta' : report.collection_type_filter === 'entrega' ? 'Entrega' : 'Todos'}`, margin, currentY);
+  currentY += 6;
+  doc.text(`Status Filtrado: ${report.collection_status_filter === 'pendente' ? 'Pendente' : report.collection_status_filter === 'agendada' ? 'Em Trânsito' : report.collection_status_filter === 'concluida' ? 'Concluída' : 'Todos'}`, margin, currentY);
+  currentY += 10;
+
+  // --- Tabela de Dados ---
   const tableColumn = [
-    "ID", "Tipo", "Parceiro", "Controle Cliente", "Endereço", "Previsão", "Qtd.", "Modelo", "Status", "Responsável"
+    "Nº Coleta", "Cliente", "Endereço de Coleta", "Responsável", "Material", "Qtd.", "Status", "Observações"
   ];
   const tableRows: any[] = [];
 
   data.forEach(item => {
     const rowData = [
-      item.id.substring(0, 8),
-      item.type === 'coleta' ? 'Coleta' : 'Entrega',
+      item.unique_number || item.id.substring(0, 8),
       item.parceiro || 'N/A',
-      item.client_control || 'N/A',
-      item.endereco || 'N/A',
-      item.previsao_coleta ? format(new Date(item.previsao_coleta), 'dd/MM/yyyy') : 'N/A',
-      item.qtd_aparelhos_solicitado || 0,
-      item.modelo_aparelho || 'N/A',
-      item.status_coleta === 'pendente' ? 'Pendente' : item.status_coleta === 'agendada' ? 'Em Trânsito' : 'Concluída',
+      item.endereco_origem || 'N/A',
       item.responsavel || 'N/A',
+      item.modelo_aparelho || 'N/A',
+      item.qtd_aparelhos_solicitado || 0,
+      item.status_coleta === 'pendente' ? 'Pendente' : item.status_coleta === 'agendada' ? 'Em Trânsito' : 'Concluída',
+      item.observacao || 'N/A',
     ];
     tableRows.push(rowData);
   });
 
-  (doc as any).autoTable(tableColumn, tableRows, { startY: 60 });
+  (doc as any).autoTable({
+    head: [tableColumn],
+    body: tableRows,
+    startY: currentY,
+    theme: 'grid', // Estilo de grade para a tabela
+    styles: {
+      fontSize: 8,
+      cellPadding: 2,
+      valign: 'middle',
+      overflow: 'linebreak',
+    },
+    headStyles: {
+      fillColor: [230, 230, 230], // Cinza claro
+      textColor: [50, 50, 50],
+      fontStyle: 'bold',
+    },
+    alternateRowStyles: {
+      fillColor: [245, 245, 245], // Cinza mais claro para linhas alternadas
+    },
+    margin: { left: margin, right: margin },
+    didDrawPage: function (data: any) {
+      // Rodapé em cada página
+      doc.setFontSize(9);
+      doc.setTextColor(100);
+      doc.text("LogiReverseIA | Contato: contato@logireverseia.com", margin, pageHeight - margin);
+      doc.text(`Página ${data.pageNumber} de ${data.pageCount}`, pageWidth - margin, pageHeight - margin, { align: "right" });
+    }
+  });
+
+  // Espaço para assinatura
+  const finalY = (doc as any).autoTable.previous.finalY;
+  if (finalY + 40 < pageHeight - margin) { // Verifica se há espaço na página atual
+    doc.setDrawColor(150);
+    doc.line(margin + 20, finalY + 30, margin + 80, finalY + 30);
+    doc.setFontSize(10);
+    doc.setTextColor(50);
+    doc.text("Assinatura do Responsável", margin + 20, finalY + 35);
+  } else { // Adiciona uma nova página se não houver espaço
+    doc.addPage();
+    doc.setDrawColor(150);
+    doc.line(margin + 20, margin + 30, margin + 80, margin + 30);
+    doc.setFontSize(10);
+    doc.setTextColor(50);
+    doc.text("Assinatura do Responsável", margin + 20, margin + 35);
+  }
+
   doc.save(`${report.title.replace(/\s/g, '_')}_${format(new Date(), 'yyyyMMdd_HHmmss')}.pdf`);
 };
 
