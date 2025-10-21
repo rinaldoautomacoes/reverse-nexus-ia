@@ -33,6 +33,7 @@ import { LandingPage } from "./pages/LandingPage";
 import { EntregasDashboardPage } from "./pages/EntregasDashboardPage";
 import { DriverManagement } from "./pages/DriverManagement";
 import { TransportadoraManagement } from "./pages/TransportadoraManagement";
+import { DataImportPage } from "./pages/DataImportPage"; // Importar a nova página
 
 const queryClient = new QueryClient();
 
@@ -93,6 +94,7 @@ const AppLayout = () => {
             <Route path="/metrics-management" element={<MetricsManagement />} />
             <Route path="/user-management" element={<UserManagement />} />
             <Route path="/client-management" element={<ClientManagement />} />
+            <Route path="/data-import" element={<DataImportPage />} /> {/* Nova rota para importação de dados */}
           </Route>
           
           <Route path="*" element={<NotFound />} />

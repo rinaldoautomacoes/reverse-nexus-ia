@@ -22,6 +22,7 @@ import {
   FileText, // Adicionado FileText para relatórios
   Home, // Adicionado ícone Home
   Building, // Adicionado ícone Building para transportadoras
+  DatabaseZap, // Adicionado ícone para Importação de Dados
 } from 'lucide-react';
 import { useAuth } from '@/hooks/use-auth';
 import { supabase } from '@/integrations/supabase/client';
@@ -136,6 +137,12 @@ export const SidebarNav: React.FC<SidebarNavProps> = ({ selectedYear, setSelecte
       icon: Route,
       path: '/roteirizacao',
       roles: ['standard', 'admin'],
+    },
+    {
+      label: 'Importar Dados', // NOVO ITEM: Importar Dados
+      icon: DatabaseZap,
+      path: '/data-import',
+      roles: ['admin'], // Apenas administradores podem importar dados
     },
     {
       label: 'Gerenciar Motoristas',
