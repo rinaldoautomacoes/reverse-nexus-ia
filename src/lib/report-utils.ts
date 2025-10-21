@@ -14,7 +14,7 @@ const COLOR_BACKGROUND_WHITE = [255, 255, 255]; // Fundo branco
 const COLOR_BACKGROUND_ALT_ROW = [245, 245, 245]; // Um cinza muito claro para linhas alternadas
 const COLOR_FOREGROUND_DARK = [30, 30, 30]; // Texto escuro para legibilidade no fundo branco
 const COLOR_PRIMARY_NEON_CYAN = [0, 255, 255]; // hsl(180 100% 50%) - Azul neon
-const COLOR_NEON_BLUE_GRADIENT_END = [0, 150, 255]; // Um azul mais escuro para o fim do degradê
+const COLOR_NEON_BLUE_GRADIENT_END = [0, 150, 255]; // Um azul mais escuro para o fim do degradê (usado no degradê do cabeçalho)
 const COLOR_DESTRUCTIVE_RED = [220, 38, 38]; // Vermelho para 'Pendente' (destructive)
 const COLOR_WARNING_ORANGE = [251, 191, 36]; // Laranja para 'Em Trânsito' (warning-yellow)
 const COLOR_SUCCESS_GREEN = [34, 197, 94]; // Verde para 'Concluída' (success-green)
@@ -162,9 +162,9 @@ const generatePdfReportContent = async (report: Report, data: Coleta[]): Promise
   doc.line(margin, currentY, pageWidth - margin, currentY);
   currentY += 10;
 
-  // Detalhes do Relatório
+  // Detalhes do Relatório (agora em cinza escuro)
   doc.setFontSize(11);
-  doc.setTextColor(...COLOR_PRIMARY_NEON_CYAN);
+  doc.setTextColor(...COLOR_FOREGROUND_DARK); // Alterado para cinza escuro
   doc.setFont("helvetica", "bold");
   doc.text("Detalhes do Relatório:", margin, currentY);
   currentY += 7;
@@ -193,7 +193,7 @@ const generatePdfReportContent = async (report: Report, data: Coleta[]): Promise
 
   // Tabela de Dados (implementação manual)
   doc.setFontSize(10);
-  doc.setTextColor(...COLOR_PRIMARY_NEON_CYAN);
+  doc.setTextColor(...COLOR_FOREGROUND_DARK); // Alterado para cinza escuro
   doc.setFont("helvetica", "bold");
   doc.text("Dados das Coletas:", margin, currentY); // Mantido 'Coletas' aqui, pois o título principal já indica o tipo
   currentY += 7;
@@ -227,9 +227,9 @@ const generatePdfReportContent = async (report: Report, data: Coleta[]): Promise
   const cellPadding = 2;
 
   const drawTableHeader = () => {
-    // Simulate gradient fill for the header background
-    const gradientStart = COLOR_PRIMARY_NEON_CYAN; // [0, 255, 255]
-    const gradientEnd = COLOR_NEON_BLUE_GRADIENT_END; // [0, 150, 255]
+    // Simulate gradient fill for the header background (black to dark gray)
+    const gradientStart = [0, 0, 0]; // Black
+    const gradientEnd = [50, 50, 50]; // Dark Gray
     const numSteps = 10; // Number of steps for a smoother gradient simulation
     const stepWidth = usableWidth / numSteps;
 
