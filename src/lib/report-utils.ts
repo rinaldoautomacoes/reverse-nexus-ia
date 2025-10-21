@@ -1,10 +1,10 @@
-import jsPDF from "jspdf"; // Import jsPDF first
-import 'jspdf-autotable'; // Reintroduzido: Garante que o plugin seja carregado no contexto deste arquivo
+import jsPDF from "jspdf";
+import 'jspdf-autotable'; // Garante que o plugin seja carregado no contexto deste arquivo
 
 import { supabase } from "@/integrations/supabase/client";
 import type { Tables } from "@/integrations/supabase/types_generated";
 import { format } from "date-fns";
-import { ptBR } from "date-fns/locale"; // Importar locale para formatação de data
+import { ptBR } from "date-fns/locale";
 
 type Report = Tables<'reports'>;
 type Coleta = Tables<'coletas'>;
@@ -28,7 +28,7 @@ export const generateReport = async (report: Report, userId: string) => {
       query = query.gte('created_at', report.start_date);
     }
     if (report.end_date) {
-      query = query.lte('created_at', report.end_date + 'T23:59:59.999Z'); // Inclui o dia inteiro
+      query = query.lte('created_at', report.end_date + 'T23:59:59.999Z');
     }
 
     const { data: coletas, error } = await query.order('created_at', { ascending: false });
@@ -58,7 +58,6 @@ export const generateReport = async (report: Report, userId: string) => {
       throw new Error("Formato de relatório não suportado.");
     }
 
-    // Atualizar o status do relatório para 'concluido' e salvar a URL
     await supabase
       .from('reports')
       .update({ status: 'concluido', report_url: reportUrl })
@@ -66,19 +65,18 @@ export const generateReport = async (report: Report, userId: string) => {
 
   } catch (error: any) {
     console.error("Erro ao gerar relatório:", error.message);
-    // Atualizar o status do relatório para 'erro'
     await supabase
       .from('reports')
       .update({ status: 'erro', description: `Erro: ${error.message}` })
       .eq('id', report.id);
-    throw error; // Re-throw para que o chamador possa lidar com o erro
+    throw error;
   }
 };
 
 const uploadFileToStorage = async (userId: string, fileName: string, fileBlob: Blob, contentType: string) => {
   const filePath = `${userId}/${fileName}`;
   const { error: uploadError } = await supabase.storage
-    .from('reports-files') // Nome do bucket
+    .from('reports-files')
     .upload(filePath, fileBlob, {
       cacheControl: '3600',
       upsert: true,
@@ -98,36 +96,34 @@ const uploadFileToStorage = async (userId: string, fileName: string, fileBlob: B
 
 const generatePdfReportContent = (report: Report, data: Coleta[]): Blob => {
   console.log("generatePdfReportContent: Iniciando geração de PDF.");
+  console.log("jsPDF.prototype.autoTable antes da instância:", (jsPDF.prototype as any).autoTable); // Log de depuração
+
   const doc = new jsPDF();
   console.log("generatePdfReportContent: Instância jsPDF criada.", doc);
+  console.log("doc.autoTable após a instância:", (doc as any).autoTable); // Log de depuração
 
   const pageWidth = doc.internal.pageSize.getWidth();
   const pageHeight = doc.internal.pageSize.getHeight();
-  const margin = 14; // Margem padrão
+  const margin = 14;
 
-  // --- Cabeçalho ---
-  // Placeholder para Logotipo da Empresa
   doc.setFontSize(10);
   doc.setTextColor(150);
-  doc.text("LogiReverseIA", margin, margin + 4); // Nome da empresa como placeholder de logo
+  doc.text("LogiReverseIA", margin, margin + 4);
 
   doc.setFontSize(22);
   doc.setTextColor(20);
   doc.setFont("helvetica", "bold");
   doc.text("Relatório de Coleta", pageWidth / 2, margin + 10, { align: "center" });
 
-  // Data e Hora da Geração
   doc.setFontSize(9);
   doc.setTextColor(100);
   doc.setFont("helvetica", "normal");
   const now = new Date();
   doc.text(`Gerado em: ${format(now, 'dd/MM/yyyy HH:mm:ss', { locale: ptBR })}`, pageWidth - margin, margin + 4, { align: "right" });
 
-  // Linha divisória
   doc.setDrawColor(200);
   doc.line(margin, margin + 15, pageWidth - margin, margin + 15);
 
-  // --- Informações do Relatório ---
   let currentY = margin + 25;
   doc.setFontSize(11);
   doc.setTextColor(50);
@@ -147,7 +143,6 @@ const generatePdfReportContent = (report: Report, data: Coleta[]): Blob => {
   doc.text(`Status Filtrado: ${report.collection_status_filter === 'pendente' ? 'Pendente' : report.collection_status_filter === 'agendada' ? 'Em Trânsito' : report.collection_status_filter === 'concluida' ? 'Concluída' : 'Todos'}`, margin, currentY);
   currentY += 10;
 
-  // --- Tabela de Dados ---
   const tableColumn = [
     "Nº Coleta", "Cliente", "Endereço de Coleta", "Responsável", "Material", "Qtd.", "Status", "Observações"
   ];
@@ -171,7 +166,7 @@ const generatePdfReportContent = (report: Report, data: Coleta[]): Blob => {
     head: [tableColumn],
     body: tableRows,
     startY: currentY,
-    theme: 'grid', // Estilo de grade para a tabela
+    theme: 'grid',
     styles: {
       fontSize: 8,
       cellPadding: 2,
@@ -179,16 +174,15 @@ const generatePdfReportContent = (report: Report, data: Coleta[]): Blob => {
       overflow: 'linebreak',
     },
     headStyles: {
-      fillColor: [230, 230, 230], // Cinza claro
+      fillColor: [230, 230, 230],
       textColor: [50, 50, 50],
       fontStyle: 'bold',
     },
     alternateRowStyles: {
-      fillColor: [245, 245, 245], // Cinza mais claro para linhas alternadas
+      fillColor: [245, 245, 245],
     },
     margin: { left: margin, right: margin },
     didDrawPage: function (data: any) {
-      // Rodapé em cada página
       doc.setFontSize(9);
       doc.setTextColor(100);
       doc.text("LogiReverseIA | Contato: contato@logireverseia.com", margin, pageHeight - margin);
@@ -197,15 +191,14 @@ const generatePdfReportContent = (report: Report, data: Coleta[]): Blob => {
   });
   console.log("generatePdfReportContent: autoTable executado.");
 
-  // Espaço para assinatura
   const finalY = (doc as any).autoTable.previous.finalY;
-  if (finalY + 40 < pageHeight - margin) { // Verifica se há espaço na página atual
+  if (finalY + 40 < pageHeight - margin) {
     doc.setDrawColor(150);
     doc.line(margin + 20, finalY + 30, margin + 80, finalY + 30);
     doc.setFontSize(10);
     doc.setTextColor(50);
     doc.text("Assinatura do Responsável", margin + 20, finalY + 35);
-  } else { // Adiciona uma nova página se não houver espaço
+  } else {
     doc.addPage();
     doc.setDrawColor(150);
     doc.line(margin + 20, margin + 30, margin + 80, margin + 30);
@@ -215,7 +208,7 @@ const generatePdfReportContent = (report: Report, data: Coleta[]): Blob => {
   }
 
   console.log("generatePdfReportContent: Finalizando geração de PDF.");
-  return doc.output('blob'); // Retorna o PDF como Blob
+  return doc.output('blob');
 };
 
 const generateCsvReportContent = (report: Report, data: Coleta[]): Blob => {
