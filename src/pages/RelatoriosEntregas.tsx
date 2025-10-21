@@ -205,7 +205,7 @@ export const RelatoriosEntregas = () => {
                         <Edit className="mr-1 h-3 w-3" />
                         Editar
                       </Button>
-                      {report.format === 'csv' && report.report_url && report.status === 'concluido' ? (
+                      {report.report_url && report.status === 'concluido' ? (
                         <a href={report.report_url} target="_blank" rel="noopener noreferrer">
                           <Button
                             variant="outline"
