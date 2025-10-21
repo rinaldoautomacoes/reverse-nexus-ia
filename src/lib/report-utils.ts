@@ -1,6 +1,6 @@
-import { jsPDF } from "jspdf"; // Importar jsPDF diretamente aqui
+import { jsPDF } from "jspdf";
 import html2canvas from "html2canvas"; // Manter import para caso de uso futuro, mas não será usado para a tabela
-import "jspdf-autotable"; // Importar o plugin jspdf-autotable diretamente aqui
+// import "jspdf-autotable"; // REMOVIDO: Não usaremos mais o plugin jspdf-autotable
 
 import { supabase } from "@/integrations/supabase/client";
 import type { Tables } from "@/integrations/supabase/types_generated";
@@ -102,6 +102,25 @@ const generatePdfReportContent = async (report: Report, data: Coleta[]): Promise
   const margin = 14;
   let currentY = margin;
 
+  // Helper para adicionar nova página e cabeçalho/rodapé
+  const addPageWithHeaderAndFooter = (pageNumber: number) => {
+    doc.addPage();
+    currentY = margin;
+    doc.setFontSize(10);
+    doc.setTextColor(150);
+    doc.text("LogiReverseIA", margin, currentY + 4);
+    doc.setFontSize(9);
+    doc.setTextColor(100);
+    doc.text(`Gerado em: ${format(new Date(), 'dd/MM/yyyy HH:mm:ss', { locale: ptBR })}`, pageWidth - margin, currentY + 4, { align: "right" });
+    currentY += 15;
+    doc.setDrawColor(200);
+    doc.line(margin, currentY, pageWidth - margin, currentY);
+    currentY += 10;
+    
+    // Redesenhar cabeçalhos da tabela na nova página
+    drawTableHeader();
+  };
+
   // Cabeçalho do PDF
   doc.setFontSize(10);
   doc.setTextColor(150);
@@ -142,68 +161,123 @@ const generatePdfReportContent = async (report: Report, data: Coleta[]): Promise
   doc.text(`Status Filtrado: ${report.collection_status_filter === 'pendente' ? 'Pendente' : report.collection_status_filter === 'agendada' ? 'Em Trânsito' : report.collection_status_filter === 'concluida' ? 'Concluída' : 'Todos'}`, margin, currentY);
   currentY += 10;
 
-  // Tabela de Dados com jspdf-autotable
-  const tableHeaders = [
-    ["Nº Coleta", "Cliente", "Endereço de Origem", "Endereço de Destino", "Material", "Qtd", "Status", "Previsão"]
+  // Tabela de Dados (implementação manual)
+  doc.setFontSize(10);
+  doc.setTextColor(50);
+  doc.setFont("helvetica", "bold");
+  doc.text("Dados das Coletas:", margin, currentY);
+  currentY += 7;
+
+  const tableHeaders = ["Nº Coleta", "Cliente", "Endereço de Origem", "Endereço de Destino", "Material", "Qtd", "Status", "Previsão"];
+  const usableWidth = pageWidth - 2 * margin;
+  const columnWidths = [
+    usableWidth * 0.10, // Nº Coleta
+    usableWidth * 0.15, // Cliente
+    usableWidth * 0.25, // Endereço Origem
+    usableWidth * 0.25, // Endereço Destino
+    usableWidth * 0.10, // Material
+    usableWidth * 0.05, // Qtd
+    usableWidth * 0.05, // Status
+    usableWidth * 0.05, // Previsão
   ];
+  
+  const rowHeight = 8;
+  const headerHeight = 10;
+  const cellPadding = 2;
 
-  const tableRows = data.map(item => [
-    item.unique_number || item.id.substring(0, 8),
-    item.parceiro || 'N/A',
-    item.endereco_origem || 'N/A',
-    item.endereco_destino || 'N/A',
-    item.modelo_aparelho || 'N/A',
-    (item.qtd_aparelhos_solicitado || 0).toString(),
-    item.status_coleta === 'pendente' ? 'Pendente' : item.status_coleta === 'agendada' ? 'Em Trânsito' : item.status_coleta === 'concluida' ? 'Concluída' : 'N/A',
-    item.previsao_coleta ? format(new Date(item.previsao_coleta), 'dd/MM/yyyy', { locale: ptBR }) : 'N/A',
-  ]);
+  const drawTableHeader = () => {
+    doc.setFillColor(240, 240, 240); // Cor de fundo para o cabeçalho
+    doc.rect(margin, currentY, usableWidth, headerHeight, 'F'); // Desenha o fundo do cabeçalho
+    doc.setDrawColor(200);
+    doc.setLineWidth(0.1);
+    doc.rect(margin, currentY, usableWidth, headerHeight, 'S'); // Desenha a borda do cabeçalho
 
-  (doc as any).autoTable({
-    startY: currentY,
-    head: tableHeaders,
-    body: tableRows,
-    theme: 'grid', // 'striped', 'grid', 'plain'
-    styles: {
-      fontSize: 8,
-      cellPadding: 2,
-      valign: 'middle',
-      overflow: 'linebreak',
-      lineColor: [200, 200, 200],
-      lineWidth: 0.1,
-      textColor: [50, 50, 50],
-    },
-    headStyles: {
-      fillColor: [240, 240, 240],
-      textColor: [0, 0, 0],
-      fontStyle: 'bold',
-      halign: 'center',
-    },
-    bodyStyles: {
-      halign: 'left',
-    },
-    columnStyles: {
-      0: { cellWidth: 20 }, // Nº Coleta
-      1: { cellWidth: 30 }, // Cliente
-      2: { cellWidth: 40 }, // Endereço Origem
-      3: { cellWidth: 40 }, // Endereço Destino
-      4: { cellWidth: 25 }, // Material
-      5: { cellWidth: 15, halign: 'center' }, // Qtd
-      6: { cellWidth: 20, halign: 'center' }, // Status
-      7: { cellWidth: 20, halign: 'center' }, // Previsão
-    },
-    didDrawPage: (dataHook: any) => {
-      // Rodapé para cada página
-      doc.setFontSize(9);
-      doc.setTextColor(100);
-      doc.text("LogiReverseIA | Contato: contato@logireverseia.com", margin, pageHeight - margin);
-      doc.text(`Página ${dataHook.pageNumber}`, pageWidth - margin, pageHeight - margin, { align: "right" });
-    },
-  });
+    let currentX = margin;
+    doc.setFontSize(8);
+    doc.setTextColor(0);
+    doc.setFont("helvetica", "bold");
+    tableHeaders.forEach((header, i) => {
+      doc.text(header, currentX + columnWidths[i] / 2, currentY + headerHeight / 2 + 1, { align: "center" });
+      currentX += columnWidths[i];
+      if (i < tableHeaders.length - 1) {
+        doc.line(currentX, currentY, currentX, currentY + headerHeight); // Linhas verticais do cabeçalho
+      }
+    });
+    currentY += headerHeight;
+  };
 
-  currentY = (doc as any).autoTable.previous.finalY + 20; // Posição após a tabela
+  drawTableHeader();
+
+  doc.setFont("helvetica", "normal");
+  doc.setTextColor(50);
+
+  let pageNumber = 1;
+
+  for (const item of data) {
+    const rowData = [
+      item.unique_number || item.id.substring(0, 8),
+      item.parceiro || 'N/A',
+      item.endereco_origem || 'N/A',
+      item.endereco_destino || 'N/A',
+      item.modelo_aparelho || 'N/A',
+      (item.qtd_aparelhos_solicitado || 0).toString(),
+      item.status_coleta === 'pendente' ? 'Pendente' : item.status_coleta === 'agendada' ? 'Em Trânsito' : item.status_coleta === 'concluida' ? 'Concluída' : 'N/A',
+      item.previsao_coleta ? format(new Date(item.previsao_coleta), 'dd/MM/yyyy', { locale: ptBR }) : 'N/A',
+    ];
+
+    // Calcular altura da linha com base no conteúdo (especialmente endereços)
+    let maxLineHeight = rowHeight;
+    const wrappedLines: string[][] = [];
+    rowData.forEach((cellText, i) => {
+      const lines = doc.splitTextToSize(cellText, columnWidths[i] - 2 * cellPadding);
+      wrappedLines.push(lines);
+      if (lines.length * (doc.getFontSize() / doc.internal.scaleFactor + 1) > maxLineHeight) {
+        maxLineHeight = lines.length * (doc.getFontSize() / doc.internal.scaleFactor + 1);
+      }
+    });
+
+    if (currentY + maxLineHeight + cellPadding * 2 > pageHeight - margin) {
+      addPageWithHeaderAndFooter(++pageNumber);
+    }
+
+    let currentX = margin;
+    doc.setDrawColor(200);
+    doc.setLineWidth(0.1);
+    doc.setFontSize(8);
+    
+    // Desenha o fundo da linha (opcional, para linhas alternadas)
+    // if (data.indexOf(item) % 2 === 0) {
+    //   doc.setFillColor(248, 248, 248);
+    //   doc.rect(margin, currentY, usableWidth, maxLineHeight + 2 * cellPadding, 'F');
+    // }
+
+    rowData.forEach((cellText, i) => {
+      doc.rect(currentX, currentY, columnWidths[i], maxLineHeight + 2 * cellPadding, 'S'); // Desenha a borda da célula
+      
+      // Alinhamento de texto
+      let textX = currentX + cellPadding;
+      let textY = currentY + cellPadding + doc.getFontSize() / doc.internal.scaleFactor;
+      let align: 'left' | 'center' | 'right' = 'left';
+
+      if (i === 5 || i === 6 || i === 7) { // Qtd, Status, Previsão (centralizado)
+        textX = currentX + columnWidths[i] / 2;
+        align = 'center';
+      }
+
+      doc.text(wrappedLines[i], textX, textY, { align: align });
+      currentX += columnWidths[i];
+    });
+    currentY += maxLineHeight + 2 * cellPadding;
+  }
+
+  // Rodapé para a última página
+  doc.setFontSize(9);
+  doc.setTextColor(100);
+  doc.text("LogiReverseIA | Contato: contato@logireverseia.com", margin, pageHeight - margin);
+  doc.text(`Página ${doc.internal.getNumberOfPages()}`, pageWidth - margin, pageHeight - margin, { align: "right" });
 
   // Adicionar espaço para assinatura do responsável
-  let signatureY = currentY;
+  let signatureY = currentY + 20;
   if (signatureY + 30 > pageHeight - margin) { // Se não houver espaço, adiciona nova página
     doc.addPage();
     signatureY = margin + 20;
