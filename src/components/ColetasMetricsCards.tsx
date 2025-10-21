@@ -174,8 +174,13 @@ export const ColetasMetricsCards: React.FC<ColetasMetricsCardsProps> = ({ select
   const calculateColetasMetrics = (coletasData: Coleta[] | undefined, itemsData: Item[] | undefined, allItemsData: Item[] | undefined) => {
     const totalColetas = coletasData?.length || 0;
     
-    // Calculate total quantity of all items associated with 'coleta' type
-    const totalProductQuantity = allItemsData?.reduce((sum, item) => sum + (item.quantity || 0), 0) || 0;
+    // Calculate total quantity of all items for the user and year from allItemsData
+    // This sums the 'quantity' field of all items found in the 'items' table for the selected year.
+    const totalProductQuantity = allItemsData?.reduce((sum, item) => {
+      // Ensure item.quantity is a number, default to 0 if null/undefined
+      const quantity = typeof item.quantity === 'number' ? item.quantity : 0;
+      return sum + quantity;
+    }, 0) || 0;
 
     const pendenteColetas = coletasData?.filter(c => c.status_coleta === 'pendente').length || 0;
     const concluidaColetas = coletasData?.filter(c => c.status_coleta === 'concluida').length || 0;

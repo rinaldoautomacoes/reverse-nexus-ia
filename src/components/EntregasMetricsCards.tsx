@@ -175,7 +175,12 @@ export const EntregasMetricsCards: React.FC<EntregasMetricsCardsProps> = ({ sele
     const totalEntregas = entregasData?.length || 0;
     
     // Calculate total quantity of all items for the user and year from allItemsData
-    const totalProductQuantity = allItemsData?.reduce((sum, item) => sum + (item.quantity || 0), 0) || 0;
+    // This sums the 'quantity' field of all items found in the 'items' table for the selected year.
+    const totalProductQuantity = allItemsData?.reduce((sum, item) => {
+      // Ensure item.quantity is a number, default to 0 if null/undefined
+      const quantity = typeof item.quantity === 'number' ? item.quantity : 0;
+      return sum + quantity;
+    }, 0) || 0;
 
     const pendenteEntregas = entregasData?.filter(e => e.status_coleta === 'pendente').length || 0;
     const concluidaEntregas = entregasData?.filter(e => e.status_coleta === 'concluida').length || 0;
