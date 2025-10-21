@@ -9,15 +9,16 @@ import { ptBR } from "date-fns/locale";
 type Report = Tables<'reports'>;
 type Coleta = Tables<'coletas'>;
 
-// RGB values for futuristic theme
-const COLOR_BACKGROUND_DARK = [13, 15, 18]; // hsl(225 15% 6%)
+// RGB values for futuristic theme - ADJUSTED FOR A SOFTER, MORE PROFESSIONAL DARK BACKGROUND
+const COLOR_BACKGROUND_DARK = [30, 35, 40]; // Um cinza-azulado escuro, menos intenso que o preto
+const COLOR_BACKGROUND_ALT_ROW = [38, 43, 48]; // Um pouco mais claro para linhas alternadas
 const COLOR_FOREGROUND_LIGHT = [242, 255, 255]; // hsl(180 100% 95%)
 const COLOR_PRIMARY_NEON_CYAN = [0, 255, 255]; // hsl(180 100% 50%)
-const COLOR_ACCENT_NEURAL_BLUE = [0, 102, 255]; // hsl(220 100% 60%) - using this for warning-yellow too
-const COLOR_DESTRUCTIVE_DEEP_BLUE = [20, 20, 204]; // hsl(240 80% 40%) - for pendente
-const COLOR_SUCCESS_GREEN = [0, 255, 255]; // hsl(180 100% 50%) - same as neon-cyan
+const COLOR_ACCENT_NEURAL_BLUE = [0, 102, 255]; // hsl(220 100% 60%) - for 'Em Trânsito'
+const COLOR_DESTRUCTIVE_DEEP_BLUE = [20, 20, 204]; // hsl(240 80% 40%) - for 'Pendente'
+const COLOR_SUCCESS_GREEN = [0, 255, 255]; // hsl(180 100% 50%) - same as neon-cyan for 'Concluída'
 const COLOR_MUTED_FOREGROUND = [180, 180, 180]; // A lighter gray for muted text
-const COLOR_BORDER = [50, 50, 50]; // Darker border for elements
+const COLOR_BORDER = [70, 75, 80]; // Borda mais visível contra o novo fundo
 
 export const generateReport = async (report: Report, userId: string) => {
   try {
@@ -225,7 +226,7 @@ const generatePdfReportContent = async (report: Report, data: Coleta[]): Promise
   const cellPadding = 2;
 
   const drawTableHeader = () => {
-    doc.setFillColor(0, 102, 255); // Neural Blue for header background
+    doc.setFillColor(...COLOR_ACCENT_NEURAL_BLUE); // Neural Blue for header background
     doc.rect(margin, currentY, usableWidth, headerHeight, 'F'); // Desenha o fundo do cabeçalho
     doc.setDrawColor(...COLOR_PRIMARY_NEON_CYAN); // Neon Cyan border
     doc.setLineWidth(0.2);
@@ -286,9 +287,9 @@ const generatePdfReportContent = async (report: Report, data: Coleta[]): Promise
     
     // Alternating row background
     if (data.indexOf(item) % 2 === 0) {
-      doc.setFillColor(COLOR_BACKGROUND_DARK[0] + 5, COLOR_BACKGROUND_DARK[1] + 5, COLOR_BACKGROUND_DARK[2] + 5); // Slightly lighter dark for even rows
+      doc.setFillColor(...COLOR_BACKGROUND_ALT_ROW); // Slightly lighter dark for even rows
     } else {
-      doc.setFillColor(COLOR_BACKGROUND_DARK[0], COLOR_BACKGROUND_DARK[1], COLOR_BACKGROUND_DARK[2]); // Original dark for odd rows
+      doc.setFillColor(...COLOR_BACKGROUND_DARK); // Original dark for odd rows
     }
     doc.rect(margin, currentY, usableWidth, maxLineHeight + 2 * cellPadding, 'F');
 
