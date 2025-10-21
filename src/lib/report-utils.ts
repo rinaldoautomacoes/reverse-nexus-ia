@@ -190,15 +190,16 @@ const generatePdfReportContent = async (report: Report, data: Coleta[]): Promise
     report.type === 'coleta' ? "Previsão Coleta" : "Previsão Entrega",
   ];
   const usableWidth = pageWidth - 2 * margin;
+  // Ajuste das larguras das colunas para melhor visualização
   const columnWidths = [
-    usableWidth * 0.10, // Nº Coleta/Entrega
+    usableWidth * 0.12, // Nº Coleta/Entrega (aumentado)
     usableWidth * 0.15, // Cliente
-    usableWidth * 0.25, // Endereço Origem
-    usableWidth * 0.25, // Endereço Destino
-    usableWidth * 0.10, // Material
-    usableWidth * 0.05, // Qtd
-    usableWidth * 0.05, // Status
-    usableWidth * 0.05, // Previsão Coleta/Entrega
+    usableWidth * 0.23, // Endereço Origem (ajustado)
+    usableWidth * 0.22, // Endereço Destino (ajustado)
+    usableWidth * 0.08, // Material (ajustado)
+    usableWidth * 0.04, // Qtd (ajustado)
+    usableWidth * 0.08, // Status (aumentado)
+    usableWidth * 0.08, // Previsão Coleta/Entrega (aumentado)
   ];
   
   const rowHeight = 8;
@@ -256,7 +257,7 @@ const generatePdfReportContent = async (report: Report, data: Coleta[]): Promise
       }
     });
 
-    if (currentY + maxLineHeight + cellPadding * 2 > pageHeight - margin) {
+    if (currentY + maxLineHeight + 2 * cellPadding > pageHeight - margin) { // Ajustado para considerar o padding
       addPageWithHeaderAndFooter(++pageNumber);
     }
 
