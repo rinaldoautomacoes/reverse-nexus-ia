@@ -81,38 +81,23 @@ export const EntregasMetricsCards: React.FC<EntregasMetricsCardsProps> = ({ sele
     enabled: !!user?.id,
   });
 
-  // Fetch items associated with the fetched entregas (kept for potential future use or other metrics)
-  const collectionIds = entregas?.map(e => e.id) || [];
-  const { data: items, isLoading: isLoadingItems, error: itemsError } = useQuery<Item[], Error>({
-    queryKey: ['itemsForEntregasMetrics', user?.id, collectionIds],
-    queryFn: async () => {
-      if (!user?.id || collectionIds.length === 0) return [];
-      const { data, error } = await supabase
-        .from('items')
-        .select('quantity, collection_id, name') // Added name (product code)
-        .eq('user_id', user.id)
-        .in('collection_id', collectionIds);
-      if (error) throw new Error(error.message);
-      return data;
-    },
-    enabled: !!user?.id && collectionIds.length > 0,
-  });
-
-  // NEW: Fetch all items for the selected year, regardless of collection type
-  const { data: allUserItems, isLoading: isLoadingAllItems, error: allItemsError } = useQuery<Item[], Error>({
-    queryKey: ['allItemsForEntregasMetrics', user?.id, selectedYear],
+  // NEW: Fetch only items associated with COMPLETED entregas for the selected year
+  const { data: completedEntregas, isLoading: isLoadingCompletedEntregas, error: completedEntregasError } = useQuery<Coleta[], Error>({
+    queryKey: ['completedEntregasForItems', user?.id, selectedYear],
     queryFn: async () => {
       if (!user?.id) return [];
 
-      const startDate = `${selectedYear}-01-01T00:00:00Z`;
-      const endDate = `${parseInt(selectedYear) + 1}-01-01T00:00:00Z`;
+      const startDate = `${selectedYear}-01-01`;
+      const endDate = `${parseInt(selectedYear) + 1}-01-01`;
 
       const { data, error } = await supabase
-        .from('items')
-        .select('quantity, name') // Select quantity and name (product code)
-        .eq('user_id', user.id) // Corrected from 'user.id' to 'user_id'
-        .gte('created_at', startDate)
-        .lt('created_at', endDate);
+        .from('coletas')
+        .select('id')
+        .eq('user_id', user.id)
+        .eq('type', 'entrega')
+        .eq('status_coleta', 'concluida') // Filter for completed entregas
+        .gte('previsao_coleta', startDate)
+        .lt('previsao_coleta', endDate);
       
       if (error) {
         throw new Error(error.message);
@@ -120,6 +105,22 @@ export const EntregasMetricsCards: React.FC<EntregasMetricsCardsProps> = ({ sele
       return data;
     },
     enabled: !!user?.id,
+  });
+
+  const completedCollectionIds = completedEntregas?.map(e => e.id) || [];
+  const { data: completedEntregaItems, isLoading: isLoadingCompletedEntregaItems, error: completedEntregaItemsError } = useQuery<Item[], Error>({
+    queryKey: ['completedEntregaItems', user?.id, completedCollectionIds],
+    queryFn: async () => {
+      if (!user?.id || completedCollectionIds.length === 0) return [];
+      const { data, error } = await supabase
+        .from('items')
+        .select('quantity, name')
+        .eq('user_id', user.id)
+        .in('collection_id', completedCollectionIds);
+      if (error) throw new Error(error.message);
+      return data;
+    },
+    enabled: !!user?.id && completedCollectionIds.length > 0,
   });
 
   useEffect(() => {
@@ -130,13 +131,6 @@ export const EntregasMetricsCards: React.FC<EntregasMetricsCardsProps> = ({ sele
         variant: "destructive",
       });
     }
-    if (itemsError) {
-      toast({
-        title: "Erro ao carregar dados dos itens",
-        description: itemsError.message,
-        variant: "destructive",
-      });
-    }
     if (productsError) {
       toast({
         title: "Erro ao carregar descrições de produtos",
@@ -144,14 +138,14 @@ export const EntregasMetricsCards: React.FC<EntregasMetricsCardsProps> = ({ sele
         variant: "destructive",
       });
     }
-    if (allItemsError) {
+    if (completedEntregasError || completedEntregaItemsError) {
       toast({
-        title: "Erro ao carregar dados de todos os itens",
-        description: allItemsError.message,
+        title: "Erro ao carregar itens de entregas concluídas",
+        description: (completedEntregasError || completedEntregaItemsError)?.message,
         variant: "destructive",
       });
     }
-  }, [entregasError, itemsError, productsError, allItemsError, toast]);
+  }, [entregasError, productsError, completedEntregasError, completedEntregaItemsError, toast]);
 
   // Helper function to generate item descriptions for tooltips/cards
   const generateItemDescription = (itemCodeQuantities: Map<string, number>) => {
@@ -171,13 +165,11 @@ export const EntregasMetricsCards: React.FC<EntregasMetricsCardsProps> = ({ sele
     return `${descriptions[0]}, ${descriptions[1]} e outros`;
   };
 
-  const calculateEntregasMetrics = (entregasData: Coleta[] | undefined, itemsData: Item[] | undefined, allItemsData: Item[] | undefined) => {
+  const calculateEntregasMetrics = (entregasData: Coleta[] | undefined, completedItemsData: Item[] | undefined) => {
     const totalEntregas = entregasData?.length || 0;
     
-    // Calculate total quantity of all items for the user and year from allItemsData
-    // This sums the 'quantity' field of all items found in the 'items' table for the selected year.
-    const totalProductQuantity = allItemsData?.reduce((sum, item) => {
-      // Ensure item.quantity is a number, default to 0 if null/undefined
+    // Calculate total quantity of items from COMPLETED entregas
+    const totalProductQuantity = completedItemsData?.reduce((sum, item) => {
       const quantity = typeof item.quantity === 'number' ? item.quantity : 0;
       return sum + quantity;
     }, 0) || 0;
@@ -198,8 +190,8 @@ export const EntregasMetricsCards: React.FC<EntregasMetricsCardsProps> = ({ sele
       {
         id: 'total-produtos',
         title: 'Total Geral de Produtos',
-        value: totalProductQuantity.toString(), // Use the sum of quantities
-        description: 'Itens cadastrados na base', // Updated description
+        value: totalProductQuantity.toString(), // Use the sum of quantities from completed entregas
+        description: 'Itens entregues e processados', // Updated description
         icon_name: 'Box',
         color: 'text-neural',
         bg_color: 'bg-neural/10',
@@ -225,9 +217,9 @@ export const EntregasMetricsCards: React.FC<EntregasMetricsCardsProps> = ({ sele
     ];
   };
 
-  const dashboardMetrics = calculateEntregasMetrics(entregas, items, allUserItems); // Pass allUserItems to the calculation function
+  const dashboardMetrics = calculateEntregasMetrics(entregas, completedEntregaItems);
 
-  if (isLoadingEntregas || isLoadingItems || isLoadingProducts || isLoadingAllItems) {
+  if (isLoadingEntregas || isLoadingProducts || isLoadingCompletedEntregas || isLoadingCompletedEntregaItems) {
     return (
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         {[...Array(4)].map((_, i) => (
