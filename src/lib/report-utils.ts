@@ -97,7 +97,9 @@ const uploadFileToStorage = async (userId: string, fileName: string, fileBlob: B
 };
 
 const generatePdfReportContent = (report: Report, data: Coleta[]): Blob => {
+  console.log("generatePdfReportContent: Iniciando geração de PDF.");
   const doc = new jsPDF();
+  console.log("generatePdfReportContent: Instância jsPDF criada.", doc);
 
   const pageWidth = doc.internal.pageSize.getWidth();
   const pageHeight = doc.internal.pageSize.getHeight();
@@ -165,6 +167,7 @@ const generatePdfReportContent = (report: Report, data: Coleta[]): Blob => {
     tableRows.push(rowData);
   });
 
+  console.log("generatePdfReportContent: Verificando doc.autoTable antes da chamada:", typeof (doc as any).autoTable);
   (doc as any).autoTable({
     head: [tableColumn],
     body: tableRows,
@@ -193,6 +196,7 @@ const generatePdfReportContent = (report: Report, data: Coleta[]): Blob => {
       doc.text(`Página ${data.pageNumber} de ${data.pageCount}`, pageWidth - margin, pageHeight - margin, { align: "right" });
     }
   });
+  console.log("generatePdfReportContent: autoTable executado.");
 
   // Espaço para assinatura
   const finalY = (doc as any).autoTable.previous.finalY;
@@ -211,6 +215,7 @@ const generatePdfReportContent = (report: Report, data: Coleta[]): Blob => {
     doc.text("Assinatura do Responsável", margin + 20, margin + 35);
   }
 
+  console.log("generatePdfReportContent: Finalizando geração de PDF.");
   return doc.output('blob'); // Retorna o PDF como Blob
 };
 
