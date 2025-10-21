@@ -1,5 +1,5 @@
-import 'jspdf-autotable'; // Garante que o plugin seja carregado primeiro
-import jsPDF from "jspdf"; // Em seguida, importa o jsPDF
+import jsPDF from "jspdf"; // Import jsPDF first
+import 'jspdf-autotable'; // Then ensure the plugin is loaded
 
 import { supabase } from "@/integrations/supabase/client";
 import type { Tables } from "@/integrations/supabase/types_generated";
