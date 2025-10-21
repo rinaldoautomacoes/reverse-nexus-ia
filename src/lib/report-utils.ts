@@ -1,12 +1,8 @@
 import jsPDF from "jspdf";
 import 'jspdf-autotable'; // Garante que o plugin seja carregado no contexto deste arquivo
 
-// Adiciona uma verificação e atribuição explícita para autoTable
-// Isso é um workaround caso o plugin não estenda jsPDF automaticamente
-if (typeof (jsPDF.prototype as any).autoTable === 'undefined') {
-  // @ts-ignore - Ignora o erro de tipo temporariamente para a atribuição
-  (jsPDF.prototype as any).autoTable = (window as any).jsPDF.API.autoTable;
-}
+// A atribuição explícita de autoTable foi removida, pois window.jsPDF.API não está definido
+// O plugin jspdf-autotable deve estender jsPDF automaticamente ao ser importado.
 
 import { supabase } from "@/integrations/supabase/client";
 import type { Tables } from "@/integrations/supabase/types_generated";
