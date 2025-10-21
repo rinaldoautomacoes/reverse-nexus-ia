@@ -1,6 +1,5 @@
 import { jsPDF } from "jspdf";
-import html2canvas from "html2canvas"; // Manter import para caso de uso futuro, mas não será usado para a tabela
-// import "jspdf-autotable"; // REMOVIDO: Não usaremos mais o plugin jspdf-autotable
+import html2canvas from "html2canvas"; 
 
 import { supabase } from "@/integrations/supabase/client";
 import type { Tables } from "@/integrations/supabase/types_generated";
@@ -129,7 +128,8 @@ const generatePdfReportContent = async (report: Report, data: Coleta[]): Promise
   doc.setFontSize(22);
   doc.setTextColor(20);
   doc.setFont("helvetica", "bold");
-  doc.text("Relatório de Coleta", pageWidth / 2, currentY + 10, { align: "center" });
+  // Título dinâmico do relatório
+  doc.text(`Relatório de ${report.type === 'coleta' ? 'Coleta' : report.type === 'entrega' ? 'Entrega' : 'Geral'}`, pageWidth / 2, currentY + 10, { align: "center" });
 
   doc.setFontSize(9);
   doc.setTextColor(100);
@@ -156,7 +156,17 @@ const generatePdfReportContent = async (report: Report, data: Coleta[]): Promise
   currentY += 6;
   doc.text(`Período: ${report.start_date ? format(new Date(report.start_date), 'dd/MM/yyyy', { locale: ptBR }) : 'N/A'} - ${report.end_date ? format(new Date(report.end_date), 'dd/MM/yyyy', { locale: ptBR }) : 'N/A'}`, margin, currentY);
   currentY += 6;
-  doc.text(`Tipo de Coleta/Entrega: ${report.collection_type_filter === 'coleta' ? 'Coleta' : report.collection_type_filter === 'entrega' ? 'Entrega' : 'Todos'}`, margin, currentY);
+
+  // Lógica para exibir o tipo de operação de forma consistente
+  let displayedCollectionType = '';
+  if (report.type === 'coleta') {
+    displayedCollectionType = `Tipo de Coleta: ${report.collection_type_filter === 'todos' ? 'Todos' : 'Coleta'}`;
+  } else if (report.type === 'entrega') {
+    displayedCollectionType = `Tipo de Entrega: ${report.collection_type_filter === 'todos' ? 'Todos' : 'Entrega'}`;
+  } else { // Para relatórios do tipo 'geral' ou tipos inesperados
+    displayedCollectionType = `Tipo de Operação: ${report.collection_type_filter === 'todos' ? 'Todos' : (report.collection_type_filter === 'coleta' ? 'Coleta' : 'Entrega')}`;
+  }
+  doc.text(displayedCollectionType, margin, currentY);
   currentY += 6;
   doc.text(`Status Filtrado: ${report.collection_status_filter === 'pendente' ? 'Pendente' : report.collection_status_filter === 'agendada' ? 'Em Trânsito' : report.collection_status_filter === 'concluida' ? 'Concluída' : 'Todos'}`, margin, currentY);
   currentY += 10;
@@ -165,20 +175,30 @@ const generatePdfReportContent = async (report: Report, data: Coleta[]): Promise
   doc.setFontSize(10);
   doc.setTextColor(50);
   doc.setFont("helvetica", "bold");
-  doc.text("Dados das Coletas:", margin, currentY);
+  doc.text("Dados das Coletas:", margin, currentY); // Mantido 'Coletas' aqui, pois o título principal já indica o tipo
   currentY += 7;
 
-  const tableHeaders = ["Nº Coleta", "Cliente", "Endereço de Origem", "Endereço de Destino", "Material", "Qtd", "Status", "Previsão"];
+  // Cabeçalhos da tabela dinâmicos
+  const tableHeaders = [
+    report.type === 'coleta' ? "Nº Coleta" : "Nº Entrega",
+    "Cliente",
+    "Endereço de Origem",
+    "Endereço de Destino",
+    "Material",
+    "Qtd",
+    "Status",
+    report.type === 'coleta' ? "Previsão Coleta" : "Previsão Entrega",
+  ];
   const usableWidth = pageWidth - 2 * margin;
   const columnWidths = [
-    usableWidth * 0.10, // Nº Coleta
+    usableWidth * 0.10, // Nº Coleta/Entrega
     usableWidth * 0.15, // Cliente
     usableWidth * 0.25, // Endereço Origem
     usableWidth * 0.25, // Endereço Destino
     usableWidth * 0.10, // Material
     usableWidth * 0.05, // Qtd
     usableWidth * 0.05, // Status
-    usableWidth * 0.05, // Previsão
+    usableWidth * 0.05, // Previsão Coleta/Entrega
   ];
   
   const rowHeight = 8;
