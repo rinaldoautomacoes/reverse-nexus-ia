@@ -14,7 +14,6 @@ import { useAuth } from "@/hooks/use-auth";
 import type { Tables } from "@/integrations/supabase/types"; // Import Tables type
 
 type Coleta = Tables<'coletas'>;
-type Item = Tables<'items'>;
 type Product = Tables<'products'>; // Import Product type
 
 // Mapeamento de nomes de ícones para componentes Lucide React
@@ -34,7 +33,7 @@ export const EntregasMetricsCards: React.FC<EntregasMetricsCardsProps> = ({ sele
   const { toast } = useToast();
   const { user } = useAuth();
 
-  // Fetch all products to get their descriptions (still needed for generateItemDescription)
+  // Fetch all products to get their descriptions (still needed for generateItemDescription in other components)
   const { data: products, isLoading: isLoadingProducts, error: productsError } = useQuery<Product[], Error>({
     queryKey: ['allProducts', user?.id],
     queryFn: async () => {
@@ -67,7 +66,7 @@ export const EntregasMetricsCards: React.FC<EntregasMetricsCardsProps> = ({ sele
 
       const { data, error } = await supabase
         .from('coletas')
-        .select('id, status_coleta') // Only need id and status_coleta for counts
+        .select('id, status_coleta, qtd_aparelhos_solicitado') // Select quantity now
         .eq('user_id', user.id)
         .eq('type', 'entrega')
         .gte('previsao_coleta', startDate)
@@ -79,48 +78,6 @@ export const EntregasMetricsCards: React.FC<EntregasMetricsCardsProps> = ({ sele
       return data;
     },
     enabled: !!user?.id,
-  });
-
-  // NEW: Fetch only items associated with COMPLETED entregas for the selected year
-  const { data: completedEntregas, isLoading: isLoadingCompletedEntregas, error: completedEntregasError } = useQuery<Coleta[], Error>({
-    queryKey: ['completedEntregasForItems', user?.id, selectedYear],
-    queryFn: async () => {
-      if (!user?.id) return [];
-
-      const startDate = `${selectedYear}-01-01`;
-      const endDate = `${parseInt(selectedYear) + 1}-01-01`;
-
-      const { data, error } = await supabase
-        .from('coletas')
-        .select('id')
-        .eq('user_id', user.id)
-        .eq('type', 'entrega')
-        .eq('status_coleta', 'concluida') // Filter for completed entregas
-        .gte('previsao_coleta', startDate)
-        .lt('previsao_coleta', endDate);
-      
-      if (error) {
-        throw new Error(error.message);
-      }
-      return data;
-    },
-    enabled: !!user?.id,
-  });
-
-  const completedCollectionIds = completedEntregas?.map(e => e.id) || [];
-  const { data: completedEntregaItems, isLoading: isLoadingCompletedEntregaItems, error: completedEntregaItemsError } = useQuery<Item[], Error>({
-    queryKey: ['completedEntregaItems', user?.id, completedCollectionIds],
-    queryFn: async () => {
-      if (!user?.id || completedCollectionIds.length === 0) return [];
-      const { data, error } = await supabase
-        .from('items')
-        .select('quantity, name')
-        .eq('user_id', user.id)
-        .in('collection_id', completedCollectionIds);
-      if (error) throw new Error(error.message);
-      return data;
-    },
-    enabled: !!user?.id && completedCollectionIds.length > 0,
   });
 
   useEffect(() => {
@@ -138,48 +95,17 @@ export const EntregasMetricsCards: React.FC<EntregasMetricsCardsProps> = ({ sele
         variant: "destructive",
       });
     }
-    if (completedEntregasError || completedEntregaItemsError) {
-      toast({
-        title: "Erro ao carregar itens de entregas concluídas",
-        description: (completedEntregasError || completedEntregaItemsError)?.message,
-        variant: "destructive",
-      });
-    }
-  }, [entregasError, productsError, completedEntregasError, completedEntregaItemsError, toast]);
+  }, [entregasError, productsError, toast]);
 
-  // Helper function to generate item descriptions for tooltips/cards
-  const generateItemDescription = (itemCodeQuantities: Map<string, number>) => {
-    const descriptions: string[] = [];
-    itemCodeQuantities.forEach((quantity, code) => {
-      const description = productDescriptionsMap.get(code);
-      if (description) {
-        descriptions.push(`${quantity}x ${description}`);
-      } else {
-        descriptions.push(`${quantity}x Item Desconhecido`);
-      }
-    });
-
-    if (descriptions.length === 0) return "Nenhum item";
-    if (descriptions.length === 1) return descriptions[0];
-    if (descriptions.length === 2) return `${descriptions[0]} e ${descriptions[1]}`;
-    return `${descriptions[0]}, ${descriptions[1]} e outros`;
-  };
-
-  const calculateEntregasMetrics = (entregasData: Coleta[] | undefined, completedItemsData: Item[] | undefined) => {
+  const calculateEntregasMetrics = (entregasData: Coleta[] | undefined) => {
     const totalEntregas = entregasData?.length || 0;
-    
-    // Calculate total quantity of items from COMPLETED entregas
-    const totalProductQuantity = completedItemsData?.reduce((sum, item) => {
-      const quantity = typeof item.quantity === 'number' ? item.quantity : 0;
-      return sum + quantity;
-    }, 0) || 0;
-
+    const totalAllProducts = entregasData?.reduce((sum, entrega) => sum + (entrega.qtd_aparelhos_solicitado || 0), 0) || 0;
     const pendenteEntregas = entregasData?.filter(e => e.status_coleta === 'pendente').length || 0;
     const concluidaEntregas = entregasData?.filter(e => e.status_coleta === 'concluida').length || 0;
 
     return [
       {
-        id: 'total-entregas',
+        id: 'total-entregas-geral',
         title: 'Total Geral de Entregas',
         value: totalEntregas.toString(),
         description: 'Entregas registradas no ano',
@@ -188,10 +114,10 @@ export const EntregasMetricsCards: React.FC<EntregasMetricsCardsProps> = ({ sele
         bg_color: 'bg-primary/10',
       },
       {
-        id: 'total-produtos',
+        id: 'total-produtos-geral',
         title: 'Total Geral de Produtos',
-        value: totalProductQuantity.toString(), // Use the sum of quantities from completed entregas
-        description: 'Itens entregues e processados', // Updated description
+        value: totalAllProducts.toString(),
+        description: 'Itens entregues e processados',
         icon_name: 'Box',
         color: 'text-neural',
         bg_color: 'bg-neural/10',
@@ -217,9 +143,9 @@ export const EntregasMetricsCards: React.FC<EntregasMetricsCardsProps> = ({ sele
     ];
   };
 
-  const dashboardMetrics = calculateEntregasMetrics(entregas, completedEntregaItems);
+  const dashboardMetrics = calculateEntregasMetrics(entregas);
 
-  if (isLoadingEntregas || isLoadingProducts || isLoadingCompletedEntregas || isLoadingCompletedEntregaItems) {
+  if (isLoadingEntregas || isLoadingProducts) {
     return (
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         {[...Array(4)].map((_, i) => (
