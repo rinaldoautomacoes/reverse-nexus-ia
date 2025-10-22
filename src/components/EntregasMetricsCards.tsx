@@ -101,6 +101,7 @@ export const EntregasMetricsCards: React.FC<EntregasMetricsCardsProps> = ({ sele
     const totalEntregas = entregasData?.length || 0;
     const totalAllProducts = entregasData?.reduce((sum, entrega) => sum + (entrega.qtd_aparelhos_solicitado || 0), 0) || 0;
     const pendenteEntregas = entregasData?.filter(e => e.status_coleta === 'pendente').length || 0;
+    const emTransitoEntregas = entregasData?.filter(e => e.status_coleta === 'agendada').length || 0; // Adicionado para 'Em Trânsito'
     const concluidaEntregas = entregasData?.filter(e => e.status_coleta === 'concluida').length || 0;
 
     return [
@@ -130,6 +131,15 @@ export const EntregasMetricsCards: React.FC<EntregasMetricsCardsProps> = ({ sele
         icon_name: 'Clock',
         color: 'text-destructive',
         bg_color: 'bg-destructive/10',
+      },
+      {
+        id: 'entregas-em-transito', // Novo card para 'Em Trânsito'
+        title: 'Entregas Em Trânsito',
+        value: emTransitoEntregas.toString(),
+        description: 'Entregas agendadas e em andamento',
+        icon_name: 'Truck',
+        color: 'text-warning-yellow',
+        bg_color: 'bg-warning-yellow/10',
       },
       {
         id: 'entregas-concluidas',
@@ -165,7 +175,7 @@ export const EntregasMetricsCards: React.FC<EntregasMetricsCardsProps> = ({ sele
   }
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6"> {/* Ajustado para 5 colunas */}
       {dashboardMetrics.map((metric, index) => {
         const Icon = iconMap[metric.icon_name || ''];
         if (!Icon) {
