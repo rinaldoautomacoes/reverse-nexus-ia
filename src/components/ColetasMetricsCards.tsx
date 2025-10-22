@@ -4,7 +4,8 @@ import {
   Clock, 
   CheckCircle,
   ListChecks, // Icon for 'Total de Coletas'
-  Box // Icon for 'Total de Produtos'
+  Box, // Icon for 'Total de Produtos'
+  Truck // Icon for 'Produtos Em Trânsito'
 } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -14,7 +15,6 @@ import { useAuth } from "@/hooks/use-auth";
 import type { Tables } from "@/integrations/supabase/types";
 
 type Coleta = Tables<'coletas'>;
-type Item = Tables<'items'>;
 type Product = Tables<'products'>; // Import Product type
 
 // Mapeamento de nomes de ícones para componentes Lucide React
@@ -23,7 +23,8 @@ const iconMap: { [key: string]: React.ElementType } = {
   Clock,
   CheckCircle,
   ListChecks,
-  Box
+  Box,
+  Truck
 };
 
 interface ColetasMetricsCardsProps {
@@ -34,7 +35,7 @@ export const ColetasMetricsCards: React.FC<ColetasMetricsCardsProps> = ({ select
   const { toast } = useToast();
   const { user } = useAuth();
 
-  // Fetch all products to get their descriptions (still needed for generateItemDescription)
+  // Fetch all products to get their descriptions (still needed for generateItemDescription in other components)
   const { data: products, isLoading: isLoadingProducts, error: productsError } = useQuery<Product[], Error>({
     queryKey: ['allProducts', user?.id],
     queryFn: async () => {
@@ -67,7 +68,7 @@ export const ColetasMetricsCards: React.FC<ColetasMetricsCardsProps> = ({ select
 
       const { data, error } = await supabase
         .from('coletas')
-        .select('id, status_coleta') // Only need id and status_coleta for counts
+        .select('id, status_coleta, qtd_aparelhos_solicitado') // Select quantity now
         .eq('user_id', user.id)
         .eq('type', 'coleta')
         .gte('previsao_coleta', startDate)
@@ -79,48 +80,6 @@ export const ColetasMetricsCards: React.FC<ColetasMetricsCardsProps> = ({ select
       return data;
     },
     enabled: !!user?.id,
-  });
-
-  // NEW: Fetch only items associated with COMPLETED coletas for the selected year
-  const { data: completedColetas, isLoading: isLoadingCompletedColetas, error: completedColetasError } = useQuery<Coleta[], Error>({
-    queryKey: ['completedColetasForItems', user?.id, selectedYear],
-    queryFn: async () => {
-      if (!user?.id) return [];
-
-      const startDate = `${selectedYear}-01-01`;
-      const endDate = `${parseInt(selectedYear) + 1}-01-01`;
-
-      const { data, error } = await supabase
-        .from('coletas')
-        .select('id')
-        .eq('user_id', user.id)
-        .eq('type', 'coleta')
-        .eq('status_coleta', 'concluida') // Filter for completed coletas
-        .gte('previsao_coleta', startDate)
-        .lt('previsao_coleta', endDate);
-      
-      if (error) {
-        throw new Error(error.message);
-      }
-      return data;
-    },
-    enabled: !!user?.id,
-  });
-
-  const completedCollectionIds = completedColetas?.map(c => c.id) || [];
-  const { data: completedColetaItems, isLoading: isLoadingCompletedColetaItems, error: completedColetaItemsError } = useQuery<Item[], Error>({
-    queryKey: ['completedColetaItems', user?.id, completedCollectionIds],
-    queryFn: async () => {
-      if (!user?.id || completedCollectionIds.length === 0) return [];
-      const { data, error } = await supabase
-        .from('items')
-        .select('quantity, name')
-        .eq('user_id', user.id)
-        .in('collection_id', completedCollectionIds);
-      if (error) throw new Error(error.message);
-      return data;
-    },
-    enabled: !!user?.id && completedCollectionIds.length > 0,
   });
 
   useEffect(() => {
@@ -138,78 +97,47 @@ export const ColetasMetricsCards: React.FC<ColetasMetricsCardsProps> = ({ select
         variant: "destructive",
       });
     }
-    if (completedColetasError || completedColetaItemsError) {
-      toast({
-        title: "Erro ao carregar itens de coletas concluídas",
-        description: (completedColetasError || completedColetaItemsError)?.message,
-        variant: "destructive",
-      });
-    }
-  }, [coletasError, productsError, completedColetasError, completedColetaItemsError, toast]);
+  }, [coletasError, productsError, toast]);
 
-  // Helper function to generate item descriptions for tooltips/cards
-  const generateItemDescription = (itemCodeQuantities: Map<string, number>) => {
-    const descriptions: string[] = [];
-    itemCodeQuantities.forEach((quantity, code) => {
-      const description = productDescriptionsMap.get(code);
-      if (description) {
-        descriptions.push(`${quantity}x ${description}`);
-      } else {
-        descriptions.push(`${quantity}x Item Desconhecido`);
-      }
-    });
-
-    if (descriptions.length === 0) return "Nenhum item";
-    if (descriptions.length === 1) return descriptions[0];
-    if (descriptions.length === 2) return `${descriptions[0]} e ${descriptions[1]}`;
-    return `${descriptions[0]}, ${descriptions[1]} e outros`;
-  };
-
-  const calculateColetasMetrics = (coletasData: Coleta[] | undefined, completedItemsData: Item[] | undefined) => {
-    const totalColetas = coletasData?.length || 0;
-    
-    // Calculate total quantity of items from COMPLETED coletas
-    const totalProductQuantity = completedItemsData?.reduce((sum, item) => {
-      const quantity = typeof item.quantity === 'number' ? item.quantity : 0;
-      return sum + quantity;
-    }, 0) || 0;
-
-    const pendenteColetas = coletasData?.filter(c => c.status_coleta === 'pendente').length || 0;
-    const concluidaColetas = coletasData?.filter(c => c.status_coleta === 'concluida').length || 0;
+  const calculateColetasMetrics = (coletasData: Coleta[] | undefined) => {
+    const totalAllProducts = coletasData?.reduce((sum, coleta) => sum + (coleta.qtd_aparelhos_solicitado || 0), 0) || 0;
+    const pendenteProducts = coletasData?.filter(c => c.status_coleta === 'pendente').reduce((sum, coleta) => sum + (coleta.qtd_aparelhos_solicitado || 0), 0) || 0;
+    const emTransitoProducts = coletasData?.filter(c => c.status_coleta === 'agendada').reduce((sum, coleta) => sum + (coleta.qtd_aparelhos_solicitado || 0), 0) || 0;
+    const coletadosProducts = coletasData?.filter(c => c.status_coleta === 'concluida').reduce((sum, coleta) => sum + (coleta.qtd_aparelhos_solicitado || 0), 0) || 0;
 
     return [
       {
-        id: 'total-coletas',
-        title: 'Total Geral de Coletas',
-        value: totalColetas.toString(),
-        description: 'Coletas registradas no ano',
-        icon_name: 'ListChecks',
-        color: 'text-primary',
-        bg_color: 'bg-primary/10',
-      },
-      {
-        id: 'total-produtos',
+        id: 'total-produtos-geral',
         title: 'Total Geral de Produtos',
-        value: totalProductQuantity.toString(), // Use the sum of quantities from completed coletas
-        description: 'Itens coletados e processados', // Updated description
+        value: totalAllProducts.toString(),
+        description: 'Itens totais em coletas',
         icon_name: 'Box',
         color: 'text-neural',
         bg_color: 'bg-neural/10',
       },
       {
-        id: 'coletas-pendentes',
-        title: 'Coletas Pendentes',
-        value: pendenteColetas.toString(),
-        description: 'Aguardando agendamento ou início',
+        id: 'produtos-pendentes',
+        title: 'Produtos Pendentes',
+        value: pendenteProducts.toString(),
+        description: 'Itens aguardando coleta',
         icon_name: 'Clock',
         color: 'text-destructive',
         bg_color: 'bg-destructive/10',
       },
       {
-        id: 'coletas-concluidas',
-        title: 'Coletas Concluídas',
-        value: concluidaColetas.toString(),
-        description: 'Coletas finalizadas e processadas',
+        id: 'produtos-em-transito',
+        title: 'Produtos Em Trânsito',
+        value: emTransitoProducts.toString(),
+        description: 'Itens a caminho da unidade',
+        icon_name: 'Truck',
+        color: 'text-warning-yellow',
+        bg_color: 'bg-warning-yellow/10',
+      },
+      {
+        id: 'produtos-coletados',
+        title: 'Produtos Coletados',
+        value: coletadosProducts.toString(),
+        description: 'Itens entregues na unidade',
         icon_name: 'CheckCircle',
         color: 'text-success-green',
         bg_color: 'bg-success-green/10',
@@ -217,9 +145,9 @@ export const ColetasMetricsCards: React.FC<ColetasMetricsCardsProps> = ({ select
     ];
   };
 
-  const dashboardMetrics = calculateColetasMetrics(coletas, completedColetaItems);
+  const dashboardMetrics = calculateColetasMetrics(coletas);
 
-  if (isLoadingColetas || isLoadingProducts || isLoadingCompletedColetas || isLoadingCompletedColetaItems) {
+  if (isLoadingColetas || isLoadingProducts) {
     return (
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         {[...Array(4)].map((_, i) => (
