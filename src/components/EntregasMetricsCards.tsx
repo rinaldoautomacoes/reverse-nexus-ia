@@ -98,14 +98,14 @@ export const EntregasMetricsCards: React.FC<EntregasMetricsCardsProps> = ({ sele
   }, [entregasError, productsError, toast]);
 
   const calculateEntregasMetrics = (entregasData: Coleta[] | undefined) => {
-    const totalEntregas = entregasData?.length || 0;
     const totalAllProducts = entregasData?.reduce((sum, entrega) => sum + (entrega.qtd_aparelhos_solicitado || 0), 0) || 0;
-    const pendenteEntregas = entregasData?.filter(e => e.status_coleta === 'pendente').length || 0;
-    const emTransitoEntregas = entregasData?.filter(e => e.status_coleta === 'agendada').length || 0; // Adicionado para 'Em Trânsito'
-    const concluidaEntregas = entregasData?.filter(e => e.status_coleta === 'concluida').length || 0;
+    
+    // Calculate product counts for each status
+    const pendenteProducts = entregasData?.filter(e => e.status_coleta === 'pendente').reduce((sum, entrega) => sum + (entrega.qtd_aparelhos_solicitado || 0), 0) || 0;
+    const emTransitoProducts = entregasData?.filter(e => e.status_coleta === 'agendada').reduce((sum, entrega) => sum + (entrega.qtd_aparelhos_solicitado || 0), 0) || 0;
+    const entreguesProducts = entregasData?.filter(e => e.status_coleta === 'concluida').reduce((sum, entrega) => sum + (entrega.qtd_aparelhos_solicitado || 0), 0) || 0;
 
     return [
-      // Removido o card 'Total Geral de Entregas'
       {
         id: 'total-produtos-geral',
         title: 'Total Geral de Produtos',
@@ -116,28 +116,28 @@ export const EntregasMetricsCards: React.FC<EntregasMetricsCardsProps> = ({ sele
         bg_color: 'bg-neural/10',
       },
       {
-        id: 'entregas-pendentes',
-        title: 'Entregas Pendentes',
-        value: pendenteEntregas.toString(),
-        description: 'Aguardando agendamento ou início',
+        id: 'produtos-pendentes',
+        title: 'Produtos Pendentes',
+        value: pendenteProducts.toString(),
+        description: 'Itens aguardando agendamento ou início',
         icon_name: 'Clock',
         color: 'text-destructive',
         bg_color: 'bg-destructive/10',
       },
       {
-        id: 'entregas-em-transito', // Novo card para 'Em Trânsito'
-        title: 'Entregas Em Trânsito',
-        value: emTransitoEntregas.toString(),
-        description: 'Entregas agendadas e em andamento',
+        id: 'produtos-em-transito',
+        title: 'Produtos Em Trânsito',
+        value: emTransitoProducts.toString(),
+        description: 'Itens agendados e em andamento',
         icon_name: 'Truck',
         color: 'text-warning-yellow',
         bg_color: 'bg-warning-yellow/10',
       },
       {
-        id: 'entregas-concluidas',
-        title: 'Entregas Concluídas',
-        value: concluidaEntregas.toString(),
-        description: 'Entregas finalizadas e processadas',
+        id: 'produtos-entregues',
+        title: 'Produtos Entregues',
+        value: entreguesProducts.toString(),
+        description: 'Itens finalizados e processados',
         icon_name: 'CheckCircle',
         color: 'text-success-green',
         bg_color: 'bg-success-green/10',
@@ -167,7 +167,7 @@ export const EntregasMetricsCards: React.FC<EntregasMetricsCardsProps> = ({ sele
   }
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6"> {/* Ajustado para 4 colunas */}
+    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
       {dashboardMetrics.map((metric, index) => {
         const Icon = iconMap[metric.icon_name || ''];
         if (!Icon) {
