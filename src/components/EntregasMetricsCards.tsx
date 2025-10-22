@@ -105,15 +105,7 @@ export const EntregasMetricsCards: React.FC<EntregasMetricsCardsProps> = ({ sele
     const concluidaEntregas = entregasData?.filter(e => e.status_coleta === 'concluida').length || 0;
 
     return [
-      {
-        id: 'total-entregas-geral',
-        title: 'Total Geral de Entregas',
-        value: totalEntregas.toString(),
-        description: 'Entregas registradas no ano',
-        icon_name: 'ListChecks',
-        color: 'text-primary',
-        bg_color: 'bg-primary/10',
-      },
+      // Removido o card 'Total Geral de Entregas'
       {
         id: 'total-produtos-geral',
         title: 'Total Geral de Produtos',
@@ -175,7 +167,7 @@ export const EntregasMetricsCards: React.FC<EntregasMetricsCardsProps> = ({ sele
   }
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6"> {/* Ajustado para 5 colunas */}
+    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6"> {/* Ajustado para 4 colunas */}
       {dashboardMetrics.map((metric, index) => {
         const Icon = iconMap[metric.icon_name || ''];
         if (!Icon) {
