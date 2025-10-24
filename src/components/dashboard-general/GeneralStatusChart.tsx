@@ -1,5 +1,5 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Package } from "lucide-react"; // Removido Truck, pois não haverá dados de entrega
+import { Package } from "lucide-react";
 import { format, parseISO, startOfMonth } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import React from "react";
@@ -10,7 +10,7 @@ import {
   YAxis,
   Tooltip,
   Area,
-  Legend,
+  // Legend, // Removido para replicar a imagem, a legenda será manual nos cards
 } from 'recharts';
 import type { Tables } from "@/integrations/supabase/types";
 
@@ -25,10 +25,30 @@ interface GeneralStatusChartProps {
 
 export const GeneralStatusChart: React.FC<GeneralStatusChartProps> = ({ allColetas, productDescriptionsMap, selectedYear }) => {
 
+  // Helper function to generate item descriptions for tooltips/cards
+  const generateItemDescription = (itemCodeQuantities: Map<string, number>) => {
+    const descriptions: string[] = [];
+    itemCodeQuantities.forEach((quantity, code) => {
+      const description = productDescriptionsMap.get(code);
+      if (description) {
+        descriptions.push(`${quantity}x ${description}`);
+      } else {
+        descriptions.push(`${quantity}x Item Desconhecido`);
+      }
+    });
+
+    if (descriptions.length === 0) return "Nenhum item";
+    if (descriptions.length === 1) return descriptions[0];
+    if (descriptions.length === 2) return `${descriptions[0]} e ${descriptions[1]}`;
+    return `${descriptions[0]}, ${descriptions[1]} e outros`; // For more than 2 types
+  };
+
   const processDataForChart = (data: Coleta[]) => {
     const monthlyDataMap = new Map<string, { 
-      totalColetasItems: number; 
-      total_items_month: number 
+      pendente: Map<string, number>; 
+      em_transito: Map<string, number>; 
+      concluidas: Map<string, number>; 
+      total_all: number 
     }>();
     const allMonths: string[] = [];
     const currentYear = parseInt(selectedYear);
@@ -38,70 +58,137 @@ export const GeneralStatusChart: React.FC<GeneralStatusChartProps> = ({ allColet
       const monthKey = format(month, 'MMM', { locale: ptBR });
       allMonths.push(monthKey);
       monthlyDataMap.set(monthKey, { 
-        totalColetasItems: 0, 
-        total_items_month: 0 
+        pendente: new Map(), 
+        em_transito: new Map(), 
+        concluidas: new Map(), 
+        total_all: 0 
       });
     }
 
-    let totalAllColetasItems = 0;
+    const totalPendenteItems: Map<string, number> = new Map();
+    const totalEmTransitoItems: Map<string, number> = new Map();
+    const totalConcluidasItems: Map<string, number> = new Map();
+    let totalAll = 0;
 
-    data.forEach(item => {
-      if (!item.previsao_coleta || !item.modelo_aparelho) return;
+    data.filter(item => item.type === 'coleta').forEach(coleta => { // Filter only 'coleta' type
+      if (!coleta.previsao_coleta || !coleta.modelo_aparelho) return;
 
-      const itemDate = parseISO(item.previsao_coleta);
-      const timezoneOffsetMinutes = itemDate.getTimezoneOffset();
-      const adjustedDateForLocalMonth = new Date(itemDate.getTime() - timezoneOffsetMinutes * 60 * 1000);
-      const monthKey = format(startOfMonth(adjustedDateForLocalMonth), 'MMM', { locale: ptBR });
-      const quantity = item.qtd_aparelhos_solicitado || 0;
+      const coletaDate = parseISO(coleta.previsao_coleta);
 
-      if (monthlyDataMap.has(monthKey)) {
-        const currentMonthData = monthlyDataMap.get(monthKey)!;
-        // Apenas itens de coleta com status 'concluida'
-        if (item.type === 'coleta' && item.status_coleta === 'concluida') {
-          currentMonthData.totalColetasItems += quantity;
-          totalAllColetasItems += quantity;
+      const timezoneOffsetMinutes = coletaDate.getTimezoneOffset();
+      const adjustedDateForLocalMonth = new Date(coletaDate.getTime() - timezoneOffsetMinutes * 60 * 1000);
+
+      const coletaMonthKey = format(startOfMonth(adjustedDateForLocalMonth), 'MMM', { locale: ptBR });
+      const quantity = coleta.qtd_aparelhos_solicitado || 0;
+      const productCode = coleta.modelo_aparelho;
+
+      if (monthlyDataMap.has(coletaMonthKey)) {
+        const currentMonthData = monthlyDataMap.get(coletaMonthKey)!;
+        switch (coleta.status_coleta) {
+          case 'pendente':
+            currentMonthData.pendente.set(productCode, (currentMonthData.pendente.get(productCode) || 0) + quantity);
+            totalPendenteItems.set(productCode, (totalPendenteItems.get(productCode) || 0) + quantity);
+            break;
+          case 'agendada': // 'agendada' is 'em trânsito' for coletas
+            currentMonthData.em_transito.set(productCode, (currentMonthData.em_transito.get(productCode) || 0) + quantity);
+            totalEmTransitoItems.set(productCode, (totalEmTransitoItems.get(productCode) || 0) + quantity);
+            break;
+          case 'concluida':
+            currentMonthData.concluidas.set(productCode, (currentMonthData.concluidas.get(productCode) || 0) + quantity);
+            totalConcluidasItems.set(productCode, (totalConcluidasItems.get(productCode) || 0) + quantity);
+            break;
         }
-        currentMonthData.total_items_month = currentMonthData.totalColetasItems; // Apenas itens de coleta
-        monthlyDataMap.set(monthKey, currentMonthData);
+        currentMonthData.total_all += quantity;
+        totalAll += quantity;
+        monthlyDataMap.set(coletaMonthKey, currentMonthData);
       }
     });
 
     const chartData = allMonths.map(monthKey => {
-      const data = monthlyDataMap.get(monthKey)!;
+      const data = monthlyDataMap.get(monthKey) || { pendente: new Map(), em_transito: new Map(), concluidas: new Map(), total_all: 0 };
       return {
         month: monthKey,
-        totalColetasItems: data.totalColetasItems,
-        total_items_month: data.total_items_month,
+        pendente: Array.from(data.pendente.values()).reduce((sum, q) => sum + q, 0),
+        em_transito: Array.from(data.em_transito.values()).reduce((sum, q) => sum + q, 0),
+        concluidas: Array.from(data.concluidas.values()).reduce((sum, q) => sum + q, 0),
+        total_all: data.total_all,
+        pendenteItems: data.pendente,
+        emTransitoItems: data.em_transito,
+        concluidasItems: data.concluidas,
       };
     });
 
+    const totalPendenteCount = Array.from(totalPendenteItems.values()).reduce((sum, q) => sum + q, 0);
+    const totalEmTransitoCount = Array.from(totalEmTransitoItems.values()).reduce((sum, q) => sum + q, 0);
+    const totalConcluidasCount = Array.from(totalConcluidasItems.values()).reduce((sum, q) => sum + q, 0);
+
     return { 
       chartData, 
-      totalAllColetasItems,
+      totalPendenteCount, 
+      totalEmTransitoCount, 
+      totalConcluidasCount, 
+      totalAll,
+      totalPendenteItems,
+      totalEmTransitoItems,
+      totalConcluidasItems
     };
   };
 
-  const { 
-    chartData, 
-    totalAllColetasItems,
-  } = processDataForChart(allColetas);
+  const { chartData, totalPendenteCount, totalEmTransitoCount, totalConcluidasCount, totalAll, totalPendenteItems, totalEmTransitoItems, totalConcluidasItems } = processDataForChart(allColetas);
 
+  // Custom Tooltip Content
   const CustomTooltip = ({ active, payload, label }: any) => {
     if (active && payload && payload.length) {
-      const data = chartData.find(d => d.month === label);
+      const data = chartData.find(d => d.month === label); // Find the full data for the month
       if (!data) return null;
 
       return (
         <div className="bg-card p-3 rounded-lg border border-border shadow-lg text-sm">
           <p className="font-semibold text-primary mb-2">{label}</p>
-          <p className="text-muted-foreground">Total de Itens Coletados: <span className="font-bold text-foreground">{data.totalColetasItems}</span></p>
+          <p className="text-muted-foreground">Total de Itens: <span className="font-bold text-foreground">{data.total_all}</span></p>
+          {data.pendenteItems.size > 0 && (
+            <div className="mt-2">
+              <p className="font-medium text-destructive">Pendentes:</p>
+              <ul className="list-disc list-inside ml-2">
+                {Array.from(data.pendenteItems.entries()).map(([code, quantity]) => (
+                  <li key={code} className="text-muted-foreground text-xs">
+                    {quantity}x {productDescriptionsMap.get(code) || 'N/A'}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+          {data.emTransitoItems.size > 0 && (
+            <div className="mt-2">
+              <p className="font-medium text-warning-yellow">Em Trânsito:</p>
+              <ul className="list-disc list-inside ml-2">
+                {Array.from(data.emTransitoItems.entries()).map(([code, quantity]) => (
+                  <li key={code} className="text-muted-foreground text-xs">
+                    {quantity}x {productDescriptionsMap.get(code) || 'N/A'}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+          {data.concluidasItems.size > 0 && (
+            <div className="mt-2">
+              <p className="font-medium text-success-green">Concluídas:</p>
+              <ul className="list-disc list-inside ml-2">
+                {Array.from(data.concluidasItems.entries()).map(([code, quantity]) => (
+                  <li key={code} className="text-muted-foreground text-xs">
+                    {quantity}x {productDescriptionsMap.get(code) || 'N/A'}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
         </div>
       );
     }
     return null;
   };
 
-  const hasData = chartData.some(d => d.totalColetasItems > 0);
+  const hasData = chartData.some(d => d.pendente > 0 || d.em_transito > 0 || d.concluidas > 0);
 
   return (
     <Card className="card-futuristic border-0">
@@ -109,7 +196,7 @@ export const GeneralStatusChart: React.FC<GeneralStatusChartProps> = ({ allColet
         <div className="flex items-center justify-between">
           <div>
             <CardTitle className="text-xl font-orbitron gradient-text">
-              Evolução Mensal de Itens Coletados
+              Evolução Mensal de Itens de Coleta
             </CardTitle>
             <p className="text-sm text-muted-foreground">Ano {selectedYear}</p>
           </div>
@@ -144,40 +231,83 @@ export const GeneralStatusChart: React.FC<GeneralStatusChartProps> = ({ allColet
                   tickFormatter={(value) => value.toFixed(0)}
                 />
                 <Tooltip content={<CustomTooltip />} />
-                <Legend
-                  wrapperStyle={{ paddingTop: '10px', display: 'flex', justifyContent: 'center', flexWrap: 'wrap' }}
-                  formatter={(value) => (
-                    <span className="text-sm flex items-center gap-2">
-                      <span className="font-semibold text-foreground">
-                        Total Itens Coletados
-                      </span>
-                    </span>
-                  )}
-                />
+                {/* Removido a tag <Legend> para replicar a imagem, a legenda será manual nos cards */}
                 <defs>
-                  <linearGradient id="gradientColetas" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="0%" stopColor="hsl(var(--neon-cyan))" stopOpacity={0.4} />
-                    <stop offset="95%" stopColor="hsl(var(--neon-cyan))" stopOpacity={0.15} />
+                  <linearGradient id="gradientEmTransito" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stopColor="hsl(var(--warning-yellow))" stopOpacity={0.4} />
+                    <stop offset="95%" stopColor="hsl(var(--warning-yellow))" stopOpacity={0.15} />
+                  </linearGradient>
+                  <linearGradient id="gradientPendente" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stopColor="hsl(var(--destructive))" stopOpacity={0.4} />
+                    <stop offset="95%" stopColor="hsl(var(--destructive))" stopOpacity={0.15} />
+                  </linearGradient>
+                  <linearGradient id="gradientConcluidas" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stopColor="hsl(var(--success-green))" stopOpacity={0.4} />
+                    <stop offset="95%" stopColor="hsl(var(--success-green))" stopOpacity={0.15} />
                   </linearGradient>
                 </defs>
                 <Area
                   type="monotone"
-                  dataKey="totalColetasItems"
-                  stroke="hsl(var(--neon-cyan))"
-                  fill="url(#gradientColetas)"
+                  dataKey="em_transito"
+                  stroke="hsl(var(--warning-yellow))"
+                  fill="url(#gradientEmTransito)"
                   strokeWidth={2}
-                  name="Total Itens Coletados"
+                  name="Coletas Em Trânsito"
+                  stackId="1"
+                />
+                <Area
+                  type="monotone"
+                  dataKey="pendente"
+                  stroke="hsl(var(--destructive))"
+                  fill="url(#gradientPendente)"
+                  strokeWidth={2}
+                  name="Coletas Pendentes"
+                  stackId="1"
+                />
+                <Area
+                  type="monotone"
+                  dataKey="concluidas"
+                  stroke="hsl(var(--success-green))"
+                  fill="url(#gradientConcluidas)"
+                  strokeWidth={2}
+                  name="Coletas Concluídas"
+                  stackId="1"
                 />
               </AreaChart>
             </ResponsiveContainer>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-1 gap-4"> {/* Ajustado para 1 coluna */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div className="flex items-center gap-3 p-3 bg-secondary/10 rounded-lg">
-              <div className="w-4 h-4 rounded" style={{ backgroundColor: 'hsl(var(--neon-cyan))' }} />
+              <div className="w-4 h-4 rounded" style={{ backgroundColor: 'hsl(var(--warning-yellow))' }} />
               <div>
-                <p className="text-sm font-medium">Total Itens Coletados</p>
-                <p className="text-xs text-muted-foreground">{totalAllColetasItems} itens</p>
+                <p className="text-sm font-medium">Coletas Em Trânsito</p>
+                <p className="text-xs text-muted-foreground">{totalEmTransitoCount} itens a caminho</p>
+                {totalEmTransitoItems.size > 0 && (
+                  <p className="text-xs text-muted-foreground italic">({generateItemDescription(totalEmTransitoItems)})</p>
+                )}
+              </div>
+            </div>
+
+            <div className="flex items-center gap-3 p-3 bg-secondary/10 rounded-lg">
+              <div className="w-4 h-4 rounded" style={{ backgroundColor: 'hsl(var(--destructive))' }} />
+              <div>
+                <p className="text-sm font-medium">Coletas Pendentes</p>
+                <p className="text-xs text-muted-foreground">{totalPendenteCount} itens aguardando</p>
+                {totalPendenteItems.size > 0 && (
+                  <p className="text-xs text-muted-foreground italic">({generateItemDescription(totalPendenteItems)})</p>
+                )}
+              </div>
+            </div>
+
+            <div className="flex items-center gap-3 p-3 bg-secondary/10 rounded-lg">
+              <div className="w-4 h-4 rounded" style={{ backgroundColor: 'hsl(var(--success-green))' }} />
+              <div>
+                <p className="text-sm font-medium">Coletas Concluídas</p>
+                <p className="text-xs text-muted-foreground">{totalConcluidasCount} itens coletados</p>
+                {totalConcluidasItems.size > 0 && (
+                  <p className="text-xs text-muted-foreground italic">({generateItemDescription(totalConcluidasItems)})</p>
+                )}
               </div>
             </div>
           </div>
