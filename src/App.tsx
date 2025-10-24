@@ -74,9 +74,10 @@ const AppLayout = () => {
           <Route path="/debug" element={<Debug />} />
           
           <Route element={<ProtectedRoute allowedRoles={['standard', 'admin']} />}>
-            <Route path="/" element={<GeneralDashboard selectedYear={selectedYear} />} /> {/* Nova rota principal */}
-            <Route path="/coletas-dashboard" element={<Index selectedYear={selectedYear} />} /> {/* Manter, mas menos proeminente */}
-            <Route path="/dashboard-entregas" element={<EntregasDashboardPage selectedYear={selectedYear} />} /> {/* Manter, mas menos proeminente */}
+            <Route path="/" element={<LandingPage />} /> {/* Rota principal de volta para LandingPage */}
+            <Route path="/dashboard-geral" element={<GeneralDashboard selectedYear={selectedYear} />} /> {/* Nova rota para o Dashboard Geral */}
+            <Route path="/coletas-dashboard" element={<Index selectedYear={selectedYear} />} />
+            <Route path="/dashboard-entregas" element={<EntregasDashboardPage selectedYear={selectedYear} />} />
             <Route path="/agendar-coleta" element={<AgendarColetaPage />} />
             <Route path="/agendar-entrega" element={<AgendarEntregaPage />} />
             <Route path="/coletas-ativas" element={<Coletas selectedYear={selectedYear} />} />

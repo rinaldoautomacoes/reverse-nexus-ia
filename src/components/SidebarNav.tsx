@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import {
   Package,
   Route,
-  TrendingUp,
+  TrendingUp, // Usado para o Dashboard Geral
   Gauge,
   ListChecks,
   Users,
@@ -20,7 +20,7 @@ import {
   ClipboardCheck,
   CalendarPlus,
   FileText,
-  Home,
+  Home, // Usado para a Página Inicial
   Building,
   DatabaseZap,
 } from 'lucide-react';
@@ -64,9 +64,16 @@ export const SidebarNav: React.FC<SidebarNavProps> = ({ selectedYear, setSelecte
 
   const navItems = [
     {
-      label: 'Dashboard Geral',
+      label: 'Página Inicial', // Alterado para Página Inicial
       icon: Home,
       path: '/',
+      roles: ['standard', 'admin'],
+      group: 'main',
+    },
+    {
+      label: 'Dashboard Geral', // Novo item para o Dashboard Geral
+      icon: TrendingUp, // Ícone diferente para o dashboard
+      path: '/dashboard-geral',
       roles: ['standard', 'admin'],
       group: 'main',
     },
