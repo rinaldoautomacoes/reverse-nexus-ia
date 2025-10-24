@@ -8,6 +8,8 @@ import type { Tables } from '@/integrations/supabase/types';
 import { GeneralMetricsCards } from '@/components/dashboard-general/GeneralMetricsCards';
 import { GeneralStatusChart } from '@/components/dashboard-general/GeneralStatusChart';
 import { GeneralStatusDonutCharts } from '@/components/dashboard-general/GeneralStatusDonutCharts';
+import { GeneralColetasPerformanceChart } from '@/components/dashboard-general/GeneralColetasPerformanceChart'; // Novo import
+import { GeneralEntregasPerformanceChart } from '@/components/dashboard-general/GeneralEntregasPerformanceChart'; // Novo import
 
 type Coleta = Tables<'coletas'>;
 type Product = Tables<'products'>;
@@ -122,6 +124,9 @@ export const GeneralDashboard: React.FC<GeneralDashboardProps> = ({ selectedYear
               productDescriptionsMap={productDescriptionsMap} 
               selectedYear={selectedYear} 
             />
+            {/* Novos gráficos de performance */}
+            <GeneralColetasPerformanceChart allColetas={allColetas || []} selectedYear={selectedYear} />
+            <GeneralEntregasPerformanceChart allColetas={allColetas || []} selectedYear={selectedYear} />
           </div>
 
           {/* Right Column - Sidebar */}
