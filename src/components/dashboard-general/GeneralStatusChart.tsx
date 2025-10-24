@@ -1,5 +1,5 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Package, Truck } from "lucide-react";
+import { Package } from "lucide-react"; // Removido Truck, pois não haverá dados de entrega
 import { format, parseISO, startOfMonth } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import React from "react";
@@ -10,7 +10,7 @@ import {
   YAxis,
   Tooltip,
   Area,
-  Legend, // Reativado para a legenda do gráfico
+  Legend,
 } from 'recharts';
 import type { Tables } from "@/integrations/supabase/types";
 
@@ -25,29 +25,9 @@ interface GeneralStatusChartProps {
 
 export const GeneralStatusChart: React.FC<GeneralStatusChartProps> = ({ allColetas, productDescriptionsMap, selectedYear }) => {
 
-  // A função generateItemDescription não é mais usada diretamente no tooltip simplificado,
-  // mas pode ser útil para depuração ou futuras expansões.
-  const generateItemDescription = (itemCodeQuantities: Map<string, number>) => {
-    const descriptions: string[] = [];
-    itemCodeQuantities.forEach((quantity, code) => {
-      const description = productDescriptionsMap.get(code);
-      if (description) {
-        descriptions.push(`${quantity}x ${description}`);
-      } else {
-        descriptions.push(`${quantity}x Item Desconhecido`);
-      }
-    });
-
-    if (descriptions.length === 0) return "Nenhum item";
-    if (descriptions.length === 1) return descriptions[0];
-    if (descriptions.length === 2) return `${descriptions[0]} e ${descriptions[1]}`;
-    return `${descriptions[0]}, ${descriptions[1]} e outros`;
-  };
-
   const processDataForChart = (data: Coleta[]) => {
     const monthlyDataMap = new Map<string, { 
       totalColetasItems: number; 
-      totalEntregasItems: number; 
       total_items_month: number 
     }>();
     const allMonths: string[] = [];
@@ -59,13 +39,11 @@ export const GeneralStatusChart: React.FC<GeneralStatusChartProps> = ({ allColet
       allMonths.push(monthKey);
       monthlyDataMap.set(monthKey, { 
         totalColetasItems: 0, 
-        totalEntregasItems: 0, 
         total_items_month: 0 
       });
     }
 
     let totalAllColetasItems = 0;
-    let totalAllEntregasItems = 0;
 
     data.forEach(item => {
       if (!item.previsao_coleta || !item.modelo_aparelho) return;
@@ -78,14 +56,12 @@ export const GeneralStatusChart: React.FC<GeneralStatusChartProps> = ({ allColet
 
       if (monthlyDataMap.has(monthKey)) {
         const currentMonthData = monthlyDataMap.get(monthKey)!;
+        // Apenas itens de coleta com status 'concluida'
         if (item.type === 'coleta' && item.status_coleta === 'concluida') {
           currentMonthData.totalColetasItems += quantity;
           totalAllColetasItems += quantity;
-        } else if (item.type === 'entrega' && item.status_coleta === 'concluida') {
-          currentMonthData.totalEntregasItems += quantity;
-          totalAllEntregasItems += quantity;
         }
-        currentMonthData.total_items_month = currentMonthData.totalColetasItems + currentMonthData.totalEntregasItems;
+        currentMonthData.total_items_month = currentMonthData.totalColetasItems; // Apenas itens de coleta
         monthlyDataMap.set(monthKey, currentMonthData);
       }
     });
@@ -95,7 +71,6 @@ export const GeneralStatusChart: React.FC<GeneralStatusChartProps> = ({ allColet
       return {
         month: monthKey,
         totalColetasItems: data.totalColetasItems,
-        totalEntregasItems: data.totalEntregasItems,
         total_items_month: data.total_items_month,
       };
     });
@@ -103,14 +78,12 @@ export const GeneralStatusChart: React.FC<GeneralStatusChartProps> = ({ allColet
     return { 
       chartData, 
       totalAllColetasItems,
-      totalAllEntregasItems,
     };
   };
 
   const { 
     chartData, 
     totalAllColetasItems,
-    totalAllEntregasItems,
   } = processDataForChart(allColetas);
 
   const CustomTooltip = ({ active, payload, label }: any) => {
@@ -121,16 +94,14 @@ export const GeneralStatusChart: React.FC<GeneralStatusChartProps> = ({ allColet
       return (
         <div className="bg-card p-3 rounded-lg border border-border shadow-lg text-sm">
           <p className="font-semibold text-primary mb-2">{label}</p>
-          <p className="text-muted-foreground">Total de Itens: <span className="font-bold text-foreground">{data.total_items_month}</span></p>
-          <p className="text-neon-cyan text-xs ml-2">Itens Coletados: <span className="font-bold">{data.totalColetasItems}</span></p>
-          <p className="text-ai-purple text-xs ml-2">Itens Entregues: <span className="font-bold">{data.totalEntregasItems}</span></p>
+          <p className="text-muted-foreground">Total de Itens Coletados: <span className="font-bold text-foreground">{data.totalColetasItems}</span></p>
         </div>
       );
     }
     return null;
   };
 
-  const hasData = chartData.some(d => d.totalColetasItems > 0 || d.totalEntregasItems > 0);
+  const hasData = chartData.some(d => d.totalColetasItems > 0);
 
   return (
     <Card className="card-futuristic border-0">
@@ -138,9 +109,9 @@ export const GeneralStatusChart: React.FC<GeneralStatusChartProps> = ({ allColet
         <div className="flex items-center justify-between">
           <div>
             <CardTitle className="text-xl font-orbitron gradient-text">
-              Evolução Mensal de Itens
+              Evolução Mensal de Itens Coletados
             </CardTitle>
-            <p className="text-sm text-muted-foreground">Coletas e Entregas - Ano {selectedYear}</p>
+            <p className="text-sm text-muted-foreground">Ano {selectedYear}</p>
           </div>
         </div>
       </CardHeader>
@@ -173,12 +144,12 @@ export const GeneralStatusChart: React.FC<GeneralStatusChartProps> = ({ allColet
                   tickFormatter={(value) => value.toFixed(0)}
                 />
                 <Tooltip content={<CustomTooltip />} />
-                <Legend // Reativado para a legenda
+                <Legend
                   wrapperStyle={{ paddingTop: '10px', display: 'flex', justifyContent: 'center', flexWrap: 'wrap' }}
                   formatter={(value) => (
                     <span className="text-sm flex items-center gap-2">
                       <span className="font-semibold text-foreground">
-                        {value === 'totalColetasItems' ? 'Total Itens Coletados' : 'Total Itens Entregues'}
+                        Total Itens Coletados
                       </span>
                     </span>
                   )}
@@ -188,10 +159,6 @@ export const GeneralStatusChart: React.FC<GeneralStatusChartProps> = ({ allColet
                     <stop offset="0%" stopColor="hsl(var(--neon-cyan))" stopOpacity={0.4} />
                     <stop offset="95%" stopColor="hsl(var(--neon-cyan))" stopOpacity={0.15} />
                   </linearGradient>
-                  <linearGradient id="gradientEntregas" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="0%" stopColor="hsl(var(--ai-purple))" stopOpacity={0.4} />
-                    <stop offset="95%" stopColor="hsl(var(--ai-purple))" stopOpacity={0.15} />
-                  </linearGradient>
                 </defs>
                 <Area
                   type="monotone"
@@ -200,34 +167,17 @@ export const GeneralStatusChart: React.FC<GeneralStatusChartProps> = ({ allColet
                   fill="url(#gradientColetas)"
                   strokeWidth={2}
                   name="Total Itens Coletados"
-                  stackId="1" // Usar stackId para empilhar as áreas
-                />
-                <Area
-                  type="monotone"
-                  dataKey="totalEntregasItems"
-                  stroke="hsl(var(--ai-purple))"
-                  fill="url(#gradientEntregas)"
-                  strokeWidth={2}
-                  name="Total Itens Entregues"
-                  stackId="1" // Usar stackId para empilhar as áreas
                 />
               </AreaChart>
             </ResponsiveContainer>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-1 gap-4"> {/* Ajustado para 1 coluna */}
             <div className="flex items-center gap-3 p-3 bg-secondary/10 rounded-lg">
               <div className="w-4 h-4 rounded" style={{ backgroundColor: 'hsl(var(--neon-cyan))' }} />
               <div>
                 <p className="text-sm font-medium">Total Itens Coletados</p>
                 <p className="text-xs text-muted-foreground">{totalAllColetasItems} itens</p>
-              </div>
-            </div>
-            <div className="flex items-center gap-3 p-3 bg-secondary/10 rounded-lg">
-              <div className="w-4 h-4 rounded" style={{ backgroundColor: 'hsl(var(--ai-purple))' }} />
-              <div>
-                <p className="text-sm font-medium">Total Itens Entregues</p>
-                <p className="text-xs text-muted-foreground">{totalAllEntregasItems} itens</p>
               </div>
             </div>
           </div>
