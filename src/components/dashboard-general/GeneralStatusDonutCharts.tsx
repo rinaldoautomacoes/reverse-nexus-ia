@@ -37,7 +37,7 @@ const CustomLabel: React.FC<CustomLabelProps> = ({ cx, cy, midAngle, innerRadius
   const y = cy + radius * Math.sin(-midAngle * Math.PI / 180);
 
   return (
-    <text x={x} y={y} fill="hsl(var(--foreground))" textAnchor={x > cx ? 'start' : 'end'} dominantBaseline="central" className="text-sm font-bold">
+    <text x={x} y={y} fill="hsl(0 0% 0%)" textAnchor={x > cx ? 'start' : 'end'} dominantBaseline="central" className="text-sm font-bold">
       {`${(percent * 100).toFixed(0)}%`}
     </text>
   );
@@ -79,7 +79,7 @@ export const GeneralStatusDonutCharts: React.FC<GeneralStatusDonutChartsProps> =
           {title}
         </CardTitle>
       </CardHeader>
-      <CardContent className="h-[350px] flex flex-col items-center justify-center"> {/* Aumentado a altura */}
+      <CardContent className="h-[350px] flex flex-col items-center justify-center">
         {total > 0 ? (
           <ResponsiveContainer width="100%" height="100%">
             <PieChart>
@@ -87,8 +87,8 @@ export const GeneralStatusDonutCharts: React.FC<GeneralStatusDonutChartsProps> =
                 data={data}
                 cx="50%"
                 cy="50%"
-                innerRadius={80} // Aumentado o raio interno
-                outerRadius={120} // Aumentado o raio externo
+                innerRadius={60} // Ajustado para um donut menor
+                outerRadius={100} // Ajustado para um donut menor
                 fill="#8884d8"
                 paddingAngle={5}
                 dataKey="value"
@@ -105,7 +105,7 @@ export const GeneralStatusDonutCharts: React.FC<GeneralStatusDonutChartsProps> =
                 itemStyle={{ color: 'hsl(var(--foreground))' }}
               />
               <Legend
-                wrapperStyle={{ paddingTop: '10px', display: 'flex', justifyContent: 'center', flexWrap: 'wrap' }} // Centraliza e permite quebra de linha
+                wrapperStyle={{ paddingTop: '10px', display: 'flex', justifyContent: 'center', flexWrap: 'wrap' }}
                 formatter={(value, entry) => (
                   <span className="text-sm flex items-center gap-2">
                     <span className="inline-block w-3 h-3 rounded-full" style={{ backgroundColor: entry.color }} />
