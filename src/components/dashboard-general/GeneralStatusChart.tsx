@@ -10,6 +10,7 @@ import {
   YAxis,
   Tooltip,
   Area,
+  Legend, // Reativado para a legenda do gráfico
 } from 'recharts';
 import type { Tables } from "@/integrations/supabase/types";
 
@@ -24,6 +25,8 @@ interface GeneralStatusChartProps {
 
 export const GeneralStatusChart: React.FC<GeneralStatusChartProps> = ({ allColetas, productDescriptionsMap, selectedYear }) => {
 
+  // A função generateItemDescription não é mais usada diretamente no tooltip simplificado,
+  // mas pode ser útil para depuração ou futuras expansões.
   const generateItemDescription = (itemCodeQuantities: Map<string, number>) => {
     const descriptions: string[] = [];
     itemCodeQuantities.forEach((quantity, code) => {
@@ -43,12 +46,8 @@ export const GeneralStatusChart: React.FC<GeneralStatusChartProps> = ({ allColet
 
   const processDataForChart = (data: Coleta[]) => {
     const monthlyDataMap = new Map<string, { 
-      coletas_pendente: Map<string, number>; 
-      coletas_em_transito: Map<string, number>; 
-      coletas_concluidas: Map<string, number>; 
-      entregas_pendente: Map<string, number>; 
-      entregas_em_transito: Map<string, number>; 
-      entregas_concluidas: Map<string, number>; 
+      totalColetasItems: number; 
+      totalEntregasItems: number; 
       total_items_month: number 
     }>();
     const allMonths: string[] = [];
@@ -59,23 +58,14 @@ export const GeneralStatusChart: React.FC<GeneralStatusChartProps> = ({ allColet
       const monthKey = format(month, 'MMM', { locale: ptBR });
       allMonths.push(monthKey);
       monthlyDataMap.set(monthKey, { 
-        coletas_pendente: new Map(), 
-        coletas_em_transito: new Map(), 
-        coletas_concluidas: new Map(), 
-        entregas_pendente: new Map(), 
-        entregas_em_transito: new Map(), 
-        entregas_concluidas: new Map(), 
+        totalColetasItems: 0, 
+        totalEntregasItems: 0, 
         total_items_month: 0 
       });
     }
 
-    let totalColetasPendente = 0;
-    let totalColetasEmTransito = 0;
-    let totalColetasConcluidas = 0;
-    let totalEntregasPendente = 0;
-    let totalEntregasEmTransito = 0;
-    let totalEntregasConcluidas = 0;
-    let totalAllItems = 0;
+    let totalAllColetasItems = 0;
+    let totalAllEntregasItems = 0;
 
     data.forEach(item => {
       if (!item.previsao_coleta || !item.modelo_aparelho) return;
@@ -85,43 +75,17 @@ export const GeneralStatusChart: React.FC<GeneralStatusChartProps> = ({ allColet
       const adjustedDateForLocalMonth = new Date(itemDate.getTime() - timezoneOffsetMinutes * 60 * 1000);
       const monthKey = format(startOfMonth(adjustedDateForLocalMonth), 'MMM', { locale: ptBR });
       const quantity = item.qtd_aparelhos_solicitado || 0;
-      const productCode = item.modelo_aparelho;
 
       if (monthlyDataMap.has(monthKey)) {
         const currentMonthData = monthlyDataMap.get(monthKey)!;
-        if (item.type === 'coleta') {
-          switch (item.status_coleta) {
-            case 'pendente':
-              currentMonthData.coletas_pendente.set(productCode, (currentMonthData.coletas_pendente.get(productCode) || 0) + quantity);
-              totalColetasPendente += quantity;
-              break;
-            case 'agendada':
-              currentMonthData.coletas_em_transito.set(productCode, (currentMonthData.coletas_em_transito.get(productCode) || 0) + quantity);
-              totalColetasEmTransito += quantity;
-              break;
-            case 'concluida':
-              currentMonthData.coletas_concluidas.set(productCode, (currentMonthData.coletas_concluidas.get(productCode) || 0) + quantity);
-              totalColetasConcluidas += quantity;
-              break;
-          }
-        } else if (item.type === 'entrega') {
-          switch (item.status_coleta) {
-            case 'pendente':
-              currentMonthData.entregas_pendente.set(productCode, (currentMonthData.entregas_pendente.get(productCode) || 0) + quantity);
-              totalEntregasPendente += quantity;
-              break;
-            case 'agendada':
-              currentMonthData.entregas_em_transito.set(productCode, (currentMonthData.entregas_em_transito.get(productCode) || 0) + quantity);
-              totalEntregasEmTransito += quantity;
-              break;
-            case 'concluida':
-              currentMonthData.entregas_concluidas.set(productCode, (currentMonthData.entregas_concluidas.get(productCode) || 0) + quantity);
-              totalEntregasConcluidas += quantity;
-              break;
-          }
+        if (item.type === 'coleta' && item.status_coleta === 'concluida') {
+          currentMonthData.totalColetasItems += quantity;
+          totalAllColetasItems += quantity;
+        } else if (item.type === 'entrega' && item.status_coleta === 'concluida') {
+          currentMonthData.totalEntregasItems += quantity;
+          totalAllEntregasItems += quantity;
         }
-        currentMonthData.total_items_month += quantity;
-        totalAllItems += quantity;
+        currentMonthData.total_items_month = currentMonthData.totalColetasItems + currentMonthData.totalEntregasItems;
         monthlyDataMap.set(monthKey, currentMonthData);
       }
     });
@@ -130,36 +94,23 @@ export const GeneralStatusChart: React.FC<GeneralStatusChartProps> = ({ allColet
       const data = monthlyDataMap.get(monthKey)!;
       return {
         month: monthKey,
-        coletas_pendente: Array.from(data.coletas_pendente.values()).reduce((sum, q) => sum + q, 0),
-        coletas_em_transito: Array.from(data.coletas_em_transito.values()).reduce((sum, q) => sum + q, 0),
-        coletas_concluidas: Array.from(data.coletas_concluidas.values()).reduce((sum, q) => sum + q, 0),
-        entregas_pendente: Array.from(data.entregas_pendente.values()).reduce((sum, q) => sum + q, 0),
-        entregas_em_transito: Array.from(data.entregas_em_transito.values()).reduce((sum, q) => sum + q, 0),
-        entregas_concluidas: Array.from(data.entregas_concluidas.values()).reduce((sum, q) => sum + q, 0),
+        totalColetasItems: data.totalColetasItems,
+        totalEntregasItems: data.totalEntregasItems,
         total_items_month: data.total_items_month,
-        // Keep item maps for detailed tooltips
-        coletas_pendente_items: data.coletas_pendente,
-        coletas_em_transito_items: data.coletas_em_transito,
-        coletas_concluidas_items: data.coletas_concluidas,
-        entregas_pendente_items: data.entregas_pendente,
-        entregas_em_transito_items: data.entregas_em_transito,
-        entregas_concluidas_items: data.entregas_concluidas,
       };
     });
 
     return { 
       chartData, 
-      totalColetasPendente, totalColetasEmTransito, totalColetasConcluidas,
-      totalEntregasPendente, totalEntregasEmTransito, totalEntregasConcluidas,
-      totalAllItems
+      totalAllColetasItems,
+      totalAllEntregasItems,
     };
   };
 
   const { 
     chartData, 
-    totalColetasPendente, totalColetasEmTransito, totalColetasConcluidas,
-    totalEntregasPendente, totalEntregasEmTransito, totalEntregasConcluidas,
-    totalAllItems
+    totalAllColetasItems,
+    totalAllEntregasItems,
   } = processDataForChart(allColetas);
 
   const CustomTooltip = ({ active, payload, label }: any) => {
@@ -171,43 +122,15 @@ export const GeneralStatusChart: React.FC<GeneralStatusChartProps> = ({ allColet
         <div className="bg-card p-3 rounded-lg border border-border shadow-lg text-sm">
           <p className="font-semibold text-primary mb-2">{label}</p>
           <p className="text-muted-foreground">Total de Itens: <span className="font-bold text-foreground">{data.total_items_month}</span></p>
-          
-          {/* Coletas */}
-          {(data.coletas_pendente_items.size > 0 || data.coletas_em_transito_items.size > 0 || data.coletas_concluidas_items.size > 0) && (
-            <div className="mt-2 border-t border-border/50 pt-2">
-              <p className="font-medium text-primary flex items-center gap-1"><Package className="h-3 w-3" /> Coletas:</p>
-              {data.coletas_pendente_items.size > 0 && (
-                <p className="text-destructive text-xs ml-2">P: {generateItemDescription(data.coletas_pendente_items)}</p>
-              )}
-              {data.coletas_em_transito_items.size > 0 && (
-                <p className="text-warning-yellow text-xs ml-2">ET: {generateItemDescription(data.coletas_em_transito_items)}</p>
-              )}
-              {data.coletas_concluidas_items.size > 0 && (
-                <p className="text-success-green text-xs ml-2">C: {generateItemDescription(data.coletas_concluidas_items)}</p>
-              )}
-            </div>
-          )}
-
-          {/* Entregas */}
-          {(data.entregas_pendente_items.size > 0 || data.entregas_em_transito_items.size > 0 || data.entregas_concluidas_items.size > 0) && (
-            <div className="mt-2 border-t border-border/50 pt-2">
-              <p className="font-medium text-accent flex items-center gap-1"><Truck className="h-3 w-3" /> Entregas:</p>
-              {data.entregas_pendente_items.size > 0 && (
-                <p className="text-destructive text-xs ml-2">P: {generateItemDescription(data.entregas_pendente_items)}</p>
-              )}
-              {data.entregas_em_transito_items.size > 0 && (
-                <p className="text-warning-yellow text-xs ml-2">ET: {generateItemDescription(data.entregas_em_transito_items)}</p>
-              )}
-              {data.entregas_concluidas_items.size > 0 && (
-                <p className="text-success-green text-xs ml-2">C: {generateItemDescription(data.entregas_concluidas_items)}</p>
-              )}
-            </div>
-          )}
+          <p className="text-neon-cyan text-xs ml-2">Itens Coletados: <span className="font-bold">{data.totalColetasItems}</span></p>
+          <p className="text-ai-purple text-xs ml-2">Itens Entregues: <span className="font-bold">{data.totalEntregasItems}</span></p>
         </div>
       );
     }
     return null;
   };
+
+  const hasData = chartData.some(d => d.totalColetasItems > 0 || d.totalEntregasItems > 0);
 
   return (
     <Card className="card-futuristic border-0">
@@ -250,6 +173,16 @@ export const GeneralStatusChart: React.FC<GeneralStatusChartProps> = ({ allColet
                   tickFormatter={(value) => value.toFixed(0)}
                 />
                 <Tooltip content={<CustomTooltip />} />
+                <Legend // Reativado para a legenda
+                  wrapperStyle={{ paddingTop: '10px', display: 'flex', justifyContent: 'center', flexWrap: 'wrap' }}
+                  formatter={(value) => (
+                    <span className="text-sm flex items-center gap-2">
+                      <span className="font-semibold text-foreground">
+                        {value === 'totalColetasItems' ? 'Total Itens Coletados' : 'Total Itens Entregues'}
+                      </span>
+                    </span>
+                  )}
+                />
                 <defs>
                   <linearGradient id="gradientColetas" x1="0" y1="0" x2="0" y2="1">
                     <stop offset="0%" stopColor="hsl(var(--neon-cyan))" stopOpacity={0.4} />
@@ -262,21 +195,21 @@ export const GeneralStatusChart: React.FC<GeneralStatusChartProps> = ({ allColet
                 </defs>
                 <Area
                   type="monotone"
-                  dataKey="coletas_concluidas"
+                  dataKey="totalColetasItems"
                   stroke="hsl(var(--neon-cyan))"
                   fill="url(#gradientColetas)"
                   strokeWidth={2}
-                  name="Itens Coletados"
-                  stackId="1"
+                  name="Total Itens Coletados"
+                  stackId="1" // Usar stackId para empilhar as áreas
                 />
                 <Area
                   type="monotone"
-                  dataKey="entregas_concluidas"
+                  dataKey="totalEntregasItems"
                   stroke="hsl(var(--ai-purple))"
                   fill="url(#gradientEntregas)"
                   strokeWidth={2}
-                  name="Itens Entregues"
-                  stackId="1"
+                  name="Total Itens Entregues"
+                  stackId="1" // Usar stackId para empilhar as áreas
                 />
               </AreaChart>
             </ResponsiveContainer>
@@ -287,14 +220,14 @@ export const GeneralStatusChart: React.FC<GeneralStatusChartProps> = ({ allColet
               <div className="w-4 h-4 rounded" style={{ backgroundColor: 'hsl(var(--neon-cyan))' }} />
               <div>
                 <p className="text-sm font-medium">Total Itens Coletados</p>
-                <p className="text-xs text-muted-foreground">{totalColetasConcluidas} itens</p>
+                <p className="text-xs text-muted-foreground">{totalAllColetasItems} itens</p>
               </div>
             </div>
             <div className="flex items-center gap-3 p-3 bg-secondary/10 rounded-lg">
               <div className="w-4 h-4 rounded" style={{ backgroundColor: 'hsl(var(--ai-purple))' }} />
               <div>
                 <p className="text-sm font-medium">Total Itens Entregues</p>
-                <p className="text-xs text-muted-foreground">{totalEntregasConcluidas} itens</p>
+                <p className="text-xs text-muted-foreground">{totalAllEntregasItems} itens</p>
               </div>
             </div>
           </div>
