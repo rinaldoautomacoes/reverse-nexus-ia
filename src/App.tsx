@@ -3,10 +3,10 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, useLocation } from "react-router-dom";
-import Index from "./pages/Index";
+import Index from "./pages/Index"; // Keep for now, but will be less prominent
 import NotFound from "./pages/NotFound";
-import { AgendarColetaPage } from "./pages/AgendarColetaPage"; // Reintroduzido
-import { AgendarEntregaPage } from "./pages/AgendarEntregaPage"; // Reintroduzido
+import { AgendarColetaPage } from "./pages/AgendarColetaPage";
+import { AgendarEntregaPage } from "./pages/AgendarEntregaPage";
 import { Relatorios } from "./pages/Relatorios";
 import { RelatoriosEntregas } from "./pages/RelatoriosEntregas";
 import { Coletas } from "./pages/Coletas";
@@ -33,7 +33,8 @@ import { LandingPage } from "./pages/LandingPage";
 import { EntregasDashboardPage } from "./pages/EntregasDashboardPage";
 import { DriverManagement } from "./pages/DriverManagement";
 import { TransportadoraManagement } from "./pages/TransportadoraManagement";
-import { DataImportPage } from "./pages/DataImportPage"; // Importar a nova página
+import { DataImportPage } from "./pages/DataImportPage";
+import { GeneralDashboard } from "./pages/GeneralDashboard"; // Importar o novo dashboard geral
 
 const queryClient = new QueryClient();
 
@@ -73,11 +74,11 @@ const AppLayout = () => {
           <Route path="/debug" element={<Debug />} />
           
           <Route element={<ProtectedRoute allowedRoles={['standard', 'admin']} />}>
-            <Route path="/" element={<LandingPage />} />
-            <Route path="/coletas-dashboard" element={<Index selectedYear={selectedYear} />} />
-            <Route path="/dashboard-entregas" element={<EntregasDashboardPage selectedYear={selectedYear} />} />
-            <Route path="/agendar-coleta" element={<AgendarColetaPage />} /> {/* Rota reintroduzida */}
-            <Route path="/agendar-entrega" element={<AgendarEntregaPage />} /> {/* Rota reintroduzida */}
+            <Route path="/" element={<GeneralDashboard selectedYear={selectedYear} />} /> {/* Nova rota principal */}
+            <Route path="/coletas-dashboard" element={<Index selectedYear={selectedYear} />} /> {/* Manter, mas menos proeminente */}
+            <Route path="/dashboard-entregas" element={<EntregasDashboardPage selectedYear={selectedYear} />} /> {/* Manter, mas menos proeminente */}
+            <Route path="/agendar-coleta" element={<AgendarColetaPage />} />
+            <Route path="/agendar-entrega" element={<AgendarEntregaPage />} />
             <Route path="/coletas-ativas" element={<Coletas selectedYear={selectedYear} />} />
             <Route path="/coletas-concluidas" element={<ColetasConcluidas selectedYear={selectedYear} />} />
             <Route path="/entregas-ativas" element={<EntregasAtivas selectedYear={selectedYear} />} />
@@ -94,7 +95,7 @@ const AppLayout = () => {
             <Route path="/metrics-management" element={<MetricsManagement />} />
             <Route path="/user-management" element={<UserManagement />} />
             <Route path="/client-management" element={<ClientManagement />} />
-            <Route path="/data-import" element={<DataImportPage />} /> {/* Nova rota para importação de dados */}
+            <Route path="/data-import" element={<DataImportPage />} />
           </Route>
           
           <Route path="*" element={<NotFound />} />

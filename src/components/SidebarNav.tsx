@@ -19,10 +19,10 @@ import {
   Truck,
   ClipboardCheck,
   CalendarPlus,
-  FileText, // Adicionado FileText para relatórios
-  Home, // Adicionado ícone Home
-  Building, // Adicionado ícone Building para transportadoras
-  DatabaseZap, // Adicionado ícone para Importação de Dados
+  FileText,
+  Home,
+  Building,
+  DatabaseZap,
 } from 'lucide-react';
 import { useAuth } from '@/hooks/use-auth';
 import { supabase } from '@/integrations/supabase/client';
@@ -41,7 +41,7 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from "@/components/ui/accordion";
-import { UserProfileCard } from './UserProfileCard'; // Importar o novo componente
+import { UserProfileCard } from './UserProfileCard';
 
 interface SidebarNavProps {
   selectedYear: string;
@@ -62,125 +62,183 @@ export const SidebarNav: React.FC<SidebarNavProps> = ({ selectedYear, setSelecte
     if (isMobile) setIsSheetOpen(false);
   };
 
-  // Itens de navegação agrupados para "Serviços de Coletas"
-  const coletaNavItems = [
+  const navItems = [
     {
-      label: 'Dashboard Coletas',
-      icon: Brain,
-      path: '/coletas-dashboard', // Rota atualizada
+      label: 'Dashboard Geral',
+      icon: Home,
+      path: '/',
       roles: ['standard', 'admin'],
+      group: 'main',
     },
     {
-      label: 'Agendar Coleta',
-      icon: Package,
-      path: '/agendar-coleta', // Rota reintroduzida
-      roles: ['standard', 'admin'],
-    },
-    {
-      label: 'Coletas Ativas',
-      icon: ListChecks,
-      path: '/coletas-ativas',
-      roles: ['standard', 'admin'],
-    },
-    {
-      label: 'Coletas Concluídas',
-      icon: CheckCircle,
-      path: '/coletas-concluidas',
-      roles: ['standard', 'admin'],
-    },
-    {
-      label: 'Relatório de Coletas', // Adicionado item de relatório de coletas
-      icon: FileText,
-      path: '/relatorios',
-      roles: ['standard', 'admin'],
-    },
-  ];
-
-  // Itens de navegação agrupados para "Serviços de Entregas"
-  const entregaNavItems = [
-    {
-      label: 'Dashboard Entregas',
-      icon: Truck,
-      path: '/dashboard-entregas',
-      roles: ['standard', 'admin'],
-    },
-    {
-      label: 'Agendar Entrega',
-      icon: CalendarPlus,
-      path: '/agendar-entrega', // Rota reintroduzida
-      roles: ['standard', 'admin'],
-    },
-    {
-      label: 'Entregas Ativas',
-      icon: Truck,
-      path: '/entregas-ativas',
-      roles: ['standard', 'admin'],
-    },
-    {
-      label: 'Entregas Concluídas',
-      icon: ClipboardCheck,
-      path: '/entregas-concluidas',
-      roles: ['standard', 'admin'],
-    },
-    {
-      label: 'Relatório de Entregas', // NOVO ITEM
-      icon: FileText,
-      path: '/relatorios-entregas',
-      roles: ['standard', 'admin'],
-    },
-  ];
-
-  // Outros itens de navegação (não agrupados)
-  const otherNavItems = [
-    {
-      label: 'Roteirização', // NOVO ITEM: Roteirização
+      label: 'Roteirização',
       icon: Route,
       path: '/roteirizacao',
       roles: ['standard', 'admin'],
+      group: 'main',
     },
     {
-      label: 'Importar Dados', // NOVO ITEM: Importar Dados
+      label: 'Importar Dados',
       icon: DatabaseZap,
       path: '/data-import',
-      roles: ['admin'], // Apenas administradores podem importar dados
+      roles: ['admin'],
+      group: 'management',
     },
     {
       label: 'Gerenciar Motoristas',
       icon: Truck,
       path: '/driver-management',
       roles: ['admin'],
+      group: 'management',
     },
     {
-      label: 'Gerenciar Transportadoras', // NOVO ITEM: Gerenciar Transportadoras
+      label: 'Gerenciar Transportadoras',
       icon: Building,
       path: '/transportadora-management',
-      roles: ['admin'], // Apenas administradores podem gerenciar transportadoras
+      roles: ['admin'],
+      group: 'management',
     },
     {
       label: 'Gerenciar Clientes',
       icon: UserIcon,
       path: '/client-management',
       roles: ['admin'],
+      group: 'management',
     },
     {
       label: 'Gerenciar Produtos',
       icon: Package,
       path: '/product-management',
       roles: ['standard', 'admin'],
+      group: 'management',
     },
     {
       label: 'Gerenciar Usuários',
       icon: Users,
       path: '/user-management',
       roles: ['admin'],
+      group: 'management',
+    },
+    {
+      label: 'Gerenciar Métricas',
+      icon: Gauge,
+      path: '/metrics-management',
+      roles: ['admin'],
+      group: 'management',
+    },
+    // Coleta Services
+    {
+      label: 'Dashboard Coletas',
+      icon: Brain,
+      path: '/coletas-dashboard',
+      roles: ['standard', 'admin'],
+      group: 'coleta-services',
+    },
+    {
+      label: 'Agendar Coleta',
+      icon: Package,
+      path: '/agendar-coleta',
+      roles: ['standard', 'admin'],
+      group: 'coleta-services',
+    },
+    {
+      label: 'Coletas Ativas',
+      icon: ListChecks,
+      path: '/coletas-ativas',
+      roles: ['standard', 'admin'],
+      group: 'coleta-services',
+    },
+    {
+      label: 'Coletas Concluídas',
+      icon: CheckCircle,
+      path: '/coletas-concluidas',
+      roles: ['standard', 'admin'],
+      group: 'coleta-services',
+    },
+    {
+      label: 'Relatório de Coletas',
+      icon: FileText,
+      path: '/relatorios',
+      roles: ['standard', 'admin'],
+      group: 'coleta-services',
+    },
+    // Entrega Services
+    {
+      label: 'Dashboard Entregas',
+      icon: Truck,
+      path: '/dashboard-entregas',
+      roles: ['standard', 'admin'],
+      group: 'entrega-services',
+    },
+    {
+      label: 'Agendar Entrega',
+      icon: CalendarPlus,
+      path: '/agendar-entrega',
+      roles: ['standard', 'admin'],
+      group: 'entrega-services',
+    },
+    {
+      label: 'Entregas Ativas',
+      icon: Truck,
+      path: '/entregas-ativas',
+      roles: ['standard', 'admin'],
+      group: 'entrega-services',
+    },
+    {
+      label: 'Entregas Concluídas',
+      icon: ClipboardCheck,
+      path: '/entregas-concluidas',
+      roles: ['standard', 'admin'],
+      group: 'entrega-services',
+    },
+    {
+      label: 'Relatório de Entregas',
+      icon: FileText,
+      path: '/relatorios-entregas',
+      roles: ['standard', 'admin'],
+      group: 'entrega-services',
     },
   ];
+
+  const renderNavItem = (item: typeof navItems[0], isCollapsed: boolean) => {
+    const Icon = item.icon;
+    const showItem = user && item.roles.includes(profile?.role || 'standard');
+    if (!showItem) return null;
+
+    const buttonContent = (
+      <Button
+        key={item.path}
+        variant="ghost"
+        className={cn(
+          'w-full justify-start text-left h-12 text-base hover:bg-primary/10 hover:text-primary',
+          window.location.pathname === item.path && 'bg-primary/10 text-primary font-semibold',
+          isCollapsed && 'justify-center px-0'
+        )}
+        onClick={() => {
+          navigate(item.path);
+          if (isMobile) setIsSheetOpen(false);
+        }}
+      >
+        <Icon className={cn(isCollapsed ? 'h-6 w-6' : 'mr-3 h-5 w-5')} />
+        {!isCollapsed && item.label}
+      </Button>
+    );
+
+    return isCollapsed ? (
+      <Tooltip key={item.path} delayDuration={0}>
+        <TooltipTrigger asChild>{buttonContent}</TooltipTrigger>
+        <TooltipContent side="right">{item.label}</TooltipContent>
+      </Tooltip>
+    ) : (
+      buttonContent
+    );
+  };
 
   const renderNavContent = (isCollapsed: boolean) => (
     <div className={cn("flex h-full flex-col justify-between", isCollapsed ? "px-2" : "p-4")}>
       {/* Fixed top section: User Profile and Title */}
       <div>
-        {user && ( // Renderiza o UserProfileCard apenas se o usuário estiver logado
+        {user && (
           <div className="mb-6">
             <UserProfileCard isCollapsed={isCollapsed} />
           </div>
@@ -194,11 +252,14 @@ export const SidebarNav: React.FC<SidebarNavProps> = ({ selectedYear, setSelecte
       </div>
 
       {/* Scrollable navigation area */}
-      <div className="flex-1 overflow-y-auto pr-2 -mr-2"> {/* Adicionado -mr-2 para compensar o padding e garantir a largura total da barra de rolagem */}
+      <div className="flex-1 overflow-y-auto pr-2 -mr-2">
         <nav className="space-y-2">
-          {user && ( // Condição para exibir os serviços de Coletas e Entregas
+          {user && (
             <>
-              {/* Novo item Home */}
+              {/* Main Navigation Items */}
+              {navItems.filter(item => item.group === 'main').map(item => renderNavItem(item, isCollapsed))}
+
+              {/* Management Items Accordion */}
               {isCollapsed ? (
                 <Tooltip delayDuration={0}>
                   <TooltipTrigger asChild>
@@ -206,71 +267,42 @@ export const SidebarNav: React.FC<SidebarNavProps> = ({ selectedYear, setSelecte
                       variant="ghost"
                       className={cn(
                         'w-full justify-center px-0 h-12 text-base hover:bg-primary/10 hover:text-primary',
-                        window.location.pathname === '/' && 'bg-primary/10 text-primary font-semibold'
+                        navItems.filter(item => item.group === 'management').some(item => window.location.pathname === item.path) && 'bg-primary/10 text-primary font-semibold'
                       )}
                       onClick={() => {
-                        navigate('/');
+                        // Navigate to the first management item or a default if clicked collapsed
+                        const firstManagementPath = navItems.find(item => item.group === 'management' && user && item.roles.includes(profile?.role || 'standard'))?.path;
+                        if (firstManagementPath) navigate(firstManagementPath);
                         if (isMobile) setIsSheetOpen(false);
                       }}
                     >
-                      <Home className="h-6 w-6" />
+                      <Gauge className="h-6 w-6" />
                     </Button>
                   </TooltipTrigger>
-                  <TooltipContent side="right">Home</TooltipContent>
+                  <TooltipContent side="right">Gerenciamento</TooltipContent>
                 </Tooltip>
               ) : (
-                <Button
-                  variant="ghost"
-                  className={cn(
-                    'w-full justify-start text-left h-12 text-base hover:bg-primary/10 hover:text-primary',
-                    window.location.pathname === '/' && 'bg-primary/10 text-primary font-semibold',
-                  )}
-                  onClick={() => {
-                    navigate('/');
-                    if (isMobile) setIsSheetOpen(false);
-                  }}
-                >
-                  <Home className="mr-3 h-5 w-5" />
-                  Home
-                </Button>
+                <Accordion type="single" collapsible defaultValue={navItems.filter(item => item.group === 'management').some(item => window.location.pathname === item.path) ? "management-services" : undefined}>
+                  <AccordionItem value="management-services" className="border-b-0">
+                    <AccordionTrigger
+                      className={cn(
+                        "flex items-center w-full justify-start text-left h-12 text-base hover:bg-primary/10 hover:text-primary",
+                        navItems.filter(item => item.group === 'management').some(item => window.location.pathname === item.path) && 'bg-primary/10 text-primary font-semibold'
+                      )}
+                    >
+                      <Gauge className="mr-3 h-5 w-5" />
+                      Gerenciamento
+                    </AccordionTrigger>
+                    <AccordionContent className="pl-4">
+                      {navItems.filter(item => item.group === 'management').map(item => (
+                        renderNavItem({ ...item, label: item.label.replace('Gerenciar ', '') }, false) // Remove 'Gerenciar ' for sub-items
+                      ))}
+                    </AccordionContent>
+                  </AccordionItem>
+                </Accordion>
               )}
 
-              {/* Outros Itens de Navegação (não agrupados) - Roteirização primeiro */}
-              {otherNavItems.map((item) => {
-                const Icon = item.icon;
-                const showItem = user && item.roles.includes(profile?.role || 'standard');
-                if (!showItem) return null;
-
-                const buttonContent = (
-                  <Button
-                    key={item.path}
-                    variant="ghost"
-                    className={cn(
-                      'w-full justify-start text-left h-12 text-base hover:bg-primary/10 hover:text-primary',
-                      window.location.pathname === item.path && 'bg-primary/10 text-primary font-semibold',
-                      isCollapsed && 'justify-center px-0'
-                    )}
-                    onClick={() => {
-                      navigate(item.path);
-                      if (isMobile) setIsSheetOpen(false);
-                    }}
-                  >
-                    <Icon className={cn(isCollapsed ? 'h-6 w-6' : 'mr-3 h-5 w-5')} />
-                    {!isCollapsed && item.label}
-                  </Button>
-                );
-
-                return isCollapsed ? (
-                  <Tooltip key={item.path}>
-                    <TooltipTrigger asChild>{buttonContent}</TooltipTrigger>
-                    <TooltipContent side="right">{item.label}</TooltipContent>
-                  </Tooltip>
-                ) : (
-                  buttonContent
-                );
-              })}
-
-              {/* Serviços de Coletas Accordion ou Botão Colapsado */}
+              {/* Coleta Services Accordion */}
               {isCollapsed ? (
                 <Tooltip delayDuration={0}>
                   <TooltipTrigger asChild>
@@ -278,10 +310,10 @@ export const SidebarNav: React.FC<SidebarNavProps> = ({ selectedYear, setSelecte
                       variant="ghost"
                       className={cn(
                         'w-full justify-center px-0 h-12 text-base hover:bg-primary/10 hover:text-primary',
-                        coletaNavItems.some(item => window.location.pathname === item.path) && 'bg-primary/10 text-primary font-semibold'
+                        navItems.filter(item => item.group === 'coleta-services').some(item => window.location.pathname === item.path) && 'bg-primary/10 text-primary font-semibold'
                       )}
                       onClick={() => {
-                        navigate('/coletas-dashboard'); // Navega para o Dashboard de Coletas
+                        navigate('/coletas-dashboard');
                         if (isMobile) setIsSheetOpen(false);
                       }}
                     >
@@ -291,47 +323,25 @@ export const SidebarNav: React.FC<SidebarNavProps> = ({ selectedYear, setSelecte
                   <TooltipContent side="right">Serviços de Coletas</TooltipContent>
                 </Tooltip>
               ) : (
-                <Accordion type="single" collapsible defaultValue={coletaNavItems.some(item => window.location.pathname === item.path) ? "coletas-services" : undefined}>
+                <Accordion type="single" collapsible defaultValue={navItems.filter(item => item.group === 'coleta-services').some(item => window.location.pathname === item.path) ? "coletas-services" : undefined}>
                   <AccordionItem value="coletas-services" className="border-b-0">
                     <AccordionTrigger
                       className={cn(
                         "flex items-center w-full justify-start text-left h-12 text-base hover:bg-primary/10 hover:text-primary",
-                        coletaNavItems.some(item => window.location.pathname === item.path) && 'bg-primary/10 text-primary font-semibold'
+                        navItems.filter(item => item.group === 'coleta-services').some(item => window.location.pathname === item.path) && 'bg-primary/10 text-primary font-semibold'
                       )}
                     >
                       <Package className="mr-3 h-5 w-5" />
                       Serviços de Coletas
                     </AccordionTrigger>
                     <AccordionContent className="pl-4">
-                      {coletaNavItems.map((item) => {
-                        const Icon = item.icon;
-                        const showItem = user && item.roles.includes(profile?.role || 'standard');
-                        if (!showItem) return null;
-
-                        return (
-                          <Button
-                            key={item.path}
-                            variant="ghost"
-                            className={cn(
-                              'w-full justify-start text-left h-10 text-sm hover:bg-primary/10 hover:text-primary',
-                              window.location.pathname === item.path && 'bg-primary/10 text-primary font-semibold',
-                            )}
-                            onClick={() => {
-                              navigate(item.path);
-                              if (isMobile) setIsSheetOpen(false);
-                            }}
-                          >
-                            <Icon className="mr-3 h-4 w-4" />
-                            {item.label}
-                          </Button>
-                        );
-                      })}
+                      {navItems.filter(item => item.group === 'coleta-services').map(item => renderNavItem(item, false))}
                     </AccordionContent>
                   </AccordionItem>
                 </Accordion>
               )}
 
-              {/* Serviços de Entregas Accordion ou Botão Colapsado */}
+              {/* Entrega Services Accordion */}
               {isCollapsed ? (
                 <Tooltip delayDuration={0}>
                   <TooltipTrigger asChild>
@@ -339,10 +349,10 @@ export const SidebarNav: React.FC<SidebarNavProps> = ({ selectedYear, setSelecte
                       variant="ghost"
                       className={cn(
                         'w-full justify-center px-0 h-12 text-base hover:bg-primary/10 hover:text-primary',
-                        entregaNavItems.some(item => window.location.pathname === item.path) && 'bg-primary/10 text-primary font-semibold'
+                        navItems.filter(item => item.group === 'entrega-services').some(item => window.location.pathname === item.path) && 'bg-primary/10 text-primary font-semibold'
                       )}
                       onClick={() => {
-                        navigate('/dashboard-entregas'); // Navega para o Dashboard de Entregas
+                        navigate('/dashboard-entregas');
                         if (isMobile) setIsSheetOpen(false);
                       }}
                     >
@@ -352,41 +362,19 @@ export const SidebarNav: React.FC<SidebarNavProps> = ({ selectedYear, setSelecte
                   <TooltipContent side="right">Serviços de Entregas</TooltipContent>
                 </Tooltip>
               ) : (
-                <Accordion type="single" collapsible defaultValue={entregaNavItems.some(item => window.location.pathname === item.path) ? "entregas-services" : undefined}>
+                <Accordion type="single" collapsible defaultValue={navItems.filter(item => item.group === 'entrega-services').some(item => window.location.pathname === item.path) ? "entregas-services" : undefined}>
                   <AccordionItem value="entregas-services" className="border-b-0">
                     <AccordionTrigger
                       className={cn(
                         "flex items-center w-full justify-start text-left h-12 text-base hover:bg-primary/10 hover:text-primary",
-                        entregaNavItems.some(item => window.location.pathname === item.path) && 'bg-primary/10 text-primary font-semibold'
+                        navItems.filter(item => item.group === 'entrega-services').some(item => window.location.pathname === item.path) && 'bg-primary/10 text-primary font-semibold'
                       )}
                     >
                       <Truck className="mr-3 h-5 w-5" />
                       Serviços de Entregas
                     </AccordionTrigger>
                     <AccordionContent className="pl-4">
-                      {entregaNavItems.map((item) => {
-                        const Icon = item.icon;
-                        const showItem = user && item.roles.includes(profile?.role || 'standard');
-                        if (!showItem) return null;
-
-                        return (
-                          <Button
-                            key={item.path}
-                            variant="ghost"
-                            className={cn(
-                              'w-full justify-start text-left h-10 text-sm hover:bg-primary/10 hover:text-primary',
-                              window.location.pathname === item.path && 'bg-primary/10 text-primary font-semibold',
-                            )}
-                            onClick={() => {
-                              navigate(item.path);
-                              if (isMobile) setIsSheetOpen(false);
-                            }}
-                          >
-                            <Icon className="mr-3 h-4 w-4" />
-                            {item.label}
-                          </Button>
-                        );
-                      })}
+                      {navItems.filter(item => item.group === 'entrega-services').map(item => renderNavItem(item, false))}
                     </AccordionContent>
                   </AccordionItem>
                 </Accordion>
