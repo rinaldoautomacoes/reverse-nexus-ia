@@ -5,9 +5,10 @@ import { supabase } from "@/integrations/supabase/client";
 import type { Tables } from "@/integrations/supabase/types_generated";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
+import { formatItemDescriptionsForColeta } from "./utils"; // Import new util
 
 type Report = Tables<'reports'>;
-type Coleta = Tables<'coletas'>;
+type Coleta = Tables<'coletas'> & { items?: Array<Tables<'items'>> | null; }; // Add items to Coleta type
 
 // RGB values for futuristic theme - ADJUSTED FOR A WHITE BACKGROUND
 const COLOR_BACKGROUND_WHITE = [255, 255, 255]; // Fundo branco
@@ -25,7 +26,7 @@ export const generateReport = async (report: Report, userId: string) => {
   try {
     let query = supabase
       .from('coletas')
-      .select('*')
+      .select(`*, items(*)`) // Fetch items along with coletas
       .eq('user_id', userId);
 
     if (report.collection_type_filter && report.collection_type_filter !== 'todos') {
@@ -57,12 +58,12 @@ export const generateReport = async (report: Report, userId: string) => {
     const fileName = `${report.title.replace(/\s/g, '_')}_${format(new Date(), 'yyyyMMdd_HHmmss')}`;
 
     if (report.format === 'pdf') {
-      const pdfBlob = await generatePdfReportContent(report, coletas);
+      const pdfBlob = await generatePdfReportContent(report, coletas as Coleta[]); // Cast to Coleta[]
       const { publicUrl, uploadError } = await uploadFileToStorage(userId, fileName + '.pdf', pdfBlob, 'application/pdf');
       if (uploadError) throw uploadError;
       reportUrl = publicUrl;
     } else if (report.format === 'csv') {
-      const csvBlob = generateCsvReportContent(report, coletas);
+      const csvBlob = generateCsvReportContent(report, coletas as Coleta[]); // Cast to Coleta[]
       const { publicUrl, uploadError } = await uploadFileToStorage(userId, fileName + '.csv', csvBlob, 'text/csv;charset=utf-8;');
       if (uploadError) throw uploadError;
       reportUrl = publicUrl;
@@ -205,6 +206,7 @@ const generatePdfReportContent = async (report: Report, data: Coleta[]): Promise
     "Endereço de Origem",
     "Endereço de Destino",
     "Material",
+    "Descrição Material", // NEW COLUMN
     "Qtd",
     "Status",
     report.type === 'coleta' ? "Previsão Coleta" : "Previsão Entrega",
@@ -212,14 +214,15 @@ const generatePdfReportContent = async (report: Report, data: Coleta[]): Promise
   const usableWidth = pageWidth - 2 * margin;
   // Ajuste das larguras das colunas para melhor visualização
   const columnWidths = [
-    usableWidth * 0.12, // Nº Coleta/Entrega (mantido)
-    usableWidth * 0.15, // Cliente (mantido)
-    usableWidth * 0.20, // Endereço Origem (reduzido de 0.23)
-    usableWidth * 0.19, // Endereço Destino (reduzido de 0.22)
-    usableWidth * 0.08, // Material (mantido)
-    usableWidth * 0.04, // Qtd (mantido)
-    usableWidth * 0.10, // Status (aumentado de 0.08)
-    usableWidth * 0.12, // Previsão Coleta/Entrega (aumentado de 0.08)
+    usableWidth * 0.10, // Nº Coleta/Entrega
+    usableWidth * 0.12, // Cliente
+    usableWidth * 0.18, // Endereço Origem
+    usableWidth * 0.17, // Endereço Destino
+    usableWidth * 0.08, // Material (codes)
+    usableWidth * 0.15, // Descrição Material (NEW)
+    usableWidth * 0.04, // Qtd
+    usableWidth * 0.08, // Status
+    usableWidth * 0.08, // Previsão Coleta/Entrega
   ];
   
   const rowHeight = 8;
@@ -272,7 +275,8 @@ const generatePdfReportContent = async (report: Report, data: Coleta[]): Promise
       item.parceiro || 'N/A',
       item.endereco_origem || 'N/A',
       item.endereco_destino || 'N/A',
-      item.modelo_aparelho || 'N/A',
+      item.modelo_aparelho || 'N/A', // Material (codes summary)
+      formatItemDescriptionsForColeta(item.items) || 'N/A', // NEW: Descrição Material
       (item.qtd_aparelhos_solicitado || 0).toString(),
       item.status_coleta === 'pendente' ? 'Pendente' : item.status_coleta === 'agendada' ? 'Em Trânsito' : item.status_coleta === 'concluida' ? 'Concluída' : 'N/A',
       item.previsao_coleta ? format(new Date(item.previsao_coleta), 'dd/MM/yyyy', { locale: ptBR }) : 'N/A',
@@ -315,7 +319,7 @@ const generatePdfReportContent = async (report: Report, data: Coleta[]): Promise
       let align: 'left' | 'center' | 'right' = 'left';
 
       // Apply specific colors for status column
-      if (i === 6) { // Status column
+      if (i === 7) { // Status column (new index)
         if (cellText === 'Pendente') {
           doc.setTextColor(...COLOR_DESTRUCTIVE_RED);
         } else if (cellText === 'Em Trânsito') {
@@ -329,7 +333,7 @@ const generatePdfReportContent = async (report: Report, data: Coleta[]): Promise
         doc.setTextColor(...COLOR_FOREGROUND_DARK);
       }
 
-      if (i === 5 || i === 6 || i === 7) { // Qtd, Status, Previsão (centralizado)
+      if (i === 6 || i === 7 || i === 8) { // Qtd, Status, Previsão (new indices)
         textX = currentX + columnWidths[i] / 2;
         align = 'center';
       }
@@ -365,7 +369,7 @@ const generatePdfReportContent = async (report: Report, data: Coleta[]): Promise
 const generateCsvReportContent = (report: Report, data: Coleta[]): Blob => {
   const headers = [
     "ID", "Tipo", "Parceiro", "Controle Cliente", "CNPJ", "Contato", "Telefone", "Email", "Endereço", "CEP", "Bairro", "Cidade", "UF", "Localidade",
-    "Previsão Coleta/Entrega", "Qtd. Aparelhos Solicitado", "Modelo Aparelho", "Status Coleta", "Status Unidade",
+    "Previsão Coleta/Entrega", "Qtd. Aparelhos Solicitado", "Modelo Aparelho", "Descrição Materiais", "Status Coleta", "Status Unidade", // Added "Descrição Materiais"
     "NF GLBL", "NF Método", "Observação", "Responsável", "ID Responsável", "ID Cliente", "Contrato", "Criado Em"
   ];
 
@@ -387,6 +391,7 @@ const generateCsvReportContent = (report: Report, data: Coleta[]): Blob => {
     `"${item.previsao_coleta ? format(new Date(item.previsao_coleta), 'dd/MM/yyyy') : ''}"`,
     `"${item.qtd_aparelhos_solicitado || 0}"`,
     `"${item.modelo_aparelho || ''}"`,
+    `"${formatItemDescriptionsForColeta(item.items) || ''}"`, // NEW: Descrição Materiais
     `"${item.status_coleta || ''}"`,
     `"${item.status_unidade || ''}"`,
     `"${item.nf_glbl || ''}"`,

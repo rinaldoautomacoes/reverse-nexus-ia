@@ -24,3 +24,10 @@ export const formatItemsForColetaModeloAparelho = (items: ItemData[] | TablesIns
 export const getTotalQuantityOfItems = (items: Array<{ quantity: number | null }> | null) => {
   return items?.reduce((sum, item) => sum + (item.quantity || 0), 0) || 0;
 };
+
+// NEW: Helper function to format item descriptions for reports
+export const formatItemDescriptionsForColeta = (items: Tables<'items'>[] | null) => {
+  if (!items || items.length === 0) return null;
+  const descriptions = items.map(item => item.description || 'N/A').filter(Boolean).join(', ');
+  return descriptions.length > 255 ? descriptions.substring(0, 252) + '...' : descriptions;
+};
