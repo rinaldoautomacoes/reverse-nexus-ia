@@ -1,0 +1,250 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Definition of the design system. All colors, gradients, fonts, etc should be defined here. 
+All colors MUST be HSL.
+*/
+
+@layer base {
+  :root {
+    /* Futuristic Dark Theme */
+    --background: 225 15% 6%;
+    --foreground: 180 100% 95%;
+
+    --card: 225 20% 8%;
+    --card-foreground: 180 100% 95%;
+
+    --popover: 225 25% 10%;
+    --popover-foreground: 180 100% 95%;
+
+    --primary: 180 100% 50%;
+    --primary-foreground: 225 25% 10%;
+
+    --secondary: 225 25% 12%;
+    --secondary-foreground: 180 100% 95%;
+
+    --muted: 225 20% 15%;
+    --muted-foreground: 180 20% 65%;
+
+    --accent: 190 100% 45%;
+    --accent-foreground: 225 25% 10%;
+
+    --destructive: 240 80% 40%; /* Deep Blue for Pendente */
+    --destructive-foreground: 180 100% 95%;
+
+    --border: 225 25% 18%;
+    --input: 225 25% 15%;
+    --ring: 180 100% 50%;
+
+    --radius: 1rem;
+
+    /* Custom Futuristic Colors */
+    --neon-cyan: 180 100% 50%;
+    --neon-cyan-glow: 180 100% 50%;
+    --dark-slate: 225 15% 6%;
+    --darker-slate: 225 20% 4%;
+    --ice-white: 180 20% 98%;
+    --neural-blue: 220 100% 60%;
+    --ai-purple: 270 80% 65%; /* Mantido como cor customizada, mas não mais para 'destructive' */
+    --warning-yellow: 220 100% 60%; /* Neural Blue for Em Trânsito */
+    --success-green: 180 100% 50%; /* Neon Cyan for Concluída/Entregue */
+    
+    /* Gradients */
+    --gradient-primary: linear-gradient(135deg, hsl(var(--neon-cyan)) 0%, hsl(var(--neural-blue)) 100%);
+    --gradient-secondary: linear-gradient(135deg, hsl(var(--ai-purple)) 0%, hsl(var(--neon-cyan)) 100%);
+    --gradient-dark: linear-gradient(135deg, hsl(var(--darker-slate)) 0%, hsl(var(--dark-slate)) 100%);
+    
+    /* Shadows & Effects */
+    --shadow-neon: 0 0 20px hsl(var(--neon-cyan) / 0.3);
+    --shadow-deep: 0 25px 50px -12px hsl(var(--darker-slate) / 0.8);
+    --shadow-card: 0 10px 30px -10px hsl(var(--darker-slate) / 0.4);
+    
+    /* Animations */
+    --transition-smooth: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    --transition-glow: box-shadow 0.3s ease-in-out;
+
+    /* Sidebar colors - Adjusted for dark background by default */
+    --sidebar-background: 225 15% 6%; /* Using --background from dark theme */
+    --sidebar-foreground: 180 100% 95%; /* Using --foreground from dark theme */
+    --sidebar-primary: 180 100% 50%; /* Using --primary from dark theme */
+    --sidebar-primary-foreground: 225 25% 10%; /* Using --primary-foreground from dark theme */
+    --sidebar-accent: 190 100% 45%; /* Using --accent from dark theme */
+    --sidebar-accent-foreground: 225 25% 10%; /* Using --accent-foreground from dark theme */
+    --sidebar-border: 225 25% 18%; /* Using --border from dark theme */
+    --sidebar-ring: 180 100% 50%; /* Using --ring from dark theme */
+  }
+
+  .dark {
+    --background: 222.2 84% 4.9%;
+    --foreground: 210 40% 98%;
+
+    --card: 222.2 84% 4.9%;
+    --card-foreground: 210 40% 98%;
+
+    --popover: 222.2 84% 4.9%;
+    --popover-foreground: 210 40% 98%;
+
+    --primary: 210 40% 98%;
+    --primary-foreground: 222.2 47.4% 11.2%;
+
+    --secondary: 217.2 32.6% 17.5%;
+    --secondary-foreground: 210 40% 98%;
+
+    --muted: 217.2 32.6% 17.5%;
+    --muted-foreground: 215 20.2% 65.1%;
+
+    --accent: 217.2 32.6% 17.5%;
+    --accent-foreground: 210 40% 98%;
+
+    --destructive: 0 62.8% 30.6%; /* Mantido o valor original do dark theme para destructive */
+    --destructive-foreground: 210 40% 98%;
+
+    --border: 217.2 32.6% 17.5%;
+    --input: 217.2 32.6% 17.5%;
+    --ring: 212.7 26.8% 83.9%;
+    /* Sidebar colors for dark theme - already dark, keeping them */
+    --sidebar-background: 240 5.9% 10%;
+    --sidebar-foreground: 240 4.8% 95.9%;
+    --sidebar-primary: 224.3 76.3% 48%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 240 3.7% 15.9%;
+    --sidebar-accent-foreground: 240 4.8% 95.9%;
+    --sidebar-border: 240 3.7% 15.9%;
+    --sidebar-ring: 217.2 91.2% 59.8%;
+  }
+
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground;
+    font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  }
+}
+
+@layer components {
+  /* Futuristic Components */
+  .glow-effect {
+    box-shadow: var(--shadow-neon);
+    transition: var(--transition-glow);
+  }
+  
+  .glow-effect:hover {
+    box-shadow: 0 0 30px hsl(var(--neon-cyan) / 0.5);
+  }
+  
+  .card-futuristic {
+    background: var(--gradient-dark);
+    border: 1px solid hsl(var(--border));
+    box-shadow: var(--shadow-card);
+    transition: var(--transition-smooth);
+  }
+  
+  .card-futuristic:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-deep);
+  }
+  
+  .gradient-text {
+    background: var(--gradient-primary);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+  
+  .ai-pattern {
+    background-image: 
+      radial-gradient(circle at 20% 20%, hsl(var(--neon-cyan) / 0.1) 0%, transparent 50%),
+      radial-gradient(circle at 80% 80%, hsl(var(--neural-blue) / 0.1) 0%, transparent 50%),
+      radial-gradient(circle at 40% 40%, hsl(var(--ai-purple) / 0.05) 0%, transparent 50%);
+  }
+
+  /* Novo padrão de fundo para a tela de login */
+  .login-background-pattern {
+    background-image:
+      radial-gradient(circle at 15% 15%, hsl(var(--neon-cyan) / 0.15) 0%, transparent 60%), /* Opacidade aumentada */
+      radial-gradient(circle at 85% 85%, hsl(var(--neural-blue) / 0.15) 0%, transparent 60%), /* Opacidade aumentada */
+      radial-gradient(circle at 50% 50%, hsl(var(--ai-purple) / 0.08) 0%, transparent 70%);  /* Opacidade aumentada */
+  }
+}
+
+@layer utilities {
+  .animate-float {
+    animation: float 6s ease-in-out infinite;
+  }
+  
+  .animate-pulse-glow {
+    animation: pulse-glow 2s ease-in-out infinite;
+  }
+  
+  .animate-slide-up {
+    animation: slide-up 0.5s ease-out;
+  }
+
+  /* Nova animação para o título */
+  .animate-text-pulse-fade {
+    animation: text-pulse-fade 4s ease-in-out infinite;
+  }
+}
+
+@keyframes float {
+  0%, 100% { transform: translateY(0px); }
+  50% { transform: translateY(-10px); }
+}
+
+@keyframes pulse-glow {
+  0%, 100% { 
+    box-shadow: 0 0 10px hsl(var(--neon-cyan) / 0.3);
+  }
+  50% { 
+    box-shadow: 0 0 30px hsl(var(--neon-cyan) / 0.6);
+  }
+}
+
+@keyframes slide-up {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Keyframes para o efeito de pulsação do texto */
+@keyframes text-pulse-fade {
+  0%, 100% { opacity: 0.8; transform: scale(1); }
+  50% { opacity: 1; transform: scale(1.02); }
+}
+
+/* Estilos para barras de rolagem (Webkit - Chrome, Edge, Safari) */
+::-webkit-scrollbar {
+  width: 8px; /* Largura da barra de rolagem vertical */
+  height: 8px; /* Altura da barra de rolagem horizontal */
+}
+
+::-webkit-scrollbar-track {
+  background: hsl(var(--darker-slate)); /* Fundo escuro para a trilha */
+  border-radius: 10px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: hsl(var(--muted)); /* Polegar mais escuro */
+  border-radius: 10px;
+  border: 2px solid hsl(var(--darker-slate)); /* Borda para combinar com o fundo da trilha */
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: hsl(var(--muted-foreground)); /* Ligeiramente mais claro ao passar o mouse */
+  box-shadow: 0 0 5px hsl(var(--neon-cyan) / 0.3); /* Brilho neon sutil ao passar o mouse */
+}
+
+/* Estilos para barras de rolagem (Firefox) */
+/* Nota: A estilização do Firefox é mais limitada, mas define a cor e a largura */
+html {
+  scrollbar-color: hsl(var(--muted)) hsl(var(--darker-slate)); /* cor do polegar e cor da trilha */
+  scrollbar-width: thin; /* auto | thin | none */
+}
