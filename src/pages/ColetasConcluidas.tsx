@@ -14,7 +14,7 @@ import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
-import { cn } from "@/lib/utils";
+import { cn, formatItemsForColetaModeloAparelho, getTotalQuantityOfItems } from "@/lib/utils";
 import { EditColetaDialog } from "@/components/EditColetaDialog";
 import { CollectionStatusUpdateDialog } from "@/components/CollectionStatusUpdateDialog";
 import { EditResponsibleDialog } from "@/components/EditResponsibleDialog";
@@ -22,6 +22,7 @@ import { EditResponsibleDialog } from "@/components/EditResponsibleDialog";
 type Coleta = Tables<'coletas'> & {
   driver?: { name: string } | null;
   transportadora?: { name: string } | null;
+  items?: Array<Tables<'items'>> | null; // Adicionado items relation
 };
 
 interface ColetasConcluidasProps {
@@ -53,8 +54,9 @@ const ColetasConcluidas: React.FC<ColetasConcluidasProps> = ({ selectedYear }) =
         .select(`
           *,
           driver:drivers(name),
-          transportadora:transportadoras(name)
-        `)
+          transportadora:transportadoras(name),
+          items(*)
+        `) // Adicionado items(*)
         .eq('user_id', user.id)
         .eq('type', 'coleta')
         .eq('status_coleta', 'concluida')
@@ -94,6 +96,7 @@ const ColetasConcluidas: React.FC<ColetasConcluidasProps> = ({ selectedYear }) =
       queryClient.invalidateQueries({ queryKey: ['dashboardColetasMetrics', user?.id] });
       queryClient.invalidateQueries({ queryKey: ['collectionStatusChart', user?.id] });
       queryClient.invalidateQueries({ queryKey: ['productStatusChart', user?.id] });
+      queryClient.invalidateQueries({ queryKey: ['items', user?.id] });
       toast({ title: "Coleta Excluída!", description: "Coleta removida com sucesso." });
     },
     onError: (err) => {
@@ -281,10 +284,10 @@ const ColetasConcluidas: React.FC<ColetasConcluidasProps> = ({ selectedYear }) =
                           <CalendarIcon className="h-3 w-3" /> Concluída em: {coleta.previsao_coleta ? format(new Date(coleta.previsao_coleta), 'dd/MM/yyyy', { locale: ptBR }) : 'N/A'}
                         </div>
                         <div className="flex items-center gap-1">
-                          <Hash className="h-3 w-3" /> Qtd: {coleta.qtd_aparelhos_solicitado}
+                          <Hash className="h-3 w-3" /> Qtd Total: {getTotalQuantityOfItems(coleta.items)}
                         </div>
-                        <div className="flex items-center gap-1">
-                          <Package className="h-3 w-3" /> Material: {coleta.modelo_aparelho}
+                        <div className="flex items-center gap-1 col-span-full">
+                          <Package className="h-3 w-3" /> Materiais: {formatItemsForColetaModeloAparelho(coleta.items)}
                         </div>
                         <div className="flex items-center gap-1">
                           <User className="h-3 w-3" /> Responsável: {coleta.responsavel || 'Não atribuído'}

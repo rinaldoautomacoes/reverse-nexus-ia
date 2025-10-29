@@ -29,7 +29,7 @@ export const DataImportPage: React.FC = () => {
             </p>
           </div>
 
-          <DataImporter onClose={() => navigate('/')} />
+          <DataImporter onClose={() => navigate('/data-import')} /> {/* Changed onClose to stay on the page */}
         </div>
       </div>
     </div>

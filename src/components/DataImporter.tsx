@@ -3,19 +3,20 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { FileUp, Upload, CheckCircle, XCircle, Loader2, FileText, FileSpreadsheet, Package } from 'lucide-react'; // Added Package icon
+import { FileUp, Upload, CheckCircle, XCircle, Loader2, FileText, FileSpreadsheet, Package } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/use-auth';
-import { parseXLSX, parseCSV, parsePDF, ColetaImportData, ProductImportData, parseProductsXLSX, parseProductsCSV, parseProductsJSON } from '@/lib/data-parser'; // Import new product parsers and types
+import { parseXLSX, parseCSV, parsePDF, ColetaImportData, ProductImportData, parseProductsXLSX, parseProductsCSV, parseProductsJSON } from '@/lib/data-parser';
 import type { TablesInsert } from '@/integrations/supabase/types_generated';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"; // Import Tabs components
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { formatItemsForColetaModeloAparelho, getTotalQuantityOfItems } from '@/lib/utils'; // Import new utils
 
 type ColetaInsert = TablesInsert<'coletas'>;
-type ProductInsert = TablesInsert<'products'>; // Define ProductInsert type
+type ProductInsert = TablesInsert<'products'>;
 
 interface DataImporterProps {
   initialTab?: 'collections' | 'products';
@@ -29,15 +30,15 @@ export const DataImporter: React.FC<DataImporterProps> = ({ initialTab = 'collec
   const queryClient = useQueryClient();
 
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
-  const [extractedData, setExtractedData] = useState<ColetaImportData[] | ProductImportData[] | null>(null); // Can be either type
+  const [extractedData, setExtractedData] = useState<ColetaImportData[] | ProductImportData[] | null>(null);
   const [isParsing, setIsParsing] = useState(false);
-  const [activeTab, setActiveTab] = useState<'collections' | 'products'>(initialTab); // New state for active tab
+  const [activeTab, setActiveTab] = useState<'collections' | 'products'>(initialTab);
 
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (file) {
       setSelectedFile(file);
-      setExtractedData(null); // Clear previous data
+      setExtractedData(null);
     }
   };
 
@@ -70,7 +71,7 @@ export const DataImporter: React.FC<DataImporterProps> = ({ initialTab = 'collec
         } else {
           throw new Error('Formato de arquivo não suportado para coletas/entregas. Use XLSX, CSV ou PDF.');
         }
-      } else { // activeTab === 'products'
+      } else {
         if (fileExtension === 'xlsx') {
           data = await parseProductsXLSX(selectedFile);
         } else if (fileExtension === 'csv') {
@@ -113,8 +114,8 @@ export const DataImporter: React.FC<DataImporterProps> = ({ initialTab = 'collec
         telefone: item.telefone,
         email: item.email,
         cnpj: item.cnpj,
-        endereco: item.endereco_origem, // Mapeia para o campo principal 'endereco'
-        cep: item.cep_origem, // Mapeia para o campo principal 'cep'
+        endereco: item.endereco_origem,
+        cep: item.cep_origem,
         endereco_origem: item.endereco_origem,
         cep_origem: item.cep_origem,
         origin_lat: item.origin_lat,
@@ -124,8 +125,9 @@ export const DataImporter: React.FC<DataImporterProps> = ({ initialTab = 'collec
         destination_lat: item.destination_lat,
         destination_lng: item.destination_lng,
         previsao_coleta: item.previsao_coleta,
-        qtd_aparelhos_solicitado: item.qtd_aparelhos_solicitado,
-        modelo_aparelho: item.modelo_aparelho,
+        // Use the new utils to format modelo_aparelho and qtd_aparelhos_solicitado
+        modelo_aparelho: formatItemsForColetaModeloAparelho([{ name: item.modelo_aparelho, quantity: item.qtd_aparelhos_solicitado }]),
+        qtd_aparelhos_solicitado: getTotalQuantityOfItems([{ quantity: item.qtd_aparelhos_solicitado }]),
         freight_value: item.freight_value,
         observacao: item.observacao,
         status_coleta: item.status_coleta,
@@ -172,10 +174,8 @@ export const DataImporter: React.FC<DataImporterProps> = ({ initialTab = 'collec
         description: item.description,
         model: item.model,
         serial_number: item.serial_number,
-        // image_url is not imported via spreadsheet
       }));
 
-      // Use upsert to ignore duplicates based on 'code' and 'user_id'
       const { error } = await supabase
         .from('products')
         .upsert(inserts, { onConflict: 'code,user_id', ignoreDuplicates: true });
@@ -184,7 +184,7 @@ export const DataImporter: React.FC<DataImporterProps> = ({ initialTab = 'collec
       return inserts.length;
     },
     onSuccess: (count) => {
-      queryClient.invalidateQueries({ queryKey: ['products', user?.id] }); // Invalidate products query
+      queryClient.invalidateQueries({ queryKey: ['products', user?.id] });
       toast({ title: 'Importação de Produtos concluída!', description: `${count} produtos foram salvos com sucesso no banco de dados, duplicatas foram ignoradas.` });
       setSelectedFile(null);
       setExtractedData(null);
@@ -204,7 +204,7 @@ export const DataImporter: React.FC<DataImporterProps> = ({ initialTab = 'collec
 
     if (activeTab === 'collections') {
       importCollectionsMutation.mutate(extractedData as ColetaImportData[]);
-    } else { // activeTab === 'products'
+    } else {
       importProductsMutation.mutate(extractedData as ProductImportData[]);
     }
   };
@@ -216,7 +216,7 @@ export const DataImporter: React.FC<DataImporterProps> = ({ initialTab = 'collec
       case 'xlsx':
       case 'csv': return <FileSpreadsheet className="h-5 w-5 text-success-green" />;
       case 'json': return <Package className="h-5 w-5 text-neural" />;
-      default: return <Package className="h-5 w-5 text-muted-foreground" />; // Changed to Package for generic file
+      default: return <Package className="h-5 w-5 text-muted-foreground" />;
     }
   };
 
@@ -234,8 +234,8 @@ export const DataImporter: React.FC<DataImporterProps> = ({ initialTab = 'collec
         <CardContent className="p-6 space-y-4">
           <Tabs value={activeTab} onValueChange={(value) => {
             setActiveTab(value as 'collections' | 'products');
-            setSelectedFile(null); // Clear file when changing tab
-            setExtractedData(null); // Clear extracted data when changing tab
+            setSelectedFile(null);
+            setExtractedData(null);
           }} className="w-full">
             <TabsList className="grid w-full grid-cols-2">
               <TabsTrigger value="collections">Coletas/Entregas</TabsTrigger>
@@ -320,7 +320,7 @@ export const DataImporter: React.FC<DataImporterProps> = ({ initialTab = 'collec
                 </TableHeader>
                 <TableBody>
                   {activeTab === 'collections' ? (
-                    (extractedData as ColetaImportData[]).map((item: ColetaImportData, index) => ( // Explicitly type item here
+                    (extractedData as ColetaImportData[]).map((item: ColetaImportData, index) => (
                       <TableRow key={index}>
                         <TableCell>{item.unique_number}</TableCell>
                         <TableCell>{item.type === 'coleta' ? 'Coleta' : 'Entrega'}</TableCell>
@@ -333,7 +333,7 @@ export const DataImporter: React.FC<DataImporterProps> = ({ initialTab = 'collec
                       </TableRow>
                     ))
                   ) : (
-                    (extractedData as ProductImportData[]).map((item: ProductImportData, index) => ( // Explicitly type item here
+                    (extractedData as ProductImportData[]).map((item: ProductImportData, index) => (
                       <TableRow key={index}>
                         <TableCell>{item.code}</TableCell>
                         <TableCell>{item.description}</TableCell>

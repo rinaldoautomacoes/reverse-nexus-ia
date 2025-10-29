@@ -7,6 +7,10 @@ import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/use-auth';
 import { Skeleton } from '@/components/ui/skeleton';
+import type { Tables } from '@/integrations/supabase/types';
+import { getTotalQuantityOfItems } from '@/lib/utils'; // Import new util
+
+type Item = Tables<'items'>;
 
 interface ProductStatusSummaryCardProps {
   selectedYear: string;
@@ -15,7 +19,7 @@ interface ProductStatusSummaryCardProps {
 export const ProductStatusSummaryCard: React.FC<ProductStatusSummaryCardProps> = ({ selectedYear }) => {
   const { user } = useAuth();
 
-  const { data: items, isLoading } = useQuery({
+  const { data: items, isLoading } = useQuery<Item[], Error>({
     queryKey: ['product-summary', user?.id, selectedYear],
     queryFn: async () => {
       const { data, error } = await supabase
@@ -31,9 +35,9 @@ export const ProductStatusSummaryCard: React.FC<ProductStatusSummaryCardProps> =
     enabled: !!user?.id,
   });
 
-  const totalProducts = items?.reduce((sum, item) => sum + (item.quantity || 0), 0) || 0;
-  const inStock = items?.filter(i => i.status === 'concluida').reduce((sum, item) => sum + (item.quantity || 0), 0) || 0;
-  const inCollection = items?.filter(i => i.status === 'pendente' || i.status === 'em_transito').reduce((sum, item) => sum + (item.quantity || 0), 0) || 0;
+  const totalProducts = getTotalQuantityOfItems(items);
+  const inStock = getTotalQuantityOfItems(items?.filter(i => i.status === 'concluida'));
+  const inCollection = getTotalQuantityOfItems(items?.filter(i => i.status === 'pendente' || i.status === 'agendada')); // 'em_transito' is 'agendada' for coletas
   const stockPercentage = totalProducts > 0 ? (inStock / totalProducts) * 100 : 0;
 
   if (isLoading) {

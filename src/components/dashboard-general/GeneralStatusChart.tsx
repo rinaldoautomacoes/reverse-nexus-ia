@@ -12,8 +12,9 @@ import {
   Area,
 } from 'recharts';
 import type { Tables } from "@/integrations/supabase/types";
+import { getTotalQuantityOfItems } from "@/lib/utils"; // Import new util
 
-type Coleta = Tables<'coletas'>;
+type Coleta = Tables<'coletas'> & { items?: Array<Tables<'items'>> | null; }; // Add items to Coleta type
 type Product = Tables<'products'>;
 
 interface GeneralStatusChartProps {
@@ -24,18 +25,12 @@ interface GeneralStatusChartProps {
 
 export const GeneralStatusChart: React.FC<GeneralStatusChartProps> = ({ allColetas, productDescriptionsMap, selectedYear }) => {
 
-  const generateItemDescription = (itemCodeQuantities: Map<string, number>) => {
+  const generateItemDescription = (items: Array<Tables<'items'>> | null) => {
+    if (!items || items.length === 0) return "Nenhum item";
     const descriptions: string[] = [];
-    itemCodeQuantities.forEach((quantity, code) => {
-      const description = productDescriptionsMap.get(code);
-      if (description) {
-        descriptions.push(`${quantity}x ${description}`);
-      } else {
-        descriptions.push(`${quantity}x Item Desconhecido`);
-      }
+    items.forEach(item => {
+      descriptions.push(`${item.quantity}x ${item.name}`);
     });
-
-    if (descriptions.length === 0) return "Nenhum item";
     if (descriptions.length === 1) return descriptions[0];
     if (descriptions.length === 2) return `${descriptions[0]} e ${descriptions[1]}`;
     return `${descriptions[0]}, ${descriptions[1]} e outros`;
@@ -43,9 +38,9 @@ export const GeneralStatusChart: React.FC<GeneralStatusChartProps> = ({ allColet
 
   const processDataForChart = (data: Coleta[]) => {
     const monthlyDataMap = new Map<string, { 
-      coletas_pendente: Map<string, number>; 
-      coletas_em_transito: Map<string, number>; // Mantido para tooltip, mas não para as linhas principais do gráfico
-      coletas_concluidas: Map<string, number>; 
+      coletas_pendente: Tables<'items'>[]; 
+      coletas_em_transito: Tables<'items'>[];
+      coletas_concluidas: Tables<'items'>[]; 
       total_items_month: number 
     }>();
     const allMonths: string[] = [];
@@ -56,46 +51,45 @@ export const GeneralStatusChart: React.FC<GeneralStatusChartProps> = ({ allColet
       const monthKey = format(month, 'MMM', { locale: ptBR });
       allMonths.push(monthKey);
       monthlyDataMap.set(monthKey, { 
-        coletas_pendente: new Map(), 
-        coletas_em_transito: new Map(), 
-        coletas_concluidas: new Map(), 
+        coletas_pendente: [], 
+        coletas_em_transito: [], 
+        coletas_concluidas: [], 
         total_items_month: 0 
       });
     }
 
     let totalColetasPendente = 0;
-    let totalColetasEmTransito = 0; // Mantido para o resumo abaixo
+    let totalColetasEmTransito = 0;
     let totalColetasConcluidas = 0;
     let totalAllItems = 0;
 
-    data.filter(item => item.type === 'coleta').forEach(item => { // Filtrar apenas para 'coleta'
-      if (!item.previsao_coleta || !item.modelo_aparelho) return;
+    data.filter(item => item.type === 'coleta').forEach(item => {
+      if (!item.previsao_coleta || !item.items) return;
 
       const itemDate = parseISO(item.previsao_coleta);
       const timezoneOffsetMinutes = itemDate.getTimezoneOffset();
       const adjustedDateForLocalMonth = new Date(itemDate.getTime() - timezoneOffsetMinutes * 60 * 1000);
       const monthKey = format(startOfMonth(adjustedDateForLocalMonth), 'MMM', { locale: ptBR });
-      const quantity = item.qtd_aparelhos_solicitado || 0;
-      const productCode = item.modelo_aparelho;
+      const totalItemsInColeta = getTotalQuantityOfItems(item.items);
 
       if (monthlyDataMap.has(monthKey)) {
         const currentMonthData = monthlyDataMap.get(monthKey)!;
         switch (item.status_coleta) {
           case 'pendente':
-            currentMonthData.coletas_pendente.set(productCode, (currentMonthData.coletas_pendente.get(productCode) || 0) + quantity);
-            totalColetasPendente += quantity;
+            currentMonthData.coletas_pendente.push(...item.items);
+            totalColetasPendente += totalItemsInColeta;
             break;
           case 'agendada':
-            currentMonthData.coletas_em_transito.set(productCode, (currentMonthData.coletas_em_transito.get(productCode) || 0) + quantity);
-            totalColetasEmTransito += quantity;
+            currentMonthData.coletas_em_transito.push(...item.items);
+            totalColetasEmTransito += totalItemsInColeta;
             break;
           case 'concluida':
-            currentMonthData.coletas_concluidas.set(productCode, (currentMonthData.coletas_concluidas.get(productCode) || 0) + quantity);
-            totalColetasConcluidas += quantity;
+            currentMonthData.coletas_concluidas.push(...item.items);
+            totalColetasConcluidas += totalItemsInColeta;
             break;
         }
-        currentMonthData.total_items_month += quantity;
-        totalAllItems += quantity;
+        currentMonthData.total_items_month += totalItemsInColeta;
+        totalAllItems += totalItemsInColeta;
         monthlyDataMap.set(monthKey, currentMonthData);
       }
     });
@@ -104,9 +98,9 @@ export const GeneralStatusChart: React.FC<GeneralStatusChartProps> = ({ allColet
       const data = monthlyDataMap.get(monthKey)!;
       return {
         month: monthKey,
-        coletas_pendente: Array.from(data.coletas_pendente.values()).reduce((sum, q) => sum + q, 0),
-        coletas_em_transito: Array.from(data.coletas_em_transito.values()).reduce((sum, q) => sum + q, 0),
-        coletas_concluidas: Array.from(data.coletas_concluidas.values()).reduce((sum, q) => sum + q, 0),
+        coletas_pendente: getTotalQuantityOfItems(data.coletas_pendente),
+        coletas_em_transito: getTotalQuantityOfItems(data.coletas_em_transito),
+        coletas_concluidas: getTotalQuantityOfItems(data.coletas_concluidas),
         total_items_month: data.total_items_month,
         coletas_pendente_items: data.coletas_pendente,
         coletas_em_transito_items: data.coletas_em_transito,
@@ -141,17 +135,16 @@ export const GeneralStatusChart: React.FC<GeneralStatusChartProps> = ({ allColet
           <p className="font-semibold text-primary mb-2">{label}</p>
           <p className="text-muted-foreground">Total de Itens: <span className="font-bold text-foreground">{data.total_items_month}</span></p>
           
-          {/* Coletas */}
-          {(data.coletas_pendente_items.size > 0 || data.coletas_em_transito_items.size > 0 || data.coletas_concluidas_items.size > 0) && (
+          {(data.coletas_pendente_items.length > 0 || data.coletas_em_transito_items.length > 0 || data.coletas_concluidas_items.length > 0) && (
             <div className="mt-2 border-t border-border/50 pt-2">
               <p className="font-medium text-primary flex items-center gap-1"><Package className="h-3 w-3" /> Coletas:</p>
-              {data.coletas_pendente_items.size > 0 && (
+              {data.coletas_pendente_items.length > 0 && (
                 <p className="text-destructive text-xs ml-2">P: {generateItemDescription(data.coletas_pendente_items)}</p>
               )}
-              {data.coletas_em_transito_items.size > 0 && (
+              {data.coletas_em_transito_items.length > 0 && (
                 <p className="text-warning-yellow text-xs ml-2">ET: {generateItemDescription(data.coletas_em_transito_items)}</p>
               )}
-              {data.coletas_concluidas_items.size > 0 && (
+              {data.coletas_concluidas_items.length > 0 && (
                 <p className="text-success-green text-xs ml-2">C: {generateItemDescription(data.coletas_concluidas_items)}</p>
               )}
             </div>
@@ -208,7 +201,7 @@ export const GeneralStatusChart: React.FC<GeneralStatusChartProps> = ({ allColet
                     <stop offset="0%" stopColor="hsl(var(--neon-cyan))" stopOpacity={0.4} />
                     <stop offset="95%" stopColor="hsl(var(--neon-cyan))" stopOpacity={0.15} />
                   </linearGradient>
-                  <linearGradient id="gradientPendentes" x1="0" y1="0" x2="0" y2="1"> {/* Novo ID para gradiente de pendentes */}
+                  <linearGradient id="gradientPendentes" x1="0" y1="0" x2="0" y2="1">
                     <stop offset="0%" stopColor="hsl(var(--ai-purple))" stopOpacity={0.4} />
                     <stop offset="95%" stopColor="hsl(var(--ai-purple))" stopOpacity={0.15} />
                   </linearGradient>
@@ -220,16 +213,14 @@ export const GeneralStatusChart: React.FC<GeneralStatusChartProps> = ({ allColet
                   fill="url(#gradientColetas)"
                   strokeWidth={2}
                   name="Itens Coletados"
-                  // Removed stackId
                 />
                 <Area
                   type="monotone"
-                  dataKey="coletas_pendente" // Alterado para coletas_pendente
-                  stroke="hsl(var(--ai-purple))" // Usando ai-purple para pendente
-                  fill="url(#gradientPendentes)" // Usando o novo gradiente para pendente
+                  dataKey="coletas_pendente"
+                  stroke="hsl(var(--ai-purple))"
+                  fill="url(#gradientPendentes)"
                   strokeWidth={2}
-                  name="Itens Pendentes de Coleta" // Novo nome
-                  // Removed stackId
+                  name="Itens Pendentes de Coleta"
                 />
               </AreaChart>
             </ResponsiveContainer>

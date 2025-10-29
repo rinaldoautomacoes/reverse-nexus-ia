@@ -15,6 +15,7 @@ import type { Tables } from "@/integrations/supabase/types";
 import { useToast } from "@/hooks/use-toast";
 import { useEffect } from "react";
 import { useAuth } from "@/hooks/use-auth";
+import { getTotalQuantityOfItems } from "@/lib/utils"; // Import new util
 
 // Mapeamento de nomes de ícones para componentes Lucide React
 const iconMap: { [key: string]: React.ElementType } = {
@@ -25,10 +26,10 @@ const iconMap: { [key: string]: React.ElementType } = {
   TrendingUp,
   AlertTriangle,
   Gauge,
-  ListChecks // Adicionado ListChecks
+  ListChecks
 };
 
-type Coleta = Tables<'coletas'>; // Alterado para Coleta
+type Coleta = Tables<'coletas'> & { items?: Array<Tables<'items'>> | null; }; // Add items to Coleta type
 
 interface MetricsCardsProps {
   selectedYear: string;
@@ -38,31 +39,30 @@ export const MetricsCards: React.FC<MetricsCardsProps> = ({ selectedYear }) => {
   const { toast } = useToast();
   const { user } = useAuth();
 
-  const { data: coletas, isLoading, error } = useQuery<Array<{status_coleta: string}>, Error>({
-    queryKey: ['dashboardColetasMetrics', user?.id, selectedYear], // Alterado queryKey para incluir selectedYear
+  const { data: coletas, isLoading, error } = useQuery<Coleta[], Error>({
+    queryKey: ['dashboardColetasMetrics', user?.id, selectedYear],
     queryFn: async () => {
       if (!user?.id) {
-        // Se não houver usuário logado, retornar um array vazio
         return [];
       }
 
-      const startDate = `${selectedYear}-01-01`; // Ajustado para data sem hora para corresponder ao tipo DATE
-      const endDate = `${parseInt(selectedYear) + 1}-01-01`; // Ajustado para data sem hora
+      const startDate = `${selectedYear}-01-01`;
+      const endDate = `${parseInt(selectedYear) + 1}-01-01`;
 
       const { data, error } = await supabase
-        .from('coletas') // Buscar da tabela 'coletas'
-        .select('status_coleta') // Selecionar apenas o status da coleta
+        .from('coletas')
+        .select(`status_coleta, items(quantity)`) // Select items(quantity)
         .eq('user_id', user.id)
-        .eq('type', 'coleta') // FILTRAR POR TIPO 'coleta'
-        .gte('previsao_coleta', startDate) // FILTRAR POR previsao_coleta
-        .lt('previsao_coleta', endDate); // FILTRAR POR previsao_coleta
+        .eq('type', 'coleta')
+        .gte('previsao_coleta', startDate)
+        .lt('previsao_coleta', endDate);
       
       if (error) {
         throw new Error(error.message);
       }
       return data;
     },
-    enabled: !!user?.id, // A query só será executada se houver um user.id
+    enabled: !!user?.id,
   });
 
   useEffect(() => {
@@ -75,8 +75,7 @@ export const MetricsCards: React.FC<MetricsCardsProps> = ({ selectedYear }) => {
     }
   }, [error, toast]);
 
-  const calculateCollectionMetrics = (coletasData: Array<{status_coleta: string}> | undefined) => {
-    // Sempre retornar a estrutura completa, mesmo que coletasData seja undefined ou vazio
+  const calculateCollectionMetrics = (coletasData: Coleta[] | undefined) => {
     const totalColetas = coletasData?.length || 0;
     const pendenteCount = coletasData?.filter(c => c.status_coleta === 'pendente').length || 0;
     const agendadaCount = coletasData?.filter(c => c.status_coleta === 'agendada').length || 0;
@@ -95,8 +94,8 @@ export const MetricsCards: React.FC<MetricsCardsProps> = ({ selectedYear }) => {
         value: pendenteCount.toString(),
         description: 'Aguardando agendamento ou início',
         icon_name: 'Clock',
-        color: 'text-destructive', // ai-purple
-        bg_color: 'bg-destructive/10', // ai-purple/10
+        color: 'text-destructive',
+        bg_color: 'bg-destructive/10',
       },
       {
         id: 'coletas-em-transito',
@@ -104,8 +103,8 @@ export const MetricsCards: React.FC<MetricsCardsProps> = ({ selectedYear }) => {
         value: agendadaCount.toString(),
         description: 'Coletas agendadas e em andamento',
         icon_name: 'Truck',
-        color: 'text-warning-yellow', // amarelo
-        bg_color: 'bg-warning-yellow/10', // amarelo/10
+        color: 'text-warning-yellow',
+        bg_color: 'bg-warning-yellow/10',
       },
       {
         id: 'coletas-entregues',
@@ -113,13 +112,13 @@ export const MetricsCards: React.FC<MetricsCardsProps> = ({ selectedYear }) => {
         value: concluidaCount.toString(),
         description: 'Coletas finalizadas e processadas',
         icon_name: 'CheckCircle',
-        color: 'text-success-green', // neon-cyan
-        bg_color: 'bg-success-green/10', // neon-cyan/10
+        color: 'text-success-green',
+        bg_color: 'bg-success-green/10',
       },
     ];
   };
 
-  const dashboardMetrics = calculateCollectionMetrics(coletas); // Usar a nova função de cálculo
+  const dashboardMetrics = calculateCollectionMetrics(coletas);
 
   if (isLoading) {
     return (
@@ -140,13 +139,9 @@ export const MetricsCards: React.FC<MetricsCardsProps> = ({ selectedYear }) => {
     );
   }
 
-  // Não há necessidade de um bloco de 'if (!dashboardMetrics || dashboardMetrics.length === 0)' aqui,
-  // pois calculateCollectionMetrics sempre retorna um array com 4 itens.
-
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
       {dashboardMetrics.map((metric, index) => {
-        // Para o card "Total de Coletas", o ícone e as cores são fixos
         const isTotalColetasCard = metric.id === 'total-coletas';
         const Icon = isTotalColetasCard ? ListChecks : iconMap[metric.icon_name || ''];
         const iconColorClass = isTotalColetasCard ? 'text-primary' : metric.color;

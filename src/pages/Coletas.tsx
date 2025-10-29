@@ -17,9 +17,10 @@ import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
-import { cn } from "@/lib/utils";
+import { cn, formatItemsForColetaModeloAparelho, getTotalQuantityOfItems } from "@/lib/utils";
 import { ColetaForm } from "@/components/ColetaForm";
 import { EditColetaDialog } from "@/components/EditColetaDialog";
+import { ItemData } from "@/components/coleta-form-sections/ColetaItemRow"; // Importa a interface ItemData
 
 type Coleta = Tables<'coletas'> & {
   driver?: { name: string } | null;
@@ -31,17 +32,6 @@ type ColetaInsert = TablesInsert<'coletas'>;
 interface ColetasProps {
   selectedYear: string;
 }
-
-// Helper function to format items for display
-const formatItemsSummary = (items: Array<Tables<'items'>> | null) => {
-  if (!items || items.length === 0) return 'N/A';
-  const summary = items.map(item => `${item.quantity}x ${item.name}`).join(', ');
-  return summary.length > 50 ? summary.substring(0, 47) + '...' : summary;
-};
-
-const getTotalQuantity = (items: Array<Tables<'items'>> | null) => {
-  return items?.reduce((sum, item) => sum + (item.quantity || 0), 0) || 0;
-};
 
 export const Coletas: React.FC<ColetasProps> = ({ selectedYear }) => {
   const navigate = useNavigate();
@@ -71,7 +61,7 @@ export const Coletas: React.FC<ColetasProps> = ({ selectedYear }) => {
           driver:drivers(name),
           transportadora:transportadoras(name),
           items(*)
-        `) // Adicionado items(*)
+        `)
         .eq('user_id', user.id)
         .eq('type', 'coleta')
         .neq('status_coleta', 'concluida')
@@ -96,20 +86,18 @@ export const Coletas: React.FC<ColetasProps> = ({ selectedYear }) => {
   });
 
   const addColetaMutation = useMutation({
-    mutationFn: async (data: { coleta: ColetaInsert; items: TablesInsert<'items'>[] }) => { // Updated signature
+    mutationFn: async (data: { coleta: ColetaInsert; items: ItemData[] }) => {
       if (!user?.id) {
         throw new Error("Usuário não autenticado. Faça login para agendar coletas.");
       }
       
-      // Preenche modelo_aparelho e qtd_aparelhos_solicitado da coleta com o primeiro item da lista, se houver
-      const coletaToInsert: ColetaInsert = { ...data.coleta, user_id: user.id, type: 'coleta' };
-      if (data.items.length > 0) {
-        coletaToInsert.modelo_aparelho = formatItemsSummary(data.items); // Use summary for modelo_aparelho
-        coletaToInsert.qtd_aparelhos_solicitado = data.items.reduce((sum, item) => sum + (item.quantity || 0), 0);
-      } else {
-        coletaToInsert.modelo_aparelho = null;
-        coletaToInsert.qtd_aparelhos_solicitado = null;
-      }
+      const coletaToInsert: ColetaInsert = {
+        ...data.coleta,
+        user_id: user.id,
+        type: 'coleta',
+        modelo_aparelho: formatItemsForColetaModeloAparelho(data.items), // Resumo dos itens
+        qtd_aparelhos_solicitado: getTotalQuantityOfItems(data.items), // Quantidade total
+      };
 
       const { data: insertedColeta, error: coletaError } = await supabase
         .from('coletas')
@@ -119,15 +107,14 @@ export const Coletas: React.FC<ColetasProps> = ({ selectedYear }) => {
       
       if (coletaError) throw new Error(coletaError.message);
 
-      // Insere cada item na tabela 'items'
       for (const item of data.items) {
-        if (item.name && item.quantity && item.quantity > 0) {
+        if (item.modelo_aparelho && item.qtd_aparelhos_solicitado && item.qtd_aparelhos_solicitado > 0) {
           const newItem: TablesInsert<'items'> = {
             user_id: user.id,
             collection_id: insertedColeta.id,
-            name: item.name,
-            description: item.description,
-            quantity: item.quantity,
+            name: item.modelo_aparelho,
+            description: item.descricaoMaterial,
+            quantity: item.qtd_aparelhos_solicitado,
             status: insertedColeta.status_coleta || 'pendente',
           };
           const { error: itemError } = await supabase.from('items').insert(newItem);
@@ -144,7 +131,7 @@ export const Coletas: React.FC<ColetasProps> = ({ selectedYear }) => {
       queryClient.invalidateQueries({ queryKey: ['dashboardColetasMetrics', user?.id] });
       queryClient.invalidateQueries({ queryKey: ['collectionStatusChart', user?.id] });
       queryClient.invalidateQueries({ queryKey: ['productStatusChart', user?.id] });
-      queryClient.invalidateQueries({ queryKey: ['items', user?.id] }); // Invalidate general items query
+      queryClient.invalidateQueries({ queryKey: ['items', user?.id] });
       toast({ title: "Coleta Agendada!", description: "Nova coleta criada com sucesso." });
       setIsAddDialogOpen(false);
     },
@@ -167,7 +154,7 @@ export const Coletas: React.FC<ColetasProps> = ({ selectedYear }) => {
       queryClient.invalidateQueries({ queryKey: ['dashboardColetasMetrics', user?.id] });
       queryClient.invalidateQueries({ queryKey: ['collectionStatusChart', user?.id] });
       queryClient.invalidateQueries({ queryKey: ['productStatusChart', user?.id] });
-      queryClient.invalidateQueries({ queryKey: ['items', user?.id] }); // Invalidate general items query
+      queryClient.invalidateQueries({ queryKey: ['items', user?.id] });
       toast({ title: "Coleta Excluída!", description: "Coleta removida com sucesso." });
     },
     onError: (err) => {
@@ -384,10 +371,10 @@ export const Coletas: React.FC<ColetasProps> = ({ selectedYear }) => {
                           <CalendarIcon className="h-3 w-3" /> Previsão: {coleta.previsao_coleta ? format(new Date(coleta.previsao_coleta), 'dd/MM/yyyy', { locale: ptBR }) : 'N/A'}
                         </div>
                         <div className="flex items-center gap-1">
-                          <Hash className="h-3 w-3" /> Qtd Total: {getTotalQuantity(coleta.items)}
+                          <Hash className="h-3 w-3" /> Qtd Total: {getTotalQuantityOfItems(coleta.items)}
                         </div>
                         <div className="flex items-center gap-1 col-span-full">
-                          <Package className="h-3 w-3" /> Materiais: {formatItemsSummary(coleta.items)}
+                          <Package className="h-3 w-3" /> Materiais: {formatItemsForColetaModeloAparelho(coleta.items)}
                         </div>
                         <div className="flex items-center gap-1">
                           <User className="h-3 w-3" /> Responsável: {coleta.responsavel || 'Não atribuído'}

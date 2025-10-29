@@ -14,15 +14,17 @@ import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/use-auth";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
-import { cn, generateUniqueNumber } from "@/lib/utils";
+import { cn, generateUniqueNumber, formatItemsForColetaModeloAparelho, getTotalQuantityOfItems } from "@/lib/utils";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { ClientCombobox } from "@/components/ClientCombobox";
-import { ProductCombobox } from "@/components/ProductCombobox";
+import { ProductCombobox } from "@/components/ProductCombobox"; // Mantido para compatibilidade, mas não usado diretamente para o modelo_aparelho principal
 import { ResponsibleUserCombobox } from "@/components/ResponsibleUserCombobox";
 import { DriverCombobox } from "@/components/DriverCombobox";
 import { TransportadoraCombobox } from "@/components/TransportadoraCombobox";
 import axios from "axios";
+import { ColetaItemsSection } from "./coleta-form-sections/ColetaItemsSection"; // Importa a seção de itens
+import { ItemData } from "./coleta-form-sections/ColetaItemRow"; // Importa a interface ItemData
 
 type ColetaInsert = TablesInsert<'coletas'>;
 type ColetaUpdate = TablesUpdate<'coletas'>;
@@ -35,8 +37,8 @@ type ItemInsert = TablesInsert<'items'>;
 type ItemUpdate = TablesUpdate<'items'>;
 
 interface EntregaFormProps {
-  initialData?: ColetaUpdate;
-  onSave: (data: ColetaInsert | ColetaUpdate) => void;
+  initialData?: ColetaUpdate & { items?: ItemData[] }; // Adicionado items ao initialData
+  onSave: (data: ColetaInsert | ColetaUpdate, items: ItemData[]) => void; // onSave agora recebe os itens
   onCancel: () => void;
   isPending: boolean;
 }
@@ -47,11 +49,11 @@ export const EntregaForm: React.FC<EntregaFormProps> = ({ initialData, onSave, o
 
   const [formData, setFormData] = useState<ColetaInsert | ColetaUpdate>(initialData || {
     parceiro: "",
-    endereco: "", // This will be mapped to endereco_destino for display purposes
+    endereco: "", // Mapeado para endereco_destino para entregas
     previsao_coleta: format(new Date(), 'yyyy-MM-dd'),
-    qtd_aparelhos_solicitado: 1,
-    modelo_aparelho: "",
-    status_coleta: "pendente", // Alterado de "agendada" para "pendente"
+    qtd_aparelhos_solicitado: null, // Removido valor padrão, será derivado dos itens
+    modelo_aparelho: null, // Removido valor padrão, será derivado dos itens
+    status_coleta: "pendente",
     observacao: "",
     telefone: "",
     email: "",
@@ -61,7 +63,7 @@ export const EntregaForm: React.FC<EntregaFormProps> = ({ initialData, onSave, o
     client_id: null,
     type: "entrega",
     user_id: user?.id || "",
-    cep: "", // This will be mapped to cep_destino for display purposes
+    cep: "", // Mapeado para cep_destino para entregas
     bairro: "",
     cidade: "",
     uf: "",
@@ -85,6 +87,8 @@ export const EntregaForm: React.FC<EntregaFormProps> = ({ initialData, onSave, o
     client_control: "", // Novo campo
   });
 
+  const [deliveryItems, setDeliveryItems] = useState<ItemData[]>(initialData?.items || []);
+
   const [cepOrigemInput, setCepOrigemInput] = useState(initialData?.cep_origem || '');
   const [enderecoOrigemInput, setEnderecoOrigemInput] = useState(initialData?.endereco_origem || '');
   const [cepDestinoInput, setCepDestinoInput] = useState(initialData?.cep_destino || '');
@@ -95,9 +99,9 @@ export const EntregaForm: React.FC<EntregaFormProps> = ({ initialData, onSave, o
 
   useEffect(() => {
     if (initialData) {
-      // Destructure initialData to separate direct columns from joined relations
-      const { driver, transportadora, ...restOfEntregaData } = initialData;
-      setFormData(restOfEntregaData); // Only set direct columns
+      const { items, ...restOfEntregaData } = initialData;
+      setFormData(restOfEntregaData);
+      setDeliveryItems(items || []);
       setCepOrigemInput(initialData.cep_origem || '');
       setEnderecoOrigemInput(initialData.endereco_origem || '');
       setCepDestinoInput(initialData.cep_destino || '');
@@ -107,9 +111,9 @@ export const EntregaForm: React.FC<EntregaFormProps> = ({ initialData, onSave, o
         parceiro: "",
         endereco: "",
         previsao_coleta: format(new Date(), 'yyyy-MM-dd'),
-        qtd_aparelhos_solicitado: 1,
-        modelo_aparelho: "",
-        status_coleta: "pendente", // Alterado de "agendada" para "pendente"
+        qtd_aparelhos_solicitado: null,
+        modelo_aparelho: null,
+        status_coleta: "pendente",
         observacao: "",
         telefone: "",
         email: "",
@@ -140,8 +144,9 @@ export const EntregaForm: React.FC<EntregaFormProps> = ({ initialData, onSave, o
         origin_lng: null,
         destination_lat: null,
         destination_lng: null,
-        client_control: "", // Novo campo
+        client_control: "",
       });
+      setDeliveryItems([]);
       setCepOrigemInput('');
       setEnderecoOrigemInput('');
       setCepDestinoInput('');
@@ -185,7 +190,6 @@ export const EntregaForm: React.FC<EntregaFormProps> = ({ initialData, onSave, o
       setAddressInput(fullAddress);
       setAddressFormData(fullAddress);
 
-      // Update the main 'endereco' field for backward compatibility/display if it's the destination
       if (!isOrigin) {
         handleInputChange("endereco", fullAddress);
         handleInputChange("cep", cleanedCep);
@@ -226,12 +230,9 @@ export const EntregaForm: React.FC<EntregaFormProps> = ({ initialData, onSave, o
         contato: client.contact_person || '',
         client_id: client.id,
       }));
-      // If client has an address, pre-fill destination address and CEP
       if (client.address) {
         setEnderecoDestinoInput(client.address);
         handleInputChange("endereco_destino", client.address);
-        // Attempt to reverse geocode address to get CEP if needed, or leave CEP blank for manual entry
-        // For now, just set the address. User can manually enter CEP to trigger lookup.
       }
     } else {
       setFormData(prev => ({
@@ -245,13 +246,7 @@ export const EntregaForm: React.FC<EntregaFormProps> = ({ initialData, onSave, o
     }
   }, [handleInputChange]);
 
-  const handleProductComboboxSelect = useCallback((product: Product | null) => {
-    if (product) {
-      handleInputChange("modelo_aparelho", product.code);
-    } else {
-      handleInputChange("modelo_aparelho", "");
-    }
-  }, [handleInputChange]);
+  // Removido handleProductComboboxSelect pois o modelo_aparelho principal será um resumo
 
   const handleResponsibleUserSelect = useCallback((userProfile: Profile | null) => {
     handleInputChange("responsible_user_id", userProfile?.id || null);
@@ -273,21 +268,49 @@ export const EntregaForm: React.FC<EntregaFormProps> = ({ initialData, onSave, o
       return;
     }
 
+    if (!formData.parceiro || formData.parceiro.trim() === '') {
+      toast({ title: "Campo Obrigatório", description: "O campo 'Cliente' é obrigatório.", variant: "destructive" });
+      return;
+    }
+    if (!formData.endereco_destino || formData.endereco_destino.trim() === '') {
+      toast({ title: "Campo Obrigatório", description: "O campo 'Endereço de Destino' é obrigatório.", variant: "destructive" });
+      return;
+    }
+    if (!formData.previsao_coleta || formData.previsao_coleta.trim() === '') {
+      toast({ title: "Campo Obrigatório", description: "O campo 'Data da Entrega' é obrigatório.", variant: "destructive" });
+      return;
+    }
+    
+    if (deliveryItems.length === 0) {
+      toast({ title: "Campo Obrigatório", description: "Adicione pelo menos um item de material.", variant: "destructive" });
+      return;
+    }
+
+    for (const item of deliveryItems) {
+      if (!item.modelo_aparelho || item.modelo_aparelho.trim() === '') {
+        toast({ title: "Campo Obrigatório", description: `O 'Código do Material' do item #${deliveryItems.indexOf(item) + 1} é obrigatório.`, variant: "destructive" });
+        return;
+      }
+      if (item.qtd_aparelhos_solicitado === null || item.qtd_aparelhos_solicitado <= 0) {
+        toast({ title: "Campo Obrigatório", description: `A 'Quantidade' do item #${deliveryItems.indexOf(item) + 1} deve ser maior que zero.`, variant: "destructive" });
+        return;
+      }
+    }
+
     const dataToSave = {
       ...formData,
       cep_origem: cepOrigemInput,
       endereco_origem: enderecoOrigemInput,
       cep_destino: cepDestinoInput,
       endereco_destino: enderecoDestinoInput,
-      // Ensure the main 'endereco' and 'cep' fields are consistent with destination for entregas
       endereco: enderecoDestinoInput,
       cep: cepDestinoInput,
-      user_id: user.id, // Ensure user_id is always set
+      user_id: user.id,
+      modelo_aparelho: formatItemsForColetaModeloAparelho(deliveryItems), // Resumo dos itens
+      qtd_aparelhos_solicitado: getTotalQuantityOfItems(deliveryItems), // Quantidade total
     };
 
-    // Call the parent onSave, which will handle the actual Supabase insert/update for 'coletas'
-    // The parent mutation will then invalidate queries, including those for 'items'.
-    onSave(dataToSave);
+    onSave(dataToSave, deliveryItems);
   };
 
   return (
@@ -486,33 +509,14 @@ export const EntregaForm: React.FC<EntregaFormProps> = ({ initialData, onSave, o
             </PopoverContent>
           </Popover>
         </div>
-        <div className="space-y-2">
-          <Label htmlFor="qtd_aparelhos_solicitado">Quantidade de Aparelhos *</Label>
-          <div className="relative">
-            <Hash className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-            <Input
-              id="qtd_aparelhos_solicitado"
-              type="number"
-              placeholder="1"
-              className="pl-10"
-              value={formData.qtd_aparelhos_solicitado || 0}
-              onChange={(e) => handleInputChange("qtd_aparelhos_solicitado", parseInt(e.target.value) || 0)}
-              required
-              min={1}
-              disabled={isPending}
-            />
-          </div>
-        </div>
+        {/* Removido o campo de quantidade de aparelhos, pois agora é gerenciado pela ColetaItemsSection */}
       </div>
 
-      <div className="space-y-2">
-        <Label htmlFor="modelo_aparelho">Tipo de Material *</Label>
-        <ProductCombobox
-          value={formData.modelo_aparelho || ''}
-          onValueChange={(code) => handleInputChange("modelo_aparelho", code)}
-          onProductSelect={handleProductComboboxSelect}
-        />
-      </div>
+      <ColetaItemsSection
+        onItemsUpdate={setDeliveryItems}
+        isPending={isPending}
+        initialItems={deliveryItems}
+      />
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div className="space-y-2">
@@ -562,9 +566,9 @@ export const EntregaForm: React.FC<EntregaFormProps> = ({ initialData, onSave, o
       <div className="space-y-2">
         <Label htmlFor="status_coleta">Status</Label>
         <Select
-          value={formData.status_coleta || 'pendente'} // Alterado para 'pendente' como valor padrão
+          value={formData.status_coleta || 'pendente'}
           onValueChange={(value) => handleInputChange("status_coleta", value)}
-          disabled={isPending || !initialData} // Desabilita se for um novo formulário
+          disabled={isPending || !initialData}
         >
           <SelectTrigger>
             <SelectValue placeholder="Selecionar status" />

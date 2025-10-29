@@ -1,17 +1,21 @@
 import { useState, useCallback, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, Truck, PlusCircle, Loader2, Tag, ClipboardList } from "lucide-react";
+import { ArrowLeft, Truck, PlusCircle, Loader2, Tag, ClipboardList, Calendar as CalendarIcon } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import type { TablesInsert, Tables, TablesUpdate } from "@/integrations/supabase/types_generated";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/use-auth";
-import { generateUniqueNumber } from "@/lib/utils";
+import { generateUniqueNumber, formatItemsForColetaModeloAparelho, getTotalQuantityOfItems, cn } from "@/lib/utils";
 import { format } from "date-fns";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Calendar } from "@/components/ui/calendar";
+import { ptBR } from "date-fns/locale";
+
 
 // Import modular components
 import { ColetaClientDetails } from "@/components/shared-scheduler-sections/ColetaClientDetails";
@@ -43,9 +47,8 @@ export const AgendarEntregaPage: React.FC = () => {
     parceiro: "",
     endereco: "", // Mapeado para endereco_destino para entregas
     previsao_coleta: format(new Date(), 'yyyy-MM-dd'),
-    // modelo_aparelho e qtd_aparelhos_solicitado serão preenchidos do primeiro item da lista
-    modelo_aparelho: null, // Inicializa como null
-    qtd_aparelhos_solicitado: null, // Inicializa como null
+    modelo_aparelho: null, // Será preenchido do resumo dos itens
+    qtd_aparelhos_solicitado: null, // Será preenchido da quantidade total dos itens
     status_coleta: "pendente",
     observacao: "",
     telefone: "",
@@ -80,7 +83,6 @@ export const AgendarEntregaPage: React.FC = () => {
     client_control: "",
   });
 
-  // Novo estado para gerenciar a lista de itens
   const [deliveryItems, setDeliveryItems] = useState<ItemData[]>([]);
 
   const [isGeocoding, setIsGeocoding] = useState(false);
@@ -140,15 +142,13 @@ export const AgendarEntregaPage: React.FC = () => {
         throw new Error("Usuário não autenticado. Faça login para agendar entregas.");
       }
       
-      // Preenche modelo_aparelho e qtd_aparelhos_solicitado da entrega com o primeiro item da lista, se houver
-      const entregaToInsert: EntregaInsert = { ...data.entrega, user_id: user.id, type: 'entrega' };
-      if (data.items.length > 0) {
-        entregaToInsert.modelo_aparelho = data.items[0].modelo_aparelho;
-        entregaToInsert.qtd_aparelhos_solicitado = data.items[0].qtd_aparelhos_solicitado;
-      } else {
-        entregaToInsert.modelo_aparelho = null;
-        entregaToInsert.qtd_aparelhos_solicitado = null;
-      }
+      const entregaToInsert: EntregaInsert = {
+        ...data.entrega,
+        user_id: user.id,
+        type: 'entrega',
+        modelo_aparelho: formatItemsForColetaModeloAparelho(data.items), // Resumo dos itens
+        qtd_aparelhos_solicitado: getTotalQuantityOfItems(data.items), // Quantidade total
+      };
 
       const { data: insertedEntrega, error: entregaError } = await supabase
         .from('coletas')
@@ -158,21 +158,19 @@ export const AgendarEntregaPage: React.FC = () => {
       
       if (entregaError) throw new Error(entregaError.message);
 
-      // Insere cada item na tabela 'items'
       for (const item of data.items) {
         if (item.modelo_aparelho && item.qtd_aparelhos_solicitado && item.qtd_aparelhos_solicitado > 0) {
           const newItem: ItemInsert = {
             user_id: user.id,
             collection_id: insertedEntrega.id,
-            name: item.modelo_aparelho, // Código do material
+            name: item.modelo_aparelho,
+            description: item.descricaoMaterial,
             quantity: item.qtd_aparelhos_solicitado,
             status: insertedEntrega.status_coleta || 'pendente',
-            // Nota: 'descricaoMaterial' não é salvo no banco de dados com o esquema atual.
           };
           const { error: itemError } = await supabase.from('items').insert(newItem);
           if (itemError) {
             console.error("Erro ao inserir item na tabela 'items':", itemError.message);
-            // Opcional: reverter a entrega se a inserção de itens falhar
           }
         }
       }
@@ -193,44 +191,43 @@ export const AgendarEntregaPage: React.FC = () => {
     },
   });
 
-  const handleSave = () => {
-    if (!formData.parceiro || formData.parceiro.trim() === '') {
+  const handleSave = (data: EntregaInsert, items: ItemData[]) => {
+    if (!data.parceiro || data.parceiro.trim() === '') {
       toast({ title: "Campo Obrigatório", description: "O campo 'Cliente' é obrigatório.", variant: "destructive" });
       return;
     }
-    if (!formData.endereco_destino || formData.endereco_destino.trim() === '') {
+    if (!data.endereco_destino || data.endereco_destino.trim() === '') {
       toast({ title: "Campo Obrigatório", description: "O campo 'Endereço de Destino' é obrigatório.", variant: "destructive" });
       return;
     }
-    if (!formData.previsao_coleta || formData.previsao_coleta.trim() === '') {
+    if (!data.previsao_coleta || data.previsao_coleta.trim() === '') {
       toast({ title: "Campo Obrigatório", description: "O campo 'Data da Entrega' é obrigatório.", variant: "destructive" });
       return;
     }
     
-    if (deliveryItems.length === 0) {
+    if (items.length === 0) {
       toast({ title: "Campo Obrigatório", description: "Adicione pelo menos um item de material.", variant: "destructive" });
       return;
     }
 
-    // Validação para cada item na lista
-    for (const item of deliveryItems) {
+    for (const item of items) {
       if (!item.modelo_aparelho || item.modelo_aparelho.trim() === '') {
-        toast({ title: "Campo Obrigatório", description: `O 'Código do Material' do item #${deliveryItems.indexOf(item) + 1} é obrigatório.`, variant: "destructive" });
+        toast({ title: "Campo Obrigatório", description: `O 'Código do Material' do item #${items.indexOf(item) + 1} é obrigatório.`, variant: "destructive" });
         return;
       }
       if (item.qtd_aparelhos_solicitado === null || item.qtd_aparelhos_solicitado <= 0) {
-        toast({ title: "Campo Obrigatório", description: `A 'Quantidade' do item #${deliveryItems.indexOf(item) + 1} deve ser maior que zero.`, variant: "destructive" });
+        toast({ title: "Campo Obrigatório", description: `A 'Quantidade' do item #${items.indexOf(item) + 1} deve ser maior que zero.`, variant: "destructive" });
         return;
       }
     }
 
     addEntregaMutation.mutate({
       entrega: {
-        ...formData,
-        endereco: formData.endereco_destino,
-        cep: formData.cep_destino,
+        ...data,
+        endereco: data.endereco_destino,
+        cep: data.cep_destino,
       },
-      items: deliveryItems,
+      items: items,
     });
   };
 
@@ -313,9 +310,40 @@ export const AgendarEntregaPage: React.FC = () => {
                 addressLabel="Endereço de Destino"
               />
 
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="previsao_coleta">Data da Entrega *</Label>
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <Button
+                        variant={"outline"}
+                        className={cn(
+                          "w-full justify-start text-left font-normal pl-10",
+                          !formData.previsao_coleta && "text-muted-foreground"
+                        )}
+                        disabled={isFormDisabled}
+                      >
+                        <CalendarIcon className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                        {formData.previsao_coleta ? format(new Date(formData.previsao_coleta), "PPP", { locale: ptBR }) : "Selecionar data"}
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto p-0">
+                      <Calendar
+                        mode="single"
+                        selected={formData.previsao_coleta ? new Date(formData.previsao_coleta) : undefined}
+                        onSelect={(date) => handleInputChange("previsao_coleta", date ? format(date, 'yyyy-MM-dd') : null)}
+                        initialFocus
+                        locale={ptBR}
+                      />
+                    </PopoverContent>
+                  </Popover>
+                </div>
+              </div>
+
               <ColetaItemsSection
                 onItemsUpdate={setDeliveryItems}
                 isPending={isFormDisabled}
+                initialItems={deliveryItems}
               />
 
               <ColetaLogisticsDetails
@@ -341,7 +369,7 @@ export const AgendarEntregaPage: React.FC = () => {
 
               <ManualSchedulerActionButtons
                 onCancel={() => navigate('/dashboard-entregas')}
-                onSave={handleSave}
+                onSave={() => handleSave(formData, deliveryItems)}
                 isPending={isFormDisabled}
                 backButtonPath="/dashboard-entregas"
                 backButtonText="Voltar ao Dashboard de Entregas"

@@ -14,7 +14,7 @@ import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
-import { cn } from "@/lib/utils";
+import { cn, formatItemsForColetaModeloAparelho, getTotalQuantityOfItems } from "@/lib/utils";
 import { EditEntregaDialog } from "@/components/EditEntregaDialog";
 import { CollectionStatusUpdateDialog } from "@/components/CollectionStatusUpdateDialog";
 import { EditResponsibleDialog } from "@/components/EditResponsibleDialog";
@@ -28,17 +28,6 @@ type Entrega = Tables<'coletas'> & {
 interface EntregasConcluidasListProps {
   selectedYear: string;
 }
-
-// Helper function to format items for display
-const formatItemsSummary = (items: Array<Tables<'items'>> | null) => {
-  if (!items || items.length === 0) return 'N/A';
-  const summary = items.map(item => `${item.quantity}x ${item.name}`).join(', ');
-  return summary.length > 50 ? summary.substring(0, 47) + '...' : summary;
-};
-
-const getTotalQuantity = (items: Array<Tables<'items'>> | null) => {
-  return items?.reduce((sum, item) => sum + (item.quantity || 0), 0) || 0;
-};
 
 const EntregasConcluidasList: React.FC<EntregasConcluidasListProps> = ({ selectedYear }) => {
   const navigate = useNavigate();
@@ -107,7 +96,7 @@ const EntregasConcluidasList: React.FC<EntregasConcluidasListProps> = ({ selecte
       queryClient.invalidateQueries({ queryKey: ['dashboardEntregasMetrics', user?.id] });
       queryClient.invalidateQueries({ queryKey: ['entregasAtivasStatusChart', user?.id] });
       queryClient.invalidateQueries({ queryKey: ['entregasAtivasStatusDonutChart', user?.id] });
-      queryClient.invalidateQueries({ queryKey: ['items', user?.id] }); // Invalidate general items query
+      queryClient.invalidateQueries({ queryKey: ['items', user?.id] });
       toast({ title: "Entrega Excluída!", description: "Entrega removida com sucesso." });
     },
     onError: (err) => {
@@ -295,10 +284,10 @@ const EntregasConcluidasList: React.FC<EntregasConcluidasListProps> = ({ selecte
                           <CalendarIcon className="h-3 w-3" /> Concluída em: {entrega.previsao_coleta ? format(new Date(entrega.previsao_coleta), 'dd/MM/yyyy', { locale: ptBR }) : 'N/A'}
                         </div>
                         <div className="flex items-center gap-1">
-                          <Hash className="h-3 w-3" /> Qtd Total: {getTotalQuantity(entrega.items)}
+                          <Hash className="h-3 w-3" /> Qtd Total: {getTotalQuantityOfItems(entrega.items)}
                         </div>
                         <div className="flex items-center gap-1 col-span-full">
-                          <Package className="h-3 w-3" /> Materiais: {formatItemsSummary(entrega.items)}
+                          <Package className="h-3 w-3" /> Materiais: {formatItemsForColetaModeloAparelho(entrega.items)}
                         </div>
                         <div className="flex items-center gap-1">
                           <User className="h-3 w-3" /> Responsável: {entrega.responsavel || 'Não atribuído'}

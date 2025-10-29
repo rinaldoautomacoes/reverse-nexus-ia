@@ -10,8 +10,9 @@ import {
 } from "lucide-react";
 import React from "react";
 import type { Tables } from "@/integrations/supabase/types";
+import { getTotalQuantityOfItems } from "@/lib/utils"; // Import new util
 
-type Coleta = Tables<'coletas'>;
+type Coleta = Tables<'coletas'> & { items?: Array<Tables<'items'>> | null; }; // Add items to Coleta type
 
 // Mapeamento de nomes de ícones para componentes Lucide React
 const iconMap: { [key: string]: React.ElementType } = {
@@ -39,8 +40,8 @@ export const GeneralMetricsCards: React.FC<GeneralMetricsCardsProps> = ({ allCol
     const totalEntregas = entregas.length;
     const totalOperacoes = totalColetas + totalEntregas;
 
-    const totalColetaItems = coletas.reduce((sum, c) => sum + (c.qtd_aparelhos_solicitado || 0), 0);
-    const totalEntregaItems = entregas.reduce((sum, e) => sum + (e.qtd_aparelhos_solicitado || 0), 0);
+    const totalColetaItems = coletas.reduce((sum, c) => sum + getTotalQuantityOfItems(c.items), 0);
+    const totalEntregaItems = entregas.reduce((sum, e) => sum + getTotalQuantityOfItems(e.items), 0);
     const totalItemsGeral = totalColetaItems + totalEntregaItems;
 
     const coletasConcluidas = coletas.filter(c => c.status_coleta === 'concluida').length;

@@ -7,6 +7,10 @@ import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/use-auth';
 import { Skeleton } from '@/components/ui/skeleton';
+import type { Tables } from '@/integrations/supabase/types';
+import { getTotalQuantityOfItems } from '@/lib/utils'; // Import new util
+
+type Coleta = Tables<'coletas'> & { items?: Array<Tables<'items'>> | null; }; // Add items to Coleta type
 
 interface CollectionReportSummaryCardProps {
   selectedYear: string;
@@ -15,12 +19,12 @@ interface CollectionReportSummaryCardProps {
 export const CollectionReportSummaryCard: React.FC<CollectionReportSummaryCardProps> = ({ selectedYear }) => {
   const { user } = useAuth();
 
-  const { data: coletas, isLoading } = useQuery({
+  const { data: coletas, isLoading } = useQuery<Coleta[], Error>({
     queryKey: ['collection-summary', user?.id, selectedYear],
     queryFn: async () => {
       const { data, error } = await supabase
         .from('coletas')
-        .select('*')
+        .select(`*, items(quantity)`) // Select items(quantity)
         .eq('user_id', user?.id)
         .eq('type', 'coleta')
         .gte('created_at', `${selectedYear}-01-01`)

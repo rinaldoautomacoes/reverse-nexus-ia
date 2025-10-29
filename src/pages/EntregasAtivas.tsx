@@ -17,9 +17,10 @@ import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
-import { cn } from "@/lib/utils";
+import { cn, formatItemsForColetaModeloAparelho, getTotalQuantityOfItems } from "@/lib/utils";
 import { EntregaForm } from "@/components/EntregaForm";
 import { EditEntregaDialog } from "@/components/EditEntregaDialog";
+import { ItemData } from "@/components/coleta-form-sections/ColetaItemRow"; // Importa a interface ItemData
 
 type Entrega = Tables<'coletas'> & {
   driver?: { name: string } | null;
@@ -31,17 +32,6 @@ type EntregaInsert = TablesInsert<'coletas'>;
 interface EntregasAtivasProps {
   selectedYear: string;
 }
-
-// Helper function to format items for display
-const formatItemsSummary = (items: Array<Tables<'items'>> | null) => {
-  if (!items || items.length === 0) return 'N/A';
-  const summary = items.map(item => `${item.quantity}x ${item.name}`).join(', ');
-  return summary.length > 50 ? summary.substring(0, 47) + '...' : summary;
-};
-
-const getTotalQuantity = (items: Array<Tables<'items'>> | null) => {
-  return items?.reduce((sum, item) => sum + (item.quantity || 0), 0) || 0;
-};
 
 export const EntregasAtivas: React.FC<EntregasAtivasProps> = ({ selectedYear }) => {
   const navigate = useNavigate();
@@ -96,20 +86,18 @@ export const EntregasAtivas: React.FC<EntregasAtivasProps> = ({ selectedYear }) 
   });
 
   const addEntregaMutation = useMutation({
-    mutationFn: async (data: { entrega: EntregaInsert; items: TablesInsert<'items'>[] }) => { // Updated signature
+    mutationFn: async (data: { entrega: EntregaInsert; items: ItemData[] }) => {
       if (!user?.id) {
         throw new Error("Usuário não autenticado. Faça login para agendar entregas.");
       }
       
-      // Preenche modelo_aparelho e qtd_aparelhos_solicitado da entrega com o primeiro item da lista, se houver
-      const entregaToInsert: EntregaInsert = { ...data.entrega, user_id: user.id, type: 'entrega' };
-      if (data.items.length > 0) {
-        entregaToInsert.modelo_aparelho = formatItemsSummary(data.items); // Use summary for modelo_aparelho
-        entregaToInsert.qtd_aparelhos_solicitado = data.items.reduce((sum, item) => sum + (item.quantity || 0), 0);
-      } else {
-        entregaToInsert.modelo_aparelho = null;
-        entregaToInsert.qtd_aparelhos_solicitado = null;
-      }
+      const entregaToInsert: EntregaInsert = {
+        ...data.entrega,
+        user_id: user.id,
+        type: 'entrega',
+        modelo_aparelho: formatItemsForColetaModeloAparelho(data.items), // Resumo dos itens
+        qtd_aparelhos_solicitado: getTotalQuantityOfItems(data.items), // Quantidade total
+      };
 
       const { data: insertedEntrega, error: entregaError } = await supabase
         .from('coletas')
@@ -119,15 +107,14 @@ export const EntregasAtivas: React.FC<EntregasAtivasProps> = ({ selectedYear }) 
       
       if (entregaError) throw new Error(entregaError.message);
 
-      // Insere cada item na tabela 'items'
       for (const item of data.items) {
-        if (item.name && item.quantity && item.quantity > 0) {
+        if (item.modelo_aparelho && item.qtd_aparelhos_solicitado && item.qtd_aparelhos_solicitado > 0) {
           const newItem: TablesInsert<'items'> = {
             user_id: user.id,
             collection_id: insertedEntrega.id,
-            name: item.name,
-            description: item.description,
-            quantity: item.quantity,
+            name: item.modelo_aparelho,
+            description: item.descricaoMaterial,
+            quantity: item.qtd_aparelhos_solicitado,
             status: insertedEntrega.status_coleta || 'pendente',
           };
           const { error: itemError } = await supabase.from('items').insert(newItem);
@@ -144,7 +131,7 @@ export const EntregasAtivas: React.FC<EntregasAtivasProps> = ({ selectedYear }) 
       queryClient.invalidateQueries({ queryKey: ['dashboardEntregasMetrics', user?.id] });
       queryClient.invalidateQueries({ queryKey: ['entregasAtivasStatusChart', user?.id] });
       queryClient.invalidateQueries({ queryKey: ['entregasAtivasStatusDonutChart', user?.id] });
-      queryClient.invalidateQueries({ queryKey: ['items', user?.id] }); // Invalidate general items query
+      queryClient.invalidateQueries({ queryKey: ['items', user?.id] });
       toast({ title: "Entrega Agendada!", description: "Nova entrega criada com sucesso." });
       setIsAddDialogOpen(false);
     },
@@ -167,7 +154,7 @@ export const EntregasAtivas: React.FC<EntregasAtivasProps> = ({ selectedYear }) 
       queryClient.invalidateQueries({ queryKey: ['dashboardEntregasMetrics', user?.id] });
       queryClient.invalidateQueries({ queryKey: ['entregasAtivasStatusChart', user?.id] });
       queryClient.invalidateQueries({ queryKey: ['entregasAtivasStatusDonutChart', user?.id] });
-      queryClient.invalidateQueries({ queryKey: ['items', user?.id] }); // Invalidate general items query
+      queryClient.invalidateQueries({ queryKey: ['items', user?.id] });
       toast({ title: "Entrega Excluída!", description: "Entrega removida com sucesso." });
     },
     onError: (err) => {
@@ -384,10 +371,10 @@ export const EntregasAtivas: React.FC<EntregasAtivasProps> = ({ selectedYear }) 
                           <CalendarIcon className="h-3 w-3" /> Previsão: {entrega.previsao_coleta ? format(new Date(entrega.previsao_coleta), 'dd/MM/yyyy', { locale: ptBR }) : 'N/A'}
                         </div>
                         <div className="flex items-center gap-1">
-                          <Hash className="h-3 w-3" /> Qtd Total: {getTotalQuantity(entrega.items)}
+                          <Hash className="h-3 w-3" /> Qtd Total: {getTotalQuantityOfItems(entrega.items)}
                         </div>
                         <div className="flex items-center gap-1 col-span-full">
-                          <Package className="h-3 w-3" /> Materiais: {formatItemsSummary(entrega.items)}
+                          <Package className="h-3 w-3" /> Materiais: {formatItemsForColetaModeloAparelho(entrega.items)}
                         </div>
                         <div className="flex items-center gap-1">
                           <User className="h-3 w-3" /> Responsável: {entrega.responsavel || 'Não atribuído'}

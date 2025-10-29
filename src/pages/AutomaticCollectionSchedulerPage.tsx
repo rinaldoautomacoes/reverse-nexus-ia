@@ -1,27 +1,30 @@
 import { useState, useCallback, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, Package, PlusCircle, Loader2, Tag, ClipboardList } from "lucide-react";
+import { ArrowLeft, Package, PlusCircle, Loader2, Tag, ClipboardList, Calendar as CalendarIcon } from "lucide-react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import type { TablesInsert, Tables, TablesUpdate } from "@/integrations/supabase/types_generated";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/use-auth";
-import { generateUniqueNumber } from "@/lib/utils";
+import { generateUniqueNumber, formatItemsForColetaModeloAparelho, getTotalQuantityOfItems, cn } from "@/lib/utils";
 import { format } from "date-fns";
 import { parseReturnDocumentText, ParsedCollectionData, ParsedItem } from '@/lib/document-parser';
 
 // Import new modular components from the shared directory
 import { DocumentInputCard } from '@/components/shared-scheduler-sections/DocumentInputCard';
-import { ColetaClientDetails } from '@/components/shared-scheduler-sections/ColetaClientDetails'; // Corrected import to named export
+import { ColetaClientDetails } from '@/components/shared-scheduler-sections/ColetaClientDetails';
 import { OriginAddressSection } from '@/components/shared-scheduler-sections/OriginAddressSection';
 import { DestinationAddressSection } from '@/components/shared-scheduler-sections/DestinationAddressSection';
 import { MainProductAndDateSection } from '@/components/shared-scheduler-sections/MainProductAndDateSection';
 import { ItemsTableSection } from '@/components/shared-scheduler-sections/ItemsTableSection';
 import { AutomaticSchedulerActionButtons } from '@/components/shared-scheduler-sections/AutomaticSchedulerActionButtons/AutomaticSchedulerActionButtons';
-import { Label } from "@/components/ui/label"; // Importação explícita do Label
-import { Input } from "@/components/ui/input"; // Import Input
+import { Label } from "@/components/ui/label";
+import { Input } from "@/components/ui/input";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Calendar } from "@/components/ui/calendar";
+import { ptBR } from "date-fns/locale";
 
 
 type ColetaInsert = TablesInsert<'coletas'>;
@@ -171,16 +174,24 @@ export const AutomaticCollectionSchedulerPage: React.FC = () => {
   }, [documentText, toast]);
 
   const addColetaMutation = useMutation({
-    mutationFn: async (newColeta: ColetaInsert) => {
+    mutationFn: async (newColeta: ColetaInsert & { items: ParsedItem[] }) => {
       if (!user?.id) {
         throw new Error("Usuário não autenticado. Faça login para agendar coletas.");
       }
       
       const { items, ...coletaData } = newColeta;
       
+      const coletaToInsert: ColetaInsert = {
+        ...coletaData,
+        user_id: user.id,
+        type: 'coleta',
+        modelo_aparelho: formatItemsForColetaModeloAparelho(items), // Resumo dos itens
+        qtd_aparelhos_solicitado: getTotalQuantityOfItems(items), // Quantidade total
+      };
+
       const { data: insertedColeta, error: coletaError } = await supabase
         .from('coletas')
-        .insert({ ...coletaData, user_id: user.id, type: 'coleta' })
+        .insert(coletaToInsert)
         .select()
         .single();
       
@@ -235,7 +246,7 @@ export const AutomaticCollectionSchedulerPage: React.FC = () => {
       return;
     }
 
-    const coletaToInsert: ColetaInsert = {
+    const coletaToInsert: ColetaInsert & { items: ParsedItem[] } = {
       user_id: user?.id || "",
       parceiro: formData.parceiro,
       endereco: formData.endereco_origem,
@@ -260,8 +271,8 @@ export const AutomaticCollectionSchedulerPage: React.FC = () => {
       endereco_destino: formData.endereco_destino,
       destination_lat: formData.destination_lat,
       destination_lng: formData.destination_lng,
-      modelo_aparelho: formData.items[0]?.product_code || null,
-      qtd_aparelhos_solicitado: formData.items.reduce((sum, item) => sum + item.quantity, 0),
+      modelo_aparelho: formatItemsForColetaModeloAparelho(formData.items), // Resumo dos itens
+      qtd_aparelhos_solicitado: getTotalQuantityOfItems(formData.items), // Quantidade total
       items: formData.items,
     };
 
@@ -366,11 +377,35 @@ export const AutomaticCollectionSchedulerPage: React.FC = () => {
                 setIsGeocoding={setIsGeocoding}
               />
 
-              <MainProductAndDateSection
-                parsedData={formData}
-                handleParsedDataChange={handleParsedDataChange}
-                isFormDisabled={isFormDisabled}
-              />
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="previsao_coleta">Data da Coleta *</Label>
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <Button
+                        variant={"outline"}
+                        className={cn(
+                          "w-full justify-start text-left font-normal pl-10",
+                          !formData.previsao_coleta && "text-muted-foreground"
+                        )}
+                        disabled={isFormDisabled}
+                      >
+                        <CalendarIcon className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                        {formData.previsao_coleta ? format(new Date(formData.previsao_coleta), "PPP", { locale: ptBR }) : "Selecionar data"}
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto p-0">
+                      <Calendar
+                        mode="single"
+                        selected={formData.previsao_coleta ? new Date(formData.previsao_coleta) : undefined}
+                        onSelect={(date) => handleParsedDataChange("previsao_coleta", date ? format(date, 'yyyy-MM-dd') : null)}
+                        initialFocus
+                        locale={ptBR}
+                      />
+                    </PopoverContent>
+                  </Popover>
+                </div>
+              </div>
 
               <ItemsTableSection
                 parsedData={formData}

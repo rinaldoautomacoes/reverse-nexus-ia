@@ -3,19 +3,20 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, Legend } from 'recharts';
 import { Package, Truck } from "lucide-react";
 import type { Tables } from "@/integrations/supabase/types";
+import { getTotalQuantityOfItems } from "@/lib/utils"; // Import new util
 
-type Coleta = Tables<'coletas'>;
+type Coleta = Tables<'coletas'> & { items?: Array<Tables<'items'>> | null; }; // Add items to Coleta type
 
 const COLORS_COLETAS = {
-  pendente: 'hsl(var(--destructive))', // ai-purple
-  agendada: 'hsl(var(--warning-yellow))', // neural-blue
-  concluida: 'hsl(var(--success-green))',    // neon-cyan
+  pendente: 'hsl(var(--destructive))',
+  agendada: 'hsl(var(--warning-yellow))',
+  concluida: 'hsl(var(--success-green))',
 };
 
 const COLORS_ENTREGAS = {
-  pendente: 'hsl(var(--destructive))', // ai-purple
-  agendada: 'hsl(var(--warning-yellow))', // neural-blue
-  concluida: 'hsl(var(--success-green))',    // neon-cyan
+  pendente: 'hsl(var(--destructive))',
+  agendada: 'hsl(var(--warning-yellow))',
+  concluida: 'hsl(var(--success-green))',
 };
 
 interface CustomLabelProps {
@@ -87,8 +88,8 @@ export const GeneralStatusDonutCharts: React.FC<GeneralStatusDonutChartsProps> =
                 data={data}
                 cx="50%"
                 cy="50%"
-                innerRadius={70} // Diminuído para fatias mais finas
-                outerRadius={100} // Diminuído para fatias mais finas
+                innerRadius={70}
+                outerRadius={100}
                 fill="#8884d8"
                 paddingAngle={5}
                 dataKey="value"

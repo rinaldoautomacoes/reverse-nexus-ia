@@ -11,10 +11,11 @@ import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { useEffect } from "react";
 import { useAuth } from "@/hooks/use-auth";
-import type { Tables } from "@/integrations/supabase/types"; // Import Tables type
+import type { Tables } from "@/integrations/supabase/types";
+import { getTotalQuantityOfItems } from "@/lib/utils"; // Import new util
 
-type Coleta = Tables<'coletas'>;
-type Product = Tables<'products'>; // Import Product type
+type Coleta = Tables<'coletas'> & { items?: Array<Tables<'items'>> | null; }; // Add items to Coleta type
+type Product = Tables<'products'>;
 
 // Mapeamento de nomes de ícones para componentes Lucide React
 const iconMap: { [key: string]: React.ElementType } = {
@@ -66,7 +67,7 @@ export const EntregasMetricsCards: React.FC<EntregasMetricsCardsProps> = ({ sele
 
       const { data, error } = await supabase
         .from('coletas')
-        .select('id, status_coleta, qtd_aparelhos_solicitado') // Select quantity now
+        .select('id, status_coleta, items(quantity)') // Select items(quantity)
         .eq('user_id', user.id)
         .eq('type', 'entrega')
         .gte('previsao_coleta', startDate)
@@ -98,12 +99,11 @@ export const EntregasMetricsCards: React.FC<EntregasMetricsCardsProps> = ({ sele
   }, [entregasError, productsError, toast]);
 
   const calculateEntregasMetrics = (entregasData: Coleta[] | undefined) => {
-    const totalAllProducts = entregasData?.reduce((sum, entrega) => sum + (entrega.qtd_aparelhos_solicitado || 0), 0) || 0;
+    const totalAllProducts = entregasData?.reduce((sum, entrega) => sum + getTotalQuantityOfItems(entrega.items), 0) || 0;
     
-    // Calculate product counts for each status
-    const pendenteProducts = entregasData?.filter(e => e.status_coleta === 'pendente').reduce((sum, entrega) => sum + (entrega.qtd_aparelhos_solicitado || 0), 0) || 0;
-    const emTransitoProducts = entregasData?.filter(e => e.status_coleta === 'agendada').reduce((sum, entrega) => sum + (entrega.qtd_aparelhos_solicitado || 0), 0) || 0;
-    const entreguesProducts = entregasData?.filter(e => e.status_coleta === 'concluida').reduce((sum, entrega) => sum + (entrega.qtd_aparelhos_solicitado || 0), 0) || 0;
+    const pendenteProducts = entregasData?.filter(e => e.status_coleta === 'pendente').reduce((sum, entrega) => sum + getTotalQuantityOfItems(entrega.items), 0) || 0;
+    const emTransitoProducts = entregasData?.filter(e => e.status_coleta === 'agendada').reduce((sum, entrega) => sum + getTotalQuantityOfItems(entrega.items), 0) || 0;
+    const entreguesProducts = entregasData?.filter(e => e.status_coleta === 'concluida').reduce((sum, entrega) => sum + getTotalQuantityOfItems(entrega.items), 0) || 0;
 
     return [
       {

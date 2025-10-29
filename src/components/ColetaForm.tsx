@@ -2,17 +2,21 @@ import { useState, useEffect, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Loader2, Package, Tag, ClipboardList } from "lucide-react";
+import { Loader2, Package, Tag, ClipboardList, Calendar as CalendarIcon } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/use-auth";
-import { generateUniqueNumber } from "@/lib/utils";
+import { generateUniqueNumber, formatItemsForColetaModeloAparelho, getTotalQuantityOfItems, cn } from "@/lib/utils";
 import { format } from "date-fns";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Calendar } from "@/components/ui/calendar";
+import { ptBR } from "date-fns/locale";
 
 // Import modular components
 import { ColetaClientDetails } from "./coleta-form-sections/ColetaClientDetails";
 import { ColetaOriginAddress } from "./coleta-form-sections/ColetaOriginAddress";
 import { ColetaDestinationAddress } from "./coleta-form-sections/ColetaDestinationAddress";
-import { ColetaItemDetails } from "./coleta-form-sections/ColetaItemDetails";
+import { ColetaItemsSection } from "./coleta-form-sections/ColetaItemsSection"; // Novo componente
+import { ItemData } from "./coleta-form-sections/ColetaItemRow"; // Importa a interface ItemData
 import { ColetaLogisticsDetails } from "./coleta-form-sections/ColetaLogisticsDetails";
 import { ColetaResponsibleUser } from "./coleta-form-sections/ColetaResponsibleUser";
 import { ColetaObservation } from "./coleta-form-sections/ColetaObservation";
@@ -29,8 +33,8 @@ type Driver = Tables<'drivers'>;
 type Transportadora = Tables<'transportadoras'>;
 
 interface ColetaFormProps {
-  initialData?: ColetaUpdate;
-  onSave: (data: ColetaInsert | ColetaUpdate) => void;
+  initialData?: ColetaUpdate & { items?: ItemData[] }; // Adicionado items ao initialData
+  onSave: (data: ColetaInsert | ColetaUpdate, items: ItemData[]) => void; // onSave agora recebe os itens
   onCancel: () => void;
   isPending: boolean;
 }
@@ -43,8 +47,8 @@ export const ColetaForm: React.FC<ColetaFormProps> = ({ initialData, onSave, onC
     parceiro: "",
     endereco: "", // This will be mapped to endereco_origem for display purposes
     previsao_coleta: format(new Date(), 'yyyy-MM-dd'),
-    qtd_aparelhos_solicitado: 1,
-    modelo_aparelho: "",
+    qtd_aparelhos_solicitado: null, // Removido valor padrão, será derivado dos itens
+    modelo_aparelho: null, // Removido valor padrão, será derivado dos itens
     status_coleta: "pendente",
     observacao: "",
     telefone: "",
@@ -79,22 +83,24 @@ export const ColetaForm: React.FC<ColetaFormProps> = ({ initialData, onSave, onC
     client_control: "", // Novo campo
   });
 
+  const [collectionItems, setCollectionItems] = useState<ItemData[]>(initialData?.items || []);
+
   // State for fetching status from address lookup hooks
   const [isFetchingOriginAddress, setIsFetchingOriginAddress] = useState(false);
   const [isFetchingDestinationAddress, setIsFetchingDestinationAddress] = useState(false);
 
   useEffect(() => {
     if (initialData) {
-      // Destructure initialData to separate direct columns from joined relations
-      const { driver, transportadora, ...restOfColetaData } = initialData;
-      setFormData(restOfColetaData); // Only set direct columns
+      const { items, ...restOfColetaData } = initialData;
+      setFormData(restOfColetaData);
+      setCollectionItems(items || []);
     } else {
       setFormData({
         parceiro: "",
         endereco: "",
         previsao_coleta: format(new Date(), 'yyyy-MM-dd'),
-        qtd_aparelhos_solicitado: 1,
-        modelo_aparelho: "",
+        qtd_aparelhos_solicitado: null,
+        modelo_aparelho: null,
         status_coleta: "pendente",
         observacao: "",
         telefone: "",
@@ -126,8 +132,9 @@ export const ColetaForm: React.FC<ColetaFormProps> = ({ initialData, onSave, onC
         origin_lng: null,
         destination_lat: null,
         destination_lng: null,
-        client_control: "", // Novo campo
+        client_control: "",
       });
+      setCollectionItems([]);
     }
   }, [initialData, user?.id]);
 
@@ -146,10 +153,8 @@ export const ColetaForm: React.FC<ColetaFormProps> = ({ initialData, onSave, onC
         contato: client.contact_person || '',
         client_id: client.id,
       }));
-      // If client has an address, pre-fill origin address and CEP
       if (client.address) {
         handleInputChange("endereco_origem", client.address);
-        // For now, just set the address. User can manually enter CEP to trigger lookup.
       }
     } else {
       setFormData(prev => ({
@@ -160,14 +165,6 @@ export const ColetaForm: React.FC<ColetaFormProps> = ({ initialData, onSave, onC
         cnpj: '',
         contato: '',
       }));
-    }
-  }, [handleInputChange]);
-
-  const handleProductComboboxSelect = useCallback((product: Product | null) => {
-    if (product) {
-      handleInputChange("modelo_aparelho", product.code);
-    } else {
-      handleInputChange("modelo_aparelho", "");
     }
   }, [handleInputChange]);
 
@@ -186,12 +183,43 @@ export const ColetaForm: React.FC<ColetaFormProps> = ({ initialData, onSave, onC
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+
+    if (!formData.parceiro || formData.parceiro.trim() === '') {
+      toast({ title: "Campo Obrigatório", description: "O campo 'Cliente' é obrigatório.", variant: "destructive" });
+      return;
+    }
+    if (!formData.endereco_origem || formData.endereco_origem.trim() === '') {
+      toast({ title: "Campo Obrigatório", description: "O campo 'Endereço de Origem' é obrigatório.", variant: "destructive" });
+      return;
+    }
+    if (!formData.previsao_coleta || formData.previsao_coleta.trim() === '') {
+      toast({ title: "Campo Obrigatório", description: "O campo 'Data da Coleta' é obrigatório.", variant: "destructive" });
+      return;
+    }
+    
+    if (collectionItems.length === 0) {
+      toast({ title: "Campo Obrigatório", description: "Adicione pelo menos um item de material.", variant: "destructive" });
+      return;
+    }
+
+    for (const item of collectionItems) {
+      if (!item.modelo_aparelho || item.modelo_aparelho.trim() === '') {
+        toast({ title: "Campo Obrigatório", description: `O 'Código do Material' do item #${collectionItems.indexOf(item) + 1} é obrigatório.`, variant: "destructive" });
+        return;
+      }
+      if (item.qtd_aparelhos_solicitado === null || item.qtd_aparelhos_solicitado <= 0) {
+        toast({ title: "Campo Obrigatório", description: `A 'Quantidade' do item #${collectionItems.indexOf(item) + 1} deve ser maior que zero.`, variant: "destructive" });
+        return;
+      }
+    }
+
     onSave({
       ...formData,
-      // Ensure the main 'endereco' and 'cep' fields are consistent with origin for coletas
       endereco: formData.endereco_origem,
       cep: formData.cep_origem,
-    });
+      modelo_aparelho: formatItemsForColetaModeloAparelho(collectionItems), // Resumo dos itens
+      qtd_aparelhos_solicitado: getTotalQuantityOfItems(collectionItems), // Quantidade total
+    }, collectionItems);
   };
 
   return (
@@ -238,9 +266,9 @@ export const ColetaForm: React.FC<ColetaFormProps> = ({ initialData, onSave, onC
         handleInputChange={(field, value) => {
           handleInputChange(field, value);
           if (field === "origin_lat" || field === "origin_lng") {
-            setIsFetchingOriginAddress(false); // Reset fetching state when lat/lng are updated
+            setIsFetchingOriginAddress(false);
           } else if (field === "cep_origem" && value === "") {
-            setIsFetchingOriginAddress(true); // Set fetching state when CEP is cleared
+            setIsFetchingOriginAddress(true);
           }
         }}
         isPending={isPending}
@@ -251,19 +279,49 @@ export const ColetaForm: React.FC<ColetaFormProps> = ({ initialData, onSave, onC
         handleInputChange={(field, value) => {
           handleInputChange(field, value);
           if (field === "destination_lat" || field === "destination_lng") {
-            setIsFetchingDestinationAddress(false); // Reset fetching state when lat/lng are updated
+            setIsFetchingDestinationAddress(false);
           } else if (field === "cep_destino" && value === "") {
-            setIsFetchingDestinationAddress(true); // Set fetching state when CEP is cleared
+            setIsFetchingDestinationAddress(true);
           }
         }}
         isPending={isPending}
       />
 
-      <ColetaItemDetails
-        formData={formData}
-        handleInputChange={handleInputChange}
-        handleProductComboboxSelect={handleProductComboboxSelect}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="space-y-2">
+          <Label htmlFor="previsao_coleta">Data da Coleta *</Label>
+          <Popover>
+            <PopoverTrigger asChild>
+              <Button
+                variant={"outline"}
+                className={cn(
+                  "w-full justify-start text-left font-normal pl-10",
+                  !formData.previsao_coleta && "text-muted-foreground"
+                )}
+                disabled={isPending}
+              >
+                <CalendarIcon className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                {formData.previsao_coleta ? format(new Date(formData.previsao_coleta), "PPP", { locale: ptBR }) : "Selecionar data"}
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-auto p-0">
+              <Calendar
+                mode="single"
+                selected={formData.previsao_coleta ? new Date(formData.previsao_coleta) : undefined}
+                onSelect={(date) => handleInputChange("previsao_coleta", date ? format(date, 'yyyy-MM-dd') : null)}
+                initialFocus
+                locale={ptBR}
+              />
+            </PopoverContent>
+          </Popover>
+        </div>
+        {/* Removido o campo de quantidade de aparelhos, pois agora é gerenciado pela ColetaItemsSection */}
+      </div>
+
+      <ColetaItemsSection
+        onItemsUpdate={setCollectionItems}
         isPending={isPending}
+        initialItems={collectionItems}
       />
 
       <ColetaLogisticsDetails

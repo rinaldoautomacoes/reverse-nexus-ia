@@ -12,8 +12,9 @@ import {
   Area,
 } from 'recharts';
 import type { Tables } from "@/integrations/supabase/types";
+import { getTotalQuantityOfItems } from "@/lib/utils"; // Import new util
 
-type Coleta = Tables<'coletas'>;
+type Coleta = Tables<'coletas'> & { items?: Array<Tables<'items'>> | null; }; // Add items to Coleta type
 type Product = Tables<'products'>;
 
 interface GeneralDeliveriesStatusChartProps {
@@ -24,18 +25,12 @@ interface GeneralDeliveriesStatusChartProps {
 
 export const GeneralDeliveriesStatusChart: React.FC<GeneralDeliveriesStatusChartProps> = ({ allColetas, productDescriptionsMap, selectedYear }) => {
 
-  const generateItemDescription = (itemCodeQuantities: Map<string, number>) => {
+  const generateItemDescription = (items: Array<Tables<'items'>> | null) => {
+    if (!items || items.length === 0) return "Nenhum item";
     const descriptions: string[] = [];
-    itemCodeQuantities.forEach((quantity, code) => {
-      const description = productDescriptionsMap.get(code);
-      if (description) {
-        descriptions.push(`${quantity}x ${description}`);
-      } else {
-        descriptions.push(`${quantity}x Item Desconhecido`);
-      }
+    items.forEach(item => {
+      descriptions.push(`${item.quantity}x ${item.name}`);
     });
-
-    if (descriptions.length === 0) return "Nenhum item";
     if (descriptions.length === 1) return descriptions[0];
     if (descriptions.length === 2) return `${descriptions[0]} e ${descriptions[1]}`;
     return `${descriptions[0]}, ${descriptions[1]} e outros`;
@@ -43,9 +38,9 @@ export const GeneralDeliveriesStatusChart: React.FC<GeneralDeliveriesStatusChart
 
   const processDataForChart = (data: Coleta[]) => {
     const monthlyDataMap = new Map<string, { 
-      entregas_pendente: Map<string, number>; 
-      entregas_em_transito: Map<string, number>; 
-      entregas_concluidas: Map<string, number>; 
+      entregas_pendente: Tables<'items'>[]; 
+      entregas_em_transito: Tables<'items'>[]; 
+      entregas_concluidas: Tables<'items'>[]; 
       total_items_month: number 
     }>();
     const allMonths: string[] = [];
@@ -56,9 +51,9 @@ export const GeneralDeliveriesStatusChart: React.FC<GeneralDeliveriesStatusChart
       const monthKey = format(month, 'MMM', { locale: ptBR });
       allMonths.push(monthKey);
       monthlyDataMap.set(monthKey, { 
-        entregas_pendente: new Map(), 
-        entregas_em_transito: new Map(), 
-        entregas_concluidas: new Map(), 
+        entregas_pendente: [], 
+        entregas_em_transito: [], 
+        entregas_concluidas: [], 
         total_items_month: 0 
       });
     }
@@ -68,34 +63,33 @@ export const GeneralDeliveriesStatusChart: React.FC<GeneralDeliveriesStatusChart
     let totalEntregasConcluidas = 0;
     let totalAllItems = 0;
 
-    data.filter(item => item.type === 'entrega').forEach(item => { // Filtrar apenas para 'entrega'
-      if (!item.previsao_coleta || !item.modelo_aparelho) return;
+    data.filter(item => item.type === 'entrega').forEach(item => {
+      if (!item.previsao_coleta || !item.items) return;
 
       const itemDate = parseISO(item.previsao_coleta);
       const timezoneOffsetMinutes = itemDate.getTimezoneOffset();
       const adjustedDateForLocalMonth = new Date(itemDate.getTime() - timezoneOffsetMinutes * 60 * 1000);
       const monthKey = format(startOfMonth(adjustedDateForLocalMonth), 'MMM', { locale: ptBR });
-      const quantity = item.qtd_aparelhos_solicitado || 0;
-      const productCode = item.modelo_aparelho;
+      const totalItemsInEntrega = getTotalQuantityOfItems(item.items);
 
       if (monthlyDataMap.has(monthKey)) {
         const currentMonthData = monthlyDataMap.get(monthKey)!;
         switch (item.status_coleta) {
           case 'pendente':
-            currentMonthData.entregas_pendente.set(productCode, (currentMonthData.entregas_pendente.get(productCode) || 0) + quantity);
-            totalEntregasPendente += quantity;
+            currentMonthData.entregas_pendente.push(...item.items);
+            totalEntregasPendente += totalItemsInEntrega;
             break;
           case 'agendada':
-            currentMonthData.entregas_em_transito.set(productCode, (currentMonthData.entregas_em_transito.get(productCode) || 0) + quantity);
-            totalEntregasEmTransito += quantity;
+            currentMonthData.entregas_em_transito.push(...item.items);
+            totalEntregasEmTransito += totalItemsInEntrega;
             break;
           case 'concluida':
-            currentMonthData.entregas_concluidas.set(productCode, (currentMonthData.entregas_concluidas.get(productCode) || 0) + quantity);
-            totalEntregasConcluidas += quantity;
+            currentMonthData.entregas_concluidas.push(...item.items);
+            totalEntregasConcluidas += totalItemsInEntrega;
             break;
         }
-        currentMonthData.total_items_month += quantity;
-        totalAllItems += quantity;
+        currentMonthData.total_items_month += totalItemsInEntrega;
+        totalAllItems += totalItemsInEntrega;
         monthlyDataMap.set(monthKey, currentMonthData);
       }
     });
@@ -104,9 +98,9 @@ export const GeneralDeliveriesStatusChart: React.FC<GeneralDeliveriesStatusChart
       const data = monthlyDataMap.get(monthKey)!;
       return {
         month: monthKey,
-        entregas_pendente: Array.from(data.entregas_pendente.values()).reduce((sum, q) => sum + q, 0),
-        entregas_em_transito: Array.from(data.entregas_em_transito.values()).reduce((sum, q) => sum + q, 0),
-        entregas_concluidas: Array.from(data.entregas_concluidas.values()).reduce((sum, q) => sum + q, 0),
+        entregas_pendente: getTotalQuantityOfItems(data.entregas_pendente),
+        entregas_em_transito: getTotalQuantityOfItems(data.entregas_em_transito),
+        entregas_concluidas: getTotalQuantityOfItems(data.entregas_concluidas),
         total_items_month: data.total_items_month,
         entregas_pendente_items: data.entregas_pendente,
         entregas_em_transito_items: data.entregas_em_transito,
@@ -141,17 +135,16 @@ export const GeneralDeliveriesStatusChart: React.FC<GeneralDeliveriesStatusChart
           <p className="font-semibold text-primary mb-2">{label}</p>
           <p className="text-muted-foreground">Total de Itens: <span className="font-bold text-foreground">{data.total_items_month}</span></p>
           
-          {/* Entregas */}
-          {(data.entregas_pendente_items.size > 0 || data.entregas_em_transito_items.size > 0 || data.entregas_concluidas_items.size > 0) && (
+          {(data.entregas_pendente_items.length > 0 || data.entregas_em_transito_items.length > 0 || data.entregas_concluidas_items.length > 0) && (
             <div className="mt-2 border-t border-border/50 pt-2">
               <p className="font-medium text-primary flex items-center gap-1"><Truck className="h-3 w-3" /> Entregas:</p>
-              {data.entregas_pendente_items.size > 0 && (
+              {data.entregas_pendente_items.length > 0 && (
                 <p className="text-destructive text-xs ml-2">P: {generateItemDescription(data.entregas_pendente_items)}</p>
               )}
-              {data.entregas_em_transito_items.size > 0 && (
+              {data.entregas_em_transito_items.length > 0 && (
                 <p className="text-warning-yellow text-xs ml-2">ET: {generateItemDescription(data.entregas_em_transito_items)}</p>
               )}
-              {data.entregas_concluidas_items.size > 0 && (
+              {data.entregas_concluidas_items.length > 0 && (
                 <p className="text-success-green text-xs ml-2">C: {generateItemDescription(data.entregas_concluidas_items)}</p>
               )}
             </div>
