@@ -66,7 +66,7 @@ export const GeneralStatusChart: React.FC<GeneralStatusChartProps> = ({ allColet
     data.filter(item => item.type === 'coleta').forEach(item => {
       if (!item.previsao_coleta) return; // Only check for date, items will be handled as empty array if null
 
-      const itemDate = parseISO(item.previsao_coleta); // Use parseISO
+      const itemDate = new Date(item.previsao_coleta); // Use new Date() directly for local timezone interpretation
       const monthKey = format(startOfMonth(itemDate), 'MMM', { locale: ptBR });
       
       const itemsInColeta = item.items || []; // Ensure it's an array
