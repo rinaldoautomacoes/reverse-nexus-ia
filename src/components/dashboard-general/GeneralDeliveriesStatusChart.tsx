@@ -64,26 +64,26 @@ export const GeneralDeliveriesStatusChart: React.FC<GeneralDeliveriesStatusChart
     let totalAllItems = 0;
 
     data.filter(item => item.type === 'entrega').forEach(item => {
-      if (!item.previsao_coleta || !item.items) return;
+      if (!item.previsao_coleta) return; // Only check for date, items will be handled as empty array if null
 
-      // Simplified month key generation to avoid timezone issues with DATE type
-      const itemDate = new Date(item.previsao_coleta + 'T00:00:00'); // Treat as local midnight
+      const itemDate = parseISO(item.previsao_coleta); // Use parseISO
       const monthKey = format(startOfMonth(itemDate), 'MMM', { locale: ptBR });
-      const totalItemsInEntrega = getTotalQuantityOfItems(item.items);
+      const itemsInEntrega = item.items || []; // Ensure it's an array
+      const totalItemsInEntrega = getTotalQuantityOfItems(itemsInEntrega);
 
       if (monthlyDataMap.has(monthKey)) {
         const currentMonthData = monthlyDataMap.get(monthKey)!;
         switch (item.status_coleta) {
           case 'pendente':
-            currentMonthData.entregas_pendente.push(...item.items);
+            currentMonthData.entregas_pendente.push(...itemsInEntrega);
             totalEntregasPendente += totalItemsInEntrega;
             break;
           case 'agendada':
-            currentMonthData.entregas_em_transito.push(...item.items);
+            currentMonthData.entregas_em_transito.push(...itemsInEntrega);
             totalEntregasEmTransito += totalItemsInEntrega;
             break;
           case 'concluida':
-            currentMonthData.entregas_concluidas.push(...item.items);
+            currentMonthData.entregas_concluidas.push(...itemsInEntrega);
             totalEntregasConcluidas += totalItemsInEntrega;
             break;
         }
@@ -243,6 +243,15 @@ export const GeneralDeliveriesStatusChart: React.FC<GeneralDeliveriesStatusChart
           </div>
         </div>
       </CardContent>
+      {totalAllItems === 0 && (
+        <div className="absolute inset-0 flex items-center justify-center bg-gradient-dark/80 rounded-lg">
+          <div className="text-center text-muted-foreground">
+            <Truck className="h-12 w-12 mx-auto mb-4" />
+            <p>Nenhum dado de entrega disponível para {selectedYear}.</p>
+            <p className="text-sm">Agende entregas para ver as estatísticas.</p>
+          </div>
+        </div>
+      )}
     </Card>
   );
 };

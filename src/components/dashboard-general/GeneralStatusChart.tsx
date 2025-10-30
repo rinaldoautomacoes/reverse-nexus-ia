@@ -64,27 +64,27 @@ export const GeneralStatusChart: React.FC<GeneralStatusChartProps> = ({ allColet
     let totalAllItems = 0;
 
     data.filter(item => item.type === 'coleta').forEach(item => {
-      if (!item.previsao_coleta || !item.items) return;
+      if (!item.previsao_coleta) return; // Only check for date, items will be handled as empty array if null
 
-      // Simplified month key generation to avoid timezone issues with DATE type
-      const itemDate = new Date(item.previsao_coleta + 'T00:00:00'); // Treat as local midnight
+      const itemDate = parseISO(item.previsao_coleta); // Use parseISO
       const monthKey = format(startOfMonth(itemDate), 'MMM', { locale: ptBR });
       
-      const totalItemsInColeta = getTotalQuantityOfItems(item.items);
+      const itemsInColeta = item.items || []; // Ensure it's an array
+      const totalItemsInColeta = getTotalQuantityOfItems(itemsInColeta);
 
       if (monthlyDataMap.has(monthKey)) {
         const currentMonthData = monthlyDataMap.get(monthKey)!;
         switch (item.status_coleta) {
           case 'pendente':
-            currentMonthData.coletas_pendente.push(...item.items);
+            currentMonthData.coletas_pendente.push(...itemsInColeta);
             totalColetasPendente += totalItemsInColeta;
             break;
           case 'agendada':
-            currentMonthData.coletas_em_transito.push(...item.items);
+            currentMonthData.coletas_em_transito.push(...itemsInColeta);
             totalColetasEmTransito += totalItemsInColeta;
             break;
           case 'concluida':
-            currentMonthData.coletas_concluidas.push(...item.items);
+            currentMonthData.coletas_concluidas.push(...itemsInColeta);
             totalColetasConcluidas += totalItemsInColeta;
             break;
         }
@@ -244,6 +244,15 @@ export const GeneralStatusChart: React.FC<GeneralStatusChartProps> = ({ allColet
           </div>
         </div>
       </CardContent>
+      {totalAllItems === 0 && (
+        <div className="absolute inset-0 flex items-center justify-center bg-gradient-dark/80 rounded-lg">
+          <div className="text-center text-muted-foreground">
+            <Package className="h-12 w-12 mx-auto mb-4" />
+            <p>Nenhum dado de coleta disponível para {selectedYear}.</p>
+            <p className="text-sm">Agende coletas para ver as estatísticas.</p>
+          </div>
+        </div>
+      )}
     </Card>
   );
 };
