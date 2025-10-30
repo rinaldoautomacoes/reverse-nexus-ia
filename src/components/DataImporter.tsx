@@ -108,7 +108,7 @@ export const DataImporter: React.FC<DataImporterProps> = ({ initialTab = 'collec
       });
 
       if (filteredData.length === 0) {
-        throw new Error('Nenhum dado válido foi extraído do arquivo.');
+        throw new Error('Nenhum dado válido foi extraído do arquivo. Verifique se as colunas estão corretas e se há dados preenchidos.');
       }
 
       setExtractedData(filteredData);
@@ -230,7 +230,7 @@ export const DataImporter: React.FC<DataImporterProps> = ({ initialTab = 'collec
       // Validate that each client has a non-empty name
       const validClients = dataToImport.filter(client => client.name && client.name.trim() !== '');
       if (validClients.length === 0) {
-        throw new Error('Nenhum cliente válido encontrado para importação. Certifique-se de que a coluna "Nome do Cliente" não está vazia.');
+        throw new Error('Nenhum cliente válido encontrado para importação. Certifique-se de que a coluna "Nome" ou "Nome do Cliente" não está vazia.');
       }
 
       const inserts: ClientInsert[] = validClients.map(item => ({

@@ -314,13 +314,13 @@ export const parseClientsXLSX = (file: File): Promise<ClientImportData[]> => {
         const json: any[] = XLSX.utils.sheet_to_json(worksheet);
 
         const parsedData: ClientImportData[] = json.map((row: any) => ({
-          name: String(row['Nome do Cliente'] || row['name'] || '').trim(), // Ensure name is string, trim whitespace
+          name: String(row['Nome'] || row['Nome do Cliente'] || row['name'] || '').trim(), // Prioritize 'Nome', then 'Nome do Cliente', then 'name'
           phone: row['Telefone'] ? String(row['Telefone']) : null,
           email: row['Email'] || null,
           address: row['Endereço'] || null,
           cnpj: row['CNPJ'] ? String(row['CNPJ']) : null,
           contact_person: row['Pessoa de Contato'] || null,
-        })); // Removed the filter here
+        })); 
         resolve(parsedData);
       } catch (error) {
         reject(new Error('Erro ao ler arquivo XLSX para clientes. Verifique o formato das colunas.'));
@@ -344,13 +344,13 @@ export const parseClientsCSV = (file: File): Promise<ClientImportData[]> => {
         const json: any[] = XLSX.utils.sheet_to_json(worksheet);
 
         const parsedData: ClientImportData[] = json.map((row: any) => ({
-          name: String(row['Nome do Cliente'] || row['name'] || '').trim(), // Ensure name is string, trim whitespace
+          name: String(row['Nome'] || row['Nome do Cliente'] || row['name'] || '').trim(), // Prioritize 'Nome', then 'Nome do Cliente', then 'name'
           phone: row['Telefone'] ? String(row['Telefone']) : null,
           email: row['Email'] || null,
           address: row['Endereço'] || null,
           cnpj: row['CNPJ'] ? String(row['CNPJ']) : null,
           contact_person: row['Pessoa de Contato'] || null,
-        })); // Removed the filter here
+        })); 
         resolve(parsedData);
       } catch (error) {
         reject(new Error('Erro ao ler arquivo CSV para clientes. Verifique o formato das colunas.'));
@@ -371,13 +371,13 @@ export const parseClientsJSON = (file: File): Promise<ClientImportData[]> => {
         const json: any[] = JSON.parse(jsonString);
 
         const parsedData: ClientImportData[] = json.map((row: any) => ({
-          name: String(row['name'] || row['Nome do Cliente'] || '').trim(), // Ensure name is string, trim whitespace
+          name: String(row['name'] || row['Nome do Cliente'] || row['Nome'] || '').trim(), // Prioritize 'name', then 'Nome do Cliente', then 'Nome'
           phone: row['phone'] ? String(row['phone']) : row['Telefone'] ? String(row['Telefone']) : null,
           email: row['email'] || null,
           address: row['address'] || row['Endereço'] || null,
           cnpj: row['cnpj'] ? String(row['cnpj']) : row['CNPJ'] ? String(row['CNPJ']) : null,
           contact_person: row['contact_person'] || row['Pessoa de Contato'] || null,
-        })); // Removed the filter here
+        })); 
         resolve(parsedData);
       } catch (error) {
         reject(new Error('Erro ao ler arquivo JSON para clientes. Verifique o formato.'));
