@@ -33,8 +33,8 @@ export const GeneralDashboard: React.FC<GeneralDashboardProps> = ({ selectedYear
       const { data, error } = await supabase
         .from('coletas')
         .select(`
-          *, // Select all fields from coletas
-          items(*) // Select all fields from related items
+          *,
+          items(*)
         `)
         .eq('user_id', user.id)
         .gte('previsao_coleta', startDate)
