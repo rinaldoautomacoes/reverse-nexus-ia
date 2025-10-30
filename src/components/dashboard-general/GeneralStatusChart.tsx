@@ -64,9 +64,11 @@ export const GeneralStatusChart: React.FC<GeneralStatusChartProps> = ({ allColet
     let totalAllItems = 0;
 
     data.filter(item => item.type === 'coleta').forEach(item => {
-      if (!item.previsao_coleta) return; // Only check for date, items will be handled as empty array if null
+      if (!item.previsao_coleta) return;
 
-      const itemDate = new Date(item.previsao_coleta); // Use new Date() directly for local timezone interpretation
+      // Explicitly parse year, month, day to avoid timezone issues
+      const [year, month, day] = item.previsao_coleta.split('-').map(Number);
+      const itemDate = new Date(year, month - 1, day); // month is 0-indexed
       const monthKey = format(startOfMonth(itemDate), 'MMM', { locale: ptBR });
       
       const itemsInColeta = item.items || []; // Ensure it's an array
