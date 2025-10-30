@@ -10,7 +10,7 @@ import { GeneralStatusChart } from '@/components/dashboard-general/GeneralStatus
 import { GeneralStatusDonutCharts } from '@/components/dashboard-general/GeneralStatusDonutCharts';
 import { GeneralDeliveriesStatusChart } from '@/components/dashboard-general/GeneralDeliveriesStatusChart'; // Importar o novo componente
 
-type Coleta = Tables<'coletas'>;
+type Coleta = Tables<'coletas'> & { items?: Array<Tables<'items'>> | null; }; // Updated to include items
 type Product = Tables<'products'>;
 
 interface GeneralDashboardProps {
@@ -32,7 +32,10 @@ export const GeneralDashboard: React.FC<GeneralDashboardProps> = ({ selectedYear
 
       const { data, error } = await supabase
         .from('coletas')
-        .select('id, status_coleta, qtd_aparelhos_solicitado, type, previsao_coleta, modelo_aparelho')
+        .select(`
+          *, // Select all fields from coletas
+          items(*) // Select all fields from related items
+        `)
         .eq('user_id', user.id)
         .gte('previsao_coleta', startDate)
         .lt('previsao_coleta', endDate);
@@ -40,7 +43,7 @@ export const GeneralDashboard: React.FC<GeneralDashboardProps> = ({ selectedYear
       if (error) {
         throw new Error(error.message);
       }
-      return data;
+      return data as Coleta[];
     },
     enabled: !!user?.id,
   });
