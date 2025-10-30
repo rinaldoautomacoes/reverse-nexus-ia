@@ -27,6 +27,7 @@ import {
   FileSpreadsheet, // New icon for Excel Extractor
   ClipboardList, // Novo ícone para Agendamento Automático
   FileUp, // Novo ícone para Importar Dados
+  UserSquare, // Novo ícone para Clientes
 } from 'lucide-react';
 import { useAuth } from '@/hooks/use-auth';
 import { supabase } from '@/integrations/supabase/client';
@@ -128,7 +129,7 @@ export const SidebarNav: React.FC<SidebarNavProps> = ({ selectedYear, setSelecte
     },
     {
       label: 'Gerenciar Clientes',
-      icon: UserIcon,
+      icon: UserSquare, // Changed to UserSquare
       path: '/client-management',
       roles: ['admin'],
       group: 'management',
@@ -479,11 +480,6 @@ export const SidebarNav: React.FC<SidebarNavProps> = ({ selectedYear, setSelecte
 
   return isMobile ? (
     <Sheet open={isSheetOpen} onOpenChange={setIsSheetOpen}>
-      <SheetTrigger asChild>
-        <Button variant="ghost" size="icon" className="fixed top-4 left-4 z-50 bg-card/80 backdrop-blur-sm border border-border/50">
-          <Menu className="h-5 w-5" />
-        </Button>
-      </SheetTrigger>
       <SheetContent side="left" className="w-64 bg-sidebar border-sidebar-border p-0">
         {renderNavContent(false)} {/* Always not collapsed in mobile sheet */}
       </SheetContent>

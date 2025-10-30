@@ -3,12 +3,16 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { FileUp, Upload, CheckCircle, XCircle, Loader2, FileText, FileSpreadsheet, Package } from 'lucide-react';
+import { FileUp, Upload, CheckCircle, XCircle, Loader2, FileText, FileSpreadsheet, Package, Users } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/use-auth';
-import { parseXLSX, parseCSV, parsePDF, ColetaImportData, ProductImportData, parseProductsXLSX, parseProductsCSV, parseProductsJSON } from '@/lib/data-parser';
+import { 
+  parseXLSX, parseCSV, parsePDF, ColetaImportData, 
+  ProductImportData, parseProductsXLSX, parseProductsCSV, parseProductsJSON,
+  ClientImportData, parseClientsXLSX, parseClientsCSV, parseClientsJSON // NEW imports
+} from '@/lib/data-parser';
 import type { TablesInsert } from '@/integrations/supabase/types_generated';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
@@ -17,9 +21,10 @@ import { formatItemsForColetaModeloAparelho, getTotalQuantityOfItems } from '@/l
 
 type ColetaInsert = TablesInsert<'coletas'>;
 type ProductInsert = TablesInsert<'products'>;
+type ClientInsert = TablesInsert<'clients'>; // NEW type
 
 interface DataImporterProps {
-  initialTab?: 'collections' | 'products';
+  initialTab?: 'collections' | 'products' | 'clients'; // NEW initialTab option
   onImportSuccess?: () => void;
   onClose: () => void;
 }
@@ -30,9 +35,9 @@ export const DataImporter: React.FC<DataImporterProps> = ({ initialTab = 'collec
   const queryClient = useQueryClient();
 
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
-  const [extractedData, setExtractedData] = useState<ColetaImportData[] | ProductImportData[] | null>(null);
+  const [extractedData, setExtractedData] = useState<ColetaImportData[] | ProductImportData[] | ClientImportData[] | null>(null); // Updated type
   const [isParsing, setIsParsing] = useState(false);
-  const [activeTab, setActiveTab] = useState<'collections' | 'products'>(initialTab);
+  const [activeTab, setActiveTab] = useState<'collections' | 'products' | 'clients'>(initialTab); // Updated state type
 
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -54,7 +59,7 @@ export const DataImporter: React.FC<DataImporterProps> = ({ initialTab = 'collec
     const fileExtension = selectedFile.name.split('.').pop()?.toLowerCase();
 
     try {
-      let data: ColetaImportData[] | ProductImportData[] = [];
+      let data: ColetaImportData[] | ProductImportData[] | ClientImportData[] = []; // Updated type
       if (activeTab === 'collections') {
         if (fileExtension === 'xlsx') {
           data = await parseXLSX(selectedFile);
@@ -71,7 +76,7 @@ export const DataImporter: React.FC<DataImporterProps> = ({ initialTab = 'collec
         } else {
           throw new Error('Formato de arquivo não suportado para coletas/entregas. Use XLSX, CSV ou PDF.');
         }
-      } else {
+      } else if (activeTab === 'products') {
         if (fileExtension === 'xlsx') {
           data = await parseProductsXLSX(selectedFile);
         } else if (fileExtension === 'csv') {
@@ -80,6 +85,16 @@ export const DataImporter: React.FC<DataImporterProps> = ({ initialTab = 'collec
           data = await parseProductsJSON(selectedFile);
         } else {
           throw new Error('Formato de arquivo não suportado para produtos. Use XLSX, CSV ou JSON.');
+        }
+      } else if (activeTab === 'clients') { // NEW: Client parsing logic
+        if (fileExtension === 'xlsx') {
+          data = await parseClientsXLSX(selectedFile);
+        } else if (fileExtension === 'csv') {
+          data = await parseClientsCSV(selectedFile);
+        } else if (fileExtension === 'json') {
+          data = await parseClientsJSON(selectedFile);
+        } else {
+          throw new Error('Formato de arquivo não suportado para clientes. Use XLSX, CSV ou JSON.');
         }
       }
 
@@ -196,6 +211,43 @@ export const DataImporter: React.FC<DataImporterProps> = ({ initialTab = 'collec
     },
   });
 
+  // NEW: Mutation for importing clients
+  const importClientsMutation = useMutation({
+    mutationFn: async (dataToImport: ClientImportData[]) => {
+      if (!user?.id) {
+        throw new Error('Usuário não autenticado. Faça login para importar clientes.');
+      }
+
+      const inserts: ClientInsert[] = dataToImport.map(item => ({
+        user_id: user.id,
+        name: item.name,
+        phone: item.phone,
+        email: item.email,
+        address: item.address,
+        cnpj: item.cnpj,
+        contact_person: item.contact_person,
+      }));
+
+      const { error } = await supabase
+        .from('clients')
+        .upsert(inserts, { onConflict: 'name,user_id', ignoreDuplicates: true }); // Upsert based on name and user_id
+      
+      if (error) throw new Error(error.message);
+      return inserts.length;
+    },
+    onSuccess: (count) => {
+      queryClient.invalidateQueries({ queryKey: ['clients', user?.id] });
+      toast({ title: 'Importação de Clientes concluída!', description: `${count} clientes foram salvos com sucesso no banco de dados, duplicatas foram ignoradas.` });
+      setSelectedFile(null);
+      setExtractedData(null);
+      onImportSuccess?.();
+      onClose();
+    },
+    onError: (error) => {
+      toast({ title: 'Erro na importação de Clientes', description: error.message, variant: 'destructive' });
+    },
+  });
+
   const handleConfirmImport = () => {
     if (!extractedData || extractedData.length === 0) {
       toast({ title: 'Nenhum dado para importar', description: 'Por favor, extraia dados antes de confirmar a importação.', variant: 'destructive' });
@@ -204,8 +256,10 @@ export const DataImporter: React.FC<DataImporterProps> = ({ initialTab = 'collec
 
     if (activeTab === 'collections') {
       importCollectionsMutation.mutate(extractedData as ColetaImportData[]);
-    } else {
+    } else if (activeTab === 'products') {
       importProductsMutation.mutate(extractedData as ProductImportData[]);
+    } else if (activeTab === 'clients') { // NEW: Call client mutation
+      importClientsMutation.mutate(extractedData as ClientImportData[]);
     }
   };
 
@@ -220,7 +274,7 @@ export const DataImporter: React.FC<DataImporterProps> = ({ initialTab = 'collec
     }
   };
 
-  const isImportPending = importCollectionsMutation.isPending || importProductsMutation.isPending;
+  const isImportPending = importCollectionsMutation.isPending || importProductsMutation.isPending || importClientsMutation.isPending; // Updated pending state
 
   return (
     <div className="space-y-6">
@@ -233,13 +287,14 @@ export const DataImporter: React.FC<DataImporterProps> = ({ initialTab = 'collec
         </CardHeader>
         <CardContent className="p-6 space-y-4">
           <Tabs value={activeTab} onValueChange={(value) => {
-            setActiveTab(value as 'collections' | 'products');
+            setActiveTab(value as 'collections' | 'products' | 'clients'); // Updated state type
             setSelectedFile(null);
             setExtractedData(null);
           }} className="w-full">
-            <TabsList className="grid w-full grid-cols-2">
+            <TabsList className="grid w-full grid-cols-3"> {/* Updated grid-cols to 3 */}
               <TabsTrigger value="collections">Coletas/Entregas</TabsTrigger>
               <TabsTrigger value="products">Produtos</TabsTrigger>
+              <TabsTrigger value="clients">Clientes</TabsTrigger> {/* NEW Tab Trigger */}
             </TabsList>
             <TabsContent value="collections" className="mt-4">
               <p className="text-sm text-muted-foreground mb-4">
@@ -251,13 +306,22 @@ export const DataImporter: React.FC<DataImporterProps> = ({ initialTab = 'collec
                 Envie arquivos (XLSX, CSV, JSON) para extrair e importar dados de produtos automaticamente. Duplicatas serão ignoradas.
               </p>
             </TabsContent>
+            <TabsContent value="clients" className="mt-4"> {/* NEW Tab Content */}
+              <p className="text-sm text-muted-foreground mb-4">
+                Envie arquivos (XLSX, CSV, JSON) para extrair e importar dados de clientes automaticamente. Duplicatas serão ignoradas.
+              </p>
+            </TabsContent>
           </Tabs>
 
           <div className="flex items-center gap-4">
             <Input
               id="file-upload"
               type="file"
-              accept={activeTab === 'collections' ? ".xlsx,.csv,.pdf" : ".xlsx,.csv,.json"}
+              accept={
+                activeTab === 'collections' ? ".xlsx,.csv,.pdf" :
+                activeTab === 'products' ? ".xlsx,.csv,.json" :
+                ".xlsx,.csv,.json" // NEW: Accept for clients
+              }
               onChange={handleFileChange}
               className="flex-1"
               disabled={isParsing || isImportPending}
@@ -308,12 +372,21 @@ export const DataImporter: React.FC<DataImporterProps> = ({ initialTab = 'collec
                         <TableHead>Qtd</TableHead>
                         <TableHead>Status</TableHead>
                       </>
-                    ) : (
+                    ) : activeTab === 'products' ? (
                       <>
                         <TableHead>Código</TableHead>
                         <TableHead>Descrição</TableHead>
                         <TableHead>Modelo</TableHead>
                         <TableHead>Nº Série</TableHead>
+                      </>
+                    ) : ( // NEW: Client headers
+                      <>
+                        <TableHead>Nome</TableHead>
+                        <TableHead>Telefone</TableHead>
+                        <TableHead>Email</TableHead>
+                        <TableHead>Endereço</TableHead>
+                        <TableHead>CNPJ</TableHead>
+                        <TableHead>Contato</TableHead>
                       </>
                     )}
                   </TableRow>
@@ -332,13 +405,24 @@ export const DataImporter: React.FC<DataImporterProps> = ({ initialTab = 'collec
                         <TableCell>{item.status_coleta}</TableCell>
                       </TableRow>
                     ))
-                  ) : (
+                  ) : activeTab === 'products' ? (
                     (extractedData as ProductImportData[]).map((item: ProductImportData, index) => (
                       <TableRow key={index}>
                         <TableCell>{item.code}</TableCell>
                         <TableCell>{item.description}</TableCell>
                         <TableCell>{item.model}</TableCell>
                         <TableCell>{item.serial_number}</TableCell>
+                      </TableRow>
+                    ))
+                  ) : ( // NEW: Client rows
+                    (extractedData as ClientImportData[]).map((item: ClientImportData, index) => (
+                      <TableRow key={index}>
+                        <TableCell>{item.name}</TableCell>
+                        <TableCell>{item.phone}</TableCell>
+                        <TableCell>{item.email}</TableCell>
+                        <TableCell>{item.address}</TableCell>
+                        <TableCell>{item.cnpj}</TableCell>
+                        <TableCell>{item.contact_person}</TableCell>
                       </TableRow>
                     ))
                   )}

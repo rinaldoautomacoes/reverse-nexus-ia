@@ -290,3 +290,100 @@ export const parseProductsJSON = (file: File): Promise<ProductImportData[]> => {
     reader.readAsText(file);
   });
 };
+
+// NEW: Define the expected structure for client data after extraction
+export interface ClientImportData {
+  name: string;
+  phone?: string | null;
+  email?: string | null;
+  address?: string | null;
+  cnpj?: string | null;
+  contact_person?: string | null;
+}
+
+// NEW: Function to read client data from XLSX files
+export const parseClientsXLSX = (file: File): Promise<ClientImportData[]> => {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      try {
+        const data = new Uint8Array(e.target?.result as ArrayBuffer);
+        const workbook = XLSX.read(data, { type: 'array' });
+        const sheetName = workbook.SheetNames[0];
+        const worksheet = workbook.Sheets[sheetName];
+        const json: any[] = XLSX.utils.sheet_to_json(worksheet);
+
+        const parsedData: ClientImportData[] = json.map((row: any) => ({
+          name: row['Nome do Cliente'] || row['name'] || 'Cliente Desconhecido',
+          phone: row['Telefone'] ? String(row['Telefone']) : null,
+          email: row['Email'] || null,
+          address: row['Endereço'] || null,
+          cnpj: row['CNPJ'] ? String(row['CNPJ']) : null,
+          contact_person: row['Pessoa de Contato'] || null,
+        })).filter(c => c.name !== 'Cliente Desconhecido'); // Filter out rows without a valid name
+        resolve(parsedData);
+      } catch (error) {
+        reject(new Error('Erro ao ler arquivo XLSX para clientes. Verifique o formato das colunas.'));
+      }
+    };
+    reader.onerror = (error) => reject(new Error('Erro ao ler arquivo: ' + error));
+    reader.readAsArrayBuffer(file);
+  });
+};
+
+// NEW: Function to read client data from CSV files
+export const parseClientsCSV = (file: File): Promise<ClientImportData[]> => {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      try {
+        const csv = e.target?.result as string;
+        const workbook = XLSX.read(csv, { type: 'string' });
+        const sheetName = workbook.SheetNames[0];
+        const worksheet = workbook.Sheets[sheetName];
+        const json: any[] = XLSX.utils.sheet_to_json(worksheet);
+
+        const parsedData: ClientImportData[] = json.map((row: any) => ({
+          name: row['Nome do Cliente'] || row['name'] || 'Cliente Desconhecido',
+          phone: row['Telefone'] ? String(row['Telefone']) : null,
+          email: row['Email'] || null,
+          address: row['Endereço'] || null,
+          cnpj: row['CNPJ'] ? String(row['CNPJ']) : null,
+          contact_person: row['Pessoa de Contato'] || null,
+        })).filter(c => c.name !== 'Cliente Desconhecido');
+        resolve(parsedData);
+      } catch (error) {
+        reject(new Error('Erro ao ler arquivo CSV para clientes. Verifique o formato das colunas.'));
+      }
+    };
+    reader.onerror = (error) => reject(new Error('Erro ao ler arquivo: ' + error));
+    reader.readAsText(file);
+  });
+};
+
+// NEW: Function to read client data from JSON files
+export const parseClientsJSON = (file: File): Promise<ClientImportData[]> => {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      try {
+        const jsonString = e.target?.result as string;
+        const json: any[] = JSON.parse(jsonString);
+
+        const parsedData: ClientImportData[] = json.map((row: any) => ({
+          name: row['name'] || row['Nome do Cliente'] || 'Cliente Desconhecido',
+          phone: row['phone'] ? String(row['phone']) : row['Telefone'] ? String(row['Telefone']) : null,
+          email: row['email'] || null,
+          address: row['address'] || row['Endereço'] || null,
+          cnpj: row['cnpj'] ? String(row['cnpj']) : row['CNPJ'] ? String(row['CNPJ']) : null,
+          contact_person: row['contact_person'] || row['Pessoa de Contato'] || null,
+        })).filter(c => c.name !== 'Cliente Desconhecido');
+        resolve(parsedData);
+      } catch (error) {
+        reject(new Error('Erro ao ler arquivo JSON para clientes. Verifique o formato.'));
+      }
+    };
+    reader.onerror = (error) => reject(new Error('Erro ao ler arquivo: ' + error));
+    reader.readAsText(file);
+  });
+};
