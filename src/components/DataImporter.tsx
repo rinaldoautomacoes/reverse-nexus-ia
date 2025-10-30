@@ -98,12 +98,21 @@ export const DataImporter: React.FC<DataImporterProps> = ({ initialTab = 'collec
         }
       }
 
-      if (data.length === 0) {
+      // Filter out any rows that are completely empty or don't have a required field (like 'name' for clients)
+      const filteredData = data.filter(item => {
+        if (activeTab === 'clients') {
+          return (item as ClientImportData).name && (item as ClientImportData).name.trim() !== '';
+        }
+        // Add similar checks for collections and products if needed
+        return true; // Default to true if no specific validation for other tabs
+      });
+
+      if (filteredData.length === 0) {
         throw new Error('Nenhum dado válido foi extraído do arquivo.');
       }
 
-      setExtractedData(data);
-      toast({ title: 'Dados extraídos com sucesso!', description: `Foram encontrados ${data.length} registros para importação.` });
+      setExtractedData(filteredData);
+      toast({ title: 'Dados extraídos com sucesso!', description: `Foram encontrados ${filteredData.length} registros para importação.` });
 
     } catch (error: any) {
       console.error('Erro ao processar arquivo:', error);
@@ -218,7 +227,13 @@ export const DataImporter: React.FC<DataImporterProps> = ({ initialTab = 'collec
         throw new Error('Usuário não autenticado. Faça login para importar clientes.');
       }
 
-      const inserts: ClientInsert[] = dataToImport.map(item => ({
+      // Validate that each client has a non-empty name
+      const validClients = dataToImport.filter(client => client.name && client.name.trim() !== '');
+      if (validClients.length === 0) {
+        throw new Error('Nenhum cliente válido encontrado para importação. Certifique-se de que a coluna "Nome do Cliente" não está vazia.');
+      }
+
+      const inserts: ClientInsert[] = validClients.map(item => ({
         user_id: user.id,
         name: item.name,
         phone: item.phone,
