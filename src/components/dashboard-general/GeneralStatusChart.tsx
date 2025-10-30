@@ -66,10 +66,10 @@ export const GeneralStatusChart: React.FC<GeneralStatusChartProps> = ({ allColet
     data.filter(item => item.type === 'coleta').forEach(item => {
       if (!item.previsao_coleta) return;
 
-      // Explicitly parse year, month, day to avoid timezone issues
-      const [year, month, day] = item.previsao_coleta.split('-').map(Number);
-      const itemDate = new Date(year, month - 1, day); // month is 0-indexed
-      const monthKey = format(startOfMonth(itemDate), 'MMM', { locale: ptBR });
+      const itemDate = parseISO(item.previsao_coleta);
+      const timezoneOffsetMinutes = itemDate.getTimezoneOffset();
+      const adjustedDateForLocalMonth = new Date(itemDate.getTime() + timezoneOffsetMinutes * 60 * 1000); // Adjust to local timezone
+      const monthKey = format(startOfMonth(adjustedDateForLocalMonth), 'MMM', { locale: ptBR });
       
       const itemsInColeta = item.items || []; // Ensure it's an array
       const totalItemsInColeta = getTotalQuantityOfItems(itemsInColeta);
