@@ -1,7 +1,7 @@
 import React from 'react';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
-import type { ParsedCollectionData } from '@/lib/document-parser';
+import type { ParsedCollectionData } from '@/lib/types'; // Updated import path
 
 interface ObservationSectionProps {
   parsedData: ParsedCollectionData;

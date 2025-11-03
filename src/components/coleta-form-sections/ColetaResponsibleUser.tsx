@@ -26,6 +26,7 @@ export const ColetaResponsibleUser: React.FC<ColetaResponsibleUserProps> = ({
         value={formData.responsible_user_id || null}
         onValueChange={(id) => handleInputChange("responsible_user_id", id)}
         onUserSelect={handleResponsibleUserSelect}
+        disabled={isPending}
       />
     </div>
   );
