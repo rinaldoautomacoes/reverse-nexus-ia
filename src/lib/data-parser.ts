@@ -5,17 +5,6 @@ import { parseDateSafely } from './date-utils';
 import type { ColetaImportData, ProductImportData, ClientImportData } from './types';
 import { cleanPhoneNumber } from './document-parser'; // Import cleanPhoneNumber
 
-// Helper function to get phone number from a row, checking multiple common keys
-const getPhoneNumberFromRow = (row: any): string | null => {
-  const possibleKeys = ['Telefone', 'telefone', 'Phone', 'phone', 'Contato Telefone', 'contato telefone', 'Celular', 'celular'];
-  for (const key of possibleKeys) {
-    if (row[key] !== undefined && row[key] !== null) {
-      return String(row[key]);
-    }
-  }
-  return null;
-};
-
 // Função para ler dados de arquivos XLSX
 export const parseXLSX = (file: File): Promise<ColetaImportData[]> => {
   return new Promise((resolve, reject) => {
@@ -33,7 +22,7 @@ export const parseXLSX = (file: File): Promise<ColetaImportData[]> => {
           client_control: row['Controle do Cliente'] || null,
           parceiro: row['Cliente'] || 'Cliente Desconhecido',
           contato: row['Contato'] || null,
-          telefone: cleanPhoneNumber(getPhoneNumberFromRow(row)), // Aplicado getPhoneNumberFromRow e cleanPhoneNumber
+          telefone: cleanPhoneNumber(row['Telefone']), // Aplicado cleanPhoneNumber
           email: row['Email'] || null,
           cnpj: row['CNPJ'] ? String(row['CNPJ']) : null,
           endereco_origem: row['Endereço de Origem'] || row['Endereço'] || 'Endereço Desconhecido',
@@ -75,7 +64,7 @@ export const parseCSV = (file: File): Promise<ColetaImportData[]> => {
           client_control: row['Controle do Cliente'] || null,
           parceiro: row['Cliente'] || 'Cliente Desconhecido',
           contato: row['Contato'] || null,
-          telefone: cleanPhoneNumber(getPhoneNumberFromRow(row)), // Aplicado getPhoneNumberFromRow e cleanPhoneNumber
+          telefone: cleanPhoneNumber(row['Telefone']), // Aplicado cleanPhoneNumber
           email: row['Email'] || null,
           cnpj: row['CNPJ'] ? String(row['CNPJ']) : null,
           endereco_origem: row['Endereço de Origem'] || row['Endereço'] || 'Endereço Desconhecido',
@@ -242,7 +231,7 @@ export const parseClientsXLSX = (file: File): Promise<ClientImportData[]> => {
 
         const parsedData: ClientImportData[] = json.map((row: any) => ({
           name: String(row['Nome'] || row['Nome do Cliente'] || row['name'] || '').trim(),
-          phone: cleanPhoneNumber(getPhoneNumberFromRow(row)), // Aplicado getPhoneNumberFromRow e cleanPhoneNumber
+          phone: cleanPhoneNumber(row['Telefone']), // Aplicado cleanPhoneNumber
           email: row['Email'] || null,
           address: row['Endereço'] || null,
           cnpj: row['CNPJ'] ? String(row['CNPJ']) : null,
@@ -272,7 +261,7 @@ export const parseClientsCSV = (file: File): Promise<ClientImportData[]> => {
 
         const parsedData: ClientImportData[] = json.map((row: any) => ({
           name: String(row['Nome'] || row['Nome do Cliente'] || row['name'] || '').trim(),
-          phone: cleanPhoneNumber(getPhoneNumberFromRow(row)), // Aplicado getPhoneNumberFromRow e cleanPhoneNumber
+          phone: cleanPhoneNumber(row['Telefone']), // Aplicado cleanPhoneNumber
           email: row['Email'] || null,
           address: row['Endereço'] || null,
           cnpj: row['CNPJ'] ? String(row['CNPJ']) : null,
@@ -299,7 +288,7 @@ export const parseClientsJSON = (file: File): Promise<ClientImportData[]> => {
 
         const parsedData: ClientImportData[] = json.map((row: any) => ({
           name: String(row['name'] || row['Nome do Cliente'] || row['Nome'] || '').trim(),
-          phone: cleanPhoneNumber(getPhoneNumberFromRow(row)), // Aplicado getPhoneNumberFromRow e cleanPhoneNumber
+          phone: cleanPhoneNumber(row['phone'] || row['Telefone']), // Aplicado cleanPhoneNumber
           email: row['email'] || null,
           address: row['address'] || row['Endereço'] || null,
           cnpj: row['cnpj'] ? String(row['cnpj']) : row['CNPJ'] ? String(row['CNPJ']) : null,

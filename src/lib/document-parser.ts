@@ -82,16 +82,12 @@ export const parseReturnDocumentText = (text: string): ParsedCollectionData => {
         parsedData.cep_origem = cepMatch[1].replace(/\D/g, '');
       }
     } else if (lowerLine.includes('telefones:')) {
-      const phoneNumbers: string[] = [];
-      // Regex mais abrangente para capturar números de telefone com vários separadores, mas sem letras
-      // Captura: +DD (DD) DDDD-DDDD, +DD.DD.DDDD.DDDD, DD DD DDDD DDDD, etc.
-      const phoneRegex = /(\+?\d{1,3}[.\s\-\(]*\d{2}[.\s\-\)]*\d{4,5}[.\s\-]*\d{4})/gi;
-      let match;
-      while ((match = phoneRegex.exec(line)) !== null) {
-        const cleaned = cleanPhoneNumber(match[1]);
-        if (cleaned) phoneNumbers.push(cleaned);
-      }
-      parsedData.telefone = phoneNumbers.filter(Boolean).join(' / ');
+      const phoneMatch = line.match(/phone:\s*(\+?\d[\d\s\-\(\)]+)/i);
+      const mobileMatch = line.match(/mobile:\s*(\+?\d[\d\s\-\(\)]+)/i);
+      let phones = [];
+      if (phoneMatch) phones.push(cleanPhoneNumber(phoneMatch[1].trim()) || '');
+      if (mobileMatch) phones.push(cleanPhoneNumber(mobileMatch[1].trim()) || '');
+      parsedData.telefone = phones.filter(Boolean).join(' / '); // Filter out empty strings
     } else if (lowerLine.startsWith('email:')) {
       parsedData.email = line.replace(/email:/i, '').trim();
     } else if (lowerLine.startsWith('data do recolhimento:')) {
@@ -122,8 +118,7 @@ export const parseReturnDocumentText = (text: string): ParsedCollectionData => {
       lowerLine.startsWith('número da coleta:') || 
       lowerLine.startsWith('unique number:')
     ) {
-      const value = line.split(':').slice(1).join(':').trim(); // Pega tudo depois do primeiro ':'
-      if (value) parsedData.client_control = value;
+      parsedData.client_control = line.split(':').slice(1).join(':').trim();
     }
   }
 
