@@ -35,6 +35,44 @@ export interface ParsedCollectionData {
   modelo_aparelho_description?: string | null; // Descrição do produto principal (mapeia para coletas.modelo_aparelho_description)
 }
 
+// Helper function to parse date strings safely (copied from data-parser.ts for consistency)
+const parseDateSafely = (dateString: string | number | Date | undefined | null): string => {
+  if (!dateString) return format(new Date(), 'yyyy-MM-dd');
+
+  if (dateString instanceof Date) {
+    return format(dateString, 'yyyy-MM-dd');
+  }
+
+  if (typeof dateString === 'number') {
+    const excelEpoch = new Date(Date.UTC(1899, 11, 30));
+    const date = new Date(excelEpoch.getTime() + dateString * 24 * 60 * 60 * 1000);
+    if (isValid(date)) {
+      return format(date, 'yyyy-MM-dd');
+    }
+  }
+
+  const formats = [
+    'dd/MM/yyyy', 'MM/dd/yyyy', 'yyyy-MM-dd', 'dd-MM-yyyy',
+    'dd/MM/yy', 'MM/dd/yy', 'yy-MM-dd', 'dd-MM-yy',
+    'yyyy/MM/dd', 'yyyy.MM.dd',
+  ];
+
+  for (const fmt of formats) {
+    const parsed = parse(String(dateString), fmt, new Date());
+    if (isValid(parsed)) {
+      return format(parsed, 'yyyy-MM-dd');
+    }
+  }
+
+  const nativeParsed = new Date(String(dateString));
+  if (isValid(nativeParsed)) {
+    return format(nativeParsed, 'yyyy-MM-dd');
+  }
+
+  return format(new Date(), 'yyyy-MM-dd');
+};
+
+
 export const parseReturnDocumentText = (text: string): ParsedCollectionData => {
   const lines = text.split('\n').map(line => line.trim()).filter(line => line.length > 0);
   const parsedData: Partial<ParsedCollectionData> = {
@@ -108,7 +146,7 @@ export const parseReturnDocumentText = (text: string): ParsedCollectionData => {
     } else if (lowerLine.startsWith('endereço:')) {
       const addressText = line.replace(/endereço:/i, '').trim();
       parsedData.endereco_origem = addressText;
-      const cepMatch = addressText.match(/cep:(\d{2}\.\d{3}-\d{3}|\d{8})/i);
+      const cepMatch = addressText.match(/(\d{5}-?\d{3})/);
       if (cepMatch) {
         parsedData.cep_origem = cepMatch[1].replace(/\D/g, '');
       }
@@ -123,17 +161,11 @@ export const parseReturnDocumentText = (text: string): ParsedCollectionData => {
       parsedData.email = line.replace(/email:/i, '').trim();
     } else if (lowerLine.startsWith('data do recolhimento:')) {
       const dateString = line.replace(/data do recolhimento:/i, '').trim();
-      const parsedDate = parse(dateString, 'dd/MM/yy', new Date());
-      if (isValid(parsedDate)) {
-        parsedData.previsao_coleta = format(parsedDate, 'yyyy-MM-dd');
-      }
+      parsedData.previsao_coleta = parseDateSafely(dateString); // Usando parseDateSafely
     } else if (lowerLine.startsWith('data:')) {
       if (!parsedData.previsao_coleta) {
         const dateString = line.replace(/data:/i, '').trim();
-        const parsedDate = parse(dateString, 'dd/MM/yy', new Date());
-        if (isValid(parsedDate)) {
-          parsedData.previsao_coleta = format(parsedDate, 'yyyy-MM-dd');
-        }
+        parsedData.previsao_coleta = parseDateSafely(dateString); // Usando parseDateSafely
       }
     } else if (lowerLine.startsWith('tecnico responsável:')) {
       parsedData.responsavel = line.replace(/tecnico responsável:/i, '').trim();
@@ -327,7 +359,7 @@ export const parseSelectedSpreadsheetCells = (
     status_coleta: 'pendente',
     type: 'coleta',
     items: [],
-    previsao_coleta: format(new Date(), 'yyyy-MM-dd'), // Default date
+    previsao_coleta: parseDateSafely(new Date()), // Default date using parseDateSafely
   };
 
   const selectedCells: { rowIndex: number; colIndex: number; value: string | number | null }[] = [];
@@ -376,20 +408,24 @@ export const parseSelectedSpreadsheetCells = (
       const value = getValue(cell);
       if (value) parsedData.endereco_origem = value;
       const cepMatch = (parsedData.endereco_origem || value).match(/(\d{5}-?\d{3})/);
-      if (cepMatch) parsedData.cep_origem = cepMatch[1].replace(/-/g, '');
+      if (cepMatch) {
+        parsedData.cep_origem = cepMatch[1].replace(/\D/g, '');
+      }
     } else if (lowerCellValue.includes('cep de origem') || lowerCellValue.includes('cep')) {
       const value = getValue(cell);
-      if (value) parsedData.cep_origem = value.replace(/-/g, '');
+      if (value) parsedData.cep_origem = value.replace(/\D/g, '');
     }
     // Destination Address & CEP (assuming similar patterns if present)
     if (lowerCellValue.includes('endereço de destino')) {
       const value = getValue(cell);
       if (value) parsedData.endereco_destino = value;
       const cepMatch = (parsedData.endereco_destino || value).match(/(\d{5}-?\d{3})/);
-      if (cepMatch) parsedData.cep_destino = cepMatch[1].replace(/-/g, '');
+      if (cepMatch) {
+        parsedData.cep_destino = cepMatch[1].replace(/\D/g, '');
+      }
     } else if (lowerCellValue.includes('cep de destino')) {
       const value = getValue(cell);
-      if (value) parsedData.cep_destino = value.replace(/-/g, '');
+      if (value) parsedData.cep_destino = value.replace(/\D/g, '');
     }
 
     // Contact Person
@@ -420,15 +456,7 @@ export const parseSelectedSpreadsheetCells = (
     if (lowerCellValue.includes('data') || lowerCellValue.includes('previsão') || lowerCellValue.includes('data da coleta') || lowerCellValue.includes('data da entrega')) {
       let dateString = getValue(cell);
       if (dateString) {
-        const parsedDate = parse(dateString, 'dd/MM/yyyy', new Date()); // Try common format
-        if (isValid(parsedDate)) {
-          parsedData.previsao_coleta = format(parsedDate, 'yyyy-MM-dd');
-        } else {
-          const parsedDateAlt = parse(dateString, 'yyyy-MM-dd', new Date()); // Try another common format
-          if (isValid(parsedDateAlt)) {
-            parsedData.previsao_coleta = format(parsedDateAlt, 'yyyy-MM-dd');
-          }
-        }
+        parsedData.previsao_coleta = parseDateSafely(dateString); // Usando parseDateSafely
       }
     }
 

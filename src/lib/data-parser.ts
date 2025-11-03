@@ -1,5 +1,5 @@
 import * as XLSX from 'xlsx';
-import { format } from 'date-fns';
+import { format, parse, isValid } from 'date-fns';
 import { generateUniqueNumber } from './utils';
 
 // Define a estrutura esperada para os dados de coleta após a extração
@@ -28,6 +28,49 @@ export interface ColetaImportData {
   type: 'coleta' | 'entrega';
 }
 
+// Helper function to parse date strings safely
+const parseDateSafely = (dateString: string | number | Date | undefined | null): string => {
+  if (!dateString) return format(new Date(), 'yyyy-MM-dd');
+
+  // If it's already a Date object, format it
+  if (dateString instanceof Date) {
+    return format(dateString, 'yyyy-MM-dd');
+  }
+
+  // If it's a number (Excel date serial), convert it
+  if (typeof dateString === 'number') {
+    // Excel dates are days since 1900-01-01 (or 1904-01-01 for Mac)
+    // Assuming 1900-01-01 base, and adjusting for leap year bug in Excel
+    const excelEpoch = new Date(Date.UTC(1899, 11, 30)); // Dec 30, 1899
+    const date = new Date(excelEpoch.getTime() + dateString * 24 * 60 * 60 * 1000);
+    if (isValid(date)) {
+      return format(date, 'yyyy-MM-dd');
+    }
+  }
+
+  // Try common string formats
+  const formats = [
+    'dd/MM/yyyy', 'MM/dd/yyyy', 'yyyy-MM-dd', 'dd-MM-yyyy',
+    'dd/MM/yy', 'MM/dd/yy', 'yy-MM-dd', 'dd-MM-yy',
+    'yyyy/MM/dd', 'yyyy.MM.dd',
+  ];
+
+  for (const fmt of formats) {
+    const parsed = parse(String(dateString), fmt, new Date());
+    if (isValid(parsed)) {
+      return format(parsed, 'yyyy-MM-dd');
+    }
+  }
+
+  // Fallback to native Date parsing if all else fails, or current date
+  const nativeParsed = new Date(String(dateString));
+  if (isValid(nativeParsed)) {
+    return format(nativeParsed, 'yyyy-MM-dd');
+  }
+
+  return format(new Date(), 'yyyy-MM-dd'); // Default to current date if parsing fails
+};
+
 // Função para ler dados de arquivos XLSX
 export const parseXLSX = (file: File): Promise<ColetaImportData[]> => {
   return new Promise((resolve, reject) => {
@@ -52,13 +95,13 @@ export const parseXLSX = (file: File): Promise<ColetaImportData[]> => {
           cep_origem: row['CEP de Origem'] ? String(row['CEP de Origem']) : null,
           endereco_destino: row['Endereço de Destino'] || null,
           cep_destino: row['CEP de Destino'] ? String(row['CEP de Destino']) : null,
-          previsao_coleta: row['Data da Coleta'] ? format(new Date(row['Data da Coleta']), 'yyyy-MM-dd') : format(new Date(), 'yyyy-MM-dd'),
+          previsao_coleta: parseDateSafely(row['Data da Coleta']), // Usando parseDateSafely
           qtd_aparelhos_solicitado: parseInt(row['Quantidade']) || 1,
           modelo_aparelho: row['Produto'] || 'Produto Desconhecido',
           freight_value: parseFloat(row['Valor do Frete']) || null,
-          observacao: row['Observações'] || null,
           status_coleta: (row['Status']?.toLowerCase() === 'concluida' ? 'concluida' : row['Status']?.toLowerCase() === 'agendada' ? 'agendada' : 'pendente'),
           type: (row['Tipo']?.toLowerCase() === 'entrega' ? 'entrega' : 'coleta'),
+          observacao: row['Observações'] || null,
         }));
         resolve(parsedData);
       } catch (error) {
@@ -94,13 +137,13 @@ export const parseCSV = (file: File): Promise<ColetaImportData[]> => {
           cep_origem: row['CEP de Origem'] ? String(row['CEP de Origem']) : null,
           endereco_destino: row['Endereço de Destino'] || null,
           cep_destino: row['CEP de Destino'] ? String(row['CEP de Destino']) : null,
-          previsao_coleta: row['Data da Coleta'] ? format(new Date(row['Data da Coleta']), 'yyyy-MM-dd') : format(new Date(), 'yyyy-MM-dd'),
+          previsao_coleta: parseDateSafely(row['Data da Coleta']), // Usando parseDateSafely
           qtd_aparelhos_solicitado: parseInt(row['Quantidade']) || 1,
           modelo_aparelho: row['Produto'] || 'Produto Desconhecido',
           freight_value: parseFloat(row['Valor do Frete']) || null,
-          observacao: row['Observações'] || null,
           status_coleta: (row['Status']?.toLowerCase() === 'concluida' ? 'concluida' : row['Status']?.toLowerCase() === 'agendada' ? 'agendada' : 'pendente'),
           type: (row['Tipo']?.toLowerCase() === 'entrega' ? 'entrega' : 'coleta'),
+          observacao: row['Observações'] || null,
         }));
         resolve(parsedData);
       } catch (error) {
@@ -169,7 +212,7 @@ export const parsePDF = (file: File): Promise<ColetaImportData[]> => {
           cnpj: '00.000.000/0001-00',
           endereco_origem: 'Rua da Amostra, 100, Bairro Teste, Cidade Fictícia - SP',
           cep_origem: '01000-000',
-          previsao_coleta: format(new Date(), 'yyyy-MM-dd'),
+          previsao_coleta: parseDateSafely(new Date()), // Usando parseDateSafely
           qtd_aparelhos_solicitado: 3,
           modelo_aparelho: 'Equipamento PDF',
           freight_value: 75.00,
@@ -187,7 +230,7 @@ export const parsePDF = (file: File): Promise<ColetaImportData[]> => {
           cnpj: '00.000.000/0002-00',
           endereco_origem: 'Av. Simulação, 50, Centro, Rio de Janeiro - RJ',
           cep_origem: '20000-000',
-          previsao_coleta: format(new Date(), 'yyyy-MM-dd'),
+          previsao_coleta: parseDateSafely(new Date()), // Usando parseDateSafely
           qtd_aparelhos_solicitado: 1,
           modelo_aparelho: 'Componente PDF',
           freight_value: 25.00,
