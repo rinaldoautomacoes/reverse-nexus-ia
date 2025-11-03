@@ -90,13 +90,18 @@ export const parseReturnDocumentText = (text: string): ParsedCollectionData => {
       if (cepMatch) {
         parsedData.cep_origem = cepMatch[1].replace(/\D/g, '');
       }
-    } else if (lowerLine.includes('telefones:')) {
-      const phoneMatch = line.match(/phone:\s*(\+?\d[\d\s\-\(\)]+)/i);
-      const mobileMatch = line.match(/mobile:\s*(\+?\d[\d\s\-\(\)]+)/i);
-      let phones = [];
-      if (phoneMatch) phones.push(cleanPhoneNumber(phoneMatch[1].trim()) || '');
-      if (mobileMatch) phones.push(cleanPhoneNumber(mobileMatch[1].trim()) || '');
-      parsedData.telefone = phones.filter(Boolean).join(' / '); // Filter out empty strings
+    } else if (
+      lowerLine.includes('telefone') || 
+      lowerLine.includes('phone') || 
+      lowerLine.includes('mobile')
+    ) {
+      const phoneValue = line.split(':').slice(1).join(':').trim() || line.trim();
+      const extractedPhone = phoneValue.match(/(\+?\d[\d\s\-\(\)]+)/);
+      if (extractedPhone && extractedPhone[1]) {
+        parsedData.telefone = cleanPhoneNumber(extractedPhone[1].trim());
+      } else {
+        parsedData.telefone = cleanPhoneNumber(phoneValue); // Fallback to cleaning the whole value
+      }
     } else if (lowerLine.startsWith('email:')) {
       parsedData.email = line.replace(/email:/i, '').trim();
     } else if (lowerLine.startsWith('data do recolhimento:')) {
@@ -372,7 +377,11 @@ export const parseSelectedSpreadsheetCells = (
       if (value) parsedData.contato = value;
     }
 
-    if (lowerCellValue.includes('telefone') || lowerCellValue.includes('phone')) {
+    if (
+      lowerCellValue.includes('telefone') || 
+      lowerCellValue.includes('phone') || 
+      lowerCellValue.includes('mobile')
+    ) {
       const value = getValue(cell);
       if (value) parsedData.telefone = cleanPhoneNumber(value);
     }
