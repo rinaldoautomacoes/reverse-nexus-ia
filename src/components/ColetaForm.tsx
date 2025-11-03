@@ -232,8 +232,8 @@ export const ColetaForm: React.FC<ColetaFormProps> = ({ initialData, onSave, onC
             <Input
               id="unique_number"
               value={formData.unique_number || ''}
-              readOnly
-              className="pl-10 bg-muted/50"
+              onChange={(e) => handleInputChange("unique_number", e.target.value)}
+              className="pl-10"
               disabled={isPending}
             />
           </div>
