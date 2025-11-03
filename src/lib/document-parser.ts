@@ -77,7 +77,10 @@ export const parseReturnDocumentText = (text: string): ParsedCollectionData => {
         parsedData.partner_code = partnerCodeMatch[1].trim();
       }
     } else if (lowerLine.startsWith('contrato sankhya:')) {
-      parsedData.nf_glbl = line.replace(/contrato sankhya:/i, '').trim(); // Mapeado para nf_glbl
+      const nfGlblMatch = line.match(/contrato sankhya:\s*(\d+)/i); // Regex para extrair apenas números
+      if (nfGlblMatch && nfGlblMatch[1]) {
+        parsedData.nf_glbl = nfGlblMatch[1].trim();
+      }
     } else if (lowerLine.startsWith('nr. contrato:')) {
       parsedData.contrato = line.replace(/nr\. contrato:/i, '').trim(); // Mapeado para contrato
     } else if (lowerLine.startsWith('endereço:')) {
@@ -419,8 +422,20 @@ export const parseSelectedSpreadsheetCells = (
       if (value) parsedData.contrato = value;
     }
     if (lowerCellValue.includes('contrato sankhya')) {
-      const value = getValue(cell);
-      if (value) parsedData.nf_glbl = value;
+      const nfGlblMatch = cellValue.match(/contrato sankhya:\s*(\d+)/i); // Regex para extrair apenas números
+      if (nfGlblMatch && nfGlblMatch[1]) {
+        parsedData.nf_glbl = nfGlblMatch[1].trim();
+      } else {
+        const value = getValue(cell);
+        if (value) {
+          const directNumberMatch = value.match(/(\d+)/);
+          if (directNumberMatch && directNumberMatch[1]) {
+            parsedData.nf_glbl = directNumberMatch[1].trim();
+          } else {
+            parsedData.nf_glbl = value; // Fallback to full value if no number found
+          }
+        }
+      }
     }
     if (lowerCellValue.includes('cód. parc') || lowerCellValue.includes('cod parc')) {
       const value = getValue(cell);
