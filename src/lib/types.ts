@@ -26,7 +26,9 @@ export interface ParsedCollectionData {
   status_coleta: 'pendente' | 'agendada' | 'concluida';
   type: 'coleta' | 'entrega';
   items: ParsedItem[];
-  contrato?: string | null;
+  contrato?: string | null; // Novo campo
+  nf_glbl?: string | null; // Novo campo
+  partner_code?: string | null; // Novo campo
   modelo_aparelho?: string | null;
   modelo_aparelho_description?: string | null;
 }
@@ -54,6 +56,9 @@ export interface ColetaImportData {
   observacao?: string | null;
   status_coleta: 'pendente' | 'agendada' | 'concluida';
   type: 'coleta' | 'entrega';
+  contrato?: string | null; // Novo campo
+  nf_glbl?: string | null; // Novo campo
+  partner_code?: string | null; // Novo campo
 }
 
 export interface ProductImportData {

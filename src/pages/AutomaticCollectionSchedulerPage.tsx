@@ -26,6 +26,7 @@ import { Input } from "@/components/ui/input";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
 import { ptBR } from "date-fns/locale";
+import { FileText, Hash } from "lucide-react"; // Importar ícones para os novos campos
 
 
 type ColetaInsert = TablesInsert<'coletas'>;
@@ -53,6 +54,9 @@ export const AutomaticCollectionSchedulerPage: React.FC = () => {
     type: "coleta",
     unique_number: generateUniqueNumber('COL'), // Always generate a unique number on initial state
     client_control: null, // Alterado para null
+    contrato: null, // Novo campo
+    nf_glbl: null, // Novo campo
+    partner_code: null, // Novo campo
   });
 
   const [isProcessingDocument, setIsProcessingDocument] = useState(false);
@@ -197,11 +201,35 @@ export const AutomaticCollectionSchedulerPage: React.FC = () => {
       const { items, ...coletaData } = newColeta;
       
       const coletaToInsert: ColetaInsert = {
-        ...coletaData,
         user_id: user.id,
-        type: 'coleta',
+        parceiro: coletaData.parceiro,
+        endereco: coletaData.endereco_origem,
+        previsao_coleta: coletaData.previsao_coleta,
+        status_coleta: coletaData.status_coleta,
+        type: coletaData.type,
+        unique_number: coletaData.unique_number,
+        client_control: coletaData.client_control,
+        contato: coletaData.contato,
+        telefone: coletaData.telefone,
+        email: coletaData.email,
+        cnpj: coletaData.cnpj,
+        contrato: coletaData.contrato, // Novo campo
+        nf_glbl: coletaData.nf_glbl, // Novo campo
+        partner_code: coletaData.partner_code, // Novo campo
+        observacao: coletaData.observacao,
+        responsavel: coletaData.responsavel,
+        responsible_user_id: coletaData.responsible_user_id,
+        cep_origem: coletaData.cep_origem,
+        endereco_origem: coletaData.endereco_origem,
+        origin_lat: coletaData.origin_lat,
+        origin_lng: coletaData.origin_lng,
+        cep_destino: coletaData.cep_destino,
+        endereco_destino: coletaData.endereco_destino,
+        destination_lat: coletaData.destination_lat,
+        destination_lng: coletaData.destination_lng,
         modelo_aparelho: formatItemsForColetaModeloAparelho(items), // Resumo dos itens
         qtd_aparelhos_solicitado: getTotalQuantityOfItems(items), // Quantidade total
+        // Outros campos que podem vir do parsedData, mas não são diretamente mapeados para o formulário
       };
 
       const { data: insertedColeta, error: coletaError } = await supabase
@@ -274,7 +302,9 @@ export const AutomaticCollectionSchedulerPage: React.FC = () => {
       telefone: formData.telefone,
       email: formData.email,
       cnpj: formData.cnpj,
-      contrato: formData.contrato,
+      contrato: formData.contrato, // Novo campo
+      nf_glbl: formData.nf_glbl, // Novo campo
+      partner_code: formData.partner_code, // Novo campo
       observacao: formData.observacao,
       responsavel: formData.responsavel,
       responsible_user_id: formData.responsible_user_id,
@@ -305,6 +335,9 @@ export const AutomaticCollectionSchedulerPage: React.FC = () => {
       type: "coleta",
       unique_number: generateUniqueNumber('COL'), // Reset to a new unique number
       client_control: null, // Reset to null
+      contrato: null, // Reset to null
+      nf_glbl: null, // Reset to null
+      partner_code: null, // Reset to null
     });
     toast({ title: "Pré-visualização Limpa", description: "Todos os dados do formulário foram resetados." });
   };
@@ -367,6 +400,52 @@ export const AutomaticCollectionSchedulerPage: React.FC = () => {
                       className="pl-10"
                       value={formData.client_control || ''}
                       onChange={(e) => handleParsedDataChange("client_control", e.target.value)}
+                      disabled={isFormDisabled}
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* Novos campos adicionados aqui */}
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="contrato">Nr. Contrato</Label>
+                  <div className="relative">
+                    <FileText className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                    <Input
+                      id="contrato"
+                      placeholder="Ex: VMC10703/22"
+                      className="pl-10"
+                      value={formData.contrato || ''}
+                      onChange={(e) => handleParsedDataChange("contrato", e.target.value)}
+                      disabled={isFormDisabled}
+                    />
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="nf_glbl">CONTRATO SANKHYA</Label>
+                  <div className="relative">
+                    <Hash className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                    <Input
+                      id="nf_glbl"
+                      placeholder="Ex: 26192"
+                      className="pl-10"
+                      value={formData.nf_glbl || ''}
+                      onChange={(e) => handleParsedDataChange("nf_glbl", e.target.value)}
+                      disabled={isFormDisabled}
+                    />
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="partner_code">CÓD. PARC</Label>
+                  <div className="relative">
+                    <Tag className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                    <Input
+                      id="partner_code"
+                      placeholder="Ex: 53039"
+                      className="pl-10"
+                      value={formData.partner_code || ''}
+                      onChange={(e) => handleParsedDataChange("partner_code", e.target.value)}
                       disabled={isFormDisabled}
                     />
                   </div>

@@ -36,6 +36,9 @@ export const parseXLSX = (file: File): Promise<ColetaImportData[]> => {
           status_coleta: (row['Status']?.toLowerCase() === 'concluida' ? 'concluida' : row['Status']?.toLowerCase() === 'agendada' ? 'agendada' : 'pendente'),
           type: (row['Tipo']?.toLowerCase() === 'entrega' ? 'entrega' : 'coleta'),
           observacao: row['Observações'] || null,
+          contrato: row['Nr. Contrato'] || null, // Novo campo
+          nf_glbl: row['CONTRATO SANKHYA'] || null, // Novo campo
+          partner_code: row['CÓD. PARC'] || null, // Novo campo
         }));
         resolve(parsedData);
       } catch (error) {
@@ -78,6 +81,9 @@ export const parseCSV = (file: File): Promise<ColetaImportData[]> => {
           status_coleta: (row['Status']?.toLowerCase() === 'concluida' ? 'concluida' : row['Status']?.toLowerCase() === 'agendada' ? 'agendada' : 'pendente'),
           type: (row['Tipo']?.toLowerCase() === 'entrega' ? 'entrega' : 'coleta'),
           observacao: row['Observações'] || null,
+          contrato: row['Nr. Contrato'] || null, // Novo campo
+          nf_glbl: row['CONTRATO SANKHYA'] || null, // Novo campo
+          partner_code: row['CÓD. PARC'] || null, // Novo campo
         }));
         resolve(parsedData);
       } catch (error) {
@@ -111,6 +117,9 @@ export const parsePDF = (file: File): Promise<ColetaImportData[]> => {
           observacao: `Dados extraídos de PDF (simulado) do arquivo: ${file.name}`,
           status_coleta: 'pendente',
           type: 'coleta',
+          contrato: 'VMC10703/22', // Novo campo
+          nf_glbl: '26192', // Novo campo
+          partner_code: '53039', // Novo campo
         },
         {
           unique_number: generateUniqueNumber('PDF'),
@@ -129,6 +138,9 @@ export const parsePDF = (file: File): Promise<ColetaImportData[]> => {
           observacao: `Dados extraídos de PDF (simulado) do arquivo: ${file.name}`,
           status_coleta: 'agendada',
           type: 'entrega',
+          contrato: 'VMC10704/22', // Novo campo
+          nf_glbl: '26193', // Novo campo
+          partner_code: '53040', // Novo campo
         },
       ];
       resolve(dummyData);
@@ -296,7 +308,7 @@ export const parseClientsJSON = (file: File): Promise<ClientImportData[]> => {
         })); 
         resolve(parsedData);
       } catch (error) {
-        reject(new Error('Erro ao ler arquivo JSON para clientes. Verifique o formato.'));
+        reject(new Error('Erro ao ler arquivo JSON para produtos. Verifique o formato.'));
       }
     };
     reader.onerror = (error) => reject(new Error('Erro ao ler arquivo: ' + error));

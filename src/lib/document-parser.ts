@@ -19,6 +19,9 @@ export const parseReturnDocumentText = (text: string): ParsedCollectionData => {
     modelo_aparelho: null,
     modelo_aparelho_description: null,
     client_control: null, // Inicializado como null para garantir que fique em branco se não for encontrado
+    contrato: null, // Novo campo
+    nf_glbl: null, // Novo campo
+    partner_code: null, // Novo campo
   };
 
   let currentObservacao = [];
@@ -69,11 +72,11 @@ export const parseReturnDocumentText = (text: string): ParsedCollectionData => {
         parsedData.parceiro = line.replace(/nome:/i, '').trim();
       }
     } else if (lowerLine.startsWith('cód. parc:')) {
-      parsedData.client_control = line.replace(/cód\. parc:/i, '').trim();
+      parsedData.partner_code = line.replace(/cód\. parc:/i, '').trim(); // Mapeado para partner_code
     } else if (lowerLine.startsWith('contrato sankhya:')) {
-      currentObservacao.push(`Contrato Sankhya: ${line.replace(/contrato sankhya:/i, '').trim()}`);
+      parsedData.nf_glbl = line.replace(/contrato sankhya:/i, '').trim(); // Mapeado para nf_glbl
     } else if (lowerLine.startsWith('nr. contrato:')) {
-      parsedData.contrato = line.replace(/nr\. contrato:/i, '').trim();
+      parsedData.contrato = line.replace(/nr\. contrato:/i, '').trim(); // Mapeado para contrato
     } else if (lowerLine.startsWith('endereço:')) {
       const addressText = line.replace(/endereço:/i, '').trim();
       parsedData.endereco_origem = addressText;
@@ -114,9 +117,9 @@ export const parseReturnDocumentText = (text: string): ParsedCollectionData => {
       lowerLine.startsWith('controle do cliente:') || 
       lowerLine.startsWith('client control:') ||
       lowerLine.startsWith('os:') || 
-      lowerLine.startsWith('pedido:') || 
-      lowerLine.startsWith('número da coleta:') || 
-      lowerLine.startsWith('unique number:')
+      lowerCellValue.startsWith('pedido:') || 
+      lowerCellValue.startsWith('número da coleta:') || 
+      lowerCellValue.startsWith('unique number:')
     ) {
       parsedData.client_control = line.split(':').slice(1).join(':').trim();
     }
@@ -293,6 +296,9 @@ export const parseSelectedSpreadsheetCells = (
     items: [],
     previsao_coleta: parseDateSafely(new Date()),
     client_control: null, // Inicializado como null para garantir que fique em branco se não for encontrado
+    contrato: null, // Novo campo
+    nf_glbl: null, // Novo campo
+    partner_code: null, // Novo campo
   };
 
   const selectedCells: { rowIndex: number; colIndex: number; value: string | number | null }[] = [];
@@ -408,6 +414,14 @@ export const parseSelectedSpreadsheetCells = (
     if (lowerCellValue.includes('contrato')) {
       const value = getValue(cell);
       if (value) parsedData.contrato = value;
+    }
+    if (lowerCellValue.includes('contrato sankhya')) {
+      const value = getValue(cell);
+      if (value) parsedData.nf_glbl = value;
+    }
+    if (lowerCellValue.includes('cód. parc') || lowerCellValue.includes('cod parc')) {
+      const value = getValue(cell);
+      if (value) parsedData.partner_code = value;
     }
   }
 

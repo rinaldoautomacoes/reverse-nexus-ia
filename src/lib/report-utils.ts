@@ -208,6 +208,25 @@ const generatePdfReportContent = async (report: Report, data: Coleta[]): Promise
     doc.line(margin, currentY, pageWidth - margin, currentY); // Separator line
     currentY += 5;
 
+    // --- Section: Dados do Contrato ---
+    doc.setFontSize(12);
+    doc.setTextColor(...COLOR_BLACK);
+    doc.setFont("helvetica", "bold");
+    doc.text("Dados do Contrato:", margin, currentY);
+    currentY += 7;
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(10);
+    doc.text(`Nr. Contrato: ${item.contrato || 'N/A'}`, margin, currentY);
+    currentY += 5;
+    doc.text(`CONTRATO SANKHYA: ${item.nf_glbl || 'N/A'}`, margin, currentY);
+    currentY += 5;
+    doc.text(`CÓD. PARC: ${item.partner_code || 'N/A'}`, margin, currentY);
+    currentY += 8;
+    doc.setDrawColor(...COLOR_BLACK);
+    doc.setLineWidth(0.5);
+    doc.line(margin, currentY, pageWidth - margin, currentY); // Separator line
+    currentY += 5;
+
     // --- Section: Logística ---
     doc.setFontSize(12);
     doc.setTextColor(...COLOR_BLACK);
@@ -384,7 +403,7 @@ const generateCsvReportContent = (report: Report, data: Coleta[]): Blob => {
     "Endereço Origem", "CEP Origem", "Lat Origem", "Lng Origem",
     "Endereço Destino", "CEP Destino", "Lat Destino", "Lng Destino",
     "Previsão Coleta/Entrega", "Qtd. Aparelhos Solicitado", "Modelo Aparelho", "Descrição Materiais", "Status Coleta", "Status Unidade", 
-    "NF GLBL", "NF Método", "Observação", "Responsável", "ID Responsável", "ID Cliente", "Contrato", "Criado Em",
+    "NF GLBL", "NF Método", "Observação", "Responsável", "ID Responsável", "ID Cliente", "Contrato", "CÓD. PARC", "Criado Em",
     "Motorista", "Placa Motorista", "Transportadora", // Added driver and transportadora details
   ];
 
@@ -418,6 +437,7 @@ const generateCsvReportContent = (report: Report, data: Coleta[]): Blob => {
     `"${item.responsible_user_id || ''}"`,
     `"${item.client_id || ''}"`,
     `"${item.contrato || ''}"`,
+    `"${item.partner_code || ''}"`, // Novo campo
     `"${item.created_at ? format(new Date(item.created_at), 'dd/MM/yyyy HH:mm:ss') : ''}"`,
     `"${item.driver?.name || ''}"`,
     `"${item.driver?.license_plate || ''}"`,

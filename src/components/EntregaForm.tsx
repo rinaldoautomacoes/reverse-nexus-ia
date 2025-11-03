@@ -5,7 +5,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { ArrowLeft, Truck, Calendar as CalendarIcon, User, Phone, Mail, MapPin, Building, Briefcase, Loader2, Hash, Package, DollarSign, Tag, Home, Flag, ClipboardList } from "lucide-react";
+import { ArrowLeft, Truck, Calendar as CalendarIcon, User, Phone, Mail, MapPin, Building, Briefcase, Loader2, Hash, Package, DollarSign, Tag, Home, Flag, ClipboardList, FileText } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -78,8 +78,9 @@ export const EntregaForm: React.FC<EntregaFormProps> = ({ initialData, onSave, o
     uf: "",
     localidade: "",
     cnpj: "",
-    contrato: "",
-    nf_glbl: "",
+    contrato: null, // Novo campo
+    nf_glbl: null, // Novo campo
+    partner_code: null, // Novo campo
     nf_metodo: "",
     cep_origem: "",
     endereco_origem: "",
@@ -129,8 +130,9 @@ export const EntregaForm: React.FC<EntregaFormProps> = ({ initialData, onSave, o
         uf: "",
         localidade: "",
         cnpj: "",
-        contrato: "",
-        nf_glbl: "",
+        contrato: null, // Novo campo
+        nf_glbl: null, // Novo campo
+        partner_code: null, // Novo campo
         nf_metodo: "",
         cep_origem: "",
         endereco_origem: "",
@@ -236,7 +238,7 @@ export const EntregaForm: React.FC<EntregaFormProps> = ({ initialData, onSave, o
       endereco: formData.endereco_destino,
       cep: formData.cep_destino,
       user_id: user.id,
-      modelo_aparelho: formatItemsForColetaModeloAparelho(deliveryItems), // Resumo dos itens
+      modelo_aparelho: formatItemsForColetaModeloAarelho(deliveryItems), // Resumo dos itens
       qtd_aparelhos_solicitado: getTotalQuantityOfItems(deliveryItems), // Quantidade total
     };
 
@@ -269,6 +271,52 @@ export const EntregaForm: React.FC<EntregaFormProps> = ({ initialData, onSave, o
               className="pl-10"
               value={formData.client_control || ''}
               onChange={(e) => handleInputChange("client_control", e.target.value)}
+              disabled={isPending}
+            />
+          </div>
+        </div>
+      </div>
+
+      {/* Novos campos adicionados aqui */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div className="space-y-2">
+          <Label htmlFor="contrato">Nr. Contrato</Label>
+          <div className="relative">
+            <FileText className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+            <Input
+              id="contrato"
+              placeholder="Ex: VMC10703/22"
+              className="pl-10"
+              value={formData.contrato || ''}
+              onChange={(e) => handleInputChange("contrato", e.target.value)}
+              disabled={isPending}
+            />
+          </div>
+        </div>
+        <div className="space-y-2">
+          <Label htmlFor="nf_glbl">CONTRATO SANKHYA</Label>
+          <div className="relative">
+            <Hash className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+            <Input
+              id="nf_glbl"
+              placeholder="Ex: 26192"
+              className="pl-10"
+              value={formData.nf_glbl || ''}
+              onChange={(e) => handleInputChange("nf_glbl", e.target.value)}
+              disabled={isPending}
+            />
+          </div>
+        </div>
+        <div className="space-y-2">
+          <Label htmlFor="partner_code">CÓD. PARC</Label>
+          <div className="relative">
+            <Tag className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+            <Input
+              id="partner_code"
+              placeholder="Ex: 53039"
+              className="pl-10"
+              value={formData.partner_code || ''}
+              onChange={(e) => handleInputChange("partner_code", e.target.value)}
               disabled={isPending}
             />
           </div>

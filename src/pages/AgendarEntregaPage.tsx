@@ -27,6 +27,7 @@ import { ColetaLogisticsDetails } from "@/components/coleta-form-sections/Coleta
 import { ColetaResponsibleUser } from "@/components/coleta-form-sections/ColetaResponsibleUser";
 import { ColetaObservation } from "@/components/coleta-form-sections/ColetaObservation";
 import { ManualSchedulerActionButtons } from "@/components/manual-scheduler-sections/ManualSchedulerActionButtons";
+import { FileText, Hash } from "lucide-react"; // Importar ícones para os novos campos
 
 type EntregaInsert = TablesInsert<'coletas'>;
 type EntregaUpdate = TablesUpdate<'coletas'>;
@@ -65,8 +66,9 @@ export const AgendarEntregaPage: React.FC = () => {
     uf: "",
     localidade: "",
     cnpj: "",
-    contrato: "",
-    nf_glbl: "",
+    contrato: null, // Novo campo
+    nf_glbl: null, // Novo campo
+    partner_code: null, // Novo campo
     nf_metodo: "",
     cep_origem: "",
     endereco_origem: "",
@@ -182,7 +184,7 @@ export const AgendarEntregaPage: React.FC = () => {
       queryClient.invalidateQueries({ queryKey: ['dashboardEntregasMetrics', user?.id] });
       queryClient.invalidateQueries({ queryKey: ['entregasAtivasStatusChart', user?.id] });
       queryClient.invalidateQueries({ queryKey: ['entregasAtivasStatusDonutChart', user?.id] });
-      queryClient.invalidateQueries({ queryKey: ['itemsForEntregasMetrics', user?.id] });
+      queryClient.invalidateQueries({ queryKey: ['items', user?.id] });
       toast({ title: "Entrega Agendada!", description: "Nova entrega criada com sucesso." });
       navigate('/entregas-ativas');
     },
@@ -278,6 +280,52 @@ export const AgendarEntregaPage: React.FC = () => {
                       className="pl-10"
                       value={formData.client_control || ''}
                       onChange={(e) => handleInputChange("client_control", e.target.value)}
+                      disabled={isFormDisabled}
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* Novos campos adicionados aqui */}
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="contrato">Nr. Contrato</Label>
+                  <div className="relative">
+                    <FileText className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                    <Input
+                      id="contrato"
+                      placeholder="Ex: VMC10703/22"
+                      className="pl-10"
+                      value={formData.contrato || ''}
+                      onChange={(e) => handleInputChange("contrato", e.target.value)}
+                      disabled={isFormDisabled}
+                    />
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="nf_glbl">CONTRATO SANKHYA</Label>
+                  <div className="relative">
+                    <Hash className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                    <Input
+                      id="nf_glbl"
+                      placeholder="Ex: 26192"
+                      className="pl-10"
+                      value={formData.nf_glbl || ''}
+                      onChange={(e) => handleInputChange("nf_glbl", e.target.value)}
+                      disabled={isFormDisabled}
+                    />
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="partner_code">CÓD. PARC</Label>
+                  <div className="relative">
+                    <Tag className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                    <Input
+                      id="partner_code"
+                      placeholder="Ex: 53039"
+                      className="pl-10"
+                      value={formData.partner_code || ''}
+                      onChange={(e) => handleInputChange("partner_code", e.target.value)}
                       disabled={isFormDisabled}
                     />
                   </div>

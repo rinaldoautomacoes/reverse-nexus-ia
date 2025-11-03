@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { ArrowLeft, Truck, Search, CheckCircle, Calendar as CalendarIcon, User, MapPin, Hash, Package, Building, MessageSquare, Send, Edit, Trash2, Clock, DollarSign, Tag, Home, Flag, ClipboardList } from "lucide-react";
+import { ArrowLeft, Truck, Search, CheckCircle, Calendar as CalendarIcon, User, MapPin, Hash, Package, Building, MessageSquare, Send, Edit, Trash2, Clock, DollarSign, Tag, Home, Flag, ClipboardList, FileText } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -66,7 +66,7 @@ const EntregasConcluidasList: React.FC<EntregasConcluidasListProps> = ({ selecte
 
       if (searchTerm) {
         query = query.or(
-          `parceiro.ilike.%${searchTerm}%,endereco_origem.ilike.%${searchTerm}%,endereco_destino.ilike.%${searchTerm}%,modelo_aparelho.ilike.%${searchTerm}%,responsavel.ilike.%${searchTerm}%,unique_number.ilike.%${searchTerm}%,client_control.ilike.%${searchTerm}%`
+          `parceiro.ilike.%${searchTerm}%,endereco_origem.ilike.%${searchTerm}%,endereco_destino.ilike.%${searchTerm}%,modelo_aparelho.ilike.%${searchTerm}%,responsavel.ilike.%${searchTerm}%,unique_number.ilike.%${searchTerm}%,client_control.ilike.%${searchTerm}%,contrato.ilike.%${searchTerm}%,nf_glbl.ilike.%${searchTerm}%,partner_code.ilike.%${searchTerm}%`
         );
       }
 
@@ -206,7 +206,7 @@ const EntregasConcluidasList: React.FC<EntregasConcluidasListProps> = ({ selecte
                 <div className="flex-1 relative">
                   <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
                   <Input
-                    placeholder="Buscar por parceiro, endereço, modelo, responsável, número único ou controle do cliente..."
+                    placeholder="Buscar por parceiro, endereço, modelo, responsável, número único, controle do cliente, contrato ou CÓD. PARC..."
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
                     className="pl-10"
@@ -289,6 +289,21 @@ const EntregasConcluidasList: React.FC<EntregasConcluidasListProps> = ({ selecte
                         <div className="flex items-center gap-1 col-span-full">
                           <Package className="h-3 w-3" /> Materiais: {formatItemsForColetaModeloAparelho(entrega.items)}
                         </div>
+                        {entrega.contrato && (
+                          <div className="flex items-center gap-1">
+                            <FileText className="h-3 w-3" /> Nr. Contrato: {entrega.contrato}
+                          </div>
+                        )}
+                        {entrega.nf_glbl && (
+                          <div className="flex items-center gap-1">
+                            <Hash className="h-3 w-3" /> CONTRATO SANKHYA: {entrega.nf_glbl}
+                          </div>
+                        )}
+                        {entrega.partner_code && (
+                          <div className="flex items-center gap-1">
+                            <Tag className="h-3 w-3" /> CÓD. PARC: {entrega.partner_code}
+                          </div>
+                        )}
                         <div className="flex items-center gap-1">
                           <User className="h-3 w-3" /> Responsável: {entrega.responsavel || 'Não atribuído'}
                         </div>
