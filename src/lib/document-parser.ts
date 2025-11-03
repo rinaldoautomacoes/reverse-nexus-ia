@@ -72,7 +72,10 @@ export const parseReturnDocumentText = (text: string): ParsedCollectionData => {
         parsedData.parceiro = line.replace(/nome:/i, '').trim();
       }
     } else if (lowerLine.startsWith('cód. parc:')) {
-      parsedData.partner_code = line.replace(/cód\. parc:/i, '').trim(); // Mapeado para partner_code
+      const partnerCodeMatch = line.match(/cód\. parc:\s*(\d+)/i); // Regex para extrair apenas números
+      if (partnerCodeMatch && partnerCodeMatch[1]) {
+        parsedData.partner_code = partnerCodeMatch[1].trim();
+      }
     } else if (lowerLine.startsWith('contrato sankhya:')) {
       parsedData.nf_glbl = line.replace(/contrato sankhya:/i, '').trim(); // Mapeado para nf_glbl
     } else if (lowerLine.startsWith('nr. contrato:')) {
@@ -117,9 +120,9 @@ export const parseReturnDocumentText = (text: string): ParsedCollectionData => {
       lowerLine.startsWith('controle do cliente:') || 
       lowerLine.startsWith('client control:') ||
       lowerLine.startsWith('os:') || 
-      lowerCellValue.startsWith('pedido:') || 
-      lowerCellValue.startsWith('número da coleta:') || 
-      lowerCellValue.startsWith('unique number:')
+      lowerLine.startsWith('pedido:') || 
+      lowerLine.startsWith('número da coleta:') || 
+      lowerLine.startsWith('unique number:')
     ) {
       parsedData.client_control = line.split(':').slice(1).join(':').trim();
     }
@@ -421,7 +424,14 @@ export const parseSelectedSpreadsheetCells = (
     }
     if (lowerCellValue.includes('cód. parc') || lowerCellValue.includes('cod parc')) {
       const value = getValue(cell);
-      if (value) parsedData.partner_code = value;
+      if (value) {
+        const partnerCodeMatch = value.match(/(\d+)/); // Extrai apenas números
+        if (partnerCodeMatch && partnerCodeMatch[1]) {
+          parsedData.partner_code = partnerCodeMatch[1].trim();
+        } else {
+          parsedData.partner_code = value; // Fallback to full value if no number found
+        }
+      }
     }
   }
 
