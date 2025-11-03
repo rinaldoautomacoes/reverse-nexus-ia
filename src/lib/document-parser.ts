@@ -3,7 +3,7 @@ import { parseDateSafely } from './date-utils';
 import type { ParsedItem, ParsedCollectionData } from './types';
 
 // Helper function to clean phone numbers, keeping only digits
-const cleanPhoneNumber = (phone: string | null | undefined): string | null => {
+export const cleanPhoneNumber = (phone: string | null | undefined): string | null => {
   if (!phone) return null;
   const cleaned = phone.replace(/\D/g, ''); // Remove all non-digit characters
   return cleaned.length > 0 ? cleaned : null;
@@ -247,13 +247,13 @@ export const processSelectedSpreadsheetCellsForItems = (
 
         if (textCount1 > maxTextCount && numCount2 > maxNumCount && textCount1 > numCount1 && numCount2 > textCount2) {
           maxTextCount = textCount1;
-          maxNumCount = numNum2;
+          maxNumCount = numCount2;
           bestDescCol = cIndex1;
           bestQuantCol = cIndex2;
         }
         if (textCount2 > maxTextCount && numCount1 > maxNumCount && textCount2 > numCount2 && numCount1 > textCount1) {
           maxTextCount = textCount2;
-          maxNumCount = numNum1;
+          maxNumCount = numCount1;
           bestDescCol = cIndex2;
           bestQuantCol = cIndex1;
         }
