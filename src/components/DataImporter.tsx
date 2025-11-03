@@ -1,9 +1,4 @@
-import React, { useState, useEffect } from 'react';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { FileUp, Upload, CheckCircle, XCircle, Loader2, FileText, FileSpreadsheet, Package, Users } from 'lucide-react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
@@ -11,21 +6,22 @@ import { useAuth } from '@/hooks/use-auth';
 import { 
   parseXLSX, parseCSV, parsePDF, ColetaImportData, 
   ProductImportData, parseProductsXLSX, parseProductsCSV, parseProductsJSON,
-  ClientImportData, parseClientsXLSX, parseClientsCSV, parseClientsJSON // NEW imports
+  ClientImportData, parseClientsXLSX, parseClientsCSV, parseClientsJSON
 } from '@/lib/data-parser';
 import type { TablesInsert } from '@/integrations/supabase/types_generated';
-import { format } from 'date-fns';
-import { ptBR } from 'date-fns/locale';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { formatItemsForColetaModeloAparelho, getTotalQuantityOfItems } from '@/lib/utils'; // Import new utils
+
+// Import new modular components
+import { ImportFileSection } from './data-importer-sections/ImportFileSection';
+import { DataPreviewTable } from './data-importer-sections/DataPreviewTable';
+import { ImportActionButtons } from './data-importer-sections/ImportActionButtons';
 
 type ColetaInsert = TablesInsert<'coletas'>;
 type ProductInsert = TablesInsert<'products'>;
-type ClientInsert = TablesInsert<'clients'>; // NEW type
-type ItemInsert = TablesInsert<'items'>; // NEW type
+type ClientInsert = TablesInsert<'clients'>;
+type ItemInsert = TablesInsert<'items'>;
 
 interface DataImporterProps {
-  initialTab?: 'collections' | 'products' | 'clients'; // NEW initialTab option
+  initialTab?: 'collections' | 'products' | 'clients';
   onImportSuccess?: () => void;
   onClose: () => void;
 }
@@ -36,19 +32,28 @@ export const DataImporter: React.FC<DataImporterProps> = ({ initialTab = 'collec
   const queryClient = useQueryClient();
 
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
-  const [extractedData, setExtractedData] = useState<ColetaImportData[] | ProductImportData[] | ClientImportData[] | null>(null); // Updated type
+  const [extractedData, setExtractedData] = useState<ColetaImportData[] | ProductImportData[] | ClientImportData[] | null>(null);
   const [isParsing, setIsParsing] = useState(false);
-  const [activeTab, setActiveTab] = useState<'collections' | 'products' | 'clients'>(initialTab); // Updated state type
+  const [activeTab, setActiveTab] = useState<'collections' | 'products' | 'clients'>(initialTab);
+  const [parseError, setParseError] = useState<string | null>(null);
 
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (file) {
       setSelectedFile(file);
       setExtractedData(null);
+      setParseError(null);
     }
   };
 
-  const handleParseFile = async () => {
+  const handleTabChange = useCallback((tab: 'collections' | 'products' | 'clients') => {
+    setActiveTab(tab);
+    setSelectedFile(null);
+    setExtractedData(null);
+    setParseError(null);
+  }, []);
+
+  const handleParseFile = useCallback(async () => {
     if (!selectedFile) {
       toast({ title: 'Nenhum arquivo selecionado', description: 'Por favor, selecione um arquivo para importar.', variant: 'destructive' });
       return;
@@ -56,11 +61,12 @@ export const DataImporter: React.FC<DataImporterProps> = ({ initialTab = 'collec
 
     setIsParsing(true);
     setExtractedData(null);
+    setParseError(null);
 
     const fileExtension = selectedFile.name.split('.').pop()?.toLowerCase();
 
     try {
-      let data: ColetaImportData[] | ProductImportData[] | ClientImportData[] = []; // Updated type
+      let data: ColetaImportData[] | ProductImportData[] | ClientImportData[] = [];
       if (activeTab === 'collections') {
         if (fileExtension === 'xlsx') {
           data = await parseXLSX(selectedFile);
@@ -87,7 +93,7 @@ export const DataImporter: React.FC<DataImporterProps> = ({ initialTab = 'collec
         } else {
           throw new Error('Formato de arquivo não suportado para produtos. Use XLSX, CSV ou JSON.');
         }
-      } else if (activeTab === 'clients') { // NEW: Client parsing logic
+      } else if (activeTab === 'clients') {
         if (fileExtension === 'xlsx') {
           data = await parseClientsXLSX(selectedFile);
         } else if (fileExtension === 'csv') {
@@ -99,13 +105,19 @@ export const DataImporter: React.FC<DataImporterProps> = ({ initialTab = 'collec
         }
       }
 
-      // Filter out any rows that are completely empty or don't have a required field (like 'name' for clients)
       const filteredData = data.filter(item => {
         if (activeTab === 'clients') {
           return (item as ClientImportData).name && (item as ClientImportData).name.trim() !== '';
         }
-        // Add similar checks for collections and products if needed
-        return true; // Default to true if no specific validation for other tabs
+        if (activeTab === 'products') {
+          return (item as ProductImportData).code && (item as ProductImportData).code.trim() !== '';
+        }
+        if (activeTab === 'collections') {
+          return (item as ColetaImportData).parceiro && (item as ColetaImportData).parceiro.trim() !== '' &&
+                 (item as ColetaImportData).endereco_origem && (item as ColetaImportData).endereco_origem.trim() !== '' &&
+                 (item as ColetaImportData).previsao_coleta && (item as ColetaImportData).previsao_coleta.trim() !== '';
+        }
+        return true;
       });
 
       if (filteredData.length === 0) {
@@ -117,12 +129,13 @@ export const DataImporter: React.FC<DataImporterProps> = ({ initialTab = 'collec
 
     } catch (error: any) {
       console.error('Erro ao processar arquivo:', error);
+      setParseError(error.message || 'Arquivo inválido ou dados não reconhecidos.');
       toast({ title: 'Erro ao processar arquivo', description: error.message || 'Arquivo inválido ou dados não reconhecidos.', variant: 'destructive' });
       setExtractedData(null);
     } finally {
       setIsParsing(false);
     }
-  };
+  }, [selectedFile, activeTab, toast]);
 
   const importCollectionsMutation = useMutation({
     mutationFn: async (dataToImport: ColetaImportData[]) => {
@@ -150,29 +163,26 @@ export const DataImporter: React.FC<DataImporterProps> = ({ initialTab = 'collec
         destination_lat: item.destination_lat,
         destination_lng: item.destination_lng,
         previsao_coleta: item.previsao_coleta,
-        // Use the new utils to format modelo_aparelho and qtd_aparelhos_solicitado
-        modelo_aparelho: item.modelo_aparelho, // Keep this for summary
-        qtd_aparelhos_solicitado: item.qtd_aparelhos_solicitado, // Keep this for summary
+        modelo_aparelho: item.modelo_aparelho,
+        qtd_aparelhos_solicitado: item.qtd_aparelhos_solicitado,
         freight_value: item.freight_value,
         observacao: item.observacao,
         status_coleta: item.status_coleta,
         type: item.type,
       }));
 
-      // Insert coletas first to get their IDs
       const { data: insertedColetas, error: coletasError } = await supabase.from('coletas').insert(inserts).select('id, status_coleta');
       if (coletasError) throw new Error(coletasError.message);
 
-      // Prepare items for insertion
       const itemsToInsert: ItemInsert[] = [];
       insertedColetas.forEach((coleta, index) => {
-        const originalItemData = dataToImport[index]; // Get original data for item details
+        const originalItemData = dataToImport[index];
         if (originalItemData.modelo_aparelho && originalItemData.qtd_aparelhos_solicitado && originalItemData.qtd_aparelhos_solicitado > 0) {
           itemsToInsert.push({
             user_id: user.id,
             collection_id: coleta.id,
             name: originalItemData.modelo_aparelho,
-            description: originalItemData.modelo_aparelho, // Use modelo_aparelho as description for now
+            description: originalItemData.modelo_aparelho,
             quantity: originalItemData.qtd_aparelhos_solicitado,
             status: coleta.status_coleta || 'pendente',
           });
@@ -199,7 +209,7 @@ export const DataImporter: React.FC<DataImporterProps> = ({ initialTab = 'collec
       queryClient.invalidateQueries({ queryKey: ['entregasAtivasStatusChart', user?.id] });
       queryClient.invalidateQueries({ queryKey: ['entregasAtivasStatusDonutChart', user?.id] });
       queryClient.invalidateQueries({ queryKey: ['itemsForEntregasMetrics', user?.id] });
-      queryClient.invalidateQueries({ queryKey: ['allColetasForGeneralDashboard', user?.id] }); // Invalidate general dashboard
+      queryClient.invalidateQueries({ queryKey: ['allColetasForGeneralDashboard', user?.id] });
       toast({ title: 'Importação de Coletas/Entregas concluída!', description: `${count} registros foram salvos com sucesso no banco de dados.` });
       setSelectedFile(null);
       setExtractedData(null);
@@ -245,14 +255,12 @@ export const DataImporter: React.FC<DataImporterProps> = ({ initialTab = 'collec
     },
   });
 
-  // NEW: Mutation for importing clients
   const importClientsMutation = useMutation({
     mutationFn: async (dataToImport: ClientImportData[]) => {
       if (!user?.id) {
         throw new Error('Usuário não autenticado. Faça login para importar clientes.');
       }
 
-      // Validate that each client has a non-empty name
       const validClients = dataToImport.filter(client => client.name && client.name.trim() !== '');
       if (validClients.length === 0) {
         throw new Error('Nenhum cliente válido encontrado para importação. Certifique-se de que a coluna "Nome" ou "Nome do Cliente" não está vazia.');
@@ -270,7 +278,7 @@ export const DataImporter: React.FC<DataImporterProps> = ({ initialTab = 'collec
 
       const { error } = await supabase
         .from('clients')
-        .upsert(inserts, { onConflict: 'name,user_id', ignoreDuplicates: true }); // Upsert based on name and user_id
+        .upsert(inserts, { onConflict: 'name,user_id', ignoreDuplicates: true });
       
       if (error) throw new Error(error.message);
       return inserts.length;
@@ -288,7 +296,7 @@ export const DataImporter: React.FC<DataImporterProps> = ({ initialTab = 'collec
     },
   });
 
-  const handleConfirmImport = () => {
+  const handleConfirmImport = useCallback(() => {
     if (!extractedData || extractedData.length === 0) {
       toast({ title: 'Nenhum dado para importar', description: 'Por favor, extraia dados antes de confirmar a importação.', variant: 'destructive' });
       return;
@@ -298,204 +306,39 @@ export const DataImporter: React.FC<DataImporterProps> = ({ initialTab = 'collec
       importCollectionsMutation.mutate(extractedData as ColetaImportData[]);
     } else if (activeTab === 'products') {
       importProductsMutation.mutate(extractedData as ProductImportData[]);
-    } else if (activeTab === 'clients') { // NEW: Call client mutation
+    } else if (activeTab === 'clients') {
       importClientsMutation.mutate(extractedData as ClientImportData[]);
     }
-  };
+  }, [extractedData, activeTab, importCollectionsMutation, importProductsMutation, importClientsMutation, toast]);
 
-  const getFileIcon = (fileName: string | undefined) => {
-    const extension = fileName?.split('.').pop()?.toLowerCase();
-    switch (extension) {
-      case 'pdf': return <FileText className="h-5 w-5 text-destructive" />;
-      case 'xlsx':
-      case 'csv': return <FileSpreadsheet className="h-5 w-5 text-success-green" />;
-      case 'json': return <Package className="h-5 w-5 text-neural" />;
-      default: return <Package className="h-5 w-5 text-muted-foreground" />;
-    }
-  };
-
-  const isImportPending = importCollectionsMutation.isPending || importProductsMutation.isPending || importClientsMutation.isPending; // Updated pending state
+  const isImportPending = importCollectionsMutation.isPending || importProductsMutation.isPending || importClientsMutation.isPending;
 
   return (
     <div className="space-y-6">
-      <Card className="card-futuristic">
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <FileUp className="h-5 w-5 text-primary" />
-            Upload de Arquivo
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="p-6 space-y-4">
-          <Tabs value={activeTab} onValueChange={(value) => {
-            setActiveTab(value as 'collections' | 'products' | 'clients'); // Updated state type
-            setSelectedFile(null);
-            setExtractedData(null);
-          }} className="w-full">
-            <TabsList className="grid w-full grid-cols-3"> {/* Updated grid-cols to 3 */}
-              <TabsTrigger value="collections">Coletas/Entregas</TabsTrigger>
-              <TabsTrigger value="products">Produtos</TabsTrigger>
-              <TabsTrigger value="clients">Clientes</TabsTrigger> {/* NEW Tab Trigger */}
-            </TabsList>
-            <TabsContent value="collections" className="mt-4">
-              <p className="text-sm text-muted-foreground mb-4">
-                Envie arquivos (XLSX, CSV, PDF) para extrair e importar dados de coletas/entregas automaticamente.
-              </p>
-            </TabsContent>
-            <TabsContent value="products" className="mt-4">
-              <p className="text-sm text-muted-foreground mb-4">
-                Envie arquivos (XLSX, CSV, JSON) para extrair e importar dados de produtos automaticamente. Duplicatas serão ignoradas.
-              </p>
-            </TabsContent>
-            <TabsContent value="clients" className="mt-4"> {/* NEW Tab Content */}
-              <p className="text-sm text-muted-foreground mb-4">
-                Envie arquivos (XLSX, CSV, JSON) para extrair e importar dados de clientes automaticamente. Duplicatas serão ignoradas.
-              </p>
-            </TabsContent>
-          </Tabs>
-
-          <div className="flex items-center gap-4">
-            <Input
-              id="file-upload"
-              type="file"
-              accept={
-                activeTab === 'collections' ? ".xlsx,.csv,.pdf" :
-                activeTab === 'products' ? ".xlsx,.csv,.json" :
-                ".xlsx,.csv,.json" // NEW: Accept for clients
-              }
-              onChange={handleFileChange}
-              className="flex-1"
-              disabled={isParsing || isImportPending}
-            />
-            <Button
-              onClick={handleParseFile}
-              disabled={!selectedFile || isParsing || isImportPending}
-              className="bg-gradient-primary hover:bg-gradient-primary/80 glow-effect"
-            >
-              {isParsing ? (
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-              ) : (
-                <Upload className="mr-2 h-4 w-4" />
-              )}
-              Processar Arquivo
-            </Button>
-          </div>
-          {selectedFile && (
-            <div className="flex items-center gap-2 text-sm text-muted-foreground">
-              {getFileIcon(selectedFile.name)}
-              <span>{selectedFile.name}</span>
-            </div>
-          )}
-        </CardContent>
-      </Card>
+      <ImportFileSection
+        activeTab={activeTab}
+        setActiveTab={handleTabChange}
+        selectedFile={selectedFile}
+        handleFileChange={handleFileChange}
+        handleParseFile={handleParseFile}
+        isParsing={isParsing}
+        isImportPending={isImportPending}
+        error={parseError}
+      />
 
       {extractedData && extractedData.length > 0 && (
-        <Card className="card-futuristic">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <CheckCircle className="h-5 w-5 text-success-green" />
-              Pré-visualização dos Dados
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="p-6 space-y-4">
-            <div className="max-h-96 overflow-auto border rounded-lg">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    {activeTab === 'collections' ? (
-                      <>
-                        <TableHead>Nº Coleta</TableHead>
-                        <TableHead>Tipo</TableHead>
-                        <TableHead>Cliente</TableHead>
-                        <TableHead>Endereço Origem</TableHead>
-                        <TableHead>Data</TableHead>
-                        <TableHead>Produto</TableHead>
-                        <TableHead>Qtd</TableHead>
-                        <TableHead>Status</TableHead>
-                      </>
-                    ) : activeTab === 'products' ? (
-                      <>
-                        <TableHead>Código</TableHead>
-                        <TableHead>Descrição</TableHead>
-                        <TableHead>Modelo</TableHead>
-                        <TableHead>Nº Série</TableHead>
-                      </>
-                    ) : ( // NEW: Client headers
-                      <>
-                        <TableHead>Nome</TableHead>
-                        <TableHead>Telefone</TableHead>
-                        <TableHead>Email</TableHead>
-                        <TableHead>Endereço</TableHead>
-                        <TableHead>CNPJ</TableHead>
-                        <TableHead>Contato</TableHead>
-                      </>
-                    )}
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {activeTab === 'collections' ? (
-                    (extractedData as ColetaImportData[]).map((item: ColetaImportData, index) => (
-                      <TableRow key={index}>
-                        <TableCell>{item.unique_number}</TableCell>
-                        <TableCell>{item.type === 'coleta' ? 'Coleta' : 'Entrega'}</TableCell>
-                        <TableCell>{item.parceiro}</TableCell>
-                        <TableCell>{item.endereco_origem}</TableCell>
-                        <TableCell>{format(new Date(item.previsao_coleta), 'dd/MM/yyyy', { locale: ptBR })}</TableCell>
-                        <TableCell>{item.modelo_aparelho}</TableCell>
-                        <TableCell>{item.qtd_aparelhos_solicitado}</TableCell>
-                        <TableCell>{item.status_coleta}</TableCell>
-                      </TableRow>
-                    ))
-                  ) : activeTab === 'products' ? (
-                    (extractedData as ProductImportData[]).map((item: ProductImportData, index) => (
-                      <TableRow key={index}>
-                        <TableCell>{item.code}</TableCell>
-                        <TableCell>{item.description}</TableCell>
-                        <TableCell>{item.model}</TableCell>
-                        <TableCell>{item.serial_number}</TableCell>
-                      </TableRow>
-                    ))
-                  ) : ( // NEW: Client rows
-                    (extractedData as ClientImportData[]).map((item: ClientImportData, index) => (
-                      <TableRow key={index}>
-                        <TableCell>{item.name}</TableCell>
-                        <TableCell>{item.phone}</TableCell>
-                        <TableCell>{item.email}</TableCell>
-                        <TableCell>{item.address}</TableCell>
-                        <TableCell>{item.cnpj}</TableCell>
-                        <TableCell>{item.contact_person}</TableCell>
-                      </TableRow>
-                    ))
-                  )}
-                </TableBody>
-              </Table>
-            </div>
-            <div className="flex justify-end gap-2">
-              <Button
-                variant="outline"
-                onClick={() => {
-                  setSelectedFile(null);
-                  setExtractedData(null);
-                }}
-                disabled={isImportPending}
-              >
-                <XCircle className="mr-2 h-4 w-4" />
-                Cancelar
-              </Button>
-              <Button
-                onClick={handleConfirmImport}
-                disabled={isImportPending}
-                className="bg-gradient-secondary hover:bg-gradient-secondary/80 glow-effect"
-              >
-                {isImportPending ? (
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                ) : (
-                  <CheckCircle className="mr-2 h-4 w-4" />
-                )}
-                Confirmar Importação
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
+        <>
+          <DataPreviewTable activeTab={activeTab} extractedData={extractedData} />
+          <ImportActionButtons
+            onCancel={() => {
+              setSelectedFile(null);
+              setExtractedData(null);
+              setParseError(null);
+            }}
+            onConfirmImport={handleConfirmImport}
+            isImportPending={isImportPending}
+          />
+        </>
       )}
     </div>
   );
