@@ -104,7 +104,7 @@ export const Auth = () => {
   }
 
   return (
-    <div className="min-h-screen bg-background flex flex-col relative overflow-hidden">
+    <div className="min-h-screen login-background-pattern flex flex-col relative overflow-hidden">
       {/* Removido: AI Assistant Background */}
       {/* Removido: Subtle Gradient Overlay */}
       

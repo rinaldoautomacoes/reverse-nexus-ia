@@ -9,7 +9,7 @@ All colors MUST be HSL.
 @layer base {
   :root {
     /* Futuristic Dark Theme */
-    --background: 225 15% 6%;
+    --background: 210 20% 8%; /* Ajustado para um azul-esverdeado mais escuro */
     --foreground: 180 100% 95%;
 
     --card: 225 20% 8%;
@@ -164,9 +164,9 @@ All colors MUST be HSL.
   /* Novo padrão de fundo para a tela de login */
   .login-background-pattern {
     background-image:
-      radial-gradient(circle at 15% 15%, hsl(var(--neon-cyan) / 0.15) 0%, transparent 60%), /* Opacidade aumentada */
-      radial-gradient(circle at 85% 85%, hsl(var(--neural-blue) / 0.15) 0%, transparent 60%), /* Opacidade aumentada */
-      radial-gradient(circle at 50% 50%, hsl(var(--ai-purple) / 0.08) 0%, transparent 70%);  /* Opacidade aumentada */
+      radial-gradient(circle at 20% 20%, hsl(var(--neon-cyan) / 0.08) 0%, transparent 75%),
+      radial-gradient(circle at 80% 80%, hsl(var(--neural-blue) / 0.08) 0%, transparent 75%),
+      radial-gradient(circle at 50% 0%, hsl(var(--neon-cyan) / 0.03) 0%, transparent 85%); /* Brilho sutil no topo */
   }
 }
 
