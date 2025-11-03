@@ -46,9 +46,13 @@ export const EditEntregaDialog: React.FC<EditEntregaDialogProps> = ({ entrega, i
 
       const { entrega: updatedEntrega, items: updatedItems } = data;
 
+      // Destructure to omit 'driver' and 'transportadora' properties from the object
+      // as they are relations and not direct columns on the 'coletas' table.
+      const { driver, transportadora, ...restOfEntrega } = updatedEntrega;
+
       // 1. Update the entrega record, deriving modelo_aparelho and qtd_aparelhos_solicitado from the items list
       const entregaToUpdate: EntregaUpdate = {
-        ...updatedEntrega,
+        ...restOfEntrega, // Use the rest of the object without 'driver' and 'transportadora'
         modelo_aparelho: formatItemsForColetaModeloAparelho(updatedItems),
         qtd_aparelhos_solicitado: getTotalQuantityOfItems(updatedItems),
       };
@@ -56,7 +60,7 @@ export const EditEntregaDialog: React.FC<EditEntregaDialogProps> = ({ entrega, i
       const { error: updateError } = await supabase
         .from('coletas')
         .update(entregaToUpdate)
-        .eq('id', entregaToUpdate.id as string)
+        .eq('id', entregaToUpdate.id as string) // Use entregaToUpdate.id as it's guaranteed to be present
         .eq('user_id', user.id);
 
       if (updateError) throw new Error(updateError.message);

@@ -35,9 +35,13 @@ export const EditColetaDialog: React.FC<EditColetaDialogProps> = ({ coleta, isOp
       
       const { coleta: updatedColeta, items: updatedItems } = data;
 
+      // Destructure to omit 'driver' and 'transportadora' properties from the object
+      // as they are relations and not direct columns on the 'coletas' table.
+      const { driver, transportadora, ...restOfColeta } = updatedColeta;
+
       // 1. Update the coleta record, deriving modelo_aparelho and qtd_aparelhos_solicitado from the items list
       const coletaToUpdate: ColetaUpdate = {
-        ...updatedColeta,
+        ...restOfColeta, // Use the rest of the object without 'driver' and 'transportadora'
         modelo_aparelho: formatItemsForColetaModeloAparelho(updatedItems),
         qtd_aparelhos_solicitado: getTotalQuantityOfItems(updatedItems),
       };
@@ -45,7 +49,7 @@ export const EditColetaDialog: React.FC<EditColetaDialogProps> = ({ coleta, isOp
       const { data: updatedColetaResult, error: coletaError } = await supabase
         .from('coletas')
         .update(coletaToUpdate)
-        .eq('id', updatedColeta.id as string)
+        .eq('id', coletaToUpdate.id as string) // Use coletaToUpdate.id as it's guaranteed to be present
         .eq('user_id', user.id)
         .select()
         .single();
