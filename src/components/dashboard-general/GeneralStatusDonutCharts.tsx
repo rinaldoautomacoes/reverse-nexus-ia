@@ -38,7 +38,7 @@ const CustomLabel: React.FC<CustomLabelProps> = ({ cx, cy, midAngle, innerRadius
   const y = cy + radius * Math.sin(-midAngle * Math.PI / 180);
 
   return (
-    <text x={x} y={y} fill="hsl(0 0% 0%)" textAnchor="middle" dominantBaseline="central" className="text-sm font-bold">
+    <text x={x} y={y} fill="hsl(var(--foreground))" textAnchor="middle" dominantBaseline="central" className="text-sm font-bold">
       {`${(percent * 100).toFixed(0)}%`}
     </text>
   );
@@ -52,6 +52,7 @@ interface GeneralStatusDonutChartsProps {
 export const GeneralStatusDonutCharts: React.FC<GeneralStatusDonutChartsProps> = ({ allColetas, selectedYear }) => {
 
   const calculateStatusData = (data: Coleta[], type: 'coleta' | 'entrega') => {
+    console.log(`Calculating status data for ${type} with data:`, data); // Added log
     const filteredData = data.filter(item => item.type === type);
     const pendenteCount = filteredData.filter(c => c.status_coleta === 'pendente').length;
     const agendadaCount = filteredData.filter(c => c.status_coleta === 'agendada').length;
@@ -65,7 +66,7 @@ export const GeneralStatusDonutCharts: React.FC<GeneralStatusDonutChartsProps> =
       { name: `${type === 'coleta' ? 'Coletas' : 'Entregas'} Em Trânsito`, value: agendadaCount, color: colors.agendada },
       { name: `${type === 'coleta' ? 'Coletas' : 'Entregas'} Concluídas`, value: concluidaCount, color: colors.concluida },
     ];
-
+    console.log(`Generated chart data for ${type}:`, chartData); // Added log
     return { total, chartData };
   };
 

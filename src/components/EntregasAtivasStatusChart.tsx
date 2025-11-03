@@ -74,7 +74,11 @@ export const EntregasAtivasStatusChart: React.FC<EntregasAtivasStatusChartProps>
         .gte('previsao_coleta', startDate)
         .lt('previsao_coleta', endDate)
         .order('created_at', { ascending: true });
-      if (error) throw new Error(error.message);
+      if (error) {
+        console.error("Supabase query error in EntregasAtivasStatusChart:", error.message); // Added log
+        throw new Error(error.message);
+      }
+      console.log("Fetched entregas for status chart:", data); // Added log
       return data || [];
     },
     enabled: !!user?.id,
@@ -137,7 +141,10 @@ export const EntregasAtivasStatusChart: React.FC<EntregasAtivasStatusChartProps>
     let totalAll = 0;
 
     entregasData?.forEach(entrega => {
-      if (!entrega.previsao_coleta || !entrega.items) return;
+      if (!entrega.previsao_coleta || !entrega.items) {
+        console.warn("Skipping entrega due to missing previsao_coleta or items:", entrega); // Added log
+        return;
+      }
 
       // Explicitly parse year, month, day to avoid timezone issues with DATE column
       const [year, month, day] = entrega.previsao_coleta.split('-').map(Number);
@@ -180,7 +187,7 @@ export const EntregasAtivasStatusChart: React.FC<EntregasAtivasStatusChartProps>
         entreguesItems: data.entregues,
       };
     });
-
+    console.log("Generated chart data for entregas:", chartData); // Added log
     return { 
       chartData, 
       totalPendenteCount, 

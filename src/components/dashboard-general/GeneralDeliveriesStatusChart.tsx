@@ -37,6 +37,7 @@ export const GeneralDeliveriesStatusChart: React.FC<GeneralDeliveriesStatusChart
   };
 
   const processDataForChart = (data: Coleta[]) => {
+    console.log("Processing general deliveries data for chart:", data); // Added log
     const monthlyDataMap = new Map<string, { 
       entregas_pendente: Tables<'items'>[]; 
       entregas_em_transito: Tables<'items'>[]; 
@@ -64,7 +65,10 @@ export const GeneralDeliveriesStatusChart: React.FC<GeneralDeliveriesStatusChart
     let totalAllItems = 0;
 
     data.filter(item => item.type === 'entrega').forEach(item => {
-      if (!item.previsao_coleta) return;
+      if (!item.previsao_coleta) {
+        console.warn("Skipping general delivery due to missing previsao_coleta:", item); // Added log
+        return;
+      }
 
       // Explicitly parse year, month, day to avoid timezone issues
       const [year, month, day] = item.previsao_coleta.split('-').map(Number);
@@ -94,21 +98,7 @@ export const GeneralDeliveriesStatusChart: React.FC<GeneralDeliveriesStatusChart
         monthlyDataMap.set(monthKey, currentMonthData);
       }
     });
-
-    const chartData = allMonths.map(monthKey => {
-      const data = monthlyDataMap.get(monthKey)!;
-      return {
-        month: monthKey,
-        entregas_pendente: getTotalQuantityOfItems(data.entregas_pendente),
-        entregas_em_transito: getTotalQuantityOfItems(data.entregas_em_transito),
-        entregas_concluidas: getTotalQuantityOfItems(data.entregas_concluidas),
-        total_items_month: data.total_items_month,
-        entregas_pendente_items: data.entregas_pendente,
-        entregas_em_transito_items: data.entregas_em_transito,
-        entregas_concluidas_items: data.entregas_concluidas,
-      };
-    });
-
+    console.log("Generated chart data for general deliveries:", allMonths.map(monthKey => monthlyDataMap.get(monthKey))); // Added log
     return { 
       chartData, 
       totalEntregasPendente, 

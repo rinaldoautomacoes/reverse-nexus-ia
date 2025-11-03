@@ -50,6 +50,7 @@ interface GeneralMetricsCardsProps {
 
 export const GeneralMetricsCards: React.FC<GeneralMetricsCardsProps> = ({ allColetas, selectedYear }) => {
   const calculateMetrics = (data: Coleta[]) => {
+    console.log("Calculating general metrics with allColetas data:", data); // Added log
     const coletas = data.filter(item => item.type === 'coleta');
     const entregas = data.filter(item => item.type === 'entrega');
 

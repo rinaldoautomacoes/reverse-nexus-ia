@@ -37,6 +37,7 @@ export const GeneralStatusChart: React.FC<GeneralStatusChartProps> = ({ allColet
   };
 
   const processDataForChart = (data: Coleta[]) => {
+    console.log("Processing general coletas data for chart:", data); // Added log
     const monthlyDataMap = new Map<string, { 
       coletas_pendente: Tables<'items'>[]; 
       coletas_em_transito: Tables<'items'>[];
@@ -64,7 +65,10 @@ export const GeneralStatusChart: React.FC<GeneralStatusChartProps> = ({ allColet
     let totalAllItems = 0;
 
     data.filter(item => item.type === 'coleta').forEach(item => {
-      if (!item.previsao_coleta) return;
+      if (!item.previsao_coleta) {
+        console.warn("Skipping general coleta due to missing previsao_coleta:", item); // Added log
+        return;
+      }
 
       // Explicitly parse year, month, day to avoid timezone issues
       const [year, month, day] = item.previsao_coleta.split('-').map(Number);
@@ -95,21 +99,7 @@ export const GeneralStatusChart: React.FC<GeneralStatusChartProps> = ({ allColet
         monthlyDataMap.set(monthKey, currentMonthData);
       }
     });
-
-    const chartData = allMonths.map(monthKey => {
-      const data = monthlyDataMap.get(monthKey)!;
-      return {
-        month: monthKey,
-        coletas_pendente: getTotalQuantityOfItems(data.coletas_pendente),
-        coletas_em_transito: getTotalQuantityOfItems(data.coletas_em_transito),
-        coletas_concluidas: getTotalQuantityOfItems(data.coletas_concluidas),
-        total_items_month: data.total_items_month,
-        coletas_pendente_items: data.coletas_pendente,
-        coletas_em_transito_items: data.coletas_em_transito,
-        coletas_concluidas_items: data.coletas_concluidas,
-      };
-    });
-
+    console.log("Generated chart data for general coletas:", allMonths.map(monthKey => monthlyDataMap.get(monthKey))); // Added log
     return { 
       chartData, 
       totalColetasPendente, 

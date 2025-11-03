@@ -69,15 +69,17 @@ export const ColetasMetricsCards: React.FC<ColetasMetricsCardsProps> = ({ select
 
       const { data, error } = await supabase
         .from('coletas')
-        .select(`id, status_coleta, items(quantity)`) // Select items(quantity)
+        .select(`id, status_coleta, previsao_coleta, items(quantity)`) // Added previsao_coleta for debugging
         .eq('user_id', user.id)
         .eq('type', 'coleta')
         .gte('previsao_coleta', startDate) // Use previsao_coleta for filtering
         .lt('previsao_coleta', endDate); // Use previsao_coleta for filtering
       
       if (error) {
+        console.error("Supabase query error in ColetasMetricsCards:", error.message); // Added log
         throw new Error(error.message);
       }
+      console.log("Fetched coletas for metrics:", data); // Added log
       return data;
     },
     enabled: !!user?.id,
@@ -101,6 +103,7 @@ export const ColetasMetricsCards: React.FC<ColetasMetricsCardsProps> = ({ select
   }, [coletasError, productsError, toast]);
 
   const calculateColetasMetrics = (coletasData: Coleta[] | undefined) => {
+    console.log("Calculating metrics with coletasData:", coletasData); // Added log
     const totalAllProducts = coletasData?.reduce((sum, coleta) => sum + getTotalQuantityOfItems(coleta.items), 0) || 0;
     const pendenteProducts = coletasData?.filter(c => c.status_coleta === 'pendente').reduce((sum, coleta) => sum + getTotalQuantityOfItems(coleta.items), 0) || 0;
     const emTransitoProducts = coletasData?.filter(c => c.status_coleta === 'agendada').reduce((sum, coleta) => sum + getTotalQuantityOfItems(coleta.items), 0) || 0;

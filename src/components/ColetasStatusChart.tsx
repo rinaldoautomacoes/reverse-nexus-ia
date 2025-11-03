@@ -74,7 +74,11 @@ export const ColetasStatusChart: React.FC<ColetasStatusChartProps> = ({ selected
         .gte('previsao_coleta', startDate) // Use previsao_coleta for filtering
         .lt('previsao_coleta', endDate) // Use previsao_coleta for filtering
         .order('created_at', { ascending: true });
-      if (error) throw new Error(error.message);
+      if (error) {
+        console.error("Supabase query error in ColetasStatusChart:", error.message); // Added log
+        throw new Error(error.message);
+      }
+      console.log("Fetched coletas for status chart:", data); // Added log
       return data || [];
     },
     enabled: !!user?.id,
@@ -137,7 +141,10 @@ export const ColetasStatusChart: React.FC<ColetasStatusChartProps> = ({ selected
     let totalAll = 0;
 
     coletasData?.forEach(coleta => {
-      if (!coleta.previsao_coleta || !coleta.items) return;
+      if (!coleta.previsao_coleta || !coleta.items) {
+        console.warn("Skipping coleta due to missing previsao_coleta or items:", coleta); // Added log
+        return;
+      }
 
       // Explicitly parse year, month, day to avoid timezone issues with DATE column
       const [year, month, day] = coleta.previsao_coleta.split('-').map(Number);
@@ -180,7 +187,7 @@ export const ColetasStatusChart: React.FC<ColetasStatusChartProps> = ({ selected
         concluidasItems: data.concluidas,
       };
     });
-
+    console.log("Generated chart data:", chartData); // Added log
     return { 
       chartData, 
       totalPendenteCount, 

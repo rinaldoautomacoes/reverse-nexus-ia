@@ -67,15 +67,17 @@ export const EntregasMetricsCards: React.FC<EntregasMetricsCardsProps> = ({ sele
 
       const { data, error } = await supabase
         .from('coletas')
-        .select('id, status_coleta, items(quantity)') // Select items(quantity)
+        .select('id, status_coleta, previsao_coleta, items(quantity)') // Added previsao_coleta for debugging
         .eq('user_id', user.id)
         .eq('type', 'entrega')
         .gte('previsao_coleta', startDate)
         .lt('previsao_coleta', endDate);
       
       if (error) {
+        console.error("Supabase query error in EntregasMetricsCards:", error.message); // Added log
         throw new Error(error.message);
       }
+      console.log("Fetched entregas for metrics:", data); // Added log
       return data;
     },
     enabled: !!user?.id,
@@ -99,6 +101,7 @@ export const EntregasMetricsCards: React.FC<EntregasMetricsCardsProps> = ({ sele
   }, [entregasError, productsError, toast]);
 
   const calculateEntregasMetrics = (entregasData: Coleta[] | undefined) => {
+    console.log("Calculating entregas metrics with entregasData:", entregasData); // Added log
     const totalAllProducts = entregasData?.reduce((sum, entrega) => sum + getTotalQuantityOfItems(entrega.items), 0) || 0;
     
     const pendenteProducts = entregasData?.filter(e => e.status_coleta === 'pendente').reduce((sum, entrega) => sum + getTotalQuantityOfItems(entrega.items), 0) || 0;
