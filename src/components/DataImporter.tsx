@@ -197,19 +197,22 @@ export const DataImporter: React.FC<DataImporterProps> = ({ initialTab = 'collec
       return insertedColetas.length;
     },
     onSuccess: (count) => {
-      queryClient.invalidateQueries({ queryKey: ['coletasAtivas', user?.id] });
-      queryClient.invalidateQueries({ queryKey: ['coletasConcluidas', user?.id] });
-      queryClient.invalidateQueries({ queryKey: ['entregasAtivas', user?.id] });
-      queryClient.invalidateQueries({ queryKey: ['entregasConcluidas', user?.id] });
-      queryClient.invalidateQueries({ queryKey: ['dashboardColetasMetrics', user?.id] });
-      queryClient.invalidateQueries({ queryKey: ['collectionStatusChart', user?.id] });
-      queryClient.invalidateQueries({ queryKey: ['productStatusChart', user?.id] });
-      queryClient.invalidateQueries({ queryKey: ['itemsForColetasMetrics', user?.id] });
-      queryClient.invalidateQueries({ queryKey: ['entregasForMetrics', user?.id] });
-      queryClient.invalidateQueries({ queryKey: ['entregasAtivasStatusChart', user?.id] });
-      queryClient.invalidateQueries({ queryKey: ['entregasAtivasStatusDonutChart', user?.id] });
-      queryClient.invalidateQueries({ queryKey: ['itemsForEntregasMetrics', user?.id] });
-      queryClient.invalidateQueries({ queryKey: ['allColetasForGeneralDashboard', user?.id] });
+      // Invalidate specific queries used by the dashboard components
+      queryClient.invalidateQueries({ queryKey: ['coletasForMetrics'] }); // For ColetasMetricsCards
+      queryClient.invalidateQueries({ queryKey: ['coletasStatusChart'] }); // For ColetasStatusChart
+      queryClient.invalidateQueries({ queryKey: ['collectionStatusChart'] }); // For CollectionStatusDonutChart
+      queryClient.invalidateQueries({ queryKey: ['allProducts'] }); // Products might be updated or needed for descriptions
+
+      // Also invalidate other relevant lists and dashboards
+      queryClient.invalidateQueries({ queryKey: ['coletasAtivas'] });
+      queryClient.invalidateQueries({ queryKey: ['coletasConcluidas'] });
+      queryClient.invalidateQueries({ queryKey: ['entregasAtivas'] });
+      queryClient.invalidateQueries({ queryKey: ['entregasConcluidas'] });
+      queryClient.invalidateQueries({ queryKey: ['entregasForMetrics'] });
+      queryClient.invalidateQueries({ queryKey: ['entregasAtivasStatusChart'] });
+      queryClient.invalidateQueries({ queryKey: ['entregasAtivasStatusDonutChart'] });
+      queryClient.invalidateQueries({ queryKey: ['allColetasForGeneralDashboard'] });
+      
       toast({ title: 'Importação de Coletas/Entregas concluída!', description: `${count} registros foram salvos com sucesso no banco de dados.` });
       setSelectedFile(null);
       setExtractedData(null);
