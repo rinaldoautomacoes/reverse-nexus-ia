@@ -5,7 +5,7 @@ import type { ParsedItem, ParsedCollectionData } from './types'; // Import from 
 export const parseReturnDocumentText = (text: string): ParsedCollectionData => {
   const lines = text.split('\n').map(line => line.trim()).filter(line => line.length > 0);
   const parsedData: Partial<ParsedCollectionData> = {
-    unique_number: generateUniqueNumber('DOC'),
+    unique_number: generateUniqueNumber('DOC'), // Always generate a unique number here
     status_coleta: 'pendente',
     type: 'coleta',
     items: [],
@@ -100,6 +100,12 @@ export const parseReturnDocumentText = (text: string): ParsedCollectionData => {
       currentObservacao.push('Recolhimento: IMEDIATO');
     } else if (lowerLine.startsWith('obs.:')) {
       currentObservacao.push(line.replace(/obs\.:/i, '').trim());
+    }
+    // NEW: If a line contains "número da coleta", "os", "pedido", or "unique number",
+    // treat it as client_control, not unique_number.
+    else if (lowerLine.includes('número da coleta') || lowerLine.includes('os') || lowerLine.includes('pedido') || lowerLine.includes('unique number')) {
+      const value = line.split(':').length > 1 ? line.split(':').slice(1).join(':').trim() : line.trim();
+      if (value) parsedData.client_control = value;
     }
   }
 
@@ -268,7 +274,7 @@ export const parseSelectedSpreadsheetCells = (
   selectedCellKeys: string[]
 ): ParsedCollectionData => {
   const parsedData: Partial<ParsedCollectionData> = {
-    unique_number: generateUniqueNumber('EXCEL'),
+    unique_number: generateUniqueNumber('EXCEL'), // Always generate a unique number here
     status_coleta: 'pendente',
     type: 'coleta',
     items: [],
@@ -362,9 +368,10 @@ export const parseSelectedSpreadsheetCells = (
       }
     }
 
+    // NEW: Map "unique number" like fields to client_control, not unique_number
     if (lowerCellValue.includes('número da coleta') || lowerCellValue.includes('os') || lowerCellValue.includes('pedido') || lowerCellValue.includes('unique number')) {
       const value = getValue(cell);
-      if (value) parsedData.unique_number = value;
+      if (value) parsedData.client_control = value;
     } else if (lowerCellValue.includes('controle do cliente') || lowerCellValue.includes('client control')) {
       const value = getValue(cell);
       if (value) parsedData.client_control = value;

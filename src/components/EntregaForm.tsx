@@ -247,7 +247,7 @@ export const EntregaForm: React.FC<EntregaFormProps> = ({ initialData, onSave, o
     <form onSubmit={handleSubmit} className="space-y-6">
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div className="space-y-2">
-          <Label htmlFor="unique_number">Número Único da Entrega</Label>
+          <Label htmlFor="unique_number">Código da Entrega</Label>
           <div className="relative">
             <Tag className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
             <Input
