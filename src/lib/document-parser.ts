@@ -1,16 +1,17 @@
 import { generateUniqueNumber } from './utils';
-import { parseDateSafely } from './date-utils'; // Import from new date-utils
-import type { ParsedItem, ParsedCollectionData } from './types'; // Import from new types file
+import { parseDateSafely } from './date-utils';
+import type { ParsedItem, ParsedCollectionData } from './types';
 
 export const parseReturnDocumentText = (text: string): ParsedCollectionData => {
   const lines = text.split('\n').map(line => line.trim()).filter(line => line.length > 0);
   const parsedData: Partial<ParsedCollectionData> = {
-    unique_number: generateUniqueNumber('DOC'), // Always generate a unique number here
+    unique_number: generateUniqueNumber('DOC'),
     status_coleta: 'pendente',
     type: 'coleta',
     items: [],
     modelo_aparelho: null,
     modelo_aparelho_description: null,
+    client_control: null, // Inicializado como null para garantir que fique em branco se não for encontrado
   };
 
   let currentObservacao = [];
@@ -101,11 +102,16 @@ export const parseReturnDocumentText = (text: string): ParsedCollectionData => {
     } else if (lowerLine.startsWith('obs.:')) {
       currentObservacao.push(line.replace(/obs\.:/i, '').trim());
     }
-    // NEW: If a line contains "número da coleta", "os", "pedido", or "unique number",
-    // treat it as client_control, not unique_number.
-    else if (lowerLine.includes('número da coleta') || lowerLine.includes('os') || lowerLine.includes('pedido') || lowerLine.includes('unique number')) {
-      const value = line.split(':').length > 1 ? line.split(':').slice(1).join(':').trim() : line.trim();
-      if (value) parsedData.client_control = value;
+    // Lógica refinada para client_control: exige um prefixo claro seguido por ':'
+    else if (
+      lowerLine.startsWith('controle do cliente:') || 
+      lowerLine.startsWith('client control:') ||
+      lowerLine.startsWith('os:') || 
+      lowerLine.startsWith('pedido:') || 
+      lowerLine.startsWith('número da coleta:') || 
+      lowerLine.startsWith('unique number:')
+    ) {
+      parsedData.client_control = line.split(':').slice(1).join(':').trim();
     }
   }
 
@@ -274,11 +280,12 @@ export const parseSelectedSpreadsheetCells = (
   selectedCellKeys: string[]
 ): ParsedCollectionData => {
   const parsedData: Partial<ParsedCollectionData> = {
-    unique_number: generateUniqueNumber('EXCEL'), // Always generate a unique number here
+    unique_number: generateUniqueNumber('EXCEL'),
     status_coleta: 'pendente',
     type: 'coleta',
     items: [],
     previsao_coleta: parseDateSafely(new Date()),
+    client_control: null, // Inicializado como null para garantir que fique em branco se não for encontrado
   };
 
   const selectedCells: { rowIndex: number; colIndex: number; value: string | number | null }[] = [];
@@ -368,11 +375,15 @@ export const parseSelectedSpreadsheetCells = (
       }
     }
 
-    // NEW: Map "unique number" like fields to client_control, not unique_number
-    if (lowerCellValue.includes('número da coleta') || lowerCellValue.includes('os') || lowerCellValue.includes('pedido') || lowerCellValue.includes('unique number')) {
-      const value = getValue(cell);
-      if (value) parsedData.client_control = value;
-    } else if (lowerCellValue.includes('controle do cliente') || lowerCellValue.includes('client control')) {
+    // Lógica refinada para client_control: exige um prefixo claro seguido por ':' ou ser o próprio cabeçalho
+    if (
+      lowerCellValue.startsWith('controle do cliente') || 
+      lowerCellValue.startsWith('client control') ||
+      lowerCellValue.startsWith('os') || 
+      lowerCellValue.startsWith('pedido') || 
+      lowerCellValue.startsWith('número da coleta') || 
+      lowerCellValue.startsWith('unique number')
+    ) {
       const value = getValue(cell);
       if (value) parsedData.client_control = value;
     }

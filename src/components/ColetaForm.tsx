@@ -80,7 +80,7 @@ export const ColetaForm: React.FC<ColetaFormProps> = ({ initialData, onSave, onC
     origin_lng: null,
     destination_lat: null,
     destination_lng: null,
-    client_control: "", // Novo campo
+    client_control: null, // Alterado para null
   });
 
   const [collectionItems, setCollectionItems] = useState<ItemData[]>(initialData?.items || []);
@@ -132,7 +132,7 @@ export const ColetaForm: React.FC<ColetaFormProps> = ({ initialData, onSave, onC
         origin_lng: null,
         destination_lat: null,
         destination_lng: null,
-        client_control: "",
+        client_control: null, // Alterado para null
       });
       setCollectionItems([]);
     }
@@ -289,7 +289,7 @@ export const ColetaForm: React.FC<ColetaFormProps> = ({ initialData, onSave, onC
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div className="space-y-2">
-          <Label htmlFor="previsao_coleta">Previsão de Coleta *</Label> {/* Rótulo alterado aqui */}
+          <Label htmlFor="previsao_coleta">Previsão de Coleta *</Label>
           <Popover>
             <PopoverTrigger asChild>
               <Button
@@ -300,7 +300,7 @@ export const ColetaForm: React.FC<ColetaFormProps> = ({ initialData, onSave, onC
                 )}
                 disabled={isPending}
               >
-                <CalendarIcon className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                        <CalendarIcon className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
                 {formData.previsao_coleta ? format(new Date(formData.previsao_coleta), "PPP", { locale: ptBR }) : "Selecionar data"}
               </Button>
             </PopoverTrigger>

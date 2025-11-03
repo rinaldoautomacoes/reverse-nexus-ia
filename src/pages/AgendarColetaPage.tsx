@@ -80,7 +80,7 @@ export const AgendarColetaPage: React.FC = () => {
     origin_lng: null,
     destination_lat: null,
     destination_lng: null,
-    client_control: "",
+    client_control: null, // Alterado para null
   });
 
   const [collectionItems, setCollectionItems] = useState<ItemData[]>([]);

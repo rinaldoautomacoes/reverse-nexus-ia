@@ -52,6 +52,7 @@ export const AutomaticCollectionSchedulerPage: React.FC = () => {
     status_coleta: "pendente",
     type: "coleta",
     unique_number: generateUniqueNumber('COL'), // Always generate a unique number on initial state
+    client_control: null, // Alterado para null
   });
 
   const [isProcessingDocument, setIsProcessingDocument] = useState(false);
@@ -303,6 +304,7 @@ export const AutomaticCollectionSchedulerPage: React.FC = () => {
       status_coleta: "pendente",
       type: "coleta",
       unique_number: generateUniqueNumber('COL'), // Reset to a new unique number
+      client_control: null, // Reset to null
     });
     toast({ title: "Pré-visualização Limpa", description: "Todos os dados do formulário foram resetados." });
   };
