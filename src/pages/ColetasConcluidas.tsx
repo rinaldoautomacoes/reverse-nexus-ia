@@ -60,8 +60,8 @@ const ColetasConcluidas: React.FC<ColetasConcluidasProps> = ({ selectedYear }) =
         .eq('user_id', user.id)
         .eq('type', 'coleta')
         .eq('status_coleta', 'concluida')
-        .gte('created_at', `${selectedYear}-01-01T00:00:00Z`)
-        .lte('created_at', `${selectedYear}-12-31T23:59:59Z`)
+        .gte('previsao_coleta', `${selectedYear}-01-01`) // Alterado para previsao_coleta
+        .lt('previsao_coleta', `${parseInt(selectedYear) + 1}-01-01`) // Alterado para previsao_coleta
         .order('previsao_coleta', { ascending: false });
 
       if (searchTerm) {

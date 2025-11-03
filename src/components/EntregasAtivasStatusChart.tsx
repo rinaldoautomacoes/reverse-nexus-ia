@@ -139,12 +139,10 @@ export const EntregasAtivasStatusChart: React.FC<EntregasAtivasStatusChartProps>
     entregasData?.forEach(entrega => {
       if (!entrega.previsao_coleta || !entrega.items) return;
 
-      const entregaDate = parseISO(entrega.previsao_coleta);
-
-      const timezoneOffsetMinutes = entregaDate.getTimezoneOffset();
-      const adjustedDateForLocalMonth = new Date(entregaDate.getTime() - timezoneOffsetMinutes * 60 * 1000);
-
-      const entregaMonthKey = format(startOfMonth(adjustedDateForLocalMonth), 'MMM', { locale: ptBR });
+      // Explicitly parse year, month, day to avoid timezone issues with DATE column
+      const [year, month, day] = entrega.previsao_coleta.split('-').map(Number);
+      const itemDate = new Date(year, month - 1, day); // month is 0-indexed
+      const entregaMonthKey = format(startOfMonth(itemDate), 'MMM', { locale: ptBR });
       const totalItemsInEntrega = getTotalQuantityOfItems(entrega.items);
 
       if (monthlyDataMap.has(entregaMonthKey)) {

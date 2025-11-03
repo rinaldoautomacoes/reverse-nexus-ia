@@ -139,12 +139,10 @@ export const ColetasStatusChart: React.FC<ColetasStatusChartProps> = ({ selected
     coletasData?.forEach(coleta => {
       if (!coleta.previsao_coleta || !coleta.items) return;
 
-      const coletaDate = parseISO(coleta.previsao_coleta);
-
-      const timezoneOffsetMinutes = coletaDate.getTimezoneOffset();
-      const adjustedDateForLocalMonth = new Date(coletaDate.getTime() - timezoneOffsetMinutes * 60 * 1000);
-
-      const coletaMonthKey = format(startOfMonth(adjustedDateForLocalMonth), 'MMM', { locale: ptBR });
+      // Explicitly parse year, month, day to avoid timezone issues with DATE column
+      const [year, month, day] = coleta.previsao_coleta.split('-').map(Number);
+      const itemDate = new Date(year, month - 1, day); // month is 0-indexed
+      const coletaMonthKey = format(startOfMonth(itemDate), 'MMM', { locale: ptBR });
       const totalItemsInColeta = getTotalQuantityOfItems(coleta.items);
 
       if (monthlyDataMap.has(coletaMonthKey)) {

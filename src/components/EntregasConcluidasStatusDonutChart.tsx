@@ -31,7 +31,7 @@ const CustomLabel: React.FC<CustomLabelProps> = ({ cx, cy, midAngle, innerRadius
   const y = cy + radius * Math.sin(-midAngle * Math.PI / 180);
 
   return (
-    <text x={x} y={y} fill="hsl(0 0% 0%)" textAnchor="middle" dominantBaseline="central" className="text-xs font-bold"> {/* Alterado para text-xs */}
+    <text x={x} y={y} fill="hsl(var(--foreground))" textAnchor="middle" dominantBaseline="central" className="text-xs font-bold"> {/* Alterado para text-xs */}
       {`${(percent * 100).toFixed(0)}%`}
     </text>
   );

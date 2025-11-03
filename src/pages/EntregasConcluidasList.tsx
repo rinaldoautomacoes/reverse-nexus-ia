@@ -60,8 +60,8 @@ const EntregasConcluidasList: React.FC<EntregasConcluidasListProps> = ({ selecte
         .eq('user_id', user.id)
         .eq('type', 'entrega')
         .eq('status_coleta', 'concluida')
-        .gte('created_at', `${selectedYear}-01-01T00:00:00Z`)
-        .lte('created_at', `${selectedYear}-12-31T23:59:59Z`)
+        .gte('previsao_coleta', `${selectedYear}-01-01`) // Alterado para previsao_coleta
+        .lt('previsao_coleta', `${parseInt(selectedYear) + 1}-01-01`) // Alterado para previsao_coleta
         .order('previsao_coleta', { ascending: false });
 
       if (searchTerm) {
@@ -375,7 +375,7 @@ const EntregasConcluidasList: React.FC<EntregasConcluidasListProps> = ({ selecte
                 ))
               ) : (
                 <div className="p-12 text-center text-muted-foreground">
-                  <CheckCircle className="h-12 w-12 mx-auto mb-4" />
+                  <Truck className="h-12 w-12 mx-auto mb-4" />
                   <p>Nenhuma entrega concluída encontrada para {selectedYear}.</p>
                 </div>
               )}
