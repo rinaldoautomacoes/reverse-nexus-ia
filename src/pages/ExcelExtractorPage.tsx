@@ -15,6 +15,7 @@ import SpreadsheetView from '@/components/excel-extractor/SpreadsheetView';
 import ExtractedDataView from '@/components/excel-extractor/ExtractedDataView';
 import { UploadIcon, FileIcon, ClearIcon } from '@/components/excel-extractor/Icons';
 import type { TablesInsert } from '@/integrations/supabase/types_generated';
+import { parseSelectedSpreadsheetCells } from '@/lib/document-parser'; // Import new parser
 
 type ExcelData = (string | number | null)[][];
 type SelectedCells = Set<string>;
@@ -131,11 +132,12 @@ export const ExcelExtractorPage: React.FC = () => {
       return;
     }
     
-    // Passar os dados brutos da planilha e as chaves das células selecionadas
+    // Use the new parser to get all structured data
+    const parsedCollectionData = parseSelectedSpreadsheetCells(data, Array.from(selectedCells));
+
     navigate('/agendamento-automatico', { 
       state: { 
-        rawSpreadsheetData: data, 
-        selectedCellKeys: Array.from(selectedCells) 
+        parsedCollectionData: parsedCollectionData 
       } 
     });
   };

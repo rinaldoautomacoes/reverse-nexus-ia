@@ -10,7 +10,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/use-auth";
 import { generateUniqueNumber, formatItemsForColetaModeloAparelho, getTotalQuantityOfItems, cn } from "@/lib/utils";
 import { format } from "date-fns";
-import { parseReturnDocumentText, ParsedCollectionData, ParsedItem, processSelectedSpreadsheetCellsForItems } from '@/lib/document-parser';
+import { parseReturnDocumentText, ParsedCollectionData, ParsedItem, processSelectedSpreadsheetCellsForItems, parseSelectedSpreadsheetCells } from '@/lib/document-parser';
 
 // Import new modular components from the shared directory
 import { DocumentInputCard } from '@/components/shared-scheduler-sections/DocumentInputCard';
@@ -56,66 +56,6 @@ export const AutomaticCollectionSchedulerPage: React.FC = () => {
   const [isProcessingDocument, setIsProcessingDocument] = useState(false);
   const [isGeocoding, setIsGeocoding] = useState(false);
   const [documentText, setDocumentText] = useState<string>("");
-
-  useEffect(() => {
-    if (location.state?.rawSpreadsheetData && location.state?.selectedCellKeys) {
-      // Handle data coming from ExcelExtractorPage
-      const itemsFromSpreadsheet = processSelectedSpreadsheetCellsForItems(
-        location.state.rawSpreadsheetData,
-        location.state.selectedCellKeys
-      );
-      setFormData(prev => ({
-        ...prev,
-        items: itemsFromSpreadsheet,
-        // Clear documentText if it was also passed, to avoid double parsing
-        documentText: "", 
-      }));
-      // Clear location state to prevent re-processing on refresh
-      navigate(location.pathname, { replace: true, state: {} });
-      toast({ title: "Dados do Excel carregados", description: `${itemsFromSpreadsheet.length} itens extraídos da planilha.` });
-    } else if (location.state?.extractedText) {
-      // Handle data coming from manual text paste or old ExcelExtractorPage flow
-      setDocumentText(location.state.extractedText);
-      handleParseDocument(location.state.extractedText);
-      // Clear location state
-      navigate(location.pathname, { replace: true, state: {} });
-    }
-  }, [location.state, navigate, toast]);
-
-  useEffect(() => {
-    if (user?.id) {
-      // user_id will be added in mutation
-    }
-  }, [user?.id]);
-
-  const handleParsedDataChange = useCallback((field: keyof ParsedCollectionData, value: any) => {
-    setFormData(prev => ({ ...prev, [field]: value }));
-  }, []);
-
-  const handleItemChange = useCallback((index: number, field: keyof ParsedItem, value: any) => {
-    setFormData(prev => {
-      const newItems = [...(prev.items || [])];
-      if (newItems[index]) {
-        (newItems[index] as any)[field] = value;
-      }
-      return { ...prev, items: newItems };
-    });
-  }, []);
-
-  const handleAddItem = useCallback(() => {
-    setFormData(prev => ({
-      ...prev,
-      items: [...(prev.items || []), { product_code: '', product_description: '', quantity: 1 }],
-    }));
-  }, []);
-
-  const handleRemoveItem = useCallback((index: number) => {
-    setFormData(prev => {
-      const newItems = [...(prev.items || [])];
-      newItems.splice(index, 1);
-      return { ...prev, items: newItems };
-    });
-  }, []);
 
   const handleParseDocument = useCallback(async (textToParse: string = documentText) => {
     if (!textToParse.trim()) {
@@ -190,6 +130,57 @@ export const AutomaticCollectionSchedulerPage: React.FC = () => {
       setIsProcessingDocument(false);
     }
   }, [documentText, toast]);
+
+  useEffect(() => {
+    if (location.state?.parsedCollectionData) {
+      // Handle structured data coming from ExcelExtractorPage
+      setFormData(location.state.parsedCollectionData);
+      setDocumentText(""); // Clear documentText if data came from spreadsheet
+      navigate(location.pathname, { replace: true, state: {} });
+      toast({ title: "Dados do Excel carregados", description: `Dados extraídos da planilha e preenchidos no formulário.` });
+    } else if (location.state?.extractedText) {
+      // Handle data coming from manual text paste or old ExcelExtractorPage flow
+      setDocumentText(location.state.extractedText);
+      handleParseDocument(location.state.extractedText);
+      // Clear location state
+      navigate(location.pathname, { replace: true, state: {} });
+    }
+  }, [location.state, navigate, toast, handleParseDocument]);
+
+  useEffect(() => {
+    if (user?.id) {
+      // user_id will be added in mutation
+    }
+  }, [user?.id]);
+
+  const handleParsedDataChange = useCallback((field: keyof ParsedCollectionData, value: any) => {
+    setFormData(prev => ({ ...prev, [field]: value }));
+  }, []);
+
+  const handleItemChange = useCallback((index: number, field: keyof ParsedItem, value: any) => {
+    setFormData(prev => {
+      const newItems = [...(prev.items || [])];
+      if (newItems[index]) {
+        (newItems[index] as any)[field] = value;
+      }
+      return { ...prev, items: newItems };
+    });
+  }, []);
+
+  const handleAddItem = useCallback(() => {
+    setFormData(prev => ({
+      ...prev,
+      items: [...(prev.items || []), { product_code: '', product_description: '', quantity: 1 }],
+    }));
+  }, []);
+
+  const handleRemoveItem = useCallback((index: number) => {
+    setFormData(prev => {
+      const newItems = [...(prev.items || [])];
+      newItems.splice(index, 1);
+      return { ...prev, items: newItems };
+    });
+  }, []);
 
   const addColetaMutation = useMutation({
     mutationFn: async (newColeta: ColetaInsert & { items: ParsedItem[] }) => {

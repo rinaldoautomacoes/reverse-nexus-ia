@@ -317,3 +317,166 @@ export const processSelectedSpreadsheetCellsForItems = (
 
   return itemRows;
 };
+
+export const parseSelectedSpreadsheetCells = (
+  spreadsheetData: (string | number | null)[][],
+  selectedCellKeys: string[]
+): ParsedCollectionData => {
+  const parsedData: Partial<ParsedCollectionData> = {
+    unique_number: generateUniqueNumber('EXCEL'),
+    status_coleta: 'pendente',
+    type: 'coleta',
+    items: [],
+    previsao_coleta: format(new Date(), 'yyyy-MM-dd'), // Default date
+  };
+
+  const selectedCells: { rowIndex: number; colIndex: number; value: string | number | null }[] = [];
+  selectedCellKeys.forEach(key => {
+    const [rowIndexStr, colIndexStr] = key.split(':');
+    const rowIndex = parseInt(rowIndexStr);
+    const colIndex = parseInt(colIndexStr);
+    selectedCells.push({ rowIndex, colIndex, value: spreadsheetData[rowIndex]?.[colIndex] });
+  });
+
+  // Sort cells by row, then by column to process them somewhat linearly
+  selectedCells.sort((a, b) => {
+    if (a.rowIndex !== b.rowIndex) return a.rowIndex - b.rowIndex;
+    return a.colIndex - b.colIndex;
+  });
+
+  // Heuristics to extract data
+  for (const cell of selectedCells) {
+    const cellValue = String(cell.value || '').trim();
+    const lowerCellValue = cellValue.toLowerCase();
+
+    // Helper to get value from current cell or adjacent cell
+    const getValue = (currentCell: typeof cell, checkAdjacent = true) => {
+      const valueFromCurrent = currentCell.value ? String(currentCell.value).trim() : '';
+      if (valueFromCurrent && !valueFromCurrent.includes(':')) return valueFromCurrent; // If it's just a value, use it
+
+      const parts = valueFromCurrent.split(':');
+      if (parts.length > 1 && parts[0].toLowerCase().includes(lowerCellValue.split(':')[0])) {
+        return parts.slice(1).join(':').trim(); // Value after label
+      }
+
+      if (checkAdjacent && currentCell.colIndex + 1 < spreadsheetData[currentCell.rowIndex]?.length) {
+        return String(spreadsheetData[currentCell.rowIndex][currentCell.colIndex + 1] || '').trim();
+      }
+      return '';
+    };
+
+    // Client Name
+    if (lowerCellValue.includes('cliente') || lowerCellValue.includes('nome do cliente') || lowerCellValue.includes('parceiro')) {
+      const value = getValue(cell);
+      if (value) parsedData.parceiro = value;
+    }
+
+    // Address & CEP
+    if (lowerCellValue.includes('endereço de origem') || lowerCellValue.includes('endereço') || lowerCellValue.includes('address')) {
+      const value = getValue(cell);
+      if (value) parsedData.endereco_origem = value;
+      const cepMatch = (parsedData.endereco_origem || value).match(/(\d{5}-?\d{3})/);
+      if (cepMatch) parsedData.cep_origem = cepMatch[1].replace(/-/g, '');
+    } else if (lowerCellValue.includes('cep de origem') || lowerCellValue.includes('cep')) {
+      const value = getValue(cell);
+      if (value) parsedData.cep_origem = value.replace(/-/g, '');
+    }
+    // Destination Address & CEP (assuming similar patterns if present)
+    if (lowerCellValue.includes('endereço de destino')) {
+      const value = getValue(cell);
+      if (value) parsedData.endereco_destino = value;
+      const cepMatch = (parsedData.endereco_destino || value).match(/(\d{5}-?\d{3})/);
+      if (cepMatch) parsedData.cep_destino = cepMatch[1].replace(/-/g, '');
+    } else if (lowerCellValue.includes('cep de destino')) {
+      const value = getValue(cell);
+      if (value) parsedData.cep_destino = value.replace(/-/g, '');
+    }
+
+    // Contact Person
+    if (lowerCellValue.includes('contato') || lowerCellValue.includes('pessoa de contato')) {
+      const value = getValue(cell);
+      if (value) parsedData.contato = value;
+    }
+
+    // Phone
+    if (lowerCellValue.includes('telefone') || lowerCellValue.includes('phone')) {
+      const value = getValue(cell);
+      if (value) parsedData.telefone = value;
+    }
+
+    // Email
+    if (lowerCellValue.includes('email')) {
+      const value = getValue(cell);
+      if (value) parsedData.email = value;
+    }
+
+    // CNPJ
+    if (lowerCellValue.includes('cnpj')) {
+      const value = getValue(cell);
+      if (value) parsedData.cnpj = value;
+    }
+
+    // Date
+    if (lowerCellValue.includes('data') || lowerCellValue.includes('previsão') || lowerCellValue.includes('data da coleta') || lowerCellValue.includes('data da entrega')) {
+      let dateString = getValue(cell);
+      if (dateString) {
+        const parsedDate = parse(dateString, 'dd/MM/yyyy', new Date()); // Try common format
+        if (isValid(parsedDate)) {
+          parsedData.previsao_coleta = format(parsedDate, 'yyyy-MM-dd');
+        } else {
+          const parsedDateAlt = parse(dateString, 'yyyy-MM-dd', new Date()); // Try another common format
+          if (isValid(parsedDateAlt)) {
+            parsedData.previsao_coleta = format(parsedDateAlt, 'yyyy-MM-dd');
+          }
+        }
+      }
+    }
+
+    // Unique Number / Client Control
+    if (lowerCellValue.includes('número da coleta') || lowerCellValue.includes('os') || lowerCellValue.includes('pedido') || lowerCellValue.includes('unique number')) {
+      const value = getValue(cell);
+      if (value) parsedData.unique_number = value;
+    } else if (lowerCellValue.includes('controle do cliente') || lowerCellValue.includes('client control')) {
+      const value = getValue(cell);
+      if (value) parsedData.client_control = value;
+    }
+    
+    // Responsible
+    if (lowerCellValue.includes('responsável') || lowerCellValue.includes('tecnico responsável')) {
+      const value = getValue(cell);
+      if (value) parsedData.responsavel = value;
+    }
+
+    // Observation
+    if (lowerCellValue.includes('observação') || lowerCellValue.includes('obs')) {
+      const value = getValue(cell);
+      if (value) parsedData.observacao = value;
+    }
+
+    // Contract
+    if (lowerCellValue.includes('contrato')) {
+      const value = getValue(cell);
+      if (value) parsedData.contrato = value;
+    }
+  }
+
+  // Extract items using the existing function
+  parsedData.items = processSelectedSpreadsheetCellsForItems(spreadsheetData, selectedCellKeys);
+
+  // Fallbacks for required fields
+  parsedData.parceiro = parsedData.parceiro || 'Cliente Desconhecido';
+  parsedData.endereco_origem = parsedData.endereco_origem || 'Endereço Desconhecido';
+  parsedData.previsao_coleta = parsedData.previsao_coleta || format(new Date(), 'yyyy-MM-dd');
+  parsedData.items = parsedData.items || [];
+
+  // Populate main product fields from the first item if available
+  if (parsedData.items.length > 0) {
+    parsedData.modelo_aparelho = parsedData.items[0].product_code;
+    parsedData.modelo_aparelho_description = parsedData.items[0].product_description;
+  } else {
+    parsedData.modelo_aparelho = null;
+    parsedData.modelo_aparelho_description = null;
+  }
+
+  return parsedData as ParsedCollectionData;
+};
