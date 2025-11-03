@@ -82,11 +82,10 @@ export const parseReturnDocumentText = (text: string): ParsedCollectionData => {
         parsedData.cep_origem = cepMatch[1].replace(/\D/g, '');
       }
     } else if (lowerLine.includes('telefones:')) {
-      // Updated regex to capture multiple phone numbers and clean them
       const phoneNumbers: string[] = [];
-      // Regex mais abrangente para capturar números de telefone, ignorando prefixos como "phone:", "mobile:", etc.
-      // Ele busca por sequências de dígitos que podem ter + no início, parênteses, espaços e hífens.
-      const phoneRegex = /(?:phone|mobile|tel|cel|contato)?\s*[:\-\(]?\s*(\+?\d{1,3}[\s\-\(]?\d{2}\)?[\s\-]?\d{4,5}[\s\-]?\d{4})/gi;
+      // Regex mais abrangente para capturar números de telefone com vários separadores, mas sem letras
+      // Captura: +DD (DD) DDDD-DDDD, +DD.DD.DDDD.DDDD, DD DD DDDD DDDD, etc.
+      const phoneRegex = /(\+?\d{1,3}[.\s\-\(]*\d{2}[.\s\-\)]*\d{4,5}[.\s\-]*\d{4})/gi;
       let match;
       while ((match = phoneRegex.exec(line)) !== null) {
         const cleaned = cleanPhoneNumber(match[1]);
