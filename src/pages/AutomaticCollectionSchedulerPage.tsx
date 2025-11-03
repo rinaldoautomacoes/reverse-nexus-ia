@@ -10,7 +10,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/use-auth";
 import { generateUniqueNumber, formatItemsForColetaModeloAparelho, getTotalQuantityOfItems, cn } from "@/lib/utils";
 import { format } from "date-fns";
-import { parseReturnDocumentText, ParsedCollectionData, ParsedItem } from '@/lib/document-parser';
+import { parseReturnDocumentText, ParsedCollectionData, ParsedItem, processSelectedSpreadsheetCellsForItems } from '@/lib/document-parser';
 
 // Import new modular components from the shared directory
 import { DocumentInputCard } from '@/components/shared-scheduler-sections/DocumentInputCard';
@@ -58,11 +58,29 @@ export const AutomaticCollectionSchedulerPage: React.FC = () => {
   const [documentText, setDocumentText] = useState<string>("");
 
   useEffect(() => {
-    if (location.state?.extractedText) {
+    if (location.state?.rawSpreadsheetData && location.state?.selectedCellKeys) {
+      // Handle data coming from ExcelExtractorPage
+      const itemsFromSpreadsheet = processSelectedSpreadsheetCellsForItems(
+        location.state.rawSpreadsheetData,
+        location.state.selectedCellKeys
+      );
+      setFormData(prev => ({
+        ...prev,
+        items: itemsFromSpreadsheet,
+        // Clear documentText if it was also passed, to avoid double parsing
+        documentText: "", 
+      }));
+      // Clear location state to prevent re-processing on refresh
+      navigate(location.pathname, { replace: true, state: {} });
+      toast({ title: "Dados do Excel carregados", description: `${itemsFromSpreadsheet.length} itens extraídos da planilha.` });
+    } else if (location.state?.extractedText) {
+      // Handle data coming from manual text paste or old ExcelExtractorPage flow
       setDocumentText(location.state.extractedText);
       handleParseDocument(location.state.extractedText);
+      // Clear location state
+      navigate(location.pathname, { replace: true, state: {} });
     }
-  }, [location.state?.extractedText]);
+  }, [location.state, navigate, toast]);
 
   useEffect(() => {
     if (user?.id) {

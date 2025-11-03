@@ -41,134 +41,110 @@ export const parseReturnDocumentText = (text: string): ParsedCollectionData => {
     unique_number: generateUniqueNumber('DOC'),
     status_coleta: 'pendente',
     type: 'coleta',
-    items: [],
-    modelo_aparelho: null, // Inicializa novos campos
-    modelo_aparelho_description: null, // Inicializa novos campos
+    items: [], // Inicializa vazio, será preenchido por regex ou por dados da planilha
+    modelo_aparelho: null,
+    modelo_aparelho_description: null,
   };
 
   let currentObservacao = [];
-  let descriptionsBuffer: string[] = [];
-  let quantitiesBuffer: string[] = [];
-  
-  let isCapturingDescriptions = false;
-  let isCapturingQuantities = false;
+  let inItemsSection = false;
 
   for (const line of lines) {
     const lowerLine = line.toLowerCase();
 
-    // Detect start of description section
+    // Detect start of item section (e.g., header "DESCRIÇÃO: QUANT. INST.")
     if (lowerLine.includes('descrição') && lowerLine.includes('quant. inst.')) {
-      isCapturingDescriptions = true;
-      isCapturingQuantities = false; // Ensure only one capture mode is active
+      inItemsSection = true;
       continue; // Skip the header line itself
     }
 
-    // Detect start of quantity section (assuming it comes after descriptions)
-    if (lowerLine.includes('quant. inst.') && !lowerLine.includes('descrição')) {
-      isCapturingQuantities = true;
-      isCapturingDescriptions = false; // Stop capturing descriptions
-      continue; // Skip the header line itself
+    // If we are in the items section and haven't hit an end marker
+    if (inItemsSection) {
+      // Heuristic to detect end of item section
+      if (
+        lowerLine.startsWith('recolhimento:') ||
+        lowerLine.startsWith('obs.:') ||
+        lowerLine.startsWith('data do recolhimento:') ||
+        lowerLine.startsWith('tecnico responsável:') ||
+        lowerLine.startsWith('nr. contrato:') ||
+        lowerLine.startsWith('cliente:')
+      ) {
+        inItemsSection = false; // End item capture
+        // Continue to process this line as a non-item field
+      } else {
+        // Try to parse line as an item: [ITEM_NUMBER] [DESCRIPTION] [QUANTITY]
+        const itemMatch = line.match(/^(\d+)\s+(.+?)\s+(\d+)$/);
+        if (itemMatch) {
+          const [, itemNumber, description, quantityStr] = itemMatch;
+          const quantity = parseInt(quantityStr, 10);
+          if (!isNaN(quantity) && quantity > 0) {
+            parsedData.items?.push({
+              product_code: description.trim(),
+              product_description: description.trim(),
+              quantity: quantity,
+            });
+          }
+          continue; // Skip to next line if it was an item
+        }
+      }
     }
 
-    // Detect end of item sections (descriptions or quantities)
-    // This is a heuristic, adjust if other markers are more appropriate
-    if (
-      lowerLine.startsWith('recolhimento:') ||
-      lowerLine.startsWith('obs.:') ||
-      lowerLine.startsWith('data do recolhimento:') ||
-      lowerLine.startsWith('tecnico responsável:') ||
-      lowerLine.startsWith('nr. contrato:') ||
-      lowerLine.startsWith('cliente:') // Also stop if a new client section starts
-    ) {
-      isCapturingDescriptions = false;
-      isCapturingQuantities = false;
-    }
-
-    if (isCapturingDescriptions) {
-      // Collect lines that look like descriptions (not empty, not just numbers)
-      if (line.length > 0 && !/^\d+$/.test(line)) {
-        descriptionsBuffer.push(line);
+    // Parse general fields (only if not actively capturing a structured item line)
+    const contatoMatch = line.match(/contato:\s*(.*)/i);
+    if (contatoMatch && contatoMatch[1]) {
+      parsedData.contato = contatoMatch[1].trim();
+    } else if (lowerLine.startsWith('cliente:')) {
+      parsedData.parceiro = line.replace(/cliente:/i, '').trim();
+    } else if (lowerLine.startsWith('nome:')) {
+      if (!parsedData.parceiro) {
+        parsedData.parceiro = line.replace(/nome:/i, '').trim();
       }
-    } else if (isCapturingQuantities) {
-      // Collect lines that look like quantities (just numbers)
-      if (/^\d+$/.test(line)) {
-        quantitiesBuffer.push(line);
+    } else if (lowerLine.startsWith('cód. parc:')) {
+      parsedData.client_control = line.replace(/cód\. parc:/i, '').trim();
+    } else if (lowerLine.startsWith('contrato sankhya:')) {
+      currentObservacao.push(`Contrato Sankhya: ${line.replace(/contrato sankhya:/i, '').trim()}`);
+    } else if (lowerLine.startsWith('nr. contrato:')) {
+      parsedData.contrato = line.replace(/nr\. contrato:/i, '').trim();
+    } else if (lowerLine.startsWith('endereço:')) {
+      const addressText = line.replace(/endereço:/i, '').trim();
+      parsedData.endereco_origem = addressText;
+      const cepMatch = addressText.match(/cep:(\d{2}\.\d{3}-\d{3}|\d{8})/i);
+      if (cepMatch) {
+        parsedData.cep_origem = cepMatch[1].replace(/\D/g, '');
       }
-    } else {
-      // Parse general fields (only if not in item capture mode)
-      // Prioritize direct 'Contato:' field
-      const contatoMatch = line.match(/contato:\s*(.*)/i);
-      if (contatoMatch && contatoMatch[1]) {
-        parsedData.contato = contatoMatch[1].trim();
-      } else if (lowerLine.startsWith('cliente:')) {
-        parsedData.parceiro = line.replace(/cliente:/i, '').trim();
-      } else if (lowerLine.startsWith('nome:')) {
-        // Prioritize 'cliente:' if both exist, otherwise use 'nome:'
-        if (!parsedData.parceiro) {
-          parsedData.parceiro = line.replace(/nome:/i, '').trim();
-        }
-      } else if (lowerLine.startsWith('cód. parc:')) {
-        parsedData.client_control = line.replace(/cód\. parc:/i, '').trim();
-      } else if (lowerLine.startsWith('contrato sankhya:')) {
-        currentObservacao.push(`Contrato Sankhya: ${line.replace(/contrato sankhya:/i, '').trim()}`);
-      } else if (lowerLine.startsWith('nr. contrato:')) {
-        parsedData.contrato = line.replace(/nr\. contrato:/i, '').trim();
-      } else if (lowerLine.startsWith('endereço:')) {
-        const addressText = line.replace(/endereço:/i, '').trim();
-        parsedData.endereco_origem = addressText;
-        const cepMatch = addressText.match(/cep:(\d{2}\.\d{3}-\d{3}|\d{8})/i);
-        if (cepMatch) {
-          parsedData.cep_origem = cepMatch[1].replace(/\D/g, '');
-        }
-      } else if (lowerLine.includes('telefones:')) {
-        const phoneMatch = line.match(/phone:\s*(\+?\d[\d\s\-\(\)]+)/i);
-        const mobileMatch = line.match(/mobile:\s*(\+?\d[\d\s\-\(\)]+)/i);
-        let phones = [];
-        if (phoneMatch) phones.push(phoneMatch[1].trim());
-        if (mobileMatch) phones.push(mobileMatch[1].trim());
-        parsedData.telefone = phones.join(' / ');
-      } else if (lowerLine.startsWith('email:')) {
-        parsedData.email = line.replace(/email:/i, '').trim();
-      } else if (lowerLine.startsWith('data do recolhimento:')) {
-        const dateString = line.replace(/data do recolhimento:/i, '').trim();
+    } else if (lowerLine.includes('telefones:')) {
+      const phoneMatch = line.match(/phone:\s*(\+?\d[\d\s\-\(\)]+)/i);
+      const mobileMatch = line.match(/mobile:\s*(\+?\d[\d\s\-\(\)]+)/i);
+      let phones = [];
+      if (phoneMatch) phones.push(phoneMatch[1].trim());
+      if (mobileMatch) phones.push(mobileMatch[1].trim());
+      parsedData.telefone = phones.join(' / ');
+    } else if (lowerLine.startsWith('email:')) {
+      parsedData.email = line.replace(/email:/i, '').trim();
+    } else if (lowerLine.startsWith('data do recolhimento:')) {
+      const dateString = line.replace(/data do recolhimento:/i, '').trim();
+      const parsedDate = parse(dateString, 'dd/MM/yy', new Date());
+      if (isValid(parsedDate)) {
+        parsedData.previsao_coleta = format(parsedDate, 'yyyy-MM-dd');
+      }
+    } else if (lowerLine.startsWith('data:')) {
+      if (!parsedData.previsao_coleta) {
+        const dateString = line.replace(/data:/i, '').trim();
         const parsedDate = parse(dateString, 'dd/MM/yy', new Date());
         if (isValid(parsedDate)) {
           parsedData.previsao_coleta = format(parsedDate, 'yyyy-MM-dd');
         }
-      } else if (lowerLine.startsWith('data:')) { // Generic date, lower priority
-        if (!parsedData.previsao_coleta) { // Only set if not already set by 'data do recolhimento'
-          const dateString = line.replace(/data:/i, '').trim();
-          const parsedDate = parse(dateString, 'dd/MM/yy', new Date());
-          if (isValid(parsedDate)) {
-            parsedData.previsao_coleta = format(parsedDate, 'yyyy-MM-dd');
-          }
-        }
-      } else if (lowerLine.startsWith('tecnico responsável:')) {
-        parsedData.responsavel = line.replace(/tecnico responsável:/i, '').trim();
-      } else if (lowerLine.startsWith('responsável no cliente:')) {
-        // Only set if 'contato' was not already set by a direct 'Contato:' line
-        if (!parsedData.contato) {
-          parsedData.contato = line.replace(/responsável no cliente:/i, '').trim();
-        }
-      } else if (lowerLine.startsWith('recolhimento: imediato')) {
-        currentObservacao.push('Recolhimento: IMEDIATO');
-      } else if (lowerLine.startsWith('obs.:')) {
-        currentObservacao.push(line.replace(/obs\.:/i, '').trim());
       }
-    }
-  }
-
-  // After collecting all descriptions and quantities, pair them up
-  const minLength = Math.min(descriptionsBuffer.length, quantitiesBuffer.length);
-  for (let i = 0; i < minLength; i++) {
-    const description = descriptionsBuffer[i];
-    const quantity = parseInt(quantitiesBuffer[i], 10);
-    if (!isNaN(quantity) && quantity > 0) {
-      parsedData.items?.push({
-        product_code: description, // Por enquanto, o código é o mesmo da descrição
-        product_description: description,
-        quantity: quantity,
-      });
+    } else if (lowerLine.startsWith('tecnico responsável:')) {
+      parsedData.responsavel = line.replace(/tecnico responsável:/i, '').trim();
+    } else if (lowerLine.startsWith('responsável no cliente:')) {
+      if (!parsedData.contato) {
+        parsedData.contato = line.replace(/responsável no cliente:/i, '').trim();
+      }
+    } else if (lowerLine.startsWith('recolhimento: imediato')) {
+      currentObservacao.push('Recolhimento: IMEDIATO');
+    } else if (lowerLine.startsWith('obs.:')) {
+      currentObservacao.push(line.replace(/obs\.:/i, '').trim());
     }
   }
 
@@ -192,4 +168,152 @@ export const parseReturnDocumentText = (text: string): ParsedCollectionData => {
   }
 
   return parsedData as ParsedCollectionData;
+};
+
+export const processSelectedSpreadsheetCellsForItems = (
+  spreadsheetData: (string | number | null)[][],
+  selectedCellKeys: string[]
+): ParsedItem[] => {
+  const itemRows: ParsedItem[] = [];
+  const selectedCellMap = new Map<number, Map<number, string | number | null>>(); // Map<rowIndex, Map<colIndex, value>>
+
+  selectedCellKeys.forEach(key => {
+    const [rowIndexStr, colIndexStr] = key.split(':');
+    const rowIndex = parseInt(rowIndexStr);
+    const colIndex = parseInt(colIndexStr);
+    if (!selectedCellMap.has(rowIndex)) {
+      selectedCellMap.set(rowIndex, new Map());
+    }
+    selectedCellMap.get(rowIndex)?.set(colIndex, spreadsheetData[rowIndex]?.[colIndex]);
+  });
+
+  const sortedRowIndices = Array.from(selectedCellMap.keys()).sort((a, b) => a - b);
+
+  let descCol: number | null = null;
+  let quantCol: number | null = null;
+
+  // Heuristic: Try to find header row first
+  for (const rIndex of sortedRowIndices) {
+    const row = selectedCellMap.get(rIndex);
+    if (row) {
+      for (const cIndex of Array.from(row.keys()).sort((a, b) => a - b)) { // Iterate columns in order
+        const cellValue = String(row.get(cIndex) || '').toLowerCase();
+        if (cellValue.includes('descrição')) {
+          descCol = cIndex;
+        }
+        if (cellValue.includes('quant.') && cellValue.includes('inst.')) {
+          quantCol = cIndex;
+        }
+      }
+      if (descCol !== null && quantCol !== null) {
+        // Found headers, assume data starts from this row or the next
+        // For simplicity, we'll process all selected cells from this point onwards
+        break; 
+      }
+    }
+  }
+
+  // If headers were found, process data from rows after the header row
+  // If not, try to guess columns based on content type
+  if (descCol !== null && quantCol !== null) {
+    const headerRowIndex = sortedRowIndices.find(rIndex => {
+      const row = selectedCellMap.get(rIndex);
+      return row?.has(descCol) && String(row.get(descCol) || '').toLowerCase().includes('descrição');
+    });
+
+    const dataStartRowIndex = headerRowIndex !== undefined ? headerRowIndex + 1 : sortedRowIndices[0]; // Start from next row if header found, else first selected row
+
+    for (const rIndex of sortedRowIndices) {
+      if (rIndex < dataStartRowIndex) continue; // Skip header row and any rows before it
+
+      const row = selectedCellMap.get(rIndex);
+      if (row && row.has(descCol) && row.has(quantCol)) {
+        const description = String(row.get(descCol) || '');
+        const quantity = parseInt(String(row.get(quantCol)), 10);
+
+        if (description.trim() !== '' && !isNaN(quantity) && quantity > 0) {
+          itemRows.push({
+            product_code: description.trim(),
+            product_description: description.trim(), // Use description as code for now
+            quantity: quantity,
+          });
+        }
+      }
+    }
+  } else {
+    // Fallback heuristic: if no clear headers, try to find two columns where one is mostly text and one is mostly numbers
+    const columnData: Map<number, (string | number | null)[]> = new Map();
+    sortedRowIndices.forEach(rIndex => {
+      const row = selectedCellMap.get(rIndex);
+      if (row) {
+        row.forEach((value, cIndex) => {
+          if (!columnData.has(cIndex)) columnData.set(cIndex, []);
+          columnData.get(cIndex)?.push(value);
+        });
+      }
+    });
+
+    let bestDescCol: number | null = null;
+    let bestQuantCol: number | null = null;
+    let maxTextCount = -1;
+    let maxNumCount = -1;
+
+    Array.from(columnData.keys()).forEach(cIndex1 => {
+      Array.from(columnData.keys()).forEach(cIndex2 => {
+        if (cIndex1 === cIndex2) return;
+
+        const col1 = columnData.get(cIndex1) || [];
+        const col2 = columnData.get(cIndex2) || [];
+
+        let textCount1 = 0;
+        let numCount1 = 0;
+        col1.forEach(val => {
+          if (typeof val === 'string' && isNaN(Number(val))) textCount1++;
+          else if (!isNaN(Number(val))) numCount1++;
+        });
+
+        let textCount2 = 0;
+        let numCount2 = 0;
+        col2.forEach(val => {
+          if (typeof val === 'string' && isNaN(Number(val))) textCount2++;
+          else if (!isNaN(Number(val))) numCount2++;
+        });
+
+        // Check if col1 is description-like and col2 is quantity-like
+        if (textCount1 > maxTextCount && numCount2 > maxNumCount && textCount1 > numCount1 && numCount2 > textCount2) {
+          maxTextCount = textCount1;
+          maxNumCount = numCount2;
+          bestDescCol = cIndex1;
+          bestQuantCol = cIndex2;
+        }
+        // Check if col2 is description-like and col1 is quantity-like
+        if (textCount2 > maxTextCount && numCount1 > maxNumCount && textCount2 > numCount2 && numCount1 > textCount1) {
+          maxTextCount = textCount2;
+          maxNumCount = numCount1;
+          bestDescCol = cIndex2;
+          bestQuantCol = cIndex1;
+        }
+      });
+    });
+
+    if (bestDescCol !== null && bestQuantCol !== null) {
+      sortedRowIndices.forEach(rIndex => {
+        const row = selectedCellMap.get(rIndex);
+        if (row && row.has(bestDescCol) && row.has(bestQuantCol)) {
+          const description = String(row.get(bestDescCol) || '');
+          const quantity = parseInt(String(row.get(bestQuantCol)), 10);
+
+          if (description.trim() !== '' && !isNaN(quantity) && quantity > 0) {
+            itemRows.push({
+              product_code: description.trim(),
+              product_description: description.trim(),
+              quantity: quantity,
+            });
+          }
+        }
+      });
+    }
+  }
+
+  return itemRows;
 };

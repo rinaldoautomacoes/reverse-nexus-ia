@@ -126,11 +126,18 @@ export const ExcelExtractorPage: React.FC = () => {
 
   // Modificado: Ação do botão agora navega para a página de agendamento automático
   const handleReviewAndSchedule = () => {
-    if (!extractedText) {
-      toast({ title: "Nenhum dado para agendar", description: "Por favor, selecione e extraia dados antes de agendar uma coleta.", variant: "destructive" });
+    if (selectedCells.size === 0) {
+      toast({ title: "Nenhum dado para agendar", description: "Por favor, selecione células para extrair.", variant: "destructive" });
       return;
     }
-    navigate('/agendamento-automatico', { state: { extractedText: extractedText } });
+    
+    // Passar os dados brutos da planilha e as chaves das células selecionadas
+    navigate('/agendamento-automatico', { 
+      state: { 
+        rawSpreadsheetData: data, 
+        selectedCellKeys: Array.from(selectedCells) 
+      } 
+    });
   };
 
   return (
@@ -196,7 +203,7 @@ export const ExcelExtractorPage: React.FC = () => {
                     <div className="flex justify-end">
                       <Button
                         onClick={handleReviewAndSchedule} // Nova função de clique
-                        disabled={!extractedText} // Desabilita se não houver texto extraído
+                        disabled={selectedCells.size === 0} // Desabilita se não houver células selecionadas
                         className="bg-gradient-secondary hover:bg-gradient-secondary/80 glow-effect"
                       >
                         <Send className="mr-2 h-4 w-4" />
