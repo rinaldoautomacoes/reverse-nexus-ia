@@ -9,7 +9,7 @@ import { cn } from '@/lib/utils';
 import { format, parseISO } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { ProductCombobox } from '@/components/ProductCombobox';
-import type { ParsedCollectionData, ParsedItem } from '@/lib/document-parser';
+import type { ParsedCollectionData } from '@/lib/types'; // Updated import path
 import type { Tables } from '@/integrations/supabase/types_generated';
 
 type Product = Tables<'products'>;

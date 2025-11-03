@@ -4,11 +4,12 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/use-auth';
 import { 
-  parseXLSX, parseCSV, parsePDF, ColetaImportData, 
-  ProductImportData, parseProductsXLSX, parseProductsCSV, parseProductsJSON,
-  ClientImportData, parseClientsXLSX, parseClientsCSV, parseClientsJSON
+  parseXLSX, parseCSV, parsePDF, 
+  parseProductsXLSX, parseProductsCSV, parseProductsJSON,
+  parseClientsXLSX, parseClientsCSV, parseClientsJSON
 } from '@/lib/data-parser';
 import type { TablesInsert } from '@/integrations/supabase/types_generated';
+import type { ColetaImportData, ProductImportData, ClientImportData } from '@/lib/types'; // Updated import path
 
 // Import new modular components
 import { ImportFileSection } from './data-importer-sections/ImportFileSection';

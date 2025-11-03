@@ -3,7 +3,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Package, PlusCircle, XCircle } from 'lucide-react';
-import type { ParsedCollectionData, ParsedItem } from '@/lib/document-parser';
+import type { ParsedCollectionData, ParsedItem } from '@/lib/types'; // Updated import path
 
 interface ItemsTableSectionProps {
   parsedData: ParsedCollectionData;
