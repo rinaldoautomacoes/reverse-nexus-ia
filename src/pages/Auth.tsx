@@ -9,7 +9,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/use-auth";
 import { z } from "zod";
-import aiAssistantBg from "@/assets/ai-assistant-login-bg.png";
+// Removido: import aiAssistantBg from "@/assets/ai-assistant-login-bg.png";
 
 const loginSchema = z.object({
   email: z.string().trim().email("E-mail inválido").max(255, "E-mail muito longo"),
@@ -94,7 +94,7 @@ export const Auth = () => {
   // Show loading state while auth is being checked
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-background login-background-pattern flex items-center justify-center">
+      <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="text-center">
           <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin mx-auto mb-2" />
           <p className="text-sm text-muted-foreground">Verificando sessão...</p>
@@ -105,17 +105,8 @@ export const Auth = () => {
 
   return (
     <div className="min-h-screen bg-background flex flex-col relative overflow-hidden">
-      {/* AI Assistant Background - Mirrored */}
-      <div className="absolute inset-0 flex items-center justify-center">
-        <img 
-          src={aiAssistantBg} 
-          alt="AI Assistant" 
-          className="w-full h-full object-cover scale-x-[-1]"
-        />
-      </div>
-      
-      {/* Subtle Gradient Overlay */}
-      <div className="absolute inset-0 bg-gradient-to-br from-background/30 via-transparent to-background/40" />
+      {/* Removido: AI Assistant Background */}
+      {/* Removido: Subtle Gradient Overlay */}
       
       {/* Main Content */}
       <div className="flex-1 flex items-center justify-center px-6 py-12 relative z-10">
