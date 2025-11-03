@@ -71,8 +71,8 @@ export const ColetasStatusChart: React.FC<ColetasStatusChartProps> = ({ selected
         `) // Select items directly
         .eq('user_id', user.id)
         .eq('type', 'coleta')
-        .gte('previsao_coleta', startDate)
-        .lt('previsao_coleta', endDate)
+        .gte('previsao_coleta', startDate) // Use previsao_coleta for filtering
+        .lt('previsao_coleta', endDate) // Use previsao_coleta for filtering
         .order('created_at', { ascending: true });
       if (error) throw new Error(error.message);
       return data || [];
