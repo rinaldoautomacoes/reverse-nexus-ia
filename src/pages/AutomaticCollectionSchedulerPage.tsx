@@ -10,8 +10,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/use-auth";
 import { generateUniqueNumber, formatItemsForColetaModeloAparelho, getTotalQuantityOfItems, cn } from "@/lib/utils";
 import { format } from "date-fns";
-import { parseReturnDocumentText, processSelectedSpreadsheetCellsForItems, parseSelectedSpreadsheetCells } from '@/lib/document-parser';
-import type { ParsedCollectionData, ParsedItem } from '@/lib/types'; // Updated import path
+import { parseReturnDocumentText, ParsedCollectionData, ParsedItem, processSelectedSpreadsheetCellsForItems, parseSelectedSpreadsheetCells } from '@/lib/document-parser';
 
 // Import new modular components from the shared directory
 import { DocumentInputCard } from '@/components/shared-scheduler-sections/DocumentInputCard';
@@ -51,8 +50,7 @@ export const AutomaticCollectionSchedulerPage: React.FC = () => {
     items: [],
     status_coleta: "pendente",
     type: "coleta",
-    unique_number: generateUniqueNumber('COL'), // Always generate a unique number on initial state
-    client_control: null, // Alterado para null
+    unique_number: generateUniqueNumber('COL'),
   });
 
   const [isProcessingDocument, setIsProcessingDocument] = useState(false);
@@ -119,7 +117,7 @@ export const AutomaticCollectionSchedulerPage: React.FC = () => {
       setFormData(prev => ({
         ...prev,
         ...parsed,
-        unique_number: generateUniqueNumber('COL'), // Always override with a new unique number
+        unique_number: parsed.unique_number || generateUniqueNumber('COL'),
         origin_lat: originLat,
         origin_lng: originLng,
         destination_lat: destinationLat,
@@ -136,11 +134,7 @@ export const AutomaticCollectionSchedulerPage: React.FC = () => {
   useEffect(() => {
     if (location.state?.parsedCollectionData) {
       // Handle structured data coming from ExcelExtractorPage
-      setFormData(prev => ({
-        ...prev,
-        ...location.state.parsedCollectionData,
-        unique_number: generateUniqueNumber('COL'), // Always override with a new unique number
-      }));
+      setFormData(location.state.parsedCollectionData);
       setDocumentText(""); // Clear documentText if data came from spreadsheet
       navigate(location.pathname, { replace: true, state: {} });
       toast({ title: "Dados do Excel carregados", description: `Dados extraídos da planilha e preenchidos no formulário.` });
@@ -303,8 +297,7 @@ export const AutomaticCollectionSchedulerPage: React.FC = () => {
       items: [],
       status_coleta: "pendente",
       type: "coleta",
-      unique_number: generateUniqueNumber('COL'), // Reset to a new unique number
-      client_control: null, // Reset to null
+      unique_number: generateUniqueNumber('COL'),
     });
     toast({ title: "Pré-visualização Limpa", description: "Todos os dados do formulário foram resetados." });
   };
@@ -345,7 +338,7 @@ export const AutomaticCollectionSchedulerPage: React.FC = () => {
             <CardContent className="p-6 space-y-6">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label htmlFor="unique_number">Código da Coleta</Label>
+                  <Label htmlFor="unique_number">Número Único da Coleta</Label>
                   <div className="relative">
                     <Tag className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
                     <Input

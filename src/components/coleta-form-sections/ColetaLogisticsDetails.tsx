@@ -34,7 +34,6 @@ export const ColetaLogisticsDetails: React.FC<ColetaLogisticsDetailsProps> = ({
             value={formData.driver_id}
             onValueChange={(id) => handleInputChange("driver_id", id)}
             onDriverSelect={handleDriverSelect}
-            disabled={isPending}
           />
         </div>
         <div className="space-y-2">
@@ -43,7 +42,6 @@ export const ColetaLogisticsDetails: React.FC<ColetaLogisticsDetailsProps> = ({
             value={formData.transportadora_id}
             onValueChange={(id) => handleInputChange("transportadora_id", id)}
             onTransportadoraSelect={handleTransportadoraSelect}
-            disabled={isPending}
           />
         </div>
       </div>

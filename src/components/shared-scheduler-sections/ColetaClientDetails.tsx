@@ -7,7 +7,7 @@ import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import type { Tables } from '@/integrations/supabase/types_generated';
 import { Mail, Phone, Building, Contact } from 'lucide-react';
-import type { ParsedCollectionData } from '@/lib/types'; // Updated import path
+import { ParsedCollectionData } from '@/lib/document-parser';
 
 type Client = Tables<'clients'>;
 

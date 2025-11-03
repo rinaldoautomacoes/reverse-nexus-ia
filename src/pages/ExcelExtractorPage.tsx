@@ -16,7 +16,6 @@ import ExtractedDataView from '@/components/excel-extractor/ExtractedDataView';
 import { UploadIcon, FileIcon, ClearIcon } from '@/components/excel-extractor/Icons';
 import type { TablesInsert } from '@/integrations/supabase/types_generated';
 import { parseSelectedSpreadsheetCells } from '@/lib/document-parser'; // Import new parser
-import type { ParsedCollectionData } from '@/lib/types'; // Import from new types file
 
 type ExcelData = (string | number | null)[][];
 type SelectedCells = Set<string>;
@@ -181,7 +180,7 @@ export const ExcelExtractorPage: React.FC = () => {
                       <span className="font-medium truncate max-w-[200px]">{fileName}</span>
                     </div>
                     <Button onClick={clearSelection} variant="outline" className="border-destructive text-destructive hover:bg-destructive/10">
-                      <XCircle className="w-4 h-4 mr-2" />
+                      <XCircle className="w-4 h-4 mr-2" /> {/* Changed to XCircle for clarity */}
                       Limpar Seleção
                     </Button>
                   </div>
@@ -205,8 +204,8 @@ export const ExcelExtractorPage: React.FC = () => {
                     <ExtractedDataView extractedText={extractedText} />
                     <div className="flex justify-end">
                       <Button
-                        onClick={handleReviewAndSchedule}
-                        disabled={selectedCells.size === 0}
+                        onClick={handleReviewAndSchedule} // Nova função de clique
+                        disabled={selectedCells.size === 0} // Desabilita se não houver células selecionadas
                         className="bg-gradient-secondary hover:bg-gradient-secondary/80 glow-effect"
                       >
                         <Send className="mr-2 h-4 w-4" />

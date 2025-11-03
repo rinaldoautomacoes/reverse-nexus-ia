@@ -93,7 +93,7 @@ export const EntregaForm: React.FC<EntregaFormProps> = ({ initialData, onSave, o
     origin_lng: null,
     destination_lat: null,
     destination_lng: null,
-    client_control: null, // Alterado para null
+    client_control: "", // Novo campo
   });
 
   const [deliveryItems, setDeliveryItems] = useState<ItemData[]>(initialData?.items || []);
@@ -144,7 +144,7 @@ export const EntregaForm: React.FC<EntregaFormProps> = ({ initialData, onSave, o
         origin_lng: null,
         destination_lat: null,
         destination_lng: null,
-        client_control: null, // Alterado para null
+        client_control: "",
       });
       setDeliveryItems([]);
     }
@@ -247,7 +247,7 @@ export const EntregaForm: React.FC<EntregaFormProps> = ({ initialData, onSave, o
     <form onSubmit={handleSubmit} className="space-y-6">
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div className="space-y-2">
-          <Label htmlFor="unique_number">Código da Entrega</Label>
+          <Label htmlFor="unique_number">Número Único da Entrega</Label>
           <div className="relative">
             <Tag className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
             <Input
@@ -310,7 +310,7 @@ export const EntregaForm: React.FC<EntregaFormProps> = ({ initialData, onSave, o
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div className="space-y-2">
-          <Label htmlFor="previsao_coleta">Previsão de Entrega *</Label>
+          <Label htmlFor="previsao_coleta">Data da Entrega *</Label>
           <Popover>
             <PopoverTrigger asChild>
               <Button
@@ -321,7 +321,7 @@ export const EntregaForm: React.FC<EntregaFormProps> = ({ initialData, onSave, o
                 )}
                 disabled={isPending}
               >
-                        <CalendarIcon className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                <CalendarIcon className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
                 {formData.previsao_coleta ? format(new Date(formData.previsao_coleta), "PPP", { locale: ptBR }) : "Selecionar data"}
               </Button>
             </PopoverTrigger>
@@ -359,6 +359,24 @@ export const EntregaForm: React.FC<EntregaFormProps> = ({ initialData, onSave, o
         handleResponsibleUserSelect={handleResponsibleUserSelect}
         isPending={isPending}
       />
+
+      <div className="space-y-2">
+        <Label htmlFor="status_coleta">Status</Label>
+        <Select
+          value={formData.status_coleta || 'pendente'}
+          onValueChange={(value) => handleInputChange("status_coleta", value)}
+          disabled={isPending || !initialData}
+        >
+          <SelectTrigger>
+            <SelectValue placeholder="Selecionar status" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="pendente">Pendente</SelectItem>
+            <SelectItem value="agendada">Em Trânsito</SelectItem>
+            <SelectItem value="concluida">Concluída</SelectItem>
+          </SelectContent>
+        </Select>
+      </div>
 
       <ColetaObservation
         formData={formData}

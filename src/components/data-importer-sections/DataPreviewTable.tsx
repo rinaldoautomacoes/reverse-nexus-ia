@@ -4,7 +4,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { CheckCircle } from 'lucide-react';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-import type { ColetaImportData, ProductImportData, ClientImportData } from '@/lib/types'; // Updated import path
+import type { ColetaImportData, ProductImportData, ClientImportData } from '@/lib/data-parser';
 
 interface DataPreviewTableProps {
   activeTab: 'collections' | 'products' | 'clients';

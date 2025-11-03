@@ -80,7 +80,7 @@ export const AgendarColetaPage: React.FC = () => {
     origin_lng: null,
     destination_lat: null,
     destination_lng: null,
-    client_control: null, // Alterado para null
+    client_control: "",
   });
 
   const [collectionItems, setCollectionItems] = useState<ItemData[]>([]);
@@ -182,7 +182,7 @@ export const AgendarColetaPage: React.FC = () => {
       queryClient.invalidateQueries({ queryKey: ['dashboardColetasMetrics', user?.id] });
       queryClient.invalidateQueries({ queryKey: ['collectionStatusChart', user?.id] });
       queryClient.invalidateQueries({ queryKey: ['productStatusChart', user?.id] });
-      queryClient.invalidateQueries({ queryKey: ['items', user?.id] });
+      queryClient.invalidateQueries({ queryKey: ['itemsForColetasMetrics', user?.id] });
       toast({ title: "Coleta Agendada!", description: "Nova coleta criada com sucesso." });
       navigate('/coletas-ativas');
     },
@@ -256,7 +256,7 @@ export const AgendarColetaPage: React.FC = () => {
             <CardContent className="p-6 space-y-6">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label htmlFor="unique_number">Código da Coleta</Label>
+                  <Label htmlFor="unique_number">Número Único da Coleta</Label>
                   <div className="relative">
                     <Tag className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
                     <Input

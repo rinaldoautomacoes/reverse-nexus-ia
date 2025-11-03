@@ -6,7 +6,6 @@ import type { Tables } from "@/integrations/supabase/types_generated";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { formatItemDescriptionsForColeta, getTotalQuantityOfItems } from "./utils"; // Import new util
-import { parseDateSafely } from './date-utils'; // Import from new date-utils
 
 type Coleta = Tables<'coletas'> & {
   driver?: { name: string; license_plate?: string | null } | null; // Add license_plate
