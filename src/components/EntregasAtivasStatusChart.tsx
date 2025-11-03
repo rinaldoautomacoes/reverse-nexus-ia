@@ -141,10 +141,7 @@ export const EntregasAtivasStatusChart: React.FC<EntregasAtivasStatusChartProps>
     let totalAll = 0;
 
     entregasData?.forEach(entrega => {
-      if (!entrega.previsao_coleta || !entrega.items) {
-        console.warn("Skipping entrega due to missing previsao_coleta or items:", entrega); // Added log
-        return;
-      }
+      if (!entrega.previsao_coleta || !entrega.items) return;
 
       // Explicitly parse year, month, day to avoid timezone issues with DATE column
       const [year, month, day] = entrega.previsao_coleta.split('-').map(Number);
@@ -187,7 +184,7 @@ export const EntregasAtivasStatusChart: React.FC<EntregasAtivasStatusChartProps>
         entreguesItems: data.entregues,
       };
     });
-    console.log("Generated chart data for entregas:", chartData); // Added log
+
     return { 
       chartData, 
       totalPendenteCount, 
@@ -197,7 +194,13 @@ export const EntregasAtivasStatusChart: React.FC<EntregasAtivasStatusChartProps>
     };
   };
 
-  const { chartData, totalPendenteCount, totalEmTransitoCount, totalEntreguesCount, totalAll } = processEntregasData(entregas);
+  const { 
+    chartData = [], // Default to empty array
+    totalPendenteCount = 0, 
+    totalEmTransitoCount = 0, 
+    totalEntreguesCount = 0, 
+    totalAll = 0 
+  } = processEntregasData(entregas);
 
   // Custom Tooltip Content
   const CustomTooltip = ({ active, payload, label }: any) => {

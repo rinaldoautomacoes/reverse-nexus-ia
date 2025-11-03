@@ -36,7 +36,7 @@ export const GeneralStatusChart: React.FC<GeneralStatusChartProps> = ({ allColet
     return `${descriptions[0]}, ${descriptions[1]} e outros`;
   };
 
-  const processDataForChart = (data: Coleta[]) => {
+  const processDataForChart = (data: Coleta[] | undefined) => {
     console.log("Processing general coletas data for chart:", data); // Added log
     const monthlyDataMap = new Map<string, { 
       coletas_pendente: Tables<'items'>[]; 
@@ -64,7 +64,7 @@ export const GeneralStatusChart: React.FC<GeneralStatusChartProps> = ({ allColet
     let totalColetasConcluidas = 0;
     let totalAllItems = 0;
 
-    data.filter(item => item.type === 'coleta').forEach(item => {
+    data?.filter(item => item.type === 'coleta').forEach(item => {
       if (!item.previsao_coleta) {
         console.warn("Skipping general coleta due to missing previsao_coleta:", item); // Added log
         return;
@@ -101,7 +101,19 @@ export const GeneralStatusChart: React.FC<GeneralStatusChartProps> = ({ allColet
     });
     console.log("Generated chart data for general coletas:", allMonths.map(monthKey => monthlyDataMap.get(monthKey))); // Added log
     return { 
-      chartData, 
+      chartData: allMonths.map(monthKey => { // Ensure chartData is always an array
+        const data = monthlyDataMap.get(monthKey) || { coletas_pendente: [], coletas_em_transito: [], coletas_concluidas: [], total_items_month: 0 };
+        return {
+          month: monthKey,
+          coletas_pendente: getTotalQuantityOfItems(data.coletas_pendente),
+          coletas_em_transito: getTotalQuantityOfItems(data.coletas_em_transito),
+          coletas_concluidas: getTotalQuantityOfItems(data.coletas_concluidas),
+          total_items_month: data.total_items_month,
+          coletas_pendente_items: data.coletas_pendente,
+          coletas_em_transito_items: data.coletas_em_transito,
+          coletas_concluidas_items: data.coletas_concluidas,
+        };
+      }),
       totalColetasPendente, 
       totalColetasEmTransito, 
       totalColetasConcluidas,
@@ -110,11 +122,11 @@ export const GeneralStatusChart: React.FC<GeneralStatusChartProps> = ({ allColet
   };
 
   const { 
-    chartData, 
-    totalColetasPendente, 
-    totalColetasEmTransito, 
-    totalColetasConcluidas,
-    totalAllItems
+    chartData = [], // Default to empty array
+    totalColetasPendente = 0, 
+    totalColetasEmTransito = 0, 
+    totalColetasConcluidas = 0,
+    totalAllItems = 0
   } = processDataForChart(allColetas);
 
   const CustomTooltip = ({ active, payload, label }: any) => {

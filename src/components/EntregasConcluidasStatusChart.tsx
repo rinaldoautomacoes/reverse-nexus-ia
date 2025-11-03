@@ -167,7 +167,11 @@ export const EntregasConcluidasStatusChart: React.FC<EntregasConcluidasStatusCha
     };
   };
 
-  const { chartData, totalEntreguesCount, totalAll } = processEntregasData(entregas);
+  const { 
+    chartData = [], // Default to empty array
+    totalEntreguesCount = 0, 
+    totalAll = 0 
+  } = processEntregasData(entregas);
 
   // Custom Tooltip Content
   const CustomTooltip = ({ active, payload, label }: any) => {

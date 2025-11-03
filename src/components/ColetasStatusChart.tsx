@@ -197,7 +197,13 @@ export const ColetasStatusChart: React.FC<ColetasStatusChartProps> = ({ selected
     };
   };
 
-  const { chartData, totalPendenteCount, totalEmTransitoCount, totalConcluidasCount, totalAll } = processColetasData(coletas);
+  const { 
+    chartData = [], // Default to empty array
+    totalPendenteCount = 0, 
+    totalEmTransitoCount = 0, 
+    totalConcluidasCount = 0, 
+    totalAll = 0 
+  } = processColetasData(coletas);
 
   // Custom Tooltip Content
   const CustomTooltip = ({ active, payload, label }: any) => {

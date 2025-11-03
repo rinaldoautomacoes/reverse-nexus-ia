@@ -36,7 +36,7 @@ export const GeneralDeliveriesStatusChart: React.FC<GeneralDeliveriesStatusChart
     return `${descriptions[0]}, ${descriptions[1]} e outros`;
   };
 
-  const processDataForChart = (data: Coleta[]) => {
+  const processDataForChart = (data: Coleta[] | undefined) => {
     console.log("Processing general deliveries data for chart:", data); // Added log
     const monthlyDataMap = new Map<string, { 
       entregas_pendente: Tables<'items'>[]; 
@@ -64,7 +64,7 @@ export const GeneralDeliveriesStatusChart: React.FC<GeneralDeliveriesStatusChart
     let totalEntregasConcluidas = 0;
     let totalAllItems = 0;
 
-    data.filter(item => item.type === 'entrega').forEach(item => {
+    data?.filter(item => item.type === 'entrega').forEach(item => {
       if (!item.previsao_coleta) {
         console.warn("Skipping general delivery due to missing previsao_coleta:", item); // Added log
         return;
@@ -100,7 +100,19 @@ export const GeneralDeliveriesStatusChart: React.FC<GeneralDeliveriesStatusChart
     });
     console.log("Generated chart data for general deliveries:", allMonths.map(monthKey => monthlyDataMap.get(monthKey))); // Added log
     return { 
-      chartData, 
+      chartData: allMonths.map(monthKey => { // Ensure chartData is always an array
+        const data = monthlyDataMap.get(monthKey) || { entregas_pendente: [], entregas_em_transito: [], entregas_concluidas: [], total_items_month: 0 };
+        return {
+          month: monthKey,
+          entregas_pendente: getTotalQuantityOfItems(data.entregas_pendente),
+          entregas_em_transito: getTotalQuantityOfItems(data.entregas_em_transito),
+          entregas_concluidas: getTotalQuantityOfItems(data.entregas_concluidas),
+          total_items_month: data.total_items_month,
+          entregas_pendente_items: data.entregas_pendente,
+          entregas_em_transito_items: data.entregas_em_transito,
+          entregas_concluidas_items: data.entregas_concluidas,
+        };
+      }),
       totalEntregasPendente, 
       totalEntregasEmTransito, 
       totalEntregasConcluidas,
@@ -109,11 +121,11 @@ export const GeneralDeliveriesStatusChart: React.FC<GeneralDeliveriesStatusChart
   };
 
   const { 
-    chartData, 
-    totalEntregasPendente, 
-    totalEntregasEmTransito, 
-    totalEntregasConcluidas,
-    totalAllItems
+    chartData = [], // Default to empty array
+    totalEntregasPendente = 0, 
+    totalEntregasEmTransito = 0, 
+    totalEntregasConcluidas = 0,
+    totalAllItems = 0
   } = processDataForChart(allColetas);
 
   const CustomTooltip = ({ active, payload, label }: any) => {
