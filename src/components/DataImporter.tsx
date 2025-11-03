@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -22,6 +22,7 @@ import { formatItemsForColetaModeloAparelho, getTotalQuantityOfItems } from '@/l
 type ColetaInsert = TablesInsert<'coletas'>;
 type ProductInsert = TablesInsert<'products'>;
 type ClientInsert = TablesInsert<'clients'>; // NEW type
+type ItemInsert = TablesInsert<'items'>; // NEW type
 
 interface DataImporterProps {
   initialTab?: 'collections' | 'products' | 'clients'; // NEW initialTab option
@@ -150,17 +151,40 @@ export const DataImporter: React.FC<DataImporterProps> = ({ initialTab = 'collec
         destination_lng: item.destination_lng,
         previsao_coleta: item.previsao_coleta,
         // Use the new utils to format modelo_aparelho and qtd_aparelhos_solicitado
-        modelo_aparelho: formatItemsForColetaModeloAparelho([{ name: item.modelo_aparelho, quantity: item.qtd_aparelhos_solicitado }]),
-        qtd_aparelhos_solicitado: getTotalQuantityOfItems([{ quantity: item.qtd_aparelhos_solicitado }]),
+        modelo_aparelho: item.modelo_aparelho, // Keep this for summary
+        qtd_aparelhos_solicitado: item.qtd_aparelhos_solicitado, // Keep this for summary
         freight_value: item.freight_value,
         observacao: item.observacao,
         status_coleta: item.status_coleta,
         type: item.type,
       }));
 
-      const { error } = await supabase.from('coletas').insert(inserts);
-      if (error) throw new Error(error.message);
-      return inserts.length;
+      // Insert coletas first to get their IDs
+      const { data: insertedColetas, error: coletasError } = await supabase.from('coletas').insert(inserts).select('id, status_coleta');
+      if (coletasError) throw new Error(coletasError.message);
+
+      // Prepare items for insertion
+      const itemsToInsert: ItemInsert[] = [];
+      insertedColetas.forEach((coleta, index) => {
+        const originalItemData = dataToImport[index]; // Get original data for item details
+        if (originalItemData.modelo_aparelho && originalItemData.qtd_aparelhos_solicitado && originalItemData.qtd_aparelhos_solicitado > 0) {
+          itemsToInsert.push({
+            user_id: user.id,
+            collection_id: coleta.id,
+            name: originalItemData.modelo_aparelho,
+            description: originalItemData.modelo_aparelho, // Use modelo_aparelho as description for now
+            quantity: originalItemData.qtd_aparelhos_solicitado,
+            status: coleta.status_coleta || 'pendente',
+          });
+        }
+      });
+
+      if (itemsToInsert.length > 0) {
+        const { error: itemsError } = await supabase.from('items').insert(itemsToInsert);
+        if (itemsError) throw new Error(itemsError.message);
+      }
+
+      return insertedColetas.length;
     },
     onSuccess: (count) => {
       queryClient.invalidateQueries({ queryKey: ['coletasAtivas', user?.id] });
@@ -175,6 +199,7 @@ export const DataImporter: React.FC<DataImporterProps> = ({ initialTab = 'collec
       queryClient.invalidateQueries({ queryKey: ['entregasAtivasStatusChart', user?.id] });
       queryClient.invalidateQueries({ queryKey: ['entregasAtivasStatusDonutChart', user?.id] });
       queryClient.invalidateQueries({ queryKey: ['itemsForEntregasMetrics', user?.id] });
+      queryClient.invalidateQueries({ queryKey: ['allColetasForGeneralDashboard', user?.id] }); // Invalidate general dashboard
       toast({ title: 'Importação de Coletas/Entregas concluída!', description: `${count} registros foram salvos com sucesso no banco de dados.` });
       setSelectedFile(null);
       setExtractedData(null);
