@@ -1,7 +1,7 @@
 import { useState, useCallback, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, Truck, PlusCircle, Loader2, Tag, ClipboardList, Calendar as CalendarIcon } from "lucide-react";
+import { ArrowLeft, Truck, PlusCircle, Loader2, Tag, ClipboardList, Calendar as CalendarIcon, FileText, Hash } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -27,7 +27,6 @@ import { ColetaLogisticsDetails } from "@/components/coleta-form-sections/Coleta
 import { ColetaResponsibleUser } from "@/components/coleta-form-sections/ColetaResponsibleUser";
 import { ColetaObservation } from "@/components/coleta-form-sections/ColetaObservation";
 import { ManualSchedulerActionButtons } from "@/components/manual-scheduler-sections/ManualSchedulerActionButtons";
-import { FileText, Hash } from "lucide-react"; // Importar ícones para os novos campos
 
 type EntregaInsert = TablesInsert<'coletas'>;
 type EntregaUpdate = TablesUpdate<'coletas'>;
@@ -124,6 +123,8 @@ export const AgendarEntregaPage: React.FC = () => {
       }));
     }
   }, [handleInputChange]);
+
+  // Removido handleProductComboboxSelect pois o modelo_aparelho principal será um resumo
 
   const handleResponsibleUserSelect = useCallback((userProfile: Profile | null) => {
     handleInputChange("responsible_user_id", userProfile?.id || null);
