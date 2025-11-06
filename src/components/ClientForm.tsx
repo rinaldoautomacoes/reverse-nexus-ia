@@ -23,7 +23,7 @@ export const ClientForm: React.FC<ClientFormProps> = ({ initialData, onSave, onC
     address: "",
     cnpj: "",
     contact_person: "",
-    registration_number: "", // Novo campo
+    address_number: "", // Novo campo: Número do Endereço
     user_id: "", // Será preenchido pela mutação
   });
 
@@ -90,17 +90,32 @@ export const ClientForm: React.FC<ClientFormProps> = ({ initialData, onSave, onC
         </div>
       </div>
 
-      <div className="space-y-2">
-        <Label htmlFor="address">Endereço</Label>
-        <div className="relative">
-          <MapPin className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-          <Input
-            id="address"
-            placeholder="Endereço completo do cliente"
-            className="pl-10"
-            value={formData.address || ''}
-            onChange={(e) => handleInputChange("address", e.target.value)}
-          />
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="space-y-2">
+          <Label htmlFor="address">Endereço</Label>
+          <div className="relative">
+            <MapPin className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+            <Input
+              id="address"
+              placeholder="Endereço completo do cliente"
+              className="pl-10"
+              value={formData.address || ''}
+              onChange={(e) => handleInputChange("address", e.target.value)}
+            />
+          </div>
+        </div>
+        <div className="space-y-2">
+          <Label htmlFor="address_number">Número do Endereço</Label>
+          <div className="relative">
+            <Hash className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+            <Input
+              id="address_number"
+              placeholder="Ex: 123"
+              className="pl-10"
+              value={formData.address_number || ''}
+              onChange={(e) => handleInputChange("address_number", e.target.value)}
+            />
+          </div>
         </div>
       </div>
 
@@ -119,31 +134,17 @@ export const ClientForm: React.FC<ClientFormProps> = ({ initialData, onSave, onC
           </div>
         </div>
         <div className="space-y-2">
-          <Label htmlFor="registration_number">Número de Registro</Label>
+          <Label htmlFor="contact_person">Pessoa de Contato</Label>
           <div className="relative">
-            <Hash className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+            <Briefcase className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
             <Input
-              id="registration_number"
-              placeholder="Ex: 123456789"
+              id="contact_person"
+              placeholder="Nome do contato principal"
               className="pl-10"
-              value={formData.registration_number || ''}
-              onChange={(e) => handleInputChange("registration_number", e.target.value)}
+              value={formData.contact_person || ''}
+              onChange={(e) => handleInputChange("contact_person", e.target.value)}
             />
           </div>
-        </div>
-      </div>
-
-      <div className="space-y-2">
-        <Label htmlFor="contact_person">Pessoa de Contato</Label>
-        <div className="relative">
-          <Briefcase className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-          <Input
-            id="contact_person"
-            placeholder="Nome do contato principal"
-            className="pl-10"
-            value={formData.contact_person || ''}
-            onChange={(e) => handleInputChange("contact_person", e.target.value)}
-          />
         </div>
       </div>
 

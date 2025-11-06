@@ -10,7 +10,7 @@ export type ClientRow = {
   name: string
   phone: string | null
   user_id: string
-  registration_number: string | null
+  address_number: string | null
 }
 
 export type ClientInsert = {
@@ -23,7 +23,7 @@ export type ClientInsert = {
   name: string
   phone?: string | null
   user_id: string
-  registration_number?: string | null
+  address_number?: string | null
 }
 
 export type ClientUpdate = {
@@ -36,7 +36,7 @@ export type ClientUpdate = {
   name?: string
   phone?: string | null
   user_id?: string
-  registration_number?: string | null
+  address_number?: string | null
 }
 
 export type ClientRelationships = []

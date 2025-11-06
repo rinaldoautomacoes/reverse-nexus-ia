@@ -73,6 +73,7 @@ export interface ClientImportData {
   phone?: string | null;
   email?: string | null;
   address?: string | null;
+  address_number?: string | null; // Novo campo
   cnpj?: string | null;
   contact_person?: string | null;
 }
