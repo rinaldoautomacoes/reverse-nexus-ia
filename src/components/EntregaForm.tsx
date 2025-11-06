@@ -388,16 +388,30 @@ export const EntregaForm: React.FC<EntregaFormProps> = ({ initialData, onSave, o
         </div>
         <div className="space-y-2">
           <Label htmlFor="data_solicitacao">Data da Solicitação</Label>
-          <div className="relative">
-            <CalendarIcon className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-            <Input
-              id="data_solicitacao"
-              value={formData.created_at ? format(new Date(formData.created_at), "PPP", { locale: ptBR }) : 'N/A'}
-              readOnly
-              className="pl-10 bg-muted/50"
-              disabled={isPending}
-            />
-          </div>
+          <Popover>
+            <PopoverTrigger asChild>
+              <Button
+                variant={"outline"}
+                className={cn(
+                  "w-full justify-start text-left font-normal pl-10",
+                  !formData.created_at && "text-muted-foreground"
+                )}
+                disabled={isPending}
+              >
+                <CalendarIcon className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                {formData.created_at ? format(new Date(formData.created_at), "PPP", { locale: ptBR }) : "Selecionar data"}
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-auto p-0">
+              <Calendar
+                mode="single"
+                selected={formData.created_at ? new Date(formData.created_at) : undefined}
+                onSelect={(date) => handleInputChange("created_at", date ? format(date, 'yyyy-MM-ddTHH:mm:ss.SSSZ') : null)}
+                initialFocus
+                locale={ptBR}
+              />
+            </PopoverContent>
+          </Popover>
         </div>
       </div>
 
