@@ -45,9 +45,21 @@ interface MetricDetailsDialogProps {
 }
 
 export const MetricDetailsDialog: React.FC<MetricDetailsDialogProps> = ({ metric, isOpen, onClose }) => {
+  console.log("MetricDetailsDialog: metric prop", metric); // Debug log
+  console.log("MetricDetailsDialog: isOpen prop", isOpen); // Debug log
+
   if (!metric) return null;
 
   const Icon = metric.icon_name ? iconMap[metric.icon_name] : null;
+
+  // Determina qual array de itens deve ser exibido
+  const itemsToDisplay = metric.id === 'total-items-geral' ? metric.allItemsDetails : metric.pendingItemsDetails;
+  // Determina se a seção de itens deve ser mostrada
+  const showItemsSection = (
+    (metric.id === 'total-items-geral' || metric.id === 'operacoes-pendentes') &&
+    itemsToDisplay &&
+    itemsToDisplay.length > 0
+  );
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
@@ -102,7 +114,7 @@ export const MetricDetailsDialog: React.FC<MetricDetailsDialogProps> = ({ metric
             </div>
           )}
 
-          {(metric.id === 'total-items-geral' || metric.id === 'operacoes-pendentes') && metric.allItemsDetails && metric.allItemsDetails.length > 0 && (
+          {showItemsSection && (
             <div className="space-y-2 border-t border-border/50 pt-4">
               <p className="text-sm font-semibold text-muted-foreground">
                 {metric.id === 'total-items-geral' ? 'Todos os Itens:' : 'Itens Pendentes:'}
@@ -115,7 +127,7 @@ export const MetricDetailsDialog: React.FC<MetricDetailsDialogProps> = ({ metric
               </div>
               <ScrollArea className="h-48 border rounded-md p-2">
                 <div className="space-y-1">
-                  {(metric.id === 'total-items-geral' ? metric.allItemsDetails : metric.pendingItemsDetails)?.map((item, itemIndex) => (
+                  {itemsToDisplay?.map((item, itemIndex) => (
                     <div key={itemIndex} className="grid grid-cols-5 text-xs text-foreground">
                       <div className="col-span-1">{item.quantity}</div>
                       <div className="col-span-2 truncate" title={item.name}>{item.name}</div>
