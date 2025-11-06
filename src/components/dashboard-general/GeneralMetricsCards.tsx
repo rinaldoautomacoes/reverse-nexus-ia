@@ -243,6 +243,7 @@ export const GeneralMetricsCards: React.FC<GeneralMetricsCardsProps> = ({ allCol
   };
 
   const handleCardClick = (metric: MetricItem) => {
+    console.log("Card clicked:", metric.id); // Log para verificar se o clique está funcionando
     setSelectedMetric(metric);
     setIsDetailsDialogOpen(true);
   };
@@ -271,7 +272,7 @@ export const GeneralMetricsCards: React.FC<GeneralMetricsCardsProps> = ({ allCol
                   iconColorClass={metric.color}
                   iconBgColorClass={metric.bg_color}
                   delay={index * 100}
-                  onClick={() => handleCardClick(metric)} // Adicionado onClick aqui
+                  onDetailsClick={() => handleCardClick(metric)} // Usando a nova prop
                 >
                   <div className="text-3xl font-bold font-orbitron gradient-text mb-1">
                     {metric.value}

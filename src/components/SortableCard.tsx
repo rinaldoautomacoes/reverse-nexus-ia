@@ -13,6 +13,7 @@ interface SortableCardProps extends React.ComponentPropsWithoutRef<typeof Card> 
   iconColorClass?: string;
   iconBgColorClass?: string;
   delay?: number;
+  onDetailsClick?: () => void; // Nova prop para o clique de detalhes
 }
 
 export const SortableCard: React.FC<SortableCardProps> = ({
@@ -24,6 +25,7 @@ export const SortableCard: React.FC<SortableCardProps> = ({
   iconBgColorClass,
   delay,
   className,
+  onDetailsClick, // Recebe a nova prop
   ...props
 }) => {
   const {
@@ -47,7 +49,7 @@ export const SortableCard: React.FC<SortableCardProps> = ({
       ref={setNodeRef}
       style={style}
       className={cn(
-        "card-futuristic border-0 animate-slide-up transition-all duration-300 ease-in-out relative cursor-grab",
+        "card-futuristic border-0 animate-slide-up transition-all duration-300 ease-in-out relative", // Removido cursor-grab daqui
         isDragging ? "ring-2 ring-primary-foreground" : "",
         className
       )}
@@ -63,12 +65,17 @@ export const SortableCard: React.FC<SortableCardProps> = ({
               <Icon className={cn("h-4 w-4", iconColorClass)} />
             </div>
           )}
-          {/* O ícone GripVertical agora é apenas um indicador visual */}
-          <GripVertical className="h-5 w-5 text-muted-foreground" /> 
+          {/* O ícone GripVertical agora é o handle de arrastar */}
+          <div className="cursor-grab" {...listeners}> 
+            <GripVertical className="h-5 w-5 text-muted-foreground" /> 
+          </div>
         </div>
       </CardHeader>
-      <CardContent>
-        {children}
+      <CardContent className="p-0">
+        {/* Conteúdo clicável para detalhes */}
+        <div className="p-4 cursor-pointer" onClick={onDetailsClick}>
+          {children}
+        </div>
       </CardContent>
     </Card>
   );
