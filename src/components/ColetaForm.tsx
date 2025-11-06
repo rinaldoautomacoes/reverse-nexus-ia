@@ -126,7 +126,7 @@ export const ColetaForm: React.FC<ColetaFormProps> = ({ initialData, onSave, onC
         cep_origem: "",
         cep_destino: "",
         endereco_origem: "",
-        endereco_destino: "",
+    endereco_destino: "",
         driver_id: null,
         transportadora_id: null,
         freight_value: null,
@@ -338,33 +338,6 @@ export const ColetaForm: React.FC<ColetaFormProps> = ({ initialData, onSave, onC
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div className="space-y-2">
-          <Label htmlFor="previsao_coleta">Previsão de Coleta *</Label>
-          <Popover>
-            <PopoverTrigger asChild>
-              <Button
-                variant={"outline"}
-                className={cn(
-                  "w-full justify-start text-left font-normal pl-10",
-                  !formData.previsao_coleta && "text-muted-foreground"
-                )}
-                disabled={isPending}
-              >
-                        <CalendarIcon className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                {formData.previsao_coleta ? format(new Date(formData.previsao_coleta), "PPP", { locale: ptBR }) : "Selecionar data"}
-              </Button>
-            </PopoverTrigger>
-            <PopoverContent className="w-auto p-0">
-              <Calendar
-                mode="single"
-                selected={formData.previsao_coleta ? new Date(formData.previsao_coleta) : undefined}
-                onSelect={(date) => handleInputChange("previsao_coleta", date ? format(date, 'yyyy-MM-dd') : null)}
-                initialFocus
-                locale={ptBR}
-              />
-            </PopoverContent>
-          </Popover>
-        </div>
-        <div className="space-y-2">
           <Label htmlFor="data_solicitacao">Data da Solicitação</Label>
           <Popover>
             <PopoverTrigger asChild>
@@ -385,6 +358,33 @@ export const ColetaForm: React.FC<ColetaFormProps> = ({ initialData, onSave, onC
                 mode="single"
                 selected={formData.created_at ? new Date(formData.created_at) : undefined}
                 onSelect={(date) => handleInputChange("created_at", date ? format(date, 'yyyy-MM-ddTHH:mm:ss.SSSZ') : null)}
+                initialFocus
+                locale={ptBR}
+              />
+            </PopoverContent>
+          </Popover>
+        </div>
+        <div className="space-y-2">
+          <Label htmlFor="previsao_coleta">Previsão de Coleta *</Label>
+          <Popover>
+            <PopoverTrigger asChild>
+              <Button
+                variant={"outline"}
+                className={cn(
+                  "w-full justify-start text-left font-normal pl-10",
+                  !formData.previsao_coleta && "text-muted-foreground"
+                )}
+                disabled={isPending}
+              >
+                        <CalendarIcon className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                {formData.previsao_coleta ? format(new Date(formData.previsao_coleta), "PPP", { locale: ptBR }) : "Selecionar data"}
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-auto p-0">
+              <Calendar
+                mode="single"
+                selected={formData.previsao_coleta ? new Date(formData.previsao_coleta) : undefined}
+                onSelect={(date) => handleInputChange("previsao_coleta", date ? format(date, 'yyyy-MM-dd') : null)}
                 initialFocus
                 locale={ptBR}
               />
