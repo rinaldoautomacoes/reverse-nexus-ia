@@ -1,5 +1,5 @@
 import React from 'react';
-import { useSortable } from '@dnd-kit/sortable';
+import { useSortable } from '@dnd-kit/core'; // Importar useSortable do @dnd-kit/core
 import { CSS } from '@dnd-kit/utilities';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { cn } from '@/lib/utils';
@@ -13,7 +13,7 @@ interface SortableCardProps extends React.ComponentPropsWithoutRef<typeof Card> 
   iconColorClass?: string;
   iconBgColorClass?: string;
   delay?: number;
-  onDetailsClick?: () => void; // Nova prop para o clique de detalhes
+  onDetailsClick?: (id: string) => void; // Nova prop para o clique de detalhes, passando o ID
 }
 
 export const SortableCard: React.FC<SortableCardProps> = ({
@@ -25,7 +25,7 @@ export const SortableCard: React.FC<SortableCardProps> = ({
   iconBgColorClass,
   delay,
   className,
-  onDetailsClick, // Recebe a nova prop
+  onDetailsClick,
   ...props
 }) => {
   const {
@@ -49,14 +49,14 @@ export const SortableCard: React.FC<SortableCardProps> = ({
       ref={setNodeRef}
       style={style}
       className={cn(
-        "card-futuristic border-0 animate-slide-up transition-all duration-300 ease-in-out relative", // Removido cursor-grab daqui
+        "card-futuristic border-0 animate-slide-up transition-all duration-300 ease-in-out relative",
         isDragging ? "ring-2 ring-primary-foreground" : "",
         className
       )}
-      {...attributes} {...listeners} {...props} 
+      {...props} 
     >
       <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-        <CardTitle className="text-sm font-medium text-muted-foreground gradient-text"> {/* Adicionado gradient-text aqui */}
+        <CardTitle className="text-sm font-medium text-muted-foreground gradient-text">
           {title}
         </CardTitle>
         <div className="flex items-center gap-2">
@@ -66,16 +66,14 @@ export const SortableCard: React.FC<SortableCardProps> = ({
             </div>
           )}
           {/* O ícone GripVertical agora é o handle de arrastar */}
-          <div className="cursor-grab" {...listeners}> 
+          <div className="cursor-grab" {...attributes} {...listeners}> 
             <GripVertical className="h-5 w-5 text-muted-foreground" /> 
           </div>
         </div>
       </CardHeader>
-      <CardContent className="p-0">
-        {/* Conteúdo clicável para detalhes */}
-        <div className="p-4 cursor-pointer" onClick={onDetailsClick}>
-          {children}
-        </div>
+      {/* Conteúdo clicável para detalhes */}
+      <CardContent className="p-4 cursor-pointer" onClick={() => onDetailsClick?.(id)}>
+        {children}
       </CardContent>
     </Card>
   );

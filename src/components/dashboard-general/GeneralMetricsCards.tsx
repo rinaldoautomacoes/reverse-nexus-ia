@@ -288,43 +288,15 @@ export const GeneralMetricsCards: React.FC<GeneralMetricsCardsProps> = ({ allCol
     }
   };
 
-  const handleCardClick = (metric: MetricItem) => {
-    setSelectedMetric(metric);
-    setIsDetailsDialogOpen(true);
+  const handleCardClick = (metricId: string) => {
+    const metric = metrics.find(m => m.id === metricId);
+    if (metric) {
+      setSelectedMetric(metric);
+      setIsDetailsDialogOpen(true);
+    }
   };
 
-  const renderItemsDetails = (items: MetricItem['allItemsDetails'] | MetricItem['pendingItemsDetails'] | MetricItem['inTransitItemsDetails'] | MetricItem['completedItemsDetails']) => {
-    if (!items || items.length === 0) return null;
-    return (
-      <div className="mt-4 border-t border-border/50 pt-3">
-        <div className="grid grid-cols-5 text-xs font-semibold text-muted-foreground mb-2">
-          <div className="col-span-1">Qtd</div>
-          <div className="col-span-1">Item</div>
-          <div className="col-span-2">Descrição</div>
-          <div className="col-span-1 text-right">Tipo</div>
-        </div>
-        <ScrollArea className="h-24">
-          <div className="space-y-1">
-            {items.map((item, itemIndex) => (
-              <div key={itemIndex} className="grid grid-cols-5 text-xs text-foreground">
-                <div className="col-span-1">{item.quantity}</div>
-                <div className="col-span-1 truncate" title={item.name}>{item.name}</div>
-                <div className="col-span-2 truncate" title={item.description}>{item.description}</div>
-                <div className="col-span-1 text-right">
-                   <Badge variant="secondary" className={cn(
-                    "px-1 py-0.5 text-[0.6rem]",
-                    item.type === 'coleta' ? 'bg-primary/10 text-primary' : 'bg-accent/10 text-accent'
-                  )}>
-                    {item.type === 'coleta' ? 'Coleta' : 'Entrega'}
-                  </Badge>
-                </div>
-              </div>
-            ))}
-          </div>
-        </ScrollArea>
-      </div>
-    );
-  };
+  // Removed renderItemsDetails from here as it's now handled by MetricDetailsDialog
 
   return (
     <>
@@ -350,7 +322,7 @@ export const GeneralMetricsCards: React.FC<GeneralMetricsCardsProps> = ({ allCol
                   iconColorClass={metric.color}
                   iconBgColorClass={metric.bg_color}
                   delay={index * 100}
-                  onDetailsClick={() => handleCardClick(metric)}
+                  onDetailsClick={handleCardClick}
                 >
                   <div className="text-3xl font-bold font-orbitron gradient-text mb-1">
                     {metric.value}
@@ -377,7 +349,6 @@ export const GeneralMetricsCards: React.FC<GeneralMetricsCardsProps> = ({ allCol
                         <Truck className="h-3 w-3 text-accent" />
                         <span>{metric.entregasCount} Entregas em andamento</span>
                       </div>
-                      {renderItemsDetails(metric.inTransitItemsDetails)} {/* Renderiza detalhes dos itens em trânsito */}
                     </div>
                   )}
                   {metric.id === 'operacoes-pendentes' && (
@@ -390,7 +361,6 @@ export const GeneralMetricsCards: React.FC<GeneralMetricsCardsProps> = ({ allCol
                         <Truck className="h-3 w-3 text-accent" />
                         <span>{metric.entregasCount} Entregas pendentes</span>
                       </div>
-                      {renderItemsDetails(metric.pendingItemsDetails)} {/* Renderiza detalhes dos itens pendentes */}
                     </div>
                   )}
                   {metric.id === 'operacoes-concluidas' && (
@@ -403,14 +373,11 @@ export const GeneralMetricsCards: React.FC<GeneralMetricsCardsProps> = ({ allCol
                         <Truck className="h-3 w-3 text-accent" />
                         <span>{metric.entregasCount} Entregas finalizadas</span>
                       </div>
-                      {renderItemsDetails(metric.completedItemsDetails)} {/* Renderiza detalhes dos itens concluídos */}
                     </div>
                   )}
                   {metric.description && metric.id !== 'total-operacoes' && metric.id !== 'operacoes-em-transito' && metric.id !== 'operacoes-concluidas' && metric.id !== 'operacoes-pendentes' && (
                     <p className="text-sm text-muted-foreground mb-1">{metric.description}</p>
                   )}
-
-                  {metric.id === 'total-items-geral' && renderItemsDetails(metric.allItemsDetails)} {/* Renderiza todos os itens */}
                 </SortableCard>
               );
             })}

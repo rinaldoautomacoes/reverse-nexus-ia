@@ -78,7 +78,7 @@ export const MetricDetailsDialog: React.FC<MetricDetailsDialogProps> = ({ metric
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="sm:max-w-[600px] bg-card border-primary/20 max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle className="flex items-center gap-2 gradient-text"> {/* Adicionado gradient-text aqui */}
+          <DialogTitle className="flex items-center gap-2 gradient-text">
             {Icon && <Icon className={cn("h-6 w-6", metric.color)} />}
             Detalhes: {metric.title}
           </DialogTitle>
