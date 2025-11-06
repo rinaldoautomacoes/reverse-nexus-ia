@@ -12,6 +12,7 @@ import {
   Box, 
   TrendingUp 
 } from "lucide-react";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'; // Importar componentes de tabela
 
 // Mapeamento de nomes de ícones para componentes Lucide React
 const iconMap: { [key: string]: React.ElementType } = {
@@ -132,31 +133,36 @@ export const MetricDetailsDialog: React.FC<MetricDetailsDialogProps> = ({ metric
               <p className="text-sm font-semibold text-muted-foreground">
                 {itemsSectionTitle}
               </p>
-              <div className="grid grid-cols-5 text-xs font-semibold text-muted-foreground mb-2">
-                <div className="col-span-1">Qtd</div>
-                <div className="col-span-2">Item</div>
-                <div className="col-span-1">Descrição</div>
-                <div className="col-span-1 text-right">Tipo</div>
+              {/* Substituindo ScrollArea e div por um div com overflow-auto e o componente Table */}
+              <div className="h-48 border rounded-md overflow-auto">
+                <Table className="min-w-full"> {/* min-w-full para forçar a rolagem horizontal se o conteúdo for muito largo */}
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead className="w-[50px]">Qtd</TableHead>
+                      <TableHead className="min-w-[150px]">Item</TableHead>
+                      <TableHead className="min-w-[200px]">Descrição</TableHead>
+                      <TableHead className="w-[80px] text-right">Tipo</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {itemsToDisplay?.map((item, itemIndex) => (
+                      <TableRow key={itemIndex}>
+                        <TableCell className="font-medium">{item.quantity}</TableCell>
+                        <TableCell className="whitespace-nowrap">{item.name}</TableCell> {/* Adicionado whitespace-nowrap */}
+                        <TableCell className="whitespace-nowrap">{item.description}</TableCell> {/* Adicionado whitespace-nowrap */}
+                        <TableCell className="text-right">
+                          <Badge variant="secondary" className={cn(
+                            "px-1 py-0.5 text-[0.6rem]",
+                            item.type === 'coleta' ? 'bg-primary/10 text-primary' : 'bg-accent/10 text-accent'
+                          )}>
+                            {item.type === 'coleta' ? 'Coleta' : 'Entrega'}
+                          </Badge>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
               </div>
-              <ScrollArea className="h-48 border rounded-md p-2">
-                <div className="space-y-1">
-                  {itemsToDisplay?.map((item, itemIndex) => (
-                    <div key={itemIndex} className="grid grid-cols-5 text-xs text-foreground">
-                      <div className="col-span-1">{item.quantity}</div>
-                      <div className="col-span-2 truncate" title={item.name}>{item.name}</div>
-                      <div className="col-span-1 truncate" title={item.description}>{item.description}</div>
-                      <div className="col-span-1 text-right">
-                        <Badge variant="secondary" className={cn(
-                          "px-1 py-0.5 text-[0.6rem]",
-                          item.type === 'coleta' ? 'bg-primary/10 text-primary' : 'bg-accent/10 text-accent'
-                        )}>
-                          {item.type === 'coleta' ? 'Coleta' : 'Entrega'}
-                        </Badge>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </ScrollArea>
             </div>
           )}
         </div>
