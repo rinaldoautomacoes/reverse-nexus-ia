@@ -11,6 +11,8 @@ import { toast } from "@/hooks/use-toast";
 import { Loader2, MapPin, Home, Flag, Truck, Route as RouteIcon, Calendar as CalendarIcon } from "lucide-react";
 import axios from "axios";
 import type { TablesInsert } from "@/integrations/supabase/types_generated";
+import { format, isValid } from "date-fns"; // Importar isValid
+import { ptBR } from "date-fns/locale"; // Importar locale
 
 type RouteInsert = TablesInsert<'routes'>;
 

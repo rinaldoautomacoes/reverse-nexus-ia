@@ -13,7 +13,7 @@ import { useAuth } from "@/hooks/use-auth";
 import { Badge } from "@/components/ui/badge";
 import { CollectionStatusUpdateDialog } from "@/components/CollectionStatusUpdateDialog";
 import { EditResponsibleDialog } from "@/components/EditResponsibleDialog";
-import { format } from "date-fns";
+import { format, isValid } from "date-fns"; // Importar isValid
 import { ptBR } from "date-fns/locale";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
@@ -185,7 +185,7 @@ export const Coletas: React.FC<ColetasProps> = ({ selectedYear }) => {
   const handleWhatsAppClick = (coleta: Coleta) => {
     if (coleta.telefone && coleta.parceiro && coleta.previsao_coleta) {
       const cleanedPhone = coleta.telefone.replace(/\D/g, '');
-      const formattedDate = format(new Date(coleta.previsao_coleta), 'dd/MM/yyyy', { locale: ptBR });
+      const formattedDate = isValid(new Date(coleta.previsao_coleta)) ? format(new Date(coleta.previsao_coleta), 'dd/MM/yyyy', { locale: ptBR }) : 'N/A';
       const transportadoraName = coleta.transportadora?.name ? ` pela transportadora ${coleta.transportadora.name}` : '';
       const message = `Olá ${coleta.parceiro},\n\nGostaríamos de confirmar sua coleta agendada para o dia ${formattedDate}${transportadoraName}. Número da Coleta: ${coleta.unique_number}.`;
       window.open(`https://wa.me/${cleanedPhone}?text=${encodeURIComponent(message)}`, '_blank');
@@ -196,7 +196,7 @@ export const Coletas: React.FC<ColetasProps> = ({ selectedYear }) => {
 
   const handleEmailClick = (coleta: Coleta) => {
     if (coleta.email && coleta.parceiro && coleta.previsao_coleta) {
-      const formattedDate = format(new Date(coleta.previsao_coleta), 'dd/MM/yyyy', { locale: ptBR });
+      const formattedDate = isValid(new Date(coleta.previsao_coleta)) ? format(new Date(coleta.previsao_coleta), 'dd/MM/yyyy', { locale: ptBR }) : 'N/A';
       const transportadoraName = coleta.transportadora?.name ? ` pela transportadora ${coleta.transportadora.name}` : '';
       const subject = encodeURIComponent(`Confirmação de Agendamento de Coleta - ${coleta.parceiro} - ${coleta.unique_number}`);
       const body = encodeURIComponent(`Olá ${coleta.parceiro},\n\nGostaríamos de confirmar sua coleta agendada para o dia ${formattedDate}${transportadoraName}. Número da Coleta: ${coleta.unique_number}.\n\nAtenciosamente,\nSua Equipe de Logística`);
@@ -297,7 +297,7 @@ export const Coletas: React.FC<ColetasProps> = ({ selectedYear }) => {
                       )}
                     >
                       <CalendarIcon className="mr-2 h-4 w-4" />
-                      {filterDate ? format(filterDate, "PPP", { locale: ptBR }) : "Filtrar por data"}
+                      {filterDate ? (isValid(filterDate) ? format(filterDate, "dd/MM/yyyy", { locale: ptBR }) : "Data inválida") : "Filtrar por data"}
                     </Button>
                   </PopoverTrigger>
                   <PopoverContent className="w-auto p-0">
@@ -378,7 +378,7 @@ export const Coletas: React.FC<ColetasProps> = ({ selectedYear }) => {
                           </div>
                         )}
                         <div className="flex items-center gap-1">
-                          <CalendarIcon className="h-3 w-3" /> Previsão: {coleta.previsao_coleta ? format(new Date(coleta.previsao_coleta), 'dd/MM/yyyy', { locale: ptBR }) : 'N/A'}
+                          <CalendarIcon className="h-3 w-3" /> Previsão: {coleta.previsao_coleta ? (isValid(new Date(coleta.previsao_coleta)) ? format(new Date(coleta.previsao_coleta), 'dd/MM/yyyy', { locale: ptBR }) : 'Data inválida') : 'N/A'}
                         </div>
                         <div className="flex items-center gap-1">
                           <Hash className="h-3 w-3" /> Qtd Total: {getTotalQuantityOfItems(coleta.items)}
@@ -411,7 +411,7 @@ export const Coletas: React.FC<ColetasProps> = ({ selectedYear }) => {
                           <Building className="h-3 w-3" /> Transportadora: {coleta.transportadora?.name || 'Não atribuída'}
                         </div>
                         <div className="flex items-center gap-1">
-                          <DollarSign className="h-3 w-3" /> Frete: {coleta.freight_value ? `R$ ${coleta.freeta_value.toFixed(2)}` : 'N/A'}
+                          <DollarSign className="h-3 w-3" /> Frete: {coleta.freight_value ? `R$ ${coleta.freight_value.toFixed(2)}` : 'N/A'}
                         </div>
                         <div className="flex items-center gap-1">
                           <Clock className="h-3 w-3" /> Status: <Badge className={getStatusBadgeColor(coleta.status_coleta)}>{getStatusText(coleta.status_coleta)}</Badge>

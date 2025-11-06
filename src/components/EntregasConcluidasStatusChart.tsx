@@ -4,7 +4,7 @@ import { TrendingUp, Truck, CheckCircle } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/use-auth";
-import { format, parseISO, startOfMonth } from "date-fns";
+import { format, parseISO, startOfMonth, isValid } from "date-fns"; // Importar isValid
 import { ptBR } from "date-fns/locale";
 import { useEffect } from "react";
 import { useToast } from "@/hooks/use-toast";
@@ -238,67 +238,79 @@ export const EntregasConcluidasStatusChart: React.FC<EntregasConcluidasStatusCha
       <CardContent>
         <div className="space-y-6">
           <div className="h-64 relative">
-            <ResponsiveContainer width="100%" height="100%">
-              <AreaChart
-                data={chartData}
-                margin={{
-                  top: 20,
-                  right: 0,
-                  left: 0,
-                  bottom: 0,
-                }}
-              >
-                <XAxis
-                  dataKey="month"
-                  stroke="hsl(var(--muted-foreground))"
-                  axisLine={false}
-                  tickLine={false}
-                  tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 12 }}
-                />
-                <YAxis
-                  stroke="hsl(var(--muted-foreground))"
-                  axisLine={false}
-                  tickLine={false}
-                  tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 12 }}
-                  domain={[0, 'dataMax']}
-                  tickFormatter={(value) => value.toFixed(0)}
-                />
-                <Tooltip content={<CustomTooltip />} />
-                <defs>
-                  <linearGradient id="gradientEntregas" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="0%" stopColor="hsl(var(--success-green))" stopOpacity={0.4} />
-                    <stop offset="95%" stopColor="hsl(var(--success-green))" stopOpacity={0.15} />
-                  </linearGradient>
-                </defs>
-                <Area
-                  type="monotone"
-                  dataKey="entregues"
-                  stroke="hsl(var(--success-green))"
-                  fill="url(#gradientEntregas)"
-                  strokeWidth={2}
-                  name="Entregas Concluídas"
-                />
-              </AreaChart>
-            </ResponsiveContainer>
+            {totalAllItems > 0 ? (
+              <ResponsiveContainer width="100%" height="100%">
+                <AreaChart
+                  data={chartData}
+                  margin={{
+                    top: 20,
+                    right: 0,
+                    left: 0,
+                    bottom: 0,
+                  }}
+                >
+                  <XAxis
+                    dataKey="month"
+                    stroke="hsl(var(--muted-foreground))"
+                    axisLine={false}
+                    tickLine={false}
+                    tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 12 }}
+                  />
+                  <YAxis
+                    stroke="hsl(var(--muted-foreground))"
+                    axisLine={false}
+                    tickLine={false}
+                    tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 12 }}
+                    domain={[0, 'dataMax']}
+                    tickFormatter={(value) => value.toFixed(0)}
+                  />
+                  <Tooltip content={<CustomTooltip />} />
+                  <defs>
+                    <linearGradient id="gradientEntregas" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="0%" stopColor="hsl(var(--success-green))" stopOpacity={0.4} />
+                      <stop offset="95%" stopColor="hsl(var(--success-green))" stopOpacity={0.15} />
+                    </linearGradient>
+                  </defs>
+                  <Area
+                    type="monotone"
+                    dataKey="entregues"
+                    stroke="hsl(var(--success-green))"
+                    fill="url(#gradientEntregues)"
+                    strokeWidth={2}
+                    name="Entregas Concluídas"
+                  />
+                </AreaChart>
+              </ResponsiveContainer>
+            ) : (
+              <div className="flex items-center justify-center h-full bg-gradient-dark/80 rounded-lg">
+                <div className="text-center text-muted-foreground">
+                  <Truck className="h-12 w-12 mx-auto mb-4" />
+                  <p>Nenhum dado de entrega disponível para {selectedYear}.</p>
+                  <p className="text-sm">Agende entregas para ver as estatísticas.</p>
+                </div>
+              </div>
+            )}
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="flex items-center gap-3 p-3 bg-secondary/10 rounded-lg">
-              <div className="w-4 h-4 rounded" style={{ backgroundColor: 'hsl(var(--success-green))' }} />
-              <div>
-                <p className="text-sm font-medium">Total de Itens Entregues</p>
-                <p className="text-xs text-muted-foreground">{totalEntreguesCount} itens entregues</p>
+          {totalAllItems > 0 && (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="flex items-center gap-3 p-3 bg-secondary/10 rounded-lg">
+                <div className="w-4 h-4 rounded" style={{ backgroundColor: 'hsl(var(--success-green))' }} />
+                <div>
+                  <p className="text-sm font-medium">Total de Itens Entregues</p>
+                  <p className="text-xs text-muted-foreground">{totalEntreguesCount} itens entregues</p>
+                </div>
               </div>
-            </div>
 
-            <div className="flex items-center gap-3 p-3 bg-secondary/10 rounded-lg">
-              <CheckCircle className="w-4 h-4 text-success-green" />
-              <div>
-                <p className="text-sm font-medium">Status</p>
-                <p className="text-xs text-muted-foreground">100% Concluídas</p>
+              <div className="flex items-center gap-3 p-3 bg-secondary/10 rounded-lg">
+                <CheckCircle className="w-4 h-4 text-success-green" />
+                <div>
+                  <p className="text-sm font-medium">Status</p>
+                  <p className="text-xs text-muted-foreground">100% Concluídas</p>
+                </div>
               </div>
             </div>
-          </div>
+          )}
         </div>
       </CardContent>
     </Card>

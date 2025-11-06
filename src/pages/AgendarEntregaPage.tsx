@@ -9,7 +9,7 @@ import type { TablesInsert, Tables, TablesUpdate } from "@/integrations/supabase
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/use-auth";
 import { generateUniqueNumber, formatItemsForColetaModeloAparelho, getTotalQuantityOfItems, cn } from "@/lib/utils";
-import { format } from "date-fns";
+import { format, isValid } from "date-fns"; // Importar isValid
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
@@ -386,7 +386,7 @@ export const AgendarEntregaPage: React.FC = () => {
                         disabled={isFormDisabled}
                       >
                         <CalendarIcon className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                        {formData.created_at ? format(new Date(formData.created_at), "dd/MM/yyyy", { locale: ptBR }) : "Selecionar data"}
+                        {formData.created_at ? (isValid(new Date(formData.created_at)) ? format(new Date(formData.created_at), "dd/MM/yyyy", { locale: ptBR }) : "Data inválida") : "Selecionar data"}
                       </Button>
                     </PopoverTrigger>
                     <PopoverContent className="w-auto p-0">
@@ -413,7 +413,7 @@ export const AgendarEntregaPage: React.FC = () => {
                         disabled={isFormDisabled}
                       >
                         <CalendarIcon className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                        {formData.previsao_coleta ? format(new Date(formData.previsao_coleta), "dd/MM/yyyy", { locale: ptBR }) : "Selecionar data"}
+                        {formData.previsao_coleta ? (isValid(new Date(formData.previsao_coleta)) ? format(new Date(formData.previsao_coleta), "dd/MM/yyyy", { locale: ptBR }) : "Data inválida") : "Selecionar data"}
                       </Button>
                     </PopoverTrigger>
                     <PopoverContent className="w-auto p-0">

@@ -7,6 +7,8 @@ import { MapPin, User, Clock, Home, Flag, Edit, Gauge, Trash2, Loader2 } from "l
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import type { Tables } from "@/integrations/supabase/types_generated";
+import { format, isValid } from "date-fns"; // Importar isValid
+import { ptBR } from "date-fns/locale"; // Importar locale
 
 type Route = Tables<'routes'> & {
   driver?: { name: string } | null;
@@ -152,7 +154,7 @@ export default function RouteList({ filters, selectedRouteId, onSelectRoute, onE
             {route.estimated_duration && (
               <div className="flex items-center gap-2">
                 <Clock className="h-4 w-4 text-warning-yellow" />
-                <span>Duração Estimada: {(route.estimated_duration / 60).toFixed(0)} min</span>
+                <span>Duração Estimada: {isValid(new Date(route.estimated_duration * 1000)) ? format(new Date(route.estimated_duration * 1000), 'mm', { locale: ptBR }) : 'N/A'} min</span>
               </div>
             )}
           </div>

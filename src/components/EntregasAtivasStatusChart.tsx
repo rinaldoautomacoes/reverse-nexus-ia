@@ -4,7 +4,7 @@ import { TrendingUp, Truck, Clock, AlertTriangle, CheckCircle } from "lucide-rea
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/use-auth";
-import { format, parseISO, startOfMonth } from "date-fns";
+import { format, parseISO, startOfMonth, isValid } from "date-fns"; // Importar isValid
 import { ptBR } from "date-fns/locale";
 import { useEffect } from "react";
 import { useToast } from "@/hooks/use-toast";

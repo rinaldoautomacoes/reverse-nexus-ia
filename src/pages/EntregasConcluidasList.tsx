@@ -10,7 +10,7 @@ import type { Tables } from "@/integrations/supabase/types_generated";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/use-auth";
 import { Badge } from "@/components/ui/badge";
-import { format } from "date-fns";
+import { format, isValid } from "date-fns"; // Importar isValid
 import { ptBR } from "date-fns/locale";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
@@ -126,7 +126,7 @@ const EntregasConcluidasList: React.FC<EntregasConcluidasListProps> = ({ selecte
   const handleWhatsAppClick = (entrega: Entrega) => {
     if (entrega.telefone && entrega.parceiro && entrega.previsao_coleta) {
       const cleanedPhone = entrega.telefone.replace(/\D/g, '');
-      const formattedDate = format(new Date(entrega.previsao_coleta), 'dd/MM/yyyy', { locale: ptBR });
+      const formattedDate = isValid(new Date(entrega.previsao_coleta)) ? format(new Date(entrega.previsao_coleta), 'dd/MM/yyyy', { locale: ptBR }) : 'N/A';
       const transportadoraName = entrega.transportadora?.name ? ` pela transportadora ${entrega.transportadora.name}` : '';
       const message = `Olá ${entrega.parceiro},\n\nGostaríamos de confirmar sua entrega agendada para o dia ${formattedDate}${transportadoraName}. Número da Entrega: ${entrega.unique_number}.`;
       window.open(`https://wa.me/${cleanedPhone}?text=${encodeURIComponent(message)}`, '_blank');
@@ -137,7 +137,7 @@ const EntregasConcluidasList: React.FC<EntregasConcluidasListProps> = ({ selecte
 
   const handleEmailClick = (entrega: Entrega) => {
     if (entrega.email && entrega.parceiro && entrega.previsao_coleta) {
-      const formattedDate = format(new Date(entrega.previsao_coleta), 'dd/MM/yyyy', { locale: ptBR });
+      const formattedDate = isValid(new Date(entrega.previsao_coleta)) ? format(new Date(entrega.previsao_coleta), 'dd/MM/yyyy', { locale: ptBR }) : 'N/A';
       const transportadoraName = entrega.transportadora?.name ? ` pela transportadora ${entrega.transportadora.name}` : '';
       const subject = encodeURIComponent(`Confirmação de Agendamento de Entrega - ${entrega.parceiro} - ${entrega.unique_number}`);
       const body = encodeURIComponent(`Olá ${entrega.parceiro},\n\nGostaríamos de confirmar sua entrega agendada para o dia ${formattedDate}${transportadoraName}. Número da Entrega: ${entrega.unique_number}.\n\nAtenciosamente,\nSua Equipe de Logística`);
@@ -230,7 +230,7 @@ const EntregasConcluidasList: React.FC<EntregasConcluidasListProps> = ({ selecte
                       )}
                     >
                       <CalendarIcon className="mr-2 h-4 w-4" />
-                      {filterDate ? format(filterDate, "PPP", { locale: ptBR }) : "Filtrar por data"}
+                      {filterDate ? (isValid(filterDate) ? format(filterDate, "dd/MM/yyyy", { locale: ptBR }) : "Data inválida") : "Filtrar por data"}
                     </Button>
                   </PopoverTrigger>
                   <PopoverContent className="w-auto p-0">
@@ -289,7 +289,7 @@ const EntregasConcluidasList: React.FC<EntregasConcluidasListProps> = ({ selecte
                           </div>
                         )}
                         <div className="flex items-center gap-1">
-                          <CalendarIcon className="h-3 w-3" /> Concluída em: {entrega.previsao_coleta ? format(new Date(entrega.previsao_coleta), 'dd/MM/yyyy', { locale: ptBR }) : 'N/A'}
+                          <CalendarIcon className="h-3 w-3" /> Concluída em: {entrega.previsao_coleta ? (isValid(new Date(entrega.previsao_coleta)) ? format(new Date(entrega.previsao_coleta), 'dd/MM/yyyy', { locale: ptBR }) : 'Data inválida') : 'N/A'}
                         </div>
                         <div className="flex items-center gap-1">
                           <Hash className="h-3 w-3" /> Qtd Total: {getTotalQuantityOfItems(entrega.items)}

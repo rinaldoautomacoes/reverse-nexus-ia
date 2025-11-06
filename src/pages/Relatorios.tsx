@@ -12,7 +12,7 @@ import { useAuth } from "@/hooks/use-auth";
 import { CreateReportDialog } from "@/components/CreateReportDialog";
 import { EditReportDialog } from "@/components/EditReportDialog"; // Importar o novo diálogo
 import { Badge } from "@/components/ui/badge";
-import { format } from "date-fns";
+import { format, isValid } from "date-fns"; // Importar isValid
 import { ptBR } from "date-fns/locale";
 import { generateReport } from "@/lib/report-utils";
 
@@ -190,7 +190,7 @@ export const Relatorios = () => {
                       <h3 className="font-semibold text-lg">{report.title}</h3>
                       <p className="text-sm text-muted-foreground">{report.description}</p>
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-sm text-muted-foreground mt-1">
-                        <p>Período: {report.start_date ? format(new Date(report.start_date), 'dd/MM/yyyy', { locale: ptBR }) : 'N/A'} - {report.end_date ? format(new Date(report.end_date), 'dd/MM/yyyy', { locale: ptBR }) : 'N/A'}</p>
+                        <p>Período: {report.start_date ? (isValid(new Date(report.start_date)) ? format(new Date(report.start_date), 'dd/MM/yyyy', { locale: ptBR }) : 'Data inválida') : 'N/A'} - {report.end_date ? (isValid(new Date(report.end_date)) ? format(new Date(report.end_date), 'dd/MM/yyyy', { locale: ptBR }) : 'Data inválida') : 'N/A'}</p>
                         <p>Formato: <Badge variant="secondary">{report.format.toUpperCase()}</Badge></p>
                         <p>Status: {getStatusBadge(report.status)}</p>
                       </div>

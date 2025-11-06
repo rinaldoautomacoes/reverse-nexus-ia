@@ -15,7 +15,7 @@ import { useAuth } from "@/hooks/use-auth";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
 import { cn, generateUniqueNumber, formatItemsForColetaModeloAparelho, getTotalQuantityOfItems } from "@/lib/utils";
-import { format } from "date-fns";
+import { format, isValid } from "date-fns"; // Importar isValid
 import { ptBR } from "date-fns/locale";
 import { ClientCombobox } from "@/components/ClientCombobox";
 import { ProductCombobox } from "@/components/ProductCombobox"; // Mantido para compatibilidade, mas não usado diretamente para o modelo_aparelho principal
@@ -372,7 +372,7 @@ export const EntregaForm: React.FC<EntregaFormProps> = ({ initialData, onSave, o
                 disabled={isPending}
               >
                 <CalendarIcon className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                {formData.created_at ? format(new Date(formData.created_at), "dd/MM/yyyy", { locale: ptBR }) : "Selecionar data"}
+                {formData.created_at ? (isValid(new Date(formData.created_at)) ? format(new Date(formData.created_at), "dd/MM/yyyy", { locale: ptBR }) : "Data inválida") : "Selecionar data"}
               </Button>
             </PopoverTrigger>
             <PopoverContent className="w-auto p-0">
@@ -399,7 +399,7 @@ export const EntregaForm: React.FC<EntregaFormProps> = ({ initialData, onSave, o
                 disabled={isPending}
               >
                         <CalendarIcon className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                {formData.previsao_coleta ? format(new Date(formData.previsao_coleta), "dd/MM/yyyy", { locale: ptBR }) : "Selecionar data"}
+                {formData.previsao_coleta ? (isValid(new Date(formData.previsao_coleta)) ? format(new Date(formData.previsao_coleta), "dd/MM/yyyy", { locale: ptBR }) : "Data inválida") : "Selecionar data"}
               </Button>
             </PopoverTrigger>
             <PopoverContent className="w-auto p-0">

@@ -1,6 +1,6 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Package, Truck } from "lucide-react";
-import { format, parseISO, startOfMonth } from "date-fns";
+import { format, parseISO, startOfMonth, isValid } from "date-fns"; // Importar isValid
 import { ptBR } from "date-fns/locale";
 import React from "react";
 import {

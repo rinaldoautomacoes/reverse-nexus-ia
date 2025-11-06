@@ -1,7 +1,7 @@
 import { useState, useCallback, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, Package, PlusCircle, Loader2, Tag, ClipboardList, Calendar as CalendarIcon } from "lucide-react";
+import { ArrowLeft, Package, PlusCircle, Loader2, Tag, ClipboardList, Calendar as CalendarIcon, FileText, Hash } from "lucide-react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -9,7 +9,12 @@ import type { TablesInsert, Tables, TablesUpdate } from "@/integrations/supabase
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/use-auth";
 import { generateUniqueNumber, formatItemsForColetaModeloAparelho, getTotalQuantityOfItems, cn } from "@/lib/utils";
-import { format } from "date-fns";
+import { format, isValid } from "date-fns"; // Importar isValid
+import { Label } from "@/components/ui/label";
+import { Input } from "@/components/ui/input";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Calendar } from "@/components/ui/calendar";
+import { ptBR } from "date-fns/locale";
 import { parseReturnDocumentText, processSelectedSpreadsheetCellsForItems, parseSelectedSpreadsheetCells } from '@/lib/document-parser';
 import type { ParsedCollectionData, ParsedItem } from '@/lib/types'; // Updated import path
 
@@ -21,13 +26,6 @@ import { DestinationAddressSection } from '@/components/shared-scheduler-section
 import { MainProductAndDateSection } from '@/components/shared-scheduler-sections/MainProductAndDateSection';
 import { ItemsTableSection } from '@/components/shared-scheduler-sections/ItemsTableSection';
 import { AutomaticSchedulerActionButtons } from '@/components/shared-scheduler-sections/AutomaticSchedulerActionButtons/AutomaticSchedulerActionButtons';
-import { Label } from "@/components/ui/label";
-import { Input } from "@/components/ui/input";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { Calendar } from "@/components/ui/calendar";
-import { ptBR } from "date-fns/locale";
-import { FileText, Hash } from "lucide-react"; // Importar ícones para os novos campos
-
 
 type ColetaInsert = TablesInsert<'coletas'>;
 type ColetaUpdate = TablesUpdate<'coletas'>;
@@ -262,7 +260,7 @@ export const AutomaticCollectionSchedulerPage: React.FC = () => {
       queryClient.invalidateQueries({ queryKey: ['dashboardColetasMetrics', user?.id] });
       queryClient.invalidateQueries({ queryKey: ['collectionStatusChart', user?.id] });
       queryClient.invalidateQueries({ queryKey: ['productStatusChart', user?.id] });
-      queryClient.invalidateQueries({ queryKey: ['itemsForColetasMetrics', user?.id] });
+      queryClient.invalidateQueries({ queryKey: ['items', user?.id] });
       toast({ title: "Coleta Agendada!", description: "Nova coleta criada com sucesso." });
       navigate('/coletas-ativas');
     },
@@ -474,7 +472,34 @@ export const AutomaticCollectionSchedulerPage: React.FC = () => {
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label htmlFor="previsao_coleta">Data da Coleta *</Label>
+                  <Label htmlFor="data_solicitacao">Data da Solicitação</Label>
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <Button
+                        variant={"outline"}
+                        className={cn(
+                          "w-full justify-start text-left font-normal pl-10",
+                          !formData.created_at && "text-muted-foreground"
+                        )}
+                        disabled={isFormDisabled}
+                      >
+                        <CalendarIcon className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                        {formData.created_at ? (isValid(new Date(formData.created_at)) ? format(new Date(formData.created_at), "dd/MM/yyyy", { locale: ptBR }) : "Data inválida") : "Selecionar data"}
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto p-0">
+                      <Calendar
+                        mode="single"
+                        selected={formData.created_at ? new Date(formData.created_at) : undefined}
+                        onSelect={(date) => handleParsedDataChange("created_at", date ? format(date, 'yyyy-MM-ddTHH:mm:ss.SSSZ') : null)}
+                        initialFocus
+                        locale={ptBR}
+                      />
+                    </PopoverContent>
+                  </Popover>
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="previsao_coleta">Previsão de Coleta *</Label>
                   <Popover>
                     <PopoverTrigger asChild>
                       <Button
@@ -486,7 +511,7 @@ export const AutomaticCollectionSchedulerPage: React.FC = () => {
                         disabled={isFormDisabled}
                       >
                         <CalendarIcon className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                        {formData.previsao_coleta ? format(new Date(formData.previsao_coleta), "PPP", { locale: ptBR }) : "Selecionar data"}
+                        {formData.previsao_coleta ? (isValid(new Date(formData.previsao_coleta)) ? format(new Date(formData.previsao_coleta), "dd/MM/yyyy", { locale: ptBR }) : "Data inválida") : "Selecionar data"}
                       </Button>
                     </PopoverTrigger>
                     <PopoverContent className="w-auto p-0">

@@ -1,6 +1,6 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Package, Truck } from "lucide-react";
-import { format, parseISO, startOfMonth } from "date-fns";
+import { format, parseISO, startOfMonth, isValid } from "date-fns"; // Importar isValid
 import { ptBR } from "date-fns/locale";
 import React from "react";
 import {
@@ -70,7 +70,7 @@ export const GeneralStatusChart: React.FC<GeneralStatusChartProps> = ({ allColet
         return;
       }
 
-      // Explicitly parse year, month, day to avoid timezone issues
+      // Explicitly parse year, month, day to avoid timezone issues with DATE column
       const [year, month, day] = item.previsao_coleta.split('-').map(Number);
       const itemDate = new Date(year, month - 1, day); // month is 0-indexed
       const monthKey = format(startOfMonth(itemDate), 'MMM', { locale: ptBR });
