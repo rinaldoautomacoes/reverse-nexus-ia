@@ -311,35 +311,7 @@ export const GeneralMetricsCards: React.FC<GeneralMetricsCardsProps> = ({ allCol
                         <Truck className="h-3 w-3 text-accent" />
                         <span>{metric.entregasCount} Entregas pendentes</span>
                       </div>
-                      {metric.pendingItemsDetails && metric.pendingItemsDetails.length > 0 && (
-                        <div className="mt-4 border-t border-border/50 pt-3">
-                          <div className="grid grid-cols-5 text-xs font-semibold text-muted-foreground mb-2">
-                            <div className="col-span-1">Qtd</div>
-                            <div className="col-span-2">Item</div>
-                            <div className="col-span-1">Descrição</div> {/* Adicionado coluna de descrição */}
-                            <div className="col-span-1 text-right">Tipo</div>
-                          </div>
-                          <ScrollArea className="h-24">
-                            <div className="space-y-1">
-                              {metric.pendingItemsDetails.map((item, itemIndex) => (
-                                <div key={itemIndex} className="grid grid-cols-5 text-xs text-foreground">
-                                  <div className="col-span-1">{item.quantity}</div>
-                                  <div className="col-span-2 truncate" title={item.name}>{item.name}</div>
-                                  <div className="col-span-1 truncate" title={item.description}>{item.description}</div> {/* Exibindo a descrição */}
-                                  <div className="col-span-1 text-right">
-                                    <Badge variant="secondary" className={cn(
-                                      "px-1 py-0.5 text-[0.6rem]",
-                                      item.type === 'coleta' ? 'bg-primary/10 text-primary' : 'bg-accent/10 text-accent'
-                                    )}>
-                                      {item.type === 'coleta' ? 'Coleta' : 'Entrega'}
-                                    </Badge>
-                                  </div>
-                                </div>
-                              ))}
-                            </div>
-                          </ScrollArea>
-                        </div>
-                      )}
+                      {/* REMOVIDO: Detalhes de itens pendentes diretamente no card */}
                     </div>
                   )}
                   {metric.id === 'operacoes-concluidas' && (
@@ -358,35 +330,7 @@ export const GeneralMetricsCards: React.FC<GeneralMetricsCardsProps> = ({ allCol
                     <p className="text-sm text-muted-foreground mb-1">{metric.description}</p>
                   )}
 
-                  {metric.id === 'total-items-geral' && metric.allItemsDetails && metric.allItemsDetails.length > 0 && (
-                    <div className="mt-4 border-t border-border/50 pt-3">
-                      <div className="grid grid-cols-5 text-xs font-semibold text-muted-foreground mb-2">
-                        <div className="col-span-1">Qtd</div>
-                        <div className="col-span-1">Item</div>
-                        <div className="col-span-2">Descrição</div>
-                        <div className="col-span-1 text-right">Tipo</div>
-                      </div>
-                      <ScrollArea className="h-24">
-                        <div className="space-y-1">
-                          {metric.allItemsDetails.map((item, itemIndex) => (
-                            <div key={itemIndex} className="grid grid-cols-5 text-xs text-foreground">
-                              <div className="col-span-1">{item.quantity}</div>
-                              <div className="col-span-1 truncate" title={item.name}>{item.name}</div>
-                              <div className="col-span-2 truncate" title={item.description}>{item.description}</div>
-                              <div className="col-span-1 text-right">
-                                 <Badge variant="secondary" className={cn(
-                                  "px-1 py-0.5 text-[0.6rem]",
-                                  item.type === 'coleta' ? 'bg-primary/10 text-primary' : 'bg-accent/10 text-accent'
-                                )}>
-                                  {item.type === 'coleta' ? 'Coleta' : 'Entrega'}
-                                </Badge>
-                              </div>
-                            </div>
-                          ))}
-                        </div>
-                      </ScrollArea>
-                    </div>
-                  )}
+                  {/* REMOVIDO: Detalhes de todos os itens diretamente no card */}
                 </SortableCard>
               );
             })}
