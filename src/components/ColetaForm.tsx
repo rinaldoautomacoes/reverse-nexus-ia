@@ -82,6 +82,7 @@ export const ColetaForm: React.FC<ColetaFormProps> = ({ initialData, onSave, onC
     destination_lat: null,
     destination_lng: null,
     client_control: null, // Alterado para null
+    created_at: format(new Date(), 'yyyy-MM-ddTHH:mm:ss.SSSZ'), // Initialize created_at for new forms
   });
 
   const [collectionItems, setCollectionItems] = useState<ItemData[]>(initialData?.items || []);
@@ -135,6 +136,7 @@ export const ColetaForm: React.FC<ColetaFormProps> = ({ initialData, onSave, onC
         destination_lat: null,
         destination_lng: null,
         client_control: null, // Alterado para null
+        created_at: format(new Date(), 'yyyy-MM-ddTHH:mm:ss.SSSZ'), // Ensure created_at is set for new forms
       });
       setCollectionItems([]);
     }
@@ -234,7 +236,6 @@ export const ColetaForm: React.FC<ColetaFormProps> = ({ initialData, onSave, onC
             <Input
               id="unique_number"
               value={formData.unique_number || ''}
-              onChange={(e) => handleInputChange("unique_number", e.target.value)}
               className="pl-10"
               disabled={isPending}
             />
@@ -363,7 +364,19 @@ export const ColetaForm: React.FC<ColetaFormProps> = ({ initialData, onSave, onC
             </PopoverContent>
           </Popover>
         </div>
-        {/* Removido o campo de quantidade de aparelhos, pois agora é gerenciado pela ColetaItemsSection */}
+        <div className="space-y-2">
+          <Label htmlFor="data_solicitacao">Data da Solicitação</Label>
+          <div className="relative">
+            <CalendarIcon className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+            <Input
+              id="data_solicitacao"
+              value={formData.created_at ? format(new Date(formData.created_at), "PPP", { locale: ptBR }) : 'N/A'}
+              readOnly
+              className="pl-10 bg-muted/50"
+              disabled={isPending}
+            />
+          </div>
+        </div>
       </div>
 
       <ColetaItemsSection

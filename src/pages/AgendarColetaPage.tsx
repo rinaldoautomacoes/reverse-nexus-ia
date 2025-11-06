@@ -91,6 +91,7 @@ export const AgendarColetaPage: React.FC = () => {
     destination_lng: null,
     client_control: null, // Alterado para null
     attachments: [], // Novo campo para anexos
+    created_at: format(new Date(), 'yyyy-MM-ddTHH:mm:ss.SSSZ'), // Initialize created_at
   });
 
   const [collectionItems, setCollectionItems] = useState<ItemData[]>([]);
@@ -172,7 +173,7 @@ export const AgendarColetaPage: React.FC = () => {
 
       for (const item of data.items) {
         if (item.modelo_aparelho && item.qtd_aparelhos_solicitado && item.qtd_aparelhos_solicitado > 0) {
-          const newItem: ItemInsert = {
+          const newItem: TablesInsert<'items'> = {
             user_id: user.id,
             collection_id: insertedColeta.id,
             name: item.modelo_aparelho,
@@ -203,7 +204,7 @@ export const AgendarColetaPage: React.FC = () => {
     },
   });
 
-  const handleSave = (data: ColetaInsert, items: ItemData[]) => {
+  const handleSave = (data: ColetaInsert, items: ItemData[], attachments: FileAttachment[]) => {
     if (!data.parceiro || data.parceiro.trim() === '') {
       toast({ title: "Campo Obrigatório", description: "O campo 'Cliente' é obrigatório.", variant: "destructive" });
       return;
@@ -396,6 +397,19 @@ export const AgendarColetaPage: React.FC = () => {
                       />
                     </PopoverContent>
                   </Popover>
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="data_solicitacao">Data da Solicitação</Label>
+                  <div className="relative">
+                    <CalendarIcon className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                    <Input
+                      id="data_solicitacao"
+                      value={formData.created_at ? format(new Date(formData.created_at), "PPP", { locale: ptBR }) : 'N/A'}
+                      readOnly
+                      className="pl-10 bg-muted/50"
+                      disabled={isFormDisabled}
+                    />
+                  </div>
                 </div>
               </div>
 

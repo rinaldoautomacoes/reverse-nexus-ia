@@ -60,8 +60,8 @@ export const EntregaForm: React.FC<EntregaFormProps> = ({ initialData, onSave, o
     parceiro: "",
     endereco: "", // Mapeado para endereco_destino para entregas
     previsao_coleta: format(new Date(), 'yyyy-MM-dd'),
-    qtd_aparelhos_solicitado: null, // Removido valor padrão, será derivado dos itens
-    modelo_aparelho: null, // Removido valor padrão, será derivado dos itens
+    modelo_aparelho: null, // Será preenchido do resumo dos itens
+    qtd_aparelhos_solicitado: null, // Será preenchido da quantidade total dos itens
     status_coleta: "pendente",
     observacao: "",
     telefone: "",
@@ -94,7 +94,8 @@ export const EntregaForm: React.FC<EntregaFormProps> = ({ initialData, onSave, o
     origin_lng: null,
     destination_lat: null,
     destination_lng: null,
-    client_control: null, // Alterado para null
+    client_control: "",
+    created_at: format(new Date(), 'yyyy-MM-ddTHH:mm:ss.SSSZ'), // Initialize created_at for new forms
   });
 
   const [deliveryItems, setDeliveryItems] = useState<ItemData[]>(initialData?.items || []);
@@ -147,6 +148,7 @@ export const EntregaForm: React.FC<EntregaFormProps> = ({ initialData, onSave, o
         destination_lat: null,
         destination_lng: null,
         client_control: null, // Alterado para null
+        created_at: format(new Date(), 'yyyy-MM-ddTHH:mm:ss.SSSZ'), // Ensure created_at is set for new forms
       });
       setDeliveryItems([]);
     }
@@ -238,7 +240,7 @@ export const EntregaForm: React.FC<EntregaFormProps> = ({ initialData, onSave, o
       endereco: formData.endereco_destino,
       cep: formData.cep_destino,
       user_id: user.id,
-      modelo_aparelho: formatItemsForColetaModeloAarelho(deliveryItems), // Resumo dos itens
+      modelo_aparelho: formatItemsForColetaModeloAaparelho(deliveryItems), // Resumo dos itens
       qtd_aparelhos_solicitado: getTotalQuantityOfItems(deliveryItems), // Quantidade total
     };
 
@@ -384,7 +386,19 @@ export const EntregaForm: React.FC<EntregaFormProps> = ({ initialData, onSave, o
             </PopoverContent>
           </Popover>
         </div>
-        {/* Removido o campo de quantidade de aparelhos, pois agora é gerenciado pela ColetaItemsSection */}
+        <div className="space-y-2">
+          <Label htmlFor="data_solicitacao">Data da Solicitação</Label>
+          <div className="relative">
+            <CalendarIcon className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+            <Input
+              id="data_solicitacao"
+              value={formData.created_at ? format(new Date(formData.created_at), "PPP", { locale: ptBR }) : 'N/A'}
+              readOnly
+              className="pl-10 bg-muted/50"
+              disabled={isPending}
+            />
+          </div>
+        </div>
       </div>
 
       <ColetaItemsSection
