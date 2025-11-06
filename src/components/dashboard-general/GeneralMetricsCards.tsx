@@ -16,6 +16,7 @@ import { Badge } from "@/components/ui/badge"; // Import Badge
 import { DndContext, closestCenter, KeyboardSensor, PointerSensor, useSensor, useSensors, DragEndEvent } from '@dnd-kit/core';
 import { SortableContext, sortableKeyboardCoordinates, arrayMove, useSortable } from '@dnd-kit/sortable';
 import { SortableCard } from '@/components/SortableCard'; // Import the new SortableCard
+import { MetricDetailsDialog } from './MetricDetailsDialog'; // Import the new dialog component
 
 type Coleta = Tables<'coletas'> & { items?: Array<Tables<'items'>> | null; }; // Add items to Coleta type
 
@@ -50,6 +51,9 @@ interface GeneralMetricsCardsProps {
 }
 
 export const GeneralMetricsCards: React.FC<GeneralMetricsCardsProps> = ({ allColetas, selectedYear }) => {
+  const [selectedMetric, setSelectedMetric] = useState<MetricItem | null>(null);
+  const [isDetailsDialogOpen, setIsDetailsDialogOpen] = useState(false);
+
   const calculateMetrics = (data: Coleta[]) => {
     console.log("Calculating general metrics with allColetas data:", data); // Added log
     const coletas = data.filter(item => item.type === 'coleta');
@@ -238,148 +242,162 @@ export const GeneralMetricsCards: React.FC<GeneralMetricsCardsProps> = ({ allCol
     }
   };
 
-  return (
-    <DndContext 
-      sensors={sensors} 
-      collisionDetection={closestCenter} 
-      onDragEnd={handleDragEnd}
-    >
-      <SortableContext items={metrics.map(m => m.id)}>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-6">
-          {metrics.map((metric, index) => {
-            const Icon = iconMap[metric.icon_name || ''];
-            if (!Icon) {
-              console.warn(`Ícone não encontrado para: ${metric.icon_name}`);
-              return null;
-            }
-            return (
-              <SortableCard
-                key={metric.id}
-                id={metric.id}
-                title={metric.title}
-                icon={Icon}
-                iconColorClass={metric.color}
-                iconBgColorClass={metric.bg_color}
-                delay={index * 100}
-              >
-                <div className="text-3xl font-bold font-orbitron gradient-text mb-1">
-                  {metric.value}
-                </div>
-                {metric.id === 'total-operacoes' && (
-                  <div className="space-y-1 text-sm text-muted-foreground mt-1">
-                    <div className="flex items-center gap-1">
-                      <Package className="h-3 w-3 text-primary" />
-                      <span>{metric.coletasCount} Coletas</span>
-                    </div>
-                    <div className="flex items-center gap-1">
-                      <Truck className="h-3 w-3 text-accent" />
-                      <span>{metric.entregasCount} Entregas</span>
-                    </div>
-                  </div>
-                )}
-                {metric.id === 'operacoes-em-transito' && (
-                  <div className="space-y-1 text-sm text-muted-foreground mt-1">
-                    <div className="flex items-center gap-1">
-                      <Package className="h-3 w-3 text-primary" />
-                      <span>{metric.coletasCount} Coletas em andamento</span>
-                    </div>
-                    <div className="flex items-center gap-1">
-                      <Truck className="h-3 w-3 text-accent" />
-                      <span>{metric.entregasCount} Entregas em andamento</span>
-                    </div>
-                  </div>
-                )}
-                {metric.id === 'operacoes-pendentes' && (
-                  <div className="space-y-1 text-sm text-muted-foreground mt-1">
-                    <div className="flex items-center gap-1">
-                      <Package className="h-3 w-3 text-primary" />
-                      <span>{metric.coletasCount} Coletas pendentes</span>
-                    </div>
-                    <div className="flex items-center gap-1">
-                      <Truck className="h-3 w-3 text-accent" />
-                      <span>{metric.entregasCount} Entregas pendentes</span>
-                    </div>
-                    {metric.pendingItemsDetails && metric.pendingItemsDetails.length > 0 && (
-                      <div className="mt-4 border-t border-border/50 pt-3">
-                        <div className="grid grid-cols-5 text-xs font-semibold text-muted-foreground mb-2">
-                          <div className="col-span-1">Qtd</div>
-                          <div className="col-span-2">Item</div>
-                          <div className="col-span-1">Descrição</div> {/* Adicionado coluna de descrição */}
-                          <div className="col-span-1 text-right">Tipo</div>
-                        </div>
-                        <ScrollArea className="h-24">
-                          <div className="space-y-1">
-                            {metric.pendingItemsDetails.map((item, itemIndex) => (
-                              <div key={itemIndex} className="grid grid-cols-5 text-xs text-foreground">
-                                <div className="col-span-1">{item.quantity}</div>
-                                <div className="col-span-2 truncate" title={item.name}>{item.name}</div>
-                                <div className="col-span-1 truncate" title={item.description}>{item.description}</div> {/* Exibindo a descrição */}
-                                <div className="col-span-1 text-right">
-                                  <Badge variant="secondary" className={cn(
-                                    "px-1 py-0.5 text-[0.6rem]",
-                                    item.type === 'coleta' ? 'bg-primary/10 text-primary' : 'bg-accent/10 text-accent'
-                                  )}>
-                                    {item.type === 'coleta' ? 'Coleta' : 'Entrega'}
-                                  </Badge>
-                                </div>
-                              </div>
-                            ))}
-                          </div>
-                        </ScrollArea>
-                      </div>
-                    )}
-                  </div>
-                )}
-                {metric.id === 'operacoes-concluidas' && (
-                  <div className="space-y-1 text-sm text-muted-foreground mt-1">
-                    <div className="flex items-center gap-1">
-                      <Package className="h-3 w-3 text-primary" />
-                      <span>{metric.coletasCount} Coletas finalizadas</span>
-                    </div>
-                    <div className="flex items-center gap-1">
-                      <Truck className="h-3 w-3 text-accent" />
-                      <span>{metric.entregasCount} Entregas finalizadas</span>
-                    </div>
-                  </div>
-                )}
-                {metric.description && metric.id !== 'total-operacoes' && metric.id !== 'operacoes-em-transito' && metric.id !== 'operacoes-concluidas' && metric.id !== 'operacoes-pendentes' && (
-                  <p className="text-sm text-muted-foreground mb-1">{metric.description}</p>
-                )}
+  const handleCardClick = (metric: MetricItem) => {
+    setSelectedMetric(metric);
+    setIsDetailsDialogOpen(true);
+  };
 
-                {metric.id === 'total-items-geral' && metric.allItemsDetails && metric.allItemsDetails.length > 0 && (
-                  <div className="mt-4 border-t border-border/50 pt-3">
-                    <div className="grid grid-cols-5 text-xs font-semibold text-muted-foreground mb-2">
-                      <div className="col-span-1">Qtd</div>
-                      <div className="col-span-1">Item</div>
-                      <div className="col-span-2">Descrição</div>
-                      <div className="col-span-1 text-right">Tipo</div>
-                    </div>
-                    <ScrollArea className="h-24">
-                      <div className="space-y-1">
-                        {metric.allItemsDetails.map((item, itemIndex) => (
-                          <div key={itemIndex} className="grid grid-cols-5 text-xs text-foreground">
-                            <div className="col-span-1">{item.quantity}</div>
-                            <div className="col-span-1 truncate" title={item.name}>{item.name}</div>
-                            <div className="col-span-2 truncate" title={item.description}>{item.description}</div>
-                            <div className="col-span-1 text-right">
-                               <Badge variant="secondary" className={cn(
-                                "px-1 py-0.5 text-[0.6rem]",
-                                item.type === 'coleta' ? 'bg-primary/10 text-primary' : 'bg-accent/10 text-accent'
-                              )}>
-                                {item.type === 'coleta' ? 'Coleta' : 'Entrega'}
-                              </Badge>
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    </ScrollArea>
+  return (
+    <>
+      <DndContext 
+        sensors={sensors} 
+        collisionDetection={closestCenter} 
+        onDragEnd={handleDragEnd}
+      >
+        <SortableContext items={metrics.map(m => m.id)}>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-6">
+            {metrics.map((metric, index) => {
+              const Icon = iconMap[metric.icon_name || ''];
+              if (!Icon) {
+                console.warn(`Ícone não encontrado para: ${metric.icon_name}`);
+                return null;
+              }
+              return (
+                <SortableCard
+                  key={metric.id}
+                  id={metric.id}
+                  title={metric.title}
+                  icon={Icon}
+                  iconColorClass={metric.color}
+                  iconBgColorClass={metric.bg_color}
+                  delay={index * 100}
+                  onClick={() => handleCardClick(metric)} // Adicionado onClick aqui
+                >
+                  <div className="text-3xl font-bold font-orbitron gradient-text mb-1">
+                    {metric.value}
                   </div>
-                )}
-              </SortableCard>
-            );
-          })}
-        </div>
-      </SortableContext>
-    </DndContext>
+                  {metric.id === 'total-operacoes' && (
+                    <div className="space-y-1 text-sm text-muted-foreground mt-1">
+                      <div className="flex items-center gap-1">
+                        <Package className="h-3 w-3 text-primary" />
+                        <span>{metric.coletasCount} Coletas</span>
+                      </div>
+                      <div className="flex items-center gap-1">
+                        <Truck className="h-3 w-3 text-accent" />
+                        <span>{metric.entregasCount} Entregas</span>
+                      </div>
+                    </div>
+                  )}
+                  {metric.id === 'operacoes-em-transito' && (
+                    <div className="space-y-1 text-sm text-muted-foreground mt-1">
+                      <div className="flex items-center gap-1">
+                        <Package className="h-3 w-3 text-primary" />
+                        <span>{metric.coletasCount} Coletas em andamento</span>
+                      </div>
+                      <div className="flex items-center gap-1">
+                        <Truck className="h-3 w-3 text-accent" />
+                        <span>{metric.entregasCount} Entregas em andamento</span>
+                      </div>
+                    </div>
+                  )}
+                  {metric.id === 'operacoes-pendentes' && (
+                    <div className="space-y-1 text-sm text-muted-foreground mt-1">
+                      <div className="flex items-center gap-1">
+                        <Package className="h-3 w-3 text-primary" />
+                        <span>{metric.coletasCount} Coletas pendentes</span>
+                      </div>
+                      <div className="flex items-center gap-1">
+                        <Truck className="h-3 w-3 text-accent" />
+                        <span>{metric.entregasCount} Entregas pendentes</span>
+                      </div>
+                      {metric.pendingItemsDetails && metric.pendingItemsDetails.length > 0 && (
+                        <div className="mt-4 border-t border-border/50 pt-3">
+                          <div className="grid grid-cols-5 text-xs font-semibold text-muted-foreground mb-2">
+                            <div className="col-span-1">Qtd</div>
+                            <div className="col-span-2">Item</div>
+                            <div className="col-span-1">Descrição</div> {/* Adicionado coluna de descrição */}
+                            <div className="col-span-1 text-right">Tipo</div>
+                          </div>
+                          <ScrollArea className="h-24">
+                            <div className="space-y-1">
+                              {metric.pendingItemsDetails.map((item, itemIndex) => (
+                                <div key={itemIndex} className="grid grid-cols-5 text-xs text-foreground">
+                                  <div className="col-span-1">{item.quantity}</div>
+                                  <div className="col-span-2 truncate" title={item.name}>{item.name}</div>
+                                  <div className="col-span-1 truncate" title={item.description}>{item.description}</div> {/* Exibindo a descrição */}
+                                  <div className="col-span-1 text-right">
+                                    <Badge variant="secondary" className={cn(
+                                      "px-1 py-0.5 text-[0.6rem]",
+                                      item.type === 'coleta' ? 'bg-primary/10 text-primary' : 'bg-accent/10 text-accent'
+                                    )}>
+                                      {item.type === 'coleta' ? 'Coleta' : 'Entrega'}
+                                    </Badge>
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
+                          </ScrollArea>
+                        </div>
+                      )}
+                    </div>
+                  )}
+                  {metric.id === 'operacoes-concluidas' && (
+                    <div className="space-y-1 text-sm text-muted-foreground mt-1">
+                      <div className="flex items-center gap-1">
+                        <Package className="h-3 w-3 text-primary" />
+                        <span>{metric.coletasCount} Coletas finalizadas</span>
+                      </div>
+                      <div className="flex items-center gap-1">
+                        <Truck className="h-3 w-3 text-accent" />
+                        <span>{metric.entregasCount} Entregas finalizadas</span>
+                      </div>
+                    </div>
+                  )}
+                  {metric.description && metric.id !== 'total-operacoes' && metric.id !== 'operacoes-em-transito' && metric.id !== 'operacoes-concluidas' && metric.id !== 'operacoes-pendentes' && (
+                    <p className="text-sm text-muted-foreground mb-1">{metric.description}</p>
+                  )}
+
+                  {metric.id === 'total-items-geral' && metric.allItemsDetails && metric.allItemsDetails.length > 0 && (
+                    <div className="mt-4 border-t border-border/50 pt-3">
+                      <div className="grid grid-cols-5 text-xs font-semibold text-muted-foreground mb-2">
+                        <div className="col-span-1">Qtd</div>
+                        <div className="col-span-1">Item</div>
+                        <div className="col-span-2">Descrição</div>
+                        <div className="col-span-1 text-right">Tipo</div>
+                      </div>
+                      <ScrollArea className="h-24">
+                        <div className="space-y-1">
+                          {metric.allItemsDetails.map((item, itemIndex) => (
+                            <div key={itemIndex} className="grid grid-cols-5 text-xs text-foreground">
+                              <div className="col-span-1">{item.quantity}</div>
+                              <div className="col-span-1 truncate" title={item.name}>{item.name}</div>
+                              <div className="col-span-2 truncate" title={item.description}>{item.description}</div>
+                              <div className="col-span-1 text-right">
+                                 <Badge variant="secondary" className={cn(
+                                  "px-1 py-0.5 text-[0.6rem]",
+                                  item.type === 'coleta' ? 'bg-primary/10 text-primary' : 'bg-accent/10 text-accent'
+                                )}>
+                                  {item.type === 'coleta' ? 'Coleta' : 'Entrega'}
+                                </Badge>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </ScrollArea>
+                    </div>
+                  )}
+                </SortableCard>
+              );
+            })}
+          </div>
+        </SortableContext>
+      </DndContext>
+
+      <MetricDetailsDialog
+        metric={selectedMetric}
+        isOpen={isDetailsDialogOpen}
+        onClose={() => setIsDetailsDialogOpen(false)}
+      />
+    </>
   );
 };
