@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { UserPlus, User, Phone, Mail, MapPin, Building, Briefcase } from "lucide-react";
+import { UserPlus, User, Phone, Mail, MapPin, Building, Briefcase, Hash } from "lucide-react";
 import type { TablesInsert, TablesUpdate } from "@/integrations/supabase/types";
 
 type ClientInsert = TablesInsert<'clients'>;
@@ -23,6 +23,7 @@ export const ClientForm: React.FC<ClientFormProps> = ({ initialData, onSave, onC
     address: "",
     cnpj: "",
     contact_person: "",
+    registration_number: "", // Novo campo
     user_id: "", // Será preenchido pela mutação
   });
 
@@ -118,17 +119,31 @@ export const ClientForm: React.FC<ClientFormProps> = ({ initialData, onSave, onC
           </div>
         </div>
         <div className="space-y-2">
-          <Label htmlFor="contact_person">Pessoa de Contato</Label>
+          <Label htmlFor="registration_number">Número de Registro</Label>
           <div className="relative">
-            <Briefcase className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+            <Hash className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
             <Input
-              id="contact_person"
-              placeholder="Nome do contato principal"
+              id="registration_number"
+              placeholder="Ex: 123456789"
               className="pl-10"
-              value={formData.contact_person || ''}
-              onChange={(e) => handleInputChange("contact_person", e.target.value)}
+              value={formData.registration_number || ''}
+              onChange={(e) => handleInputChange("registration_number", e.target.value)}
             />
           </div>
+        </div>
+      </div>
+
+      <div className="space-y-2">
+        <Label htmlFor="contact_person">Pessoa de Contato</Label>
+        <div className="relative">
+          <Briefcase className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+          <Input
+            id="contact_person"
+            placeholder="Nome do contato principal"
+            className="pl-10"
+            value={formData.contact_person || ''}
+            onChange={(e) => handleInputChange("contact_person", e.target.value)}
+          />
         </div>
       </div>
 

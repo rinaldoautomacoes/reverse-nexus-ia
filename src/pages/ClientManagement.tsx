@@ -3,7 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { ArrowLeft, PlusCircle, Edit, Trash2, User, Search, Phone, Mail, MapPin, Building, Briefcase } from "lucide-react";
+import { ArrowLeft, PlusCircle, Edit, Trash2, User, Search, Phone, Mail, MapPin, Building, Briefcase, Hash } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -123,7 +123,8 @@ export const ClientManagement = () => {
     client.contact_person?.toLowerCase().includes(searchTerm.toLowerCase()) ||
     client.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
     client.phone?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    client.cnpj?.toLowerCase().includes(searchTerm.toLowerCase())
+    client.cnpj?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    client.registration_number?.toLowerCase().includes(searchTerm.toLowerCase()) // Incluído o novo campo na busca
   ) || [];
 
   if (isLoadingClients) {
@@ -175,7 +176,7 @@ export const ClientManagement = () => {
                 <div className="flex-1 relative">
                   <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
                   <Input
-                    placeholder="Buscar por nome, contato, email, telefone ou CNPJ..."
+                    placeholder="Buscar por nome, contato, email, telefone, CNPJ ou Número de Registro..."
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
                     className="pl-10"
@@ -242,6 +243,11 @@ export const ClientManagement = () => {
                         {client.cnpj && (
                           <div className="flex items-center gap-1">
                             <Building className="h-3 w-3" /> {client.cnpj}
+                          </div>
+                        )}
+                        {client.registration_number && ( // Exibindo o novo campo
+                          <div className="flex items-center gap-1">
+                            <Hash className="h-3 w-3" /> Reg.: {client.registration_number}
                           </div>
                         )}
                         {client.address && (
