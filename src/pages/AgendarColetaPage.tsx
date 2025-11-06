@@ -2,7 +2,7 @@ import { useState, useCallback, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft, Package, PlusCircle, Loader2, Tag, ClipboardList, Calendar as CalendarIcon, FileText, Hash } from "lucide-react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import type { TablesInsert, Tables, TablesUpdate } from "@/integrations/supabase/types_generated";
@@ -91,7 +91,7 @@ export const AgendarColetaPage: React.FC = () => {
     destination_lng: null,
     client_control: null, // Alterado para null
     attachments: [], // Novo campo para anexos
-    created_at: format(new Date(), 'yyyy-MM-ddTHH:mm:ss.SSSZ'), // Initialize created_at
+    created_at: format(new Date(), "yyyy-MM-dd'T'HH:mm:ss.SSSXXX"), // Initialize created_at
   });
 
   const [collectionItems, setCollectionItems] = useState<ItemData[]>([]);
@@ -391,7 +391,7 @@ export const AgendarColetaPage: React.FC = () => {
                       <Calendar
                         mode="single"
                         selected={formData.created_at ? new Date(formData.created_at) : undefined}
-                        onSelect={(date) => handleInputChange("created_at", date ? format(date, 'yyyy-MM-ddTHH:mm:ss.SSSZ') : null)}
+                        onSelect={(date) => handleInputChange("created_at", date ? format(date, "yyyy-MM-dd'T'HH:mm:ss.SSSXXX") : null)}
                         initialFocus
                         locale={ptBR}
                       />

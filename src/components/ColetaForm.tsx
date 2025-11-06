@@ -82,7 +82,7 @@ export const ColetaForm: React.FC<ColetaFormProps> = ({ initialData, onSave, onC
     destination_lat: null,
     destination_lng: null,
     client_control: null, // Alterado para null
-    created_at: format(new Date(), 'yyyy-MM-ddTHH:mm:ss.SSSZ'), // Initialize created_at for new forms
+    created_at: format(new Date(), "yyyy-MM-dd'T'HH:mm:ss.SSSXXX"), // Initialize created_at for new forms
   });
 
   const [collectionItems, setCollectionItems] = useState<ItemData[]>(initialData?.items || []);
@@ -136,7 +136,7 @@ export const ColetaForm: React.FC<ColetaFormProps> = ({ initialData, onSave, onC
         destination_lat: null,
         destination_lng: null,
         client_control: null, // Alterado para null
-        created_at: format(new Date(), 'yyyy-MM-ddTHH:mm:ss.SSSZ'), // Ensure created_at is set for new forms
+        created_at: format(new Date(), "yyyy-MM-dd'T'HH:mm:ss.SSSXXX"), // Ensure created_at is set for new forms
       });
       setCollectionItems([]);
     }
@@ -357,7 +357,7 @@ export const ColetaForm: React.FC<ColetaFormProps> = ({ initialData, onSave, onC
               <Calendar
                 mode="single"
                 selected={formData.created_at ? new Date(formData.created_at) : undefined}
-                onSelect={(date) => handleInputChange("created_at", date ? format(date, 'yyyy-MM-ddTHH:mm:ss.SSSZ') : null)}
+                onSelect={(date) => handleInputChange("created_at", date ? format(date, "yyyy-MM-dd'T'HH:mm:ss.SSSXXX") : null)}
                 initialFocus
                 locale={ptBR}
               />

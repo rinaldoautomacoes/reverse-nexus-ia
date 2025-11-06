@@ -27,7 +27,7 @@ export const CreateRouteDialog: React.FC<CreateRouteDialogProps> = ({ isOpen, on
   const [formData, setFormData] = useState<RouteInsert>({
     name: "",
     driver_id: null,
-    date: new Date().toISOString().split('T')[0],
+    date: format(new Date(), 'yyyy-MM-dd'),
     origin_address: "",
     origin_lat: null,
     origin_lng: null,
@@ -181,7 +181,7 @@ export const CreateRouteDialog: React.FC<CreateRouteDialogProps> = ({ isOpen, on
       setFormData({
         name: "",
         driver_id: null,
-        date: new Date().toISOString().split('T')[0],
+        date: format(new Date(), 'yyyy-MM-dd'),
         origin_address: "",
         origin_lat: null,
         origin_lng: null,

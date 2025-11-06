@@ -230,7 +230,7 @@ const ColetasConcluidas: React.FC<ColetasConcluidasProps> = ({ selectedYear }) =
                       )}
                     >
                       <CalendarIcon className="mr-2 h-4 w-4" />
-                      {filterDate ? (isValid(filterDate) ? format(filterDate, "dd/MM/yyyy", { locale: ptBR }) : "Data inválida") : "Filtrar por data"}
+                      {filterDate ? (isValid(new Date(filterDate)) ? format(new Date(filterDate), "dd/MM/yyyy", { locale: ptBR }) : "Data inválida") : "Filtrar por data"}
                     </Button>
                   </PopoverTrigger>
                   <PopoverContent className="w-auto p-0">

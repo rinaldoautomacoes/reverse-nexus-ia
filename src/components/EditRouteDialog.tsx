@@ -66,7 +66,7 @@ export const EditRouteDialog: React.FC<EditRouteDialogProps> = ({ isOpen, onOpen
         .select("*")
         .eq("user_id", user.id)
         .order("name");
-      if (error) throw new Error(error.message);
+      if (error) throw error;
       return data;
     },
     enabled: !!user?.id && isOpen,
@@ -97,7 +97,7 @@ export const EditRouteDialog: React.FC<EditRouteDialogProps> = ({ isOpen, onOpen
           console.error("Erro ao recalcular direções:", directionsError);
           toast({ title: "Erro no cálculo da rota", description: "Não foi possível recalcular a distância e duração da rota.", variant: "destructive" });
         }
-      } else if (!mapboxAccessToken) {
+      } else {
         toast({ title: "Token Mapbox Ausente", description: "Insira seu token Mapbox para calcular a distância e duração da rota.", variant: "destructive" });
       }
       setIsCalculatingRoute(false);
