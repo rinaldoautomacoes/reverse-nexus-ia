@@ -36,6 +36,8 @@ interface MetricItem {
   entregasCount?: number;
   allItemsDetails?: { quantity: number; name: string; description: string; type: 'coleta' | 'entrega'; }[];
   pendingItemsDetails?: { quantity: number; name: string; description: string; type: 'coleta' | 'entrega'; }[];
+  inTransitItemsDetails?: { quantity: number; name: string; description: string; type: 'coleta' | 'entrega'; }[]; // Novo campo
+  completedItemsDetails?: { quantity: number; name: string; description: string; type: 'coleta' | 'entrega'; }[]; // Novo campo
 }
 
 interface MetricDetailsDialogProps {
@@ -52,14 +54,25 @@ export const MetricDetailsDialog: React.FC<MetricDetailsDialogProps> = ({ metric
 
   const Icon = metric.icon_name ? iconMap[metric.icon_name] : null;
 
-  // Determina qual array de itens deve ser exibido
-  const itemsToDisplay = metric.id === 'total-items-geral' ? metric.allItemsDetails : metric.pendingItemsDetails;
-  // Determina se a seção de itens deve ser mostrada
-  const showItemsSection = (
-    (metric.id === 'total-items-geral' || metric.id === 'operacoes-pendentes') &&
-    itemsToDisplay &&
-    itemsToDisplay.length > 0
-  );
+  // Determina qual array de itens deve ser exibido no diálogo
+  let itemsToDisplay: MetricItem['allItemsDetails'] | undefined;
+  let itemsSectionTitle = '';
+
+  if (metric.id === 'total-items-geral') {
+    itemsToDisplay = metric.allItemsDetails;
+    itemsSectionTitle = 'Todos os Itens:';
+  } else if (metric.id === 'operacoes-pendentes') {
+    itemsToDisplay = metric.pendingItemsDetails;
+    itemsSectionTitle = 'Itens Pendentes:';
+  } else if (metric.id === 'operacoes-em-transito') { // Novo
+    itemsToDisplay = metric.inTransitItemsDetails;
+    itemsSectionTitle = 'Itens Em Trânsito:';
+  } else if (metric.id === 'operacoes-concluidas') { // Novo
+    itemsToDisplay = metric.completedItemsDetails;
+    itemsSectionTitle = 'Itens Concluídos:';
+  }
+
+  const showItemsSection = itemsToDisplay && itemsToDisplay.length > 0;
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
@@ -117,7 +130,7 @@ export const MetricDetailsDialog: React.FC<MetricDetailsDialogProps> = ({ metric
           {showItemsSection && (
             <div className="space-y-2 border-t border-border/50 pt-4">
               <p className="text-sm font-semibold text-muted-foreground">
-                {metric.id === 'total-items-geral' ? 'Todos os Itens:' : 'Itens Pendentes:'}
+                {itemsSectionTitle}
               </p>
               <div className="grid grid-cols-5 text-xs font-semibold text-muted-foreground mb-2">
                 <div className="col-span-1">Qtd</div>
