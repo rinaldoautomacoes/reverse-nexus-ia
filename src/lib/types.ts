@@ -74,6 +74,7 @@ export interface ClientImportData {
   email?: string | null;
   address?: string | null;
   address_number?: string | null; // Novo campo
+  cep?: string | null; // Novo campo
   cnpj?: string | null;
   contact_person?: string | null;
 }

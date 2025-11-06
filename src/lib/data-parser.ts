@@ -247,6 +247,7 @@ export const parseClientsXLSX = (file: File): Promise<ClientImportData[]> => {
           email: row['Email'] || null,
           address: row['Endereço'] || null,
           address_number: row['Número do Endereço'] ? String(row['Número do Endereço']) : null, // Novo campo
+          cep: row['CEP'] ? String(row['CEP']) : null, // Novo campo
           cnpj: row['CNPJ'] ? String(row['CNPJ']) : null,
           contact_person: row['Pessoa de Contato'] || null,
         })); 
@@ -278,6 +279,7 @@ export const parseClientsCSV = (file: File): Promise<ClientImportData[]> => {
           email: row['Email'] || null,
           address: row['Endereço'] || null,
           address_number: row['Número do Endereço'] ? String(row['Número do Endereço']) : null, // Novo campo
+          cep: row['CEP'] ? String(row['CEP']) : null, // Novo campo
           cnpj: row['CNPJ'] ? String(row['CNPJ']) : null,
           contact_person: row['Pessoa de Contato'] || null,
         })); 
@@ -306,6 +308,7 @@ export const parseClientsJSON = (file: File): Promise<ClientImportData[]> => {
           email: row['email'] || null,
           address: row['address'] || row['Endereço'] || null,
           address_number: row['address_number'] ? String(row['address_number']) : row['Número do Endereço'] ? String(row['Número do Endereço']) : null, // Novo campo
+          cep: row['cep'] ? String(row['cep']) : row['CEP'] ? String(row['CEP']) : null, // Novo campo
           cnpj: row['cnpj'] ? String(row['cnpj']) : row['CNPJ'] ? String(row['CNPJ']) : null,
           contact_person: row['contact_person'] || row['Pessoa de Contato'] || null,
         })); 

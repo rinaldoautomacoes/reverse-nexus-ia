@@ -124,7 +124,8 @@ export const ClientManagement = () => {
     client.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
     client.phone?.toLowerCase().includes(searchTerm.toLowerCase()) ||
     client.cnpj?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    client.address_number?.toLowerCase().includes(searchTerm.toLowerCase()) // Incluído o novo campo na busca
+    client.address_number?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    client.cep?.toLowerCase().includes(searchTerm.toLowerCase()) // Incluído o novo campo na busca
   ) || [];
 
   if (isLoadingClients) {
@@ -176,7 +177,7 @@ export const ClientManagement = () => {
                 <div className="flex-1 relative">
                   <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
                   <Input
-                    placeholder="Buscar por nome, contato, email, telefone, CNPJ ou Número do Endereço..."
+                    placeholder="Buscar por nome, contato, email, telefone, CNPJ, Número do Endereço ou CEP..."
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
                     className="pl-10"
@@ -245,14 +246,24 @@ export const ClientManagement = () => {
                             <Building className="h-3 w-3" /> {client.cnpj}
                           </div>
                         )}
+                        {client.registration_number && ( // Exibindo o novo campo
+                          <div className="flex items-center gap-1">
+                            <Hash className="h-3 w-3" /> Reg.: {client.registration_number}
+                          </div>
+                        )}
                         {client.address_number && ( // Exibindo o novo campo
                           <div className="flex items-center gap-1">
                             <Hash className="h-3 w-3" /> Nº: {client.address_number}
                           </div>
                         )}
+                        {client.cep && ( // Exibindo o novo campo
+                          <div className="flex items-center gap-1">
+                            <MapPin className="h-3 w-3" /> CEP: {client.cep}
+                          </div>
+                        )}
                         {client.address && (
                           <div className="flex items-center gap-1 col-span-full">
-                            <MapPin className="h-3 w-3" /> {client.address}
+                            <MapPin className="h-3 w-3" /> Endereço: {client.address}
                           </div>
                         )}
                       </div>

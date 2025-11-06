@@ -11,6 +11,7 @@ export type ClientRow = {
   phone: string | null
   user_id: string
   address_number: string | null
+  cep: string | null
 }
 
 export type ClientInsert = {
@@ -24,6 +25,7 @@ export type ClientInsert = {
   phone?: string | null
   user_id: string
   address_number?: string | null
+  cep?: string | null
 }
 
 export type ClientUpdate = {
@@ -37,6 +39,7 @@ export type ClientUpdate = {
   phone?: string | null
   user_id?: string
   address_number?: string | null
+  cep?: string | null
 }
 
 export type ClientRelationships = []
