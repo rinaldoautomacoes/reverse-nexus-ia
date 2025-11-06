@@ -80,6 +80,7 @@ export type PublicSchema = {
         client_control: string | null
         qtd_aparelhos_solicitado: number | null
         modelo_aparelho: string | null
+        attachments: Json | null // Adicionado attachments
       }
       Insert: {
         bairro?: string | null
@@ -122,6 +123,7 @@ export type PublicSchema = {
         client_control?: string | null
         qtd_aparelhos_solicitado?: number | null
         modelo_aparelho?: string | null
+        attachments?: Json | null // Adicionado attachments
       }
       Update: {
         bairro?: string | null
@@ -164,6 +166,7 @@ export type PublicSchema = {
         client_control?: string | null
         qtd_aparelhos_solicitado?: number | null
         modelo_aparelho?: string | null
+        attachments?: Json | null // Adicionado attachments
       }
       Relationships: [
         {

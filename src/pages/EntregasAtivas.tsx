@@ -3,7 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { ArrowLeft, PlusCircle, Edit, Trash2, Truck, Search, Clock, Package, CheckCircle, User, Phone, Mail, MapPin, Hash, Calendar as CalendarIcon, Building, MessageSquare, Send, DollarSign, Tag, Home, Flag, ClipboardList, FileText } from "lucide-react";
+import { ArrowLeft, PlusCircle, Edit, Trash2, Truck, Search, Clock, Package, CheckCircle, User, Phone, Mail, MapPin, Hash, Calendar as CalendarIcon, Building, MessageSquare, Send, DollarSign, Tag, Home, Flag, ClipboardList, FileText, Paperclip } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -22,10 +22,18 @@ import { EntregaForm } from "@/components/EntregaForm";
 import { EditEntregaDialog } from "@/components/EditEntregaDialog";
 import { ItemData } from "@/components/coleta-form-sections/ColetaItemRow"; // Importa a interface ItemData
 
+interface FileAttachment {
+  name: string;
+  url: string;
+  type: string;
+  size: number;
+}
+
 type Entrega = Tables<'coletas'> & {
   driver?: { name: string } | null;
   transportadora?: { name: string } | null;
   items?: Array<Tables<'items'>> | null; // Adicionado items relation
+  attachments?: FileAttachment[] | null; // Adicionado attachments
 };
 type EntregaInsert = TablesInsert<'coletas'>;
 
@@ -86,7 +94,7 @@ export const EntregasAtivas: React.FC<EntregasAtivasProps> = ({ selectedYear }) 
   });
 
   const addEntregaMutation = useMutation({
-    mutationFn: async (data: { entrega: EntregaInsert; items: ItemData[] }) => {
+    mutationFn: async (data: { entrega: EntregaInsert; items: ItemData[]; attachments: FileAttachment[] }) => {
       if (!user?.id) {
         throw new Error("Usuário não autenticado. Faça login para agendar entregas.");
       }
@@ -97,6 +105,7 @@ export const EntregasAtivas: React.FC<EntregasAtivasProps> = ({ selectedYear }) 
         type: 'entrega',
         modelo_aparelho: formatItemsForColetaModeloAparelho(data.items), // Resumo dos itens
         qtd_aparelhos_solicitado: getTotalQuantityOfItems(data.items), // Quantidade total
+        attachments: data.attachments, // Salvar os anexos
       };
 
       const { data: insertedEntrega, error: entregaError } = await supabase
@@ -330,8 +339,9 @@ export const EntregasAtivas: React.FC<EntregasAtivasProps> = ({ selectedYear }) 
                       Agendar Nova Entrega
                     </DialogTitle>
                   </DialogHeader>
+                  {/* EntregaForm now handles attachments internally */}
                   <EntregaForm
-                    onSave={addEntregaMutation.mutate}
+                    onSave={({ entrega, items, attachments }) => addEntregaMutation.mutate({ entrega, items, attachments })}
                     onCancel={() => setIsAddDialogOpen(false)}
                     isPending={addEntregaMutation.isPending}
                   />
@@ -406,6 +416,11 @@ export const EntregasAtivas: React.FC<EntregasAtivasProps> = ({ selectedYear }) 
                         <div className="flex items-center gap-1">
                           <Clock className="h-3 w-3" /> Status: <Badge className={getStatusBadgeColor(entrega.status_coleta)}>{getStatusText(entrega.status_coleta)}</Badge>
                         </div>
+                        {entrega.attachments && entrega.attachments.length > 0 && (
+                          <div className="flex items-center gap-1 col-span-full">
+                            <Paperclip className="h-3 w-3" /> Anexos: {entrega.attachments.length}
+                          </div>
+                        )}
                       </div>
                     </div>
                     <div className="flex gap-2 flex-wrap justify-end">

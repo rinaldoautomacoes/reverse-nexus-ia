@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { ArrowLeft, Package, Search, CheckCircle, Calendar as CalendarIcon, User, MapPin, Hash, Truck, Building, MessageSquare, Send, Edit, Trash2, Clock, DollarSign, Tag, Home, Flag, ClipboardList, FileText } from "lucide-react";
+import { ArrowLeft, Package, Search, CheckCircle, Calendar as CalendarIcon, User, MapPin, Hash, Truck, Building, MessageSquare, Send, Edit, Trash2, Clock, DollarSign, Tag, Home, Flag, ClipboardList, FileText, Paperclip } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -19,10 +19,18 @@ import { EditColetaDialog } from "@/components/EditColetaDialog";
 import { CollectionStatusUpdateDialog } from "@/components/CollectionStatusUpdateDialog";
 import { EditResponsibleDialog } from "@/components/EditResponsibleDialog";
 
+interface FileAttachment {
+  name: string;
+  url: string;
+  type: string;
+  size: number;
+}
+
 type Coleta = Tables<'coletas'> & {
   driver?: { name: string } | null;
   transportadora?: { name: string } | null;
   items?: Array<Tables<'items'>> | null; // Adicionado items relation
+  attachments?: FileAttachment[] | null; // Adicionado attachments
 };
 
 interface ColetasConcluidasProps {
@@ -319,6 +327,11 @@ const ColetasConcluidas: React.FC<ColetasConcluidasProps> = ({ selectedYear }) =
                         <div className="flex items-center gap-1">
                           <Clock className="h-3 w-3" /> Status: <Badge className={getStatusBadgeColor(coleta.status_coleta)}>{getStatusText(coleta.status_coleta)}</Badge>
                         </div>
+                        {coleta.attachments && coleta.attachments.length > 0 && (
+                          <div className="flex items-center gap-1 col-span-full">
+                            <Paperclip className="h-3 w-3" /> Anexos: {coleta.attachments.length}
+                          </div>
+                        )}
                       </div>
                     </div>
                     <div className="flex gap-2 flex-wrap justify-end">

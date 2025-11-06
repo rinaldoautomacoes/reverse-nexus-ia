@@ -20,6 +20,13 @@ import { EntregaForm } from "./EntregaForm"; // Importa o EntregaForm refatorado
 import { ItemData } from "./coleta-form-sections/ColetaItemRow"; // Importa a interface ItemData
 import { formatItemsForColetaModeloAparelho, getTotalQuantityOfItems } from "@/lib/utils";
 
+interface FileAttachment {
+  name: string;
+  url: string;
+  type: string;
+  size: number;
+}
+
 type Entrega = Tables<'coletas'> & {
   driver?: { name: string } | null;
   transportadora?: { name: string } | null;
@@ -41,10 +48,10 @@ export const EditEntregaDialog: React.FC<EditEntregaDialogProps> = ({ entrega, i
   const { user } = useAuth();
 
   const updateEntregaMutation = useMutation({
-    mutationFn: async (data: { entrega: EntregaUpdate; items: ItemData[] }) => {
+    mutationFn: async (data: { entrega: EntregaUpdate; items: ItemData[]; attachments: FileAttachment[] }) => {
       if (!user?.id) throw new Error("User not authenticated.");
 
-      const { entrega: updatedEntrega, items: updatedItems } = data;
+      const { entrega: updatedEntrega, items: updatedItems, attachments: updatedAttachments } = data;
 
       // Destructure to omit 'driver' and 'transportadora' properties from the object
       // as they are relations and not direct columns on the 'coletas' table.
@@ -55,6 +62,7 @@ export const EditEntregaDialog: React.FC<EditEntregaDialogProps> = ({ entrega, i
         ...restOfEntrega, // Use the rest of the object without 'driver' and 'transportadora'
         modelo_aparelho: formatItemsForColetaModeloAparelho(updatedItems),
         qtd_aparelhos_solicitado: getTotalQuantityOfItems(updatedItems),
+        attachments: updatedAttachments, // Salvar os anexos atualizados
       };
 
       const { error: updateError } = await supabase
@@ -123,8 +131,8 @@ export const EditEntregaDialog: React.FC<EditEntregaDialogProps> = ({ entrega, i
     },
   });
 
-  const handleSave = (data: EntregaUpdate, items: ItemData[]) => {
-    updateEntregaMutation.mutate({ entrega: data, items });
+  const handleSave = (data: EntregaUpdate, items: ItemData[], attachments: FileAttachment[]) => {
+    updateEntregaMutation.mutate({ entrega: data, items, attachments });
   };
 
   // Mapeia os itens do banco de dados para o formato ItemData para o formulário
@@ -135,6 +143,9 @@ export const EditEntregaDialog: React.FC<EditEntregaDialogProps> = ({ entrega, i
     descricaoMaterial: item.description || "",
   })) || [];
 
+  // Ensure attachments is an array, even if null or undefined
+  const initialAttachmentsForForm: FileAttachment[] = (entrega.attachments as FileAttachment[] || []);
+
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="sm:max-w-[900px] max-h-[90vh] overflow-y-auto">
@@ -142,7 +153,7 @@ export const EditEntregaDialog: React.FC<EditEntregaDialogProps> = ({ entrega, i
           <DialogTitle>Editar Entrega: {entrega.parceiro}</DialogTitle>
         </DialogHeader>
         <EntregaForm
-          initialData={{ ...entrega, items: initialItemsForForm }}
+          initialData={{ ...entrega, items: initialItemsForForm, attachments: initialAttachmentsForForm }}
           onSave={handleSave}
           onCancel={onClose}
           isPending={updateEntregaMutation.isPending}

@@ -27,6 +27,7 @@ import { ColetaLogisticsDetails } from "@/components/coleta-form-sections/Coleta
 import { ColetaResponsibleUser } from "@/components/coleta-form-sections/ColetaResponsibleUser";
 import { ColetaObservation } from "@/components/coleta-form-sections/ColetaObservation";
 import { ManualSchedulerActionButtons } from "@/components/manual-scheduler-sections/ManualSchedulerActionButtons";
+import { FileUploadField } from "@/components/FileUploadField"; // Import the new component
 
 type ColetaInsert = TablesInsert<'coletas'>;
 type ColetaUpdate = TablesUpdate<'coletas'>;
@@ -36,6 +37,13 @@ type Profile = Tables<'profiles'>;
 type Driver = Tables<'drivers'>;
 type Transportadora = Tables<'transportadoras'>;
 type ItemInsert = TablesInsert<'items'>;
+
+interface FileAttachment {
+  name: string;
+  url: string;
+  type: string;
+  size: number;
+}
 
 export const AgendarColetaPage: React.FC = () => {
   const navigate = useNavigate();
@@ -82,9 +90,11 @@ export const AgendarColetaPage: React.FC = () => {
     destination_lat: null,
     destination_lng: null,
     client_control: null, // Alterado para null
+    attachments: [], // Novo campo para anexos
   });
 
   const [collectionItems, setCollectionItems] = useState<ItemData[]>([]);
+  const [attachments, setAttachments] = useState<FileAttachment[]>([]); // Estado para os anexos
 
   const [isGeocoding, setIsGeocoding] = useState(false);
 
@@ -94,7 +104,7 @@ export const AgendarColetaPage: React.FC = () => {
     }
   }, [user?.id]);
 
-  const handleInputChange = useCallback((field: keyof ColetaInsert, value: string | number | null) => {
+  const handleInputChange = useCallback((field: keyof ColetaInsert, value: string | number | null | FileAttachment[]) => {
     setFormData(prev => ({ ...prev, [field]: value }));
   }, []);
 
@@ -138,7 +148,7 @@ export const AgendarColetaPage: React.FC = () => {
   }, [handleInputChange]);
 
   const addColetaMutation = useMutation({
-    mutationFn: async (data: { coleta: ColetaInsert; items: ItemData[] }) => {
+    mutationFn: async (data: { coleta: ColetaInsert; items: ItemData[]; attachments: FileAttachment[] }) => {
       if (!user?.id) {
         throw new Error("Usuário não autenticado. Faça login para agendar coletas.");
       }
@@ -149,6 +159,7 @@ export const AgendarColetaPage: React.FC = () => {
         type: 'coleta',
         modelo_aparelho: formatItemsForColetaModeloAparelho(data.items), // Resumo dos itens
         qtd_aparelhos_solicitado: getTotalQuantityOfItems(data.items), // Quantidade total
+        attachments: data.attachments, // Salvar os anexos
       };
 
       const { data: insertedColeta, error: coletaError } = await supabase
@@ -229,6 +240,7 @@ export const AgendarColetaPage: React.FC = () => {
         cep: data.cep_origem,
       },
       items: items,
+      attachments: attachments, // Passar os anexos para a mutação
     });
   };
 
@@ -412,6 +424,13 @@ export const AgendarColetaPage: React.FC = () => {
                 formData={formData}
                 handleInputChange={handleInputChange}
                 isPending={isFormDisabled}
+              />
+
+              <FileUploadField
+                label="Anexos da Coleta"
+                initialFiles={attachments}
+                onFilesChange={setAttachments}
+                disabled={isFormDisabled}
               />
 
               <ManualSchedulerActionButtons

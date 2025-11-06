@@ -10,6 +10,13 @@ import { ColetaForm } from "./ColetaForm";
 import { ItemData } from "./coleta-form-sections/ColetaItemRow"; // Importa a interface ItemData
 import { formatItemsForColetaModeloAparelho, getTotalQuantityOfItems } from "@/lib/utils";
 
+interface FileAttachment {
+  name: string;
+  url: string;
+  type: string;
+  size: number;
+}
+
 type Coleta = Tables<'coletas'> & { items?: Tables<'items'>[] }; // Adicionado items ao tipo Coleta
 type ColetaUpdate = TablesUpdate<'coletas'>;
 type Item = Tables<'items'>;
@@ -28,12 +35,12 @@ export const EditColetaDialog: React.FC<EditColetaDialogProps> = ({ coleta, isOp
   const { user } = useAuth();
 
   const updateColetaMutation = useMutation({
-    mutationFn: async (data: { coleta: ColetaUpdate; items: ItemData[] }) => {
+    mutationFn: async (data: { coleta: ColetaUpdate; items: ItemData[]; attachments: FileAttachment[] }) => {
       if (!user?.id) {
         throw new Error("Usuário não autenticado. Faça login para atualizar coletas.");
       }
       
-      const { coleta: updatedColeta, items: updatedItems } = data;
+      const { coleta: updatedColeta, items: updatedItems, attachments: updatedAttachments } = data;
 
       // Destructure to omit 'driver' and 'transportadora' properties from the object
       // as they are relations and not direct columns on the 'coletas' table.
@@ -44,6 +51,7 @@ export const EditColetaDialog: React.FC<EditColetaDialogProps> = ({ coleta, isOp
         ...restOfColeta, // Use the rest of the object without 'driver' and 'transportadora'
         modelo_aparelho: formatItemsForColetaModeloAparelho(updatedItems),
         qtd_aparelhos_solicitado: getTotalQuantityOfItems(updatedItems),
+        attachments: updatedAttachments, // Salvar os anexos atualizados
       };
 
       const { data: updatedColetaResult, error: coletaError } = await supabase
@@ -116,8 +124,8 @@ export const EditColetaDialog: React.FC<EditColetaDialogProps> = ({ coleta, isOp
     },
   });
 
-  const handleSave = (data: ColetaUpdate, items: ItemData[]) => {
-    updateColetaMutation.mutate({ coleta: data, items });
+  const handleSave = (data: ColetaUpdate, items: ItemData[], attachments: FileAttachment[]) => {
+    updateColetaMutation.mutate({ coleta: data, items, attachments });
   };
 
   if (!coleta) return null;
@@ -130,6 +138,9 @@ export const EditColetaDialog: React.FC<EditColetaDialogProps> = ({ coleta, isOp
     descricaoMaterial: item.description || "",
   })) || [];
 
+  // Ensure attachments is an array, even if null or undefined
+  const initialAttachmentsForForm: FileAttachment[] = (coleta.attachments as FileAttachment[] || []);
+
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="sm:max-w-[900px] bg-card border-primary/20 max-h-[calc(100vh-150px)] overflow-y-auto">
@@ -140,7 +151,7 @@ export const EditColetaDialog: React.FC<EditColetaDialogProps> = ({ coleta, isOp
           </DialogTitle>
         </DialogHeader>
         <ColetaForm
-          initialData={{ ...coleta, items: initialItemsForForm }} // Passa os itens para o formulário
+          initialData={{ ...coleta, items: initialItemsForForm, attachments: initialAttachmentsForForm }} // Passa os itens e anexos para o formulário
           onSave={handleSave}
           onCancel={onClose}
           isPending={updateColetaMutation.isPending}

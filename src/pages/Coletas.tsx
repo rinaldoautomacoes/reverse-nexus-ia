@@ -3,7 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { ArrowLeft, PlusCircle, Edit, Trash2, Package, Search, Clock, Truck, CheckCircle, User, Phone, Mail, MapPin, Hash, Calendar as CalendarIcon, Building, MessageSquare, Send, DollarSign, Tag, Home, Flag, ClipboardList, FileText } from "lucide-react";
+import { ArrowLeft, PlusCircle, Edit, Trash2, Package, Search, Clock, Truck, CheckCircle, User, Phone, Mail, MapPin, Hash, Calendar as CalendarIcon, Building, MessageSquare, Send, DollarSign, Tag, Home, Flag, ClipboardList, FileText, Paperclip } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -22,10 +22,18 @@ import { ColetaForm } from "@/components/ColetaForm";
 import { EditColetaDialog } from "@/components/EditColetaDialog";
 import { ItemData } from "@/components/coleta-form-sections/ColetaItemRow"; // Importa a interface ItemData
 
+interface FileAttachment {
+  name: string;
+  url: string;
+  type: string;
+  size: number;
+}
+
 type Coleta = Tables<'coletas'> & {
   driver?: { name: string } | null;
   transportadora?: { name: string } | null;
   items?: Array<Tables<'items'>> | null; // Adicionado items relation
+  attachments?: FileAttachment[] | null; // Adicionado attachments
 };
 type ColetaInsert = TablesInsert<'coletas'>;
 
@@ -86,7 +94,7 @@ export const Coletas: React.FC<ColetasProps> = ({ selectedYear }) => {
   });
 
   const addColetaMutation = useMutation({
-    mutationFn: async (data: { coleta: ColetaInsert; items: ItemData[] }) => {
+    mutationFn: async (data: { coleta: ColetaInsert; items: ItemData[]; attachments: FileAttachment[] }) => {
       if (!user?.id) {
         throw new Error("Usuário não autenticado. Faça login para agendar coletas.");
       }
@@ -97,6 +105,7 @@ export const Coletas: React.FC<ColetasProps> = ({ selectedYear }) => {
         type: 'coleta',
         modelo_aparelho: formatItemsForColetaModeloAparelho(data.items), // Resumo dos itens
         qtd_aparelhos_solicitado: getTotalQuantityOfItems(data.items), // Quantidade total
+        attachments: data.attachments, // Salvar os anexos
       };
 
       const { data: insertedColeta, error: coletaError } = await supabase
@@ -330,8 +339,9 @@ export const Coletas: React.FC<ColetasProps> = ({ selectedYear }) => {
                       Agendar Nova Coleta
                     </DialogTitle>
                   </DialogHeader>
+                  {/* ColetaForm now handles attachments internally */}
                   <ColetaForm
-                    onSave={addColetaMutation.mutate}
+                    onSave={({ coleta, items, attachments }) => addColetaMutation.mutate({ coleta, items, attachments })}
                     onCancel={() => setIsAddDialogOpen(false)}
                     isPending={addColetaMutation.isPending}
                   />
@@ -401,11 +411,16 @@ export const Coletas: React.FC<ColetasProps> = ({ selectedYear }) => {
                           <Building className="h-3 w-3" /> Transportadora: {coleta.transportadora?.name || 'Não atribuída'}
                         </div>
                         <div className="flex items-center gap-1">
-                          <DollarSign className="h-3 w-3" /> Frete: {coleta.freight_value ? `R$ ${coleta.freight_value.toFixed(2)}` : 'N/A'}
+                          <DollarSign className="h-3 w-3" /> Frete: {coleta.freight_value ? `R$ ${coleta.freeta_value.toFixed(2)}` : 'N/A'}
                         </div>
                         <div className="flex items-center gap-1">
                           <Clock className="h-3 w-3" /> Status: <Badge className={getStatusBadgeColor(coleta.status_coleta)}>{getStatusText(coleta.status_coleta)}</Badge>
                         </div>
+                        {coleta.attachments && coleta.attachments.length > 0 && (
+                          <div className="flex items-center gap-1 col-span-full">
+                            <Paperclip className="h-3 w-3" /> Anexos: {coleta.attachments.length}
+                          </div>
+                        )}
                       </div>
                     </div>
                     <div className="flex gap-2 flex-wrap justify-end">

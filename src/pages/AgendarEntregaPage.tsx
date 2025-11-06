@@ -27,6 +27,7 @@ import { ColetaLogisticsDetails } from "@/components/coleta-form-sections/Coleta
 import { ColetaResponsibleUser } from "@/components/coleta-form-sections/ColetaResponsibleUser";
 import { ColetaObservation } from "@/components/coleta-form-sections/ColetaObservation";
 import { ManualSchedulerActionButtons } from "@/components/manual-scheduler-sections/ManualSchedulerActionButtons";
+import { FileUploadField } from "@/components/FileUploadField"; // Import the new component
 
 type EntregaInsert = TablesInsert<'coletas'>;
 type EntregaUpdate = TablesUpdate<'coletas'>;
@@ -36,6 +37,13 @@ type Profile = Tables<'profiles'>;
 type Driver = Tables<'drivers'>;
 type Transportadora = Tables<'transportadoras'>;
 type ItemInsert = TablesInsert<'items'>;
+
+interface FileAttachment {
+  name: string;
+  url: string;
+  type: string;
+  size: number;
+}
 
 export const AgendarEntregaPage: React.FC = () => {
   const navigate = useNavigate();
@@ -82,9 +90,11 @@ export const AgendarEntregaPage: React.FC = () => {
     destination_lat: null,
     destination_lng: null,
     client_control: "",
+    attachments: [], // Novo campo para anexos
   });
 
   const [deliveryItems, setDeliveryItems] = useState<ItemData[]>([]);
+  const [attachments, setAttachments] = useState<FileAttachment[]>([]); // Estado para os anexos
 
   const [isGeocoding, setIsGeocoding] = useState(false);
 
@@ -94,7 +104,7 @@ export const AgendarEntregaPage: React.FC = () => {
     }
   }, [user?.id]);
 
-  const handleInputChange = useCallback((field: keyof EntregaInsert, value: string | number | null) => {
+  const handleInputChange = useCallback((field: keyof EntregaInsert, value: string | number | null | FileAttachment[]) => {
     setFormData(prev => ({ ...prev, [field]: value }));
   }, []);
 
@@ -140,7 +150,7 @@ export const AgendarEntregaPage: React.FC = () => {
   }, [handleInputChange]);
 
   const addEntregaMutation = useMutation({
-    mutationFn: async (data: { entrega: EntregaInsert; items: ItemData[] }) => {
+    mutationFn: async (data: { entrega: EntregaInsert; items: ItemData[]; attachments: FileAttachment[] }) => {
       if (!user?.id) {
         throw new Error("Usuário não autenticado. Faça login para agendar entregas.");
       }
@@ -151,6 +161,7 @@ export const AgendarEntregaPage: React.FC = () => {
         type: 'entrega',
         modelo_aparelho: formatItemsForColetaModeloAparelho(data.items), // Resumo dos itens
         qtd_aparelhos_solicitado: getTotalQuantityOfItems(data.items), // Quantidade total
+        attachments: data.attachments, // Salvar os anexos
       };
 
       const { data: insertedEntrega, error: entregaError } = await supabase
@@ -231,6 +242,7 @@ export const AgendarEntregaPage: React.FC = () => {
         cep: data.cep_destino,
       },
       items: items,
+      attachments: attachments, // Passar os anexos para a mutação
     });
   };
 
@@ -414,6 +426,13 @@ export const AgendarEntregaPage: React.FC = () => {
                 formData={formData}
                 handleInputChange={handleInputChange}
                 isPending={isFormDisabled}
+              />
+
+              <FileUploadField
+                label="Anexos da Entrega"
+                initialFiles={attachments}
+                onFilesChange={setAttachments}
+                disabled={isFormDisabled}
               />
 
               <ManualSchedulerActionButtons
