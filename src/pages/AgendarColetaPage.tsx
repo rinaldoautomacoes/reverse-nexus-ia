@@ -384,7 +384,7 @@ export const AgendarColetaPage: React.FC = () => {
                         disabled={isFormDisabled}
                       >
                         <CalendarIcon className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                        {formData.created_at ? format(new Date(formData.created_at), "PPP", { locale: ptBR }) : "Selecionar data"}
+                        {formData.created_at ? format(new Date(formData.created_at), "dd/MM/yyyy", { locale: ptBR }) : "Selecionar data"}
                       </Button>
                     </PopoverTrigger>
                     <PopoverContent className="w-auto p-0">
@@ -411,7 +411,7 @@ export const AgendarColetaPage: React.FC = () => {
                         disabled={isFormDisabled}
                       >
                         <CalendarIcon className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                        {formData.previsao_coleta ? format(new Date(formData.previsao_coleta), "PPP", { locale: ptBR }) : "Selecionar data"}
+                        {formData.previsao_coleta ? format(new Date(formData.previsao_coleta), "dd/MM/yyyy", { locale: ptBR }) : "Selecionar data"}
                       </Button>
                     </PopoverTrigger>
                     <PopoverContent className="w-auto p-0">

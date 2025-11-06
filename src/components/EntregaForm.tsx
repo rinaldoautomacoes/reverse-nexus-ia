@@ -372,7 +372,7 @@ export const EntregaForm: React.FC<EntregaFormProps> = ({ initialData, onSave, o
                 disabled={isPending}
               >
                 <CalendarIcon className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                {formData.created_at ? format(new Date(formData.created_at), "PPP", { locale: ptBR }) : "Selecionar data"}
+                {formData.created_at ? format(new Date(formData.created_at), "dd/MM/yyyy", { locale: ptBR }) : "Selecionar data"}
               </Button>
             </PopoverTrigger>
             <PopoverContent className="w-auto p-0">
@@ -399,7 +399,7 @@ export const EntregaForm: React.FC<EntregaFormProps> = ({ initialData, onSave, o
                 disabled={isPending}
               >
                         <CalendarIcon className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                {formData.previsao_coleta ? format(new Date(formData.previsao_coleta), "PPP", { locale: ptBR }) : "Selecionar data"}
+                {formData.previsao_coleta ? format(new Date(formData.previsao_coleta), "dd/MM/yyyy", { locale: ptBR }) : "Selecionar data"}
               </Button>
             </PopoverTrigger>
             <PopoverContent className="w-auto p-0">
@@ -442,22 +442,28 @@ export const EntregaForm: React.FC<EntregaFormProps> = ({ initialData, onSave, o
         isPending={isPending}
       />
 
-      <FileUploadField
-        label="Anexos da Entrega"
-        initialFiles={attachments}
-        onFilesChange={setAttachments}
-        disabled={isPending}
-      />
-
-      <ManualSchedulerActionButtons
-        onCancel={() => navigate('/dashboard-entregas')}
-        onSave={() => handleSave(formData, deliveryItems, attachments)}
-        isPending={isPending}
-        backButtonPath="/dashboard-entregas"
-        backButtonText="Voltar ao Dashboard de Entregas"
-        saveButtonText="Agendar Entrega"
-        navigate={navigate}
-      />
+      <div className="flex justify-end gap-4 pt-6">
+        <Button
+          type="button"
+          variant="outline"
+          onClick={onCancel}
+          disabled={isPending}
+        >
+          Cancelar
+        </Button>
+        <Button
+          type="submit"
+          className="bg-gradient-primary hover:bg-gradient-primary/80 glow-effect"
+          disabled={isPending || isFetchingOriginAddress || isFetchingDestinationAddress}
+        >
+          {isPending || isFetchingOriginAddress || isFetchingDestinationAddress ? (
+            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+          ) : (
+            <Truck className="mr-2 h-4 w-4" />
+          )}
+          {initialData ? "Salvar Alterações" : "Agendar Entrega"}
+        </Button>
+      </div>
     </form>
   );
 };
