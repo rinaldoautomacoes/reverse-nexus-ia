@@ -9,6 +9,7 @@ import { GeneralMetricsCards } from '@/components/dashboard-general/GeneralMetri
 import { GeneralStatusChart } from '@/components/dashboard-general/GeneralStatusChart';
 import { GeneralStatusDonutCharts } from '@/components/dashboard-general/GeneralStatusDonutCharts';
 import { GeneralDeliveriesStatusChart } from '@/components/dashboard-general/GeneralDeliveriesStatusChart'; // Importar o novo componente
+// import { MetricDetailsDialog } from '@/components/dashboard-general/MetricDetailsDialog'; // Importar o novo diálogo - REMOVIDO
 
 type Coleta = Tables<'coletas'> & { items?: Array<Tables<'items'>> | null; }; // Updated to include items
 type Product = Tables<'products'>;
