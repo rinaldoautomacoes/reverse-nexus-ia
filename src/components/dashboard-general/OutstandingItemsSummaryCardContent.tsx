@@ -22,7 +22,7 @@ export const OutstandingItemsSummaryCardContent: React.FC<OutstandingItemsSummar
   const totalOutstanding = outstandingItems.length;
   const pendingItemsCount = outstandingItems.filter(item => item.status === 'pendente').length;
   const collectedItemsCount = outstandingItems.filter(item => item.status === 'coletado').length;
-  const completionRate = totalOutstanding > 0 ? (collectedItemsCount / totalOutstanding) * 100 : 0;
+  // const completionRate = totalOutstanding > 0 ? (collectedItemsCount / totalOutstanding) * 100 : 0; // Removido
 
   const totalQuantityPending = outstandingItems.reduce((sum, item) => sum + (item.quantity_pending || 0), 0);
 
@@ -73,16 +73,17 @@ export const OutstandingItemsSummaryCardContent: React.FC<OutstandingItemsSummar
           Qtd. Total: <span className="font-bold text-foreground">{totalQuantityPending}</span>
         </div>
       </div>
-      <div className="space-y-1">
+      {/* Removido: Barra de progresso */}
+      {/* <div className="space-y-1">
         <p className="text-sm text-muted-foreground">Progresso: {completionRate.toFixed(0)}%</p>
         <Progress value={completionRate} className="h-2 [&>div]:bg-success-green" />
-      </div>
+      </div> */}
       {outstandingItems.length > 0 && (
-        <div className="mt-2 space-y-1">
+        <div className="mt-2 space-y-1 max-h-24 overflow-auto"> {/* Adicionado max-h e overflow-auto */}
           <p className="text-xs font-semibold text-muted-foreground">Próximos itens:</p>
           {outstandingItems.slice(0, 2).map((item, index) => (
             <div key={item.id} className="flex items-center justify-between text-xs text-muted-foreground">
-              <span className="truncate max-w-[150px] text-foreground">
+              <span className="text-foreground"> {/* Removido truncate e max-w */}
                 <span className="font-bold">{item.product_code}</span>
                 {item.product_description ? ` - ${item.product_description}` : ''} ({item.quantity_pending})
               </span>
