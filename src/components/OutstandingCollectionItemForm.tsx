@@ -5,11 +5,15 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Loader2, Package, FileText, Tag, Clock, CheckCircle, XCircle } from "lucide-react";
-import type { TablesInsert, TablesUpdate } from "@/integrations/supabase/types_generated";
+import type { TablesInsert, TablesUpdate, Tables } from "@/integrations/supabase/types_generated"; // Added Tables
 import { useToast } from "@/hooks/use-toast";
+import { useQuery } from "@tanstack/react-query"; // Added useQuery
+import { supabase } from "@/integrations/supabase/client"; // Added supabase
+import { useAuth } from "@/hooks/use-auth"; // Added useAuth
 
 type OutstandingCollectionItemInsert = TablesInsert<'outstanding_collection_items'>;
 type OutstandingCollectionItemUpdate = TablesUpdate<'outstanding_collection_items'>;
+type Product = Tables<'products'>; // Define Product type
 
 interface OutstandingCollectionItemFormProps {
   initialData?: OutstandingCollectionItemUpdate;
@@ -20,6 +24,7 @@ interface OutstandingCollectionItemFormProps {
 
 export const OutstandingCollectionItemForm: React.FC<OutstandingCollectionItemFormProps> = ({ initialData, onSave, onCancel, isPending }) => {
   const { toast } = useToast();
+  const { user } = useAuth(); // Get current user for product filtering
   const [formData, setFormData] = useState<OutstandingCollectionItemInsert | OutstandingCollectionItemUpdate>(initialData || {
     product_code: "",
     product_description: "",
@@ -27,6 +32,21 @@ export const OutstandingCollectionItemForm: React.FC<OutstandingCollectionItemFo
     notes: "",
     status: "pendente",
     user_id: "", // Will be filled by mutation
+  });
+
+  // Fetch all products for the current user
+  const { data: products, isLoading: isLoadingProducts, error: productsError } = useQuery<Product[], Error>({
+    queryKey: ['products', user?.id],
+    queryFn: async () => {
+      if (!user?.id) return [];
+      const { data, error } = await supabase
+        .from('products')
+        .select('code, description')
+        .eq('user_id', user.id);
+      if (error) throw new Error(error.message);
+      return data;
+    },
+    enabled: !!user?.id,
   });
 
   useEffect(() => {
@@ -47,6 +67,26 @@ export const OutstandingCollectionItemForm: React.FC<OutstandingCollectionItemFo
   const handleInputChange = useCallback((field: keyof (OutstandingCollectionItemInsert | OutstandingCollectionItemUpdate), value: string | number | null) => {
     setFormData(prev => ({ ...prev, [field]: value }));
   }, []);
+
+  // New function to automatically fetch product description
+  const handleProductCodeChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    const code = e.target.value;
+    handleInputChange("product_code", code);
+
+    if (code && products) {
+      const matchedProduct = products.find(p => p.code === code);
+      if (matchedProduct) {
+        handleInputChange("product_description", matchedProduct.description || null);
+      } else {
+        // Clear description if no match is found, but only if it's not the initial data's description
+        if (initialData?.product_code !== code) {
+          handleInputChange("product_description", null);
+        }
+      }
+    } else {
+      handleInputChange("product_description", null);
+    }
+  }, [products, handleInputChange, initialData]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -74,10 +114,11 @@ export const OutstandingCollectionItemForm: React.FC<OutstandingCollectionItemFo
             placeholder="Ex: 46472"
             className="pl-10"
             value={formData.product_code || ''}
-            onChange={(e) => handleInputChange("product_code", e.target.value)}
+            onChange={handleProductCodeChange} // Use the new handler
             required
-            disabled={isPending}
+            disabled={isPending || isLoadingProducts}
           />
+          {isLoadingProducts && <Loader2 className="absolute right-3 top-3 h-4 w-4 animate-spin text-primary" />}
         </div>
       </div>
 
@@ -91,7 +132,7 @@ export const OutstandingCollectionItemForm: React.FC<OutstandingCollectionItemFo
             className="pl-10"
             value={formData.product_description || ''}
             onChange={(e) => handleInputChange("product_description", e.target.value)}
-            disabled={isPending}
+            disabled={isPending} // Description can still be manually edited if needed
           />
         </div>
       </div>
