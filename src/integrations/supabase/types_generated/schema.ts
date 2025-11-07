@@ -13,7 +13,7 @@ import type { ReportRow, ReportInsert, ReportUpdate, ReportRelationships } from 
 import type { RouteStopRow, RouteStopInsert, RouteStopUpdate, RouteStopRelationships } from './tables/route_stops';
 import type { RouteRow, RouteInsert, RouteUpdate, RouteRelationships } from './tables/routes';
 import type { TransportadoraRow, TransportadoraInsert, TransportadoraUpdate, TransportadoraRelationships } from './tables/transportadoras';
-import type { DebtRecordRow, DebtRecordInsert, DebtRecordUpdate, DebtRecordRelationships } from './tables/debt_records'; // New import
+import type { OutstandingCollectionItemRow, OutstandingCollectionItemInsert, OutstandingCollectionItemUpdate, OutstandingCollectionItemRelationships } from './tables/outstanding_collection_items'; // New import
 
 export type PublicSchema = {
   Tables: {
@@ -35,11 +35,11 @@ export type PublicSchema = {
       Update: ColetasUpdate;
       Relationships: ColetasRelationships;
     };
-    debt_records: { // New table definition
-      Row: DebtRecordRow;
-      Insert: DebtRecordInsert;
-      Update: DebtRecordUpdate;
-      Relationships: DebtRecordRelationships;
+    outstanding_collection_items: { // New table definition
+      Row: OutstandingCollectionItemRow;
+      Insert: OutstandingCollectionItemInsert;
+      Update: OutstandingCollectionItemUpdate;
+      Relationships: OutstandingCollectionItemRelationships;
     };
     drivers: {
       Row: DriverRow;

@@ -9,10 +9,10 @@ import { GeneralMetricsCards } from '@/components/dashboard-general/GeneralMetri
 import { GeneralStatusChart } from '@/components/dashboard-general/GeneralStatusChart';
 import { GeneralStatusDonutCharts } from '@/components/dashboard-general/GeneralStatusDonutCharts';
 import { GeneralDeliveriesStatusChart } from '@/components/dashboard-general/GeneralDeliveriesStatusChart';
-import { CreateDebtRecordDialog } from '@/components/CreateDebtRecordDialog'; // Import the new dialog
-import { DebtRecordsList } from '@/components/DebtRecordsList'; // Import the new list component
+import { CreateOutstandingCollectionItemDialog } from '@/components/CreateOutstandingCollectionItemDialog'; // Import the new dialog
+import { OutstandingCollectionItemsList } from '@/components/OutstandingCollectionItemsList'; // Import the new list component
 import { Button } from '@/components/ui/button'; // Import Button
-import { DollarSign } from 'lucide-react'; // Import DollarSign icon
+import { Package } from 'lucide-react'; // Import Package icon
 
 type Coleta = Tables<'coletas'> & { items?: Array<Tables<'items'>> | null; };
 type Product = Tables<'products'>;
@@ -119,11 +119,11 @@ export const GeneralDashboard: React.FC<GeneralDashboardProps> = ({ selectedYear
         {/* Metrics Cards */}
         <GeneralMetricsCards allColetas={allColetas || []} selectedYear={selectedYear} />
 
-        {/* New Section for Debt Records */}
+        {/* New Section for Outstanding Collection Items */}
         <div className="flex justify-end mb-4">
-          <CreateDebtRecordDialog />
+          <CreateOutstandingCollectionItemDialog />
         </div>
-        <DebtRecordsList selectedYear={selectedYear} />
+        <OutstandingCollectionItemsList selectedYear={selectedYear} />
 
         {/* Main Grid */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
