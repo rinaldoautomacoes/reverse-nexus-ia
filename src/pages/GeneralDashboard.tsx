@@ -9,10 +9,10 @@ import { GeneralMetricsCards } from '@/components/dashboard-general/GeneralMetri
 import { GeneralStatusChart } from '@/components/dashboard-general/GeneralStatusChart';
 import { GeneralStatusDonutCharts } from '@/components/dashboard-general/GeneralStatusDonutCharts';
 import { GeneralDeliveriesStatusChart } from '@/components/dashboard-general/GeneralDeliveriesStatusChart';
-import { CreateOutstandingCollectionItemDialog } from '@/components/CreateOutstandingCollectionItemDialog'; // Import the new dialog
-import { OutstandingCollectionItemsList } from '@/components/OutstandingCollectionItemsList'; // Import the new list component
-import { Button } from '@/components/ui/button'; // Import Button
-import { Package } from 'lucide-react'; // Import Package icon
+import { CreateOutstandingCollectionItemDialog } from '@/components/CreateOutstandingCollectionItemDialog';
+import { OutstandingCollectionItemsList } from '@/components/OutstandingCollectionItemsList';
+import { Button } from '@/components/ui/button';
+import { Package } from 'lucide-react';
 
 type Coleta = Tables<'coletas'> & { items?: Array<Tables<'items'>> | null; };
 type Product = Tables<'products'>;
