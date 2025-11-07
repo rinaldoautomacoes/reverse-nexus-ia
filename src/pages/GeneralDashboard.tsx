@@ -8,10 +8,13 @@ import type { Tables } from '@/integrations/supabase/types';
 import { GeneralMetricsCards } from '@/components/dashboard-general/GeneralMetricsCards';
 import { GeneralStatusChart } from '@/components/dashboard-general/GeneralStatusChart';
 import { GeneralStatusDonutCharts } from '@/components/dashboard-general/GeneralStatusDonutCharts';
-import { GeneralDeliveriesStatusChart } from '@/components/dashboard-general/GeneralDeliveriesStatusChart'; // Importar o novo componente
-// import { MetricDetailsDialog } from '@/components/dashboard-general/MetricDetailsDialog'; // Importar o novo diálogo - REMOVIDO
+import { GeneralDeliveriesStatusChart } from '@/components/dashboard-general/GeneralDeliveriesStatusChart';
+import { CreateDebtRecordDialog } from '@/components/CreateDebtRecordDialog'; // Import the new dialog
+import { DebtRecordsList } from '@/components/DebtRecordsList'; // Import the new list component
+import { Button } from '@/components/ui/button'; // Import Button
+import { DollarSign } from 'lucide-react'; // Import DollarSign icon
 
-type Coleta = Tables<'coletas'> & { items?: Array<Tables<'items'>> | null; }; // Updated to include items
+type Coleta = Tables<'coletas'> & { items?: Array<Tables<'items'>> | null; };
 type Product = Tables<'products'>;
 
 interface GeneralDashboardProps {
@@ -22,7 +25,6 @@ export const GeneralDashboard: React.FC<GeneralDashboardProps> = ({ selectedYear
   const navigate = useNavigate();
   const { user } = useAuth();
 
-  // Fetch all coletas (both 'coleta' and 'entrega' types) for the selected year
   const { data: allColetas, isLoading: isLoadingAllColetas, error: allColetasError } = useQuery<Coleta[], Error>({
     queryKey: ['allColetasForGeneralDashboard', user?.id, selectedYear],
     queryFn: async () => {
@@ -49,7 +51,6 @@ export const GeneralDashboard: React.FC<GeneralDashboardProps> = ({ selectedYear
     enabled: !!user?.id,
   });
 
-  // Fetch all products to get their descriptions (needed for charts)
   const { data: products, isLoading: isLoadingProducts, error: productsError } = useQuery<Product[], Error>({
     queryKey: ['allProductsForGeneralDashboard', user?.id],
     queryFn: async () => {
@@ -118,6 +119,12 @@ export const GeneralDashboard: React.FC<GeneralDashboardProps> = ({ selectedYear
         {/* Metrics Cards */}
         <GeneralMetricsCards allColetas={allColetas || []} selectedYear={selectedYear} />
 
+        {/* New Section for Debt Records */}
+        <div className="flex justify-end mb-4">
+          <CreateDebtRecordDialog />
+        </div>
+        <DebtRecordsList selectedYear={selectedYear} />
+
         {/* Main Grid */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           {/* Left Column - Charts */}
@@ -127,7 +134,7 @@ export const GeneralDashboard: React.FC<GeneralDashboardProps> = ({ selectedYear
               productDescriptionsMap={productDescriptionsMap} 
               selectedYear={selectedYear} 
             />
-            <GeneralDeliveriesStatusChart // Novo gráfico de entregas
+            <GeneralDeliveriesStatusChart
               allColetas={allColetas || []} 
               productDescriptionsMap={productDescriptionsMap} 
               selectedYear={selectedYear} 
