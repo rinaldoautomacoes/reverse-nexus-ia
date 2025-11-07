@@ -5,7 +5,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import type { Tables, TablesUpdate } from "@/integrations/supabase/types_generated";
-import { useAuth } from "@/hooks/use-auth";
+import { useAuth } from "@/hooks/useAuth";
 import { DebtRecordForm } from "./DebtRecordForm";
 
 type DebtRecord = Tables<'debt_records'>;

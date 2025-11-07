@@ -7,6 +7,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Loader2, DollarSign, FileText, Package, PlusCircle, XCircle, Tag } from "lucide-react";
 import type { TablesInsert, TablesUpdate } from "@/integrations/supabase/types_generated";
 import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/hooks/useAuth";
 
 type DebtRecordInsert = TablesInsert<'debt_records'>;
 type DebtRecordUpdate = TablesUpdate<'debt_records'>;
@@ -27,13 +28,14 @@ interface DebtRecordFormProps {
 
 export const DebtRecordForm: React.FC<DebtRecordFormProps> = ({ initialData, onSave, onCancel, isPending }) => {
   const { toast } = useToast();
+  const { user } = useAuth();
   const [formData, setFormData] = useState<DebtRecordInsert | DebtRecordUpdate>(initialData || {
     title: "",
     amount: 0,
     notes: "",
     item_details: [],
     status: "pendente",
-    user_id: "", // Will be filled by mutation
+    user_id: user?.id || "", // Will be filled by mutation
   });
   const [debtItems, setDebtItems] = useState<DebtItem[]>([]);
 
@@ -42,17 +44,13 @@ export const DebtRecordForm: React.FC<DebtRecordFormProps> = ({ initialData, onS
       setFormData(initialData);
       setDebtItems((initialData.item_details as DebtItem[]) || []);
     } else {
-      setFormData({
-        title: "",
-        amount: 0,
-        notes: "",
-        item_details: [],
-        status: "pendente",
-        user_id: "",
-      });
+      setFormData(prev => ({
+        ...prev,
+        user_id: user?.id || "",
+      }));
       setDebtItems([]);
     }
-  }, [initialData]);
+  }, [initialData, user?.id]);
 
   const handleInputChange = useCallback((field: keyof (DebtRecordInsert | DebtRecordUpdate), value: string | number | null) => {
     setFormData(prev => ({ ...prev, [field]: value }));
