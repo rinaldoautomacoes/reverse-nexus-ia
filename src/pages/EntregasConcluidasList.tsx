@@ -8,7 +8,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import type { Tables } from "@/integrations/supabase/types_generated";
 import { useToast } from "@/hooks/use-toast";
-import { useAuth } from "@/hooks/use-auth";
+import { useAuth } from "@/hooks/useAuth";
 import { Badge } from "@/components/ui/badge";
 import { format, isValid } from "date-fns"; // Importar isValid
 import { ptBR } from "date-fns/locale";
@@ -404,7 +404,7 @@ const EntregasConcluidasList: React.FC<EntregasConcluidasListProps> = ({ selecte
               ) : (
                 <div className="p-12 text-center text-muted-foreground">
                   <Truck className="h-12 w-12 mx-auto mb-4" />
-                  <p>Nenhuma entrega concluída encontrada para {selectedYear}.</p>
+                  <p>Nenhuma entrega concluída encontrada para o ano de {selectedYear}.</p>
                 </div>
               )}
             </CardContent>
