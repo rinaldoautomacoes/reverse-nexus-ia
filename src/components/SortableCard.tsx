@@ -58,7 +58,7 @@ export const SortableCard: React.FC<SortableCardProps> = ({
       {...props} 
     >
       <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-        <CardTitle className="text-sm font-medium text-muted-foreground gradient-text">
+        <CardTitle className="text-base font-medium text-muted-foreground gradient-text leading-tight">
           {title}
         </CardTitle>
         <div className="flex items-center gap-2">
