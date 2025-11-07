@@ -212,17 +212,6 @@ export const GeneralMetricsCards: React.FC<GeneralMetricsCardsProps> = ({ allCol
         allItemsDetails: allItemsDetails,
       },
       {
-        id: 'operacoes-em-transito',
-        title: 'Operações Em Trânsito',
-        value: operacoesEmTransito.toString(),
-        coletasCount: coletasEmTransito,
-        entregasCount: entregasEmTransito,
-        icon_name: 'Truck',
-        color: 'text-warning-yellow',
-        bg_color: 'bg-warning-yellow/10',
-        inTransitItemsDetails: inTransitItemsDetails, // Adicionado aqui
-      },
-      {
         id: 'operacoes-pendentes',
         title: 'Operações Pendentes',
         value: operacoesPendente.toString(),
@@ -232,6 +221,17 @@ export const GeneralMetricsCards: React.FC<GeneralMetricsCardsProps> = ({ allCol
         color: 'text-destructive',
         bg_color: 'bg-destructive/10',
         pendingItemsDetails: pendingItemsDetails,
+      },
+      {
+        id: 'operacoes-em-transito',
+        title: 'Operações Em Trânsito',
+        value: operacoesEmTransito.toString(),
+        coletasCount: coletasEmTransito,
+        entregasCount: entregasEmTransito,
+        icon_name: 'Truck',
+        color: 'text-warning-yellow',
+        bg_color: 'bg-warning-yellow/10',
+        inTransitItemsDetails: inTransitItemsDetails, // Adicionado aqui
       },
       {
         id: 'operacoes-concluidas',
@@ -306,7 +306,7 @@ export const GeneralMetricsCards: React.FC<GeneralMetricsCardsProps> = ({ allCol
         onDragEnd={handleDragEnd}
       >
         <SortableContext items={metrics.map(m => m.id)}>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6"> {/* Changed xl:grid-cols-5 to xl:grid-cols-4 */}
             {metrics.map((metric, index) => {
               const Icon = iconMap[metric.icon_name || ''];
               if (!Icon) {
