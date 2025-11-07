@@ -161,7 +161,7 @@ export const OutstandingCollectionItemsList: React.FC<OutstandingCollectionItems
                   {item.notes && (
                     <p className="text-xs text-muted-foreground mt-0.5">Notas: {item.notes}</p>
                   )}
-                  <p className="text-xs text-muted-foreground mt-1"> {/* Reduced font size and margin */}
+                  <p className="text-xs text-muted-foreground mt-1">
                     Criado em: {item.created_at ? format(new Date(item.created_at), 'dd/MM/yyyy HH:mm', { locale: ptBR }) : 'N/A'}
                   </p>
                 </div>
@@ -172,7 +172,7 @@ export const OutstandingCollectionItemsList: React.FC<OutstandingCollectionItems
                     className="border-accent text-accent hover:bg-accent/10 h-8 px-3 text-xs" // Reduced height, padding, font size
                     onClick={() => handleEditItem(item)}
                   >
-                    <Edit className="mr-1 h-3 w-3" /> {/* Reduced icon size */}
+                    <Edit className="mr-1 h-3 w-3" />
                     Editar
                   </Button>
                   <Button
@@ -183,9 +183,9 @@ export const OutstandingCollectionItemsList: React.FC<OutstandingCollectionItems
                     disabled={deleteOutstandingCollectionItemMutation.isPending}
                   >
                     {deleteOutstandingCollectionItemMutation.isPending ? (
-                      <Loader2 className="mr-1 h-3 w-3 animate-spin" /> {/* Reduced icon size */}
+                      <Loader2 className="mr-1 h-3 w-3 animate-spin" />
                     ) : (
-                      <Trash2 className="mr-1 h-3 w-3" /> {/* Reduced icon size */}
+                      <Trash2 className="mr-1 h-3 w-3" />
                     )}
                     Excluir
                   </Button>
