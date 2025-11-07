@@ -263,34 +263,35 @@ export const MetricsManagement = () => {
                               <DialogTitle className="flex items-center gap-2 gradient-text">
                                 <Gauge className="h-5 w-5" />
                                 Editar Métrica
-                            </DialogTitle>
-                          </DialogHeader>
-                          {editingMetric && editingMetric.id === metric.id && (
-                            <MetricForm
-                              initialData={editingMetric}
-                              onSave={handleUpdateMetric}
-                              onCancel={() => {
-                                setIsEditDialogOpen(false);
-                                setEditingMetric(null);
-                              }}
-                              isPending={updateMetricMutation.isPending}
-                            />
-                          )}
-                        </DialogContent>
-                      </Dialog>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        className="border-destructive text-destructive hover:bg-destructive/10"
-                        onClick={() => handleDeleteMetric(metric.id)}
-                        disabled={deleteMetricMutation.isPending}
-                      >
-                        <Trash2 className="mr-1 h-3 w-3" />
-                        Excluir
-                      </Button>
+                              </DialogTitle>
+                            </DialogHeader>
+                            {editingMetric && editingMetric.id === metric.id && (
+                              <MetricForm
+                                initialData={editingMetric}
+                                onSave={handleUpdateMetric}
+                                onCancel={() => {
+                                  setIsEditDialogOpen(false);
+                                  setEditingMetric(null);
+                                }}
+                                isPending={updateMetricMutation.isPending}
+                              />
+                            )}
+                          </DialogContent>
+                        </Dialog>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="border-destructive text-destructive hover:bg-destructive/10"
+                          onClick={() => handleDeleteMetric(metric.id)}
+                          disabled={deleteMetricMutation.isPending}
+                        >
+                          <Trash2 className="mr-1 h-3 w-3" />
+                          Excluir
+                        </Button>
+                      </div>
                     </div>
-                  </div>
-                ))
+                  );
+                })
               ) : (
                 <div className="p-12 text-center text-muted-foreground">
                   <Gauge className="h-12 w-12 mx-auto mb-4" />
