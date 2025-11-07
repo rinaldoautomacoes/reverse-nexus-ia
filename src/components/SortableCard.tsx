@@ -51,7 +51,7 @@ export const SortableCard: React.FC<SortableCardProps> = ({
       ref={setNodeRef}
       style={style}
       className={cn(
-        "card-futuristic border-0 animate-slide-up transition-all duration-300 ease-in-out relative h-[208px]", // Altura fixa adicionada aqui
+        "card-futuristic border-0 animate-slide-up transition-all duration-300 ease-in-out relative h-[280px]", // Altura ajustada para 280px
         isDragging ? "ring-2 ring-primary-foreground" : "",
         className
       )}
@@ -67,7 +67,7 @@ export const SortableCard: React.FC<SortableCardProps> = ({
             customHeaderButton
           ) : (
             Icon && (
-              <div className={cn("p-2 rounded-full", iconBgColorClass)}> {/* Alterado para rounded-full */}
+              <div className={cn("p-2 rounded-full", iconBgColorClass)}>
                 <Icon className={cn("h-4 w-4", iconColorClass)} />
               </div>
             )

@@ -50,12 +50,12 @@ export const OutstandingItemsSummaryCardContent: React.FC<OutstandingItemsSummar
   return (
     <div className="space-y-3"> {/* Removido p-4 aqui */}
       <div className="flex items-center justify-between">
-        <h4 className="text-lg font-semibold text-foreground">Itens Pendentes</h4> {/* Alterado para text-lg */}
+        <h4 className="text-lg font-semibold text-foreground">Itens Pendentes</h4>
         <Badge variant="secondary" className="bg-primary/10 text-primary">
           {selectedYear}
         </Badge>
       </div>
-      <div className="grid grid-cols-2 gap-x-4 gap-y-2 text-sm text-muted-foreground"> {/* Ajustado gaps */}
+      <div className="grid grid-cols-2 gap-x-4 gap-y-2 text-sm text-muted-foreground">
         <div className="flex items-center gap-1">
           <Package className="h-4 w-4 text-primary" />
           Total: <span className="font-bold text-foreground">{totalOutstanding}</span>
@@ -79,11 +79,11 @@ export const OutstandingItemsSummaryCardContent: React.FC<OutstandingItemsSummar
         <Progress value={completionRate} className="h-2 [&>div]:bg-success-green" />
       </div> */}
       {outstandingItems.length > 0 && (
-        <div className="mt-2 space-y-1 max-h-24 overflow-auto"> {/* Adicionado max-h e overflow-auto */}
+        <div className="mt-2 space-y-1"> {/* Removido max-h e overflow-auto */}
           <p className="text-xs font-semibold text-muted-foreground">Próximos itens:</p>
           {outstandingItems.slice(0, 2).map((item, index) => (
             <div key={item.id} className="flex items-center justify-between text-xs text-muted-foreground">
-              <span className="text-foreground"> {/* Removido truncate e max-w */}
+              <span className="text-foreground">
                 <span className="font-bold">{item.product_code}</span>
                 {item.product_description ? ` - ${item.product_description}` : ''} ({item.quantity_pending})
               </span>
