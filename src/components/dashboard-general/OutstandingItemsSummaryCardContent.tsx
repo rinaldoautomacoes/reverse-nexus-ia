@@ -60,14 +60,8 @@ export const OutstandingItemsSummaryCardContent: React.FC<OutstandingItemsSummar
           <Package className="h-4 w-4 text-primary" />
           Total: <span className="font-bold text-foreground">{totalOutstanding}</span>
         </div>
-        <div className="flex items-center gap-1">
-          <Clock className="h-4 w-4 text-destructive" />
-          Pendentes: <span className="font-bold text-foreground">{pendingItemsCount}</span>
-        </div>
-        <div className="flex items-center gap-1">
-          <CheckCircle className="h-4 w-4 text-success-green" />
-          Coletados: <span className="font-bold text-foreground">{collectedItemsCount}</span>
-        </div>
+        {/* Removido: Pendentes: {pendingItemsCount} */}
+        {/* Removido: Coletados: {collectedItemsCount} */}
         <div className="flex items-center gap-1">
           <Tag className="h-4 w-4 text-neural" />
           Qtd. Total: <span className="font-bold text-foreground">{totalQuantityPending}</span>
