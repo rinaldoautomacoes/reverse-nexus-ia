@@ -281,53 +281,25 @@ export const GeneralMetricsCards: React.FC<GeneralMetricsCardsProps> = ({ allCol
                     {filteredOutstandingItems.map((item, itemIndex) => (
                       <div
                         key={item.id}
-                        className="flex flex-col lg:flex-row items-start lg:items-center justify-between p-3 rounded-lg border border-primary/10 bg-slate-darker/10"
+                        className="flex flex-col p-3 rounded-lg border border-primary/10 bg-slate-darker/10"
                       >
-                        <div className="flex-1 min-w-0 mb-2 lg:mb-0">
-                          <h3 className="font-semibold text-base flex items-center gap-2">
+                        <div className="flex-1 min-w-0">
+                          <p className="font-semibold text-base flex items-center gap-2">
                             <Tag className="h-4 w-4 text-primary" />
                             {item.product_code}
-                          </h3>
-                          <p className="text-xs text-muted-foreground mt-0.5">
+                          </p>
+                          <p className="text-sm text-muted-foreground mt-0.5">
                             Descrição: <span className="font-bold text-foreground">{item.product_description || 'N/A'}</span>
                           </p>
-                          <p className="text-xs text-muted-foreground">
+                          <p className="text-sm text-muted-foreground">
                             Quantidade Pendente: <span className="font-bold text-foreground">{item.quantity_pending}</span>
                           </p>
-                          <p className="text-xs text-muted-foreground">
+                          <p className="text-sm text-muted-foreground">
                             Status: {getStatusBadge(item.status)}
                           </p>
-                          {item.notes && (
-                            <p className="text-xs text-muted-foreground mt-0.5">Notas: {item.notes}</p>
-                          )}
                           <p className="text-xs text-muted-foreground mt-1">
                             Criado em: {item.created_at ? format(new Date(item.created_at), 'dd/MM/yyyy HH:mm', { locale: ptBR }) : 'N/A'}
                           </p>
-                        </div>
-                        <div className="flex gap-2 flex-wrap justify-end">
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            className="border-accent text-accent hover:bg-accent/10 h-8 px-3 text-xs"
-                            onClick={() => handleEditItem(item)}
-                          >
-                            <Edit className="mr-1 h-3 w-3" />
-                            Editar
-                          </Button>
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            className="border-destructive text-destructive hover:bg-destructive/10 h-8 px-3 text-xs"
-                            onClick={() => handleDeleteItem(item.id)}
-                            disabled={deleteOutstandingCollectionItemMutation.isPending}
-                          >
-                            {deleteOutstandingCollectionItemMutation.isPending ? (
-                              <Loader2 className="mr-1 h-3 w-3 animate-spin" />
-                            ) : (
-                              <Trash2 className="mr-1 h-3 w-3" />
-                            )}
-                            Excluir
-                          </Button>
                         </div>
                       </div>
                     ))}
