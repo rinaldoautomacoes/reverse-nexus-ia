@@ -82,8 +82,8 @@ export const OutstandingItemsSummaryCardContent: React.FC<OutstandingItemsSummar
           <p className="text-xs font-semibold text-muted-foreground">Próximos itens:</p>
           {outstandingItems.slice(0, 2).map((item, index) => (
             <div key={item.id} className="flex items-center justify-between text-xs text-muted-foreground">
-              <span className="truncate max-w-[150px]">
-                {item.product_code}
+              <span className="truncate max-w-[150px] text-foreground">
+                <span className="font-bold">{item.product_code}</span>
                 {item.product_description ? ` - ${item.product_description}` : ''} ({item.quantity_pending})
               </span>
               {getStatusBadge(item.status)}
