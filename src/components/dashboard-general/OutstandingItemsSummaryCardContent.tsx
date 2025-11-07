@@ -48,14 +48,14 @@ export const OutstandingItemsSummaryCardContent: React.FC<OutstandingItemsSummar
   }
 
   return (
-    <div className="space-y-3 p-4">
+    <div className="space-y-3"> {/* Removido p-4 aqui */}
       <div className="flex items-center justify-between">
-        <h4 className="text-md font-semibold text-foreground">Itens Pendentes</h4>
+        <h4 className="text-lg font-semibold text-foreground">Itens Pendentes</h4> {/* Alterado para text-lg */}
         <Badge variant="secondary" className="bg-primary/10 text-primary">
           {selectedYear}
         </Badge>
       </div>
-      <div className="grid grid-cols-2 gap-2 text-sm text-muted-foreground">
+      <div className="grid grid-cols-2 gap-x-4 gap-y-2 text-sm text-muted-foreground"> {/* Ajustado gaps */}
         <div className="flex items-center gap-1">
           <Package className="h-4 w-4 text-primary" />
           Total: <span className="font-bold text-foreground">{totalOutstanding}</span>
