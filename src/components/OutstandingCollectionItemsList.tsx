@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Package, Search, Edit, Trash2, Loader2, FileText, Tag, Clock, CheckCircle, XCircle } from "lucide-react";
+import { Package, Search, Edit, Trash2, Loader2, FileText, Tag, Clock, CheckCircle, XCircle, Settings } from "lucide-react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import type { Tables } from "@/integrations/supabase/types_generated";
@@ -12,6 +12,8 @@ import { Badge } from "@/components/ui/badge";
 import { EditOutstandingCollectionItemDialog } from './EditOutstandingCollectionItemDialog';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { CreateOutstandingCollectionItemDialog } from './CreateOutstandingCollectionItemDialog';
 
 type OutstandingCollectionItem = Tables<'outstanding_collection_items'>;
 
@@ -27,6 +29,7 @@ export const OutstandingCollectionItemsList: React.FC<OutstandingCollectionItems
   const [searchTerm, setSearchTerm] = useState("");
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [editingItem, setEditingItem] = useState<OutstandingCollectionItem | null>(null);
+  const [isManageDialogOpen, setIsManageDialogOpen] = useState(false); // New state for manage dialog
 
   const { data: items, isLoading, error } = useQuery<OutstandingCollectionItem[], Error>({
     queryKey: ['outstandingCollectionItems', user?.id, selectedYear],
@@ -119,55 +122,136 @@ export const OutstandingCollectionItemsList: React.FC<OutstandingCollectionItems
 
   return (
     <Card className="card-futuristic">
-      <CardHeader className="pb-3">
-        <CardTitle className="flex items-center gap-2 text-lg">
-          <Package className="h-5 w-5 text-primary" />
+      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+        <CardTitle className="text-sm font-medium text-muted-foreground">
           Itens Pendentes de Coleta
         </CardTitle>
-      </CardHeader>
-      <CardContent className="p-4 space-y-3">
-        <div className="relative">
-          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
-          <Input
-            placeholder="Buscar por código, descrição, notas ou status..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="pl-10 h-9 text-sm"
-          />
+        <div className="flex items-center gap-2">
+          <div className="p-2 rounded-lg bg-primary/10">
+            <Package className="h-4 w-4 text-primary" />
+          </div>
+          <Dialog open={isManageDialogOpen} onOpenChange={setIsManageDialogOpen}>
+            <DialogTrigger asChild>
+              <Button variant="ghost" size="icon" className="h-8 w-8">
+                <Settings className="h-4 w-4" />
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="sm:max-w-[600px] bg-card border-primary/20 max-h-[90vh] overflow-y-auto">
+              <DialogHeader>
+                <DialogTitle className="flex items-center gap-2 gradient-text">
+                  <Package className="h-5 w-5" />
+                  Gerenciar Itens Pendentes
+                </DialogTitle>
+              </DialogHeader>
+              <div className="space-y-4 py-4">
+                <CreateOutstandingCollectionItemDialog />
+                <div className="relative">
+                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
+                  <Input
+                    placeholder="Buscar por código, descrição, notas ou status..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    className="pl-10 h-9 text-sm"
+                  />
+                </div>
+                {filteredItems && filteredItems.length > 0 ? (
+                  <div className="space-y-3">
+                    {filteredItems.map((item, index) => (
+                      <div
+                        key={item.id}
+                        className="flex flex-col lg:flex-row items-start lg:items-center justify-between p-3 rounded-lg border border-primary/10 bg-slate-darker/10"
+                      >
+                        <div className="flex-1 min-w-0 mb-2 lg:mb-0">
+                          <h3 className="font-semibold text-base flex items-center gap-2">
+                            <Tag className="h-4 w-4 text-primary" />
+                            {item.product_code}
+                          </h3>
+                          <p className="text-xs text-muted-foreground mt-0.5">
+                            Descrição: <span className="font-bold text-foreground">{item.product_description || 'N/A'}</span>
+                          </p>
+                          <p className="text-xs text-muted-foreground">
+                            Quantidade Pendente: <span className="font-bold text-foreground">{item.quantity_pending}</span>
+                          </p>
+                          <p className="text-xs text-muted-foreground">
+                            Status: {getStatusBadge(item.status)}
+                          </p>
+                          {item.notes && (
+                            <p className="text-xs text-muted-foreground mt-0.5">Notas: {item.notes}</p>
+                          )}
+                          <p className="text-xs text-muted-foreground mt-1">
+                            Criado em: {item.created_at ? format(new Date(item.created_at), 'dd/MM/yyyy HH:mm', { locale: ptBR }) : 'N/A'}
+                          </p>
+                        </div>
+                        <div className="flex gap-2 flex-wrap justify-end">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="border-accent text-accent hover:bg-accent/10 h-8 px-3 text-xs"
+                            onClick={() => handleEditItem(item)}
+                          >
+                            <Edit className="mr-1 h-3 w-3" />
+                            Editar
+                          </Button>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="border-destructive text-destructive hover:bg-destructive/10 h-8 px-3 text-xs"
+                            onClick={() => handleDeleteItem(item.id)}
+                            disabled={deleteOutstandingCollectionItemMutation.isPending}
+                          >
+                            {deleteOutstandingCollectionItemMutation.isPending ? (
+                              <Loader2 className="mr-1 h-3 w-3 animate-spin" />
+                            ) : (
+                              <Trash2 className="mr-1 h-3 w-3" />
+                            )}
+                            Excluir
+                          </Button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="p-8 text-center text-muted-foreground">
+                    <Package className="h-10 w-10 mx-auto mb-3" />
+                    <p className="text-sm">Nenhum item pendente de coleta encontrado.</p>
+                    <p className="text-xs mt-1">Clique em "Novo Item Pendente" para adicionar um.</p>
+                  </div>
+                )}
+              </div>
+            </DialogContent>
+          </Dialog>
         </div>
-
+      </CardHeader>
+      <CardContent className="p-4">
         {filteredItems && filteredItems.length > 0 ? (
-          <div className="space-y-3">
-            {filteredItems.map((item, index) => (
-              <div
-                key={item.id}
-                className="p-3 rounded-lg border border-primary/10 bg-slate-darker/10 animate-slide-up"
-                style={{ animationDelay: `${index * 100}ms` }}
-              >
-                <h3 className="font-semibold text-base flex items-center gap-2">
-                  <Tag className="h-4 w-4 text-primary" />
+          <div className="space-y-2">
+            {filteredItems.slice(0, 2).map((item, index) => ( // Show only first 2 items
+              <div key={item.id} className="flex flex-col space-y-0.5">
+                <h4 className="font-semibold text-sm flex items-center gap-1">
+                  <Tag className="h-3 w-3 text-primary" />
                   {item.product_code}
-                </h3>
-                <p className="text-xs text-muted-foreground mt-0.5">
+                </h4>
+                <p className="text-xs text-muted-foreground ml-4">
                   Descrição: <span className="font-bold text-foreground">{item.product_description || 'N/A'}</span>
                 </p>
-                <p className="text-xs text-muted-foreground">
-                  Quantidade Pendente: <span className="font-bold text-foreground">{item.quantity_pending}</span>
+                <p className="text-xs text-muted-foreground ml-4">
+                  Qtd. Pendente: <span className="font-bold text-foreground">{item.quantity_pending}</span>
                 </p>
-                <p className="text-xs text-muted-foreground flex items-center gap-1">
+                <p className="text-xs text-muted-foreground ml-4 flex items-center gap-1">
                   Status: {getStatusBadge(item.status)}
-                </p>
-                <p className="text-xs text-muted-foreground mt-1">
-                  Criado em: {item.created_at ? format(new Date(item.created_at), 'dd/MM/yyyy HH:mm', { locale: ptBR }) : 'N/A'}
                 </p>
               </div>
             ))}
+            {filteredItems.length > 2 && (
+              <p className="text-xs text-muted-foreground mt-2 text-center">
+                E mais {filteredItems.length - 2} itens...
+              </p>
+            )}
           </div>
         ) : (
-          <div className="p-8 text-center text-muted-foreground">
-            <Package className="h-10 w-10 mx-auto mb-3" />
-            <p className="text-sm">Nenhum item pendente de coleta encontrado.</p>
-            <p className="text-xs mt-1">Clique em "Novo Item Pendente" para adicionar um.</p>
+          <div className="text-center text-muted-foreground py-4">
+            <Package className="h-8 w-8 mx-auto mb-2" />
+            <p className="text-xs">Nenhum item pendente.</p>
           </div>
         )}
       </CardContent>
