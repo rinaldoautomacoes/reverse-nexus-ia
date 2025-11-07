@@ -1,4 +1,3 @@
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { 
   Package, 
   Truck, 
@@ -7,7 +6,8 @@ import {
   ListChecks, // Icon for 'Total de Coletas'
   Box, // Icon for 'Total de Produtos'
   TrendingUp, // General trend icon
-  Settings // Icon for managing outstanding items
+  Settings, // Icon for managing outstanding items
+  Tag // Adicionado: Importação do ícone Tag
 } from "lucide-react";
 import React, { useState, useEffect } from "react";
 import type { Tables } from "@/integrations/supabase/types";
@@ -36,7 +36,8 @@ const iconMap: { [key: string]: React.ElementType } = {
   ListChecks,
   Box,
   TrendingUp,
-  Settings
+  Settings,
+  Tag // Adicionado: Mapeamento do ícone Tag
 };
 
 interface MetricItem {
