@@ -1,26 +1,24 @@
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { ArrowLeft, PlusCircle, Edit, Trash2, Truck, Search, Clock, Package, CheckCircle, User, Phone, Mail, MapPin, Hash, Calendar as CalendarIcon, Building, MessageSquare, Send, DollarSign, Tag, Home, Flag, ClipboardList, FileText, Paperclip } from "lucide-react";
-import { useNavigate } from "react-router-dom";
+import { PlusCircle, Truck } from "lucide-react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import type { Tables, TablesUpdate, TablesInsert } from "@/integrations/supabase/types_generated";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
-import { Badge } from "@/components/ui/badge";
-import { format, isValid } from "date-fns"; // Importar isValid
-import { ptBR } from "date-fns/locale";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { Calendar } from "@/components/ui/calendar";
-import { cn, formatItemsForColetaModeloAparelho, getTotalQuantityOfItems } from "@/lib/utils";
 import { EntregaForm } from "@/components/EntregaForm";
 import { EditEntregaDialog } from "@/components/EditEntregaDialog";
 import { CollectionStatusUpdateDialog } from "@/components/CollectionStatusUpdateDialog";
 import { EditResponsibleDialog } from "@/components/EditResponsibleDialog";
-import { ItemData } from "@/components/coleta-form-sections/ColetaItemRow"; // Importa a interface ItemData
+import { ItemData } from "@/components/coleta-form-sections/ColetaItemRow";
+import { formatItemsForColetaModeloAparelho, getTotalQuantityOfItems } from "@/lib/utils";
+
+// Import new modular components
+import { EntregasHeader } from "@/components/entregas-ativas/EntregasHeader";
+import { EntregasFilters } from "@/components/entregas-ativas/EntregasFilters";
+import { EntregaListItem } from "@/components/entregas-ativas/EntregaListItem";
 
 interface FileAttachment {
   name: string;
@@ -32,8 +30,8 @@ interface FileAttachment {
 type Entrega = Tables<'coletas'> & {
   driver?: { name: string } | null;
   transportadora?: { name: string } | null;
-  items?: Array<Tables<'items'>> | null; // Adicionado items relation
-  attachments?: FileAttachment[] | null; // Adicionado attachments
+  items?: Array<Tables<'items'>> | null;
+  attachments?: FileAttachment[] | null;
 };
 type EntregaInsert = TablesInsert<'coletas'>;
 
@@ -42,7 +40,6 @@ interface EntregasAtivasProps {
 }
 
 export const EntregasAtivas: React.FC<EntregasAtivasProps> = ({ selectedYear }) => {
-  const navigate = useNavigate();
   const queryClient = useQueryClient();
   const { toast } = useToast();
   const { user } = useAuth();
@@ -69,7 +66,7 @@ export const EntregasAtivas: React.FC<EntregasAtivasProps> = ({ selectedYear }) 
           driver:drivers(name),
           transportadora:transportadoras(name),
           items(*)
-        `) // Adicionado items(*)
+        `)
         .eq('user_id', user.id)
         .eq('type', 'entrega')
         .neq('status_coleta', 'concluida')
@@ -103,9 +100,9 @@ export const EntregasAtivas: React.FC<EntregasAtivasProps> = ({ selectedYear }) 
         ...data.entrega,
         user_id: user.id,
         type: 'entrega',
-        modelo_aparelho: formatItemsForColetaModeloAparelho(data.items), // Resumo dos itens
-        qtd_aparelhos_solicitado: getTotalQuantityOfItems(data.items), // Quantidade total
-        attachments: data.attachments, // Salvar os anexos
+        modelo_aparelho: formatItemsForColetaModeloAparelho(data.items),
+        qtd_aparelhos_solicitado: getTotalQuantityOfItems(data.items),
+        attachments: data.attachments,
       };
 
       const { data: insertedEntrega, error: entregaError } = await supabase
@@ -206,31 +203,21 @@ export const EntregasAtivas: React.FC<EntregasAtivasProps> = ({ selectedYear }) 
     }
   };
 
-  const getStatusBadgeColor = (status: string) => {
-    switch (status) {
-      case 'pendente':
-        return 'bg-destructive/20 text-destructive';
-      case 'agendada':
-        return 'bg-warning-yellow/20 text-warning-yellow';
-      case 'concluida':
-        return 'bg-success-green/20 text-success-green';
-      default:
-        return 'bg-muted/20 text-muted-foreground';
-    }
+  const handleUpdateStatus = (id: string, name: string, status: string) => {
+    setSelectedEntregaForStatus({ id, name, status });
+    setIsStatusUpdateDialogOpen(true);
   };
 
-  const getStatusText = (status: string) => {
-    switch (status) {
-      case 'pendente':
-        return 'Pendente';
-      case 'agendada':
-        return 'Em Trânsito';
-      case 'concluida':
-        return 'Concluída';
-      default:
-        return status;
-    }
+  const handleUpdateResponsible = (id: string, name: string, responsibleUserId: string | null) => {
+    setSelectedEntregaForResponsible({ id, name, responsible_user_id: responsibleUserId });
+    setIsEditResponsibleDialogOpen(true);
   };
+
+  const handleAddEntrega = (data: EntregaInsert, items: ItemData[], attachments: FileAttachment[]) => {
+    addEntregaMutation.mutate({ entrega: data, items, attachments });
+  };
+
+  const isFormDisabled = addEntregaMutation.isPending || deleteEntregaMutation.isPending || isLoadingEntregas;
 
   if (isLoadingEntregas) {
     return (
@@ -256,250 +243,68 @@ export const EntregasAtivas: React.FC<EntregasAtivasProps> = ({ selectedYear }) 
   return (
     <div className="min-h-screen bg-background ai-pattern p-6">
       <div className="max-w-6xl mx-auto">
-        <Button
-          onClick={() => navigate('/dashboard-entregas')}
-          variant="ghost"
-          className="mb-6 text-primary hover:bg-primary/10"
-        >
-          <ArrowLeft className="mr-2 h-4 w-4" />
-          Voltar ao Dashboard de Entregas
-        </Button>
+        <EntregasHeader />
+        <EntregasFilters
+          searchTerm={searchTerm}
+          setSearchTerm={setSearchTerm}
+          filterDate={filterDate}
+          setFilterDate={setFilterDate}
+          isFormDisabled={isFormDisabled}
+        />
 
-        <div className="space-y-6">
-          <div className="text-center">
-            <h1 className="text-4xl font-bold font-orbitron gradient-text mb-4">
-              Entregas Ativas
-            </h1>
-            <p className="text-muted-foreground">
-              Gerencie todas as entregas que ainda não foram concluídas.
-            </p>
-          </div>
-
-          <Card className="card-futuristic">
-            <CardContent className="p-6">
-              <div className="flex flex-col md:flex-row gap-4 items-center">
-                <div className="flex-1 relative">
-                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
-                  <Input
-                    placeholder="Buscar por parceiro, endereço, modelo, status, número único, controle do cliente, contrato ou CÓD. PARC..."
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                    className="pl-10"
-                  />
-                </div>
-                <Popover>
-                  <PopoverTrigger asChild>
-                    <Button
-                      variant={"outline"}
-                      className={cn(
-                        "w-full md:w-auto justify-start text-left font-normal",
-                        !filterDate && "text-muted-foreground"
-                      )}
-                    >
-                      <CalendarIcon className="mr-2 h-4 w-4" />
-                      {filterDate ? (isValid(filterDate) ? format(new Date(filterDate), "dd/MM/yyyy", { locale: ptBR }) : "Data inválida") : "Filtrar por data"}
-                    </Button>
-                  </PopoverTrigger>
-                  <PopoverContent className="w-auto p-0">
-                    <Calendar
-                      mode="single"
-                      selected={filterDate}
-                      onSelect={setFilterDate}
-                      initialFocus
-                      locale={ptBR}
-                    />
-                  </PopoverContent>
-                </Popover>
-                {filterDate && (
-                  <Button variant="ghost" onClick={() => setFilterDate(undefined)} className="w-full md:w-auto">
-                    Limpar Data
-                  </Button>
-                )}
+        <Card className="card-futuristic mt-6">
+          <CardHeader className="flex flex-row items-center justify-between">
+            <CardTitle className="flex items-center gap-2">
+              <Truck className="h-5 w-5 text-primary" />
+              Minhas Entregas Ativas
+            </CardTitle>
+            <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
+              <DialogTrigger asChild>
+                <Button size="sm" className="bg-gradient-primary hover:bg-gradient-primary/80">
+                  <PlusCircle className="mr-2 h-4 w-4" />
+                  Nova Entrega
+                </Button>
+              </DialogTrigger>
+              <DialogContent className="sm:max-w-[900px] bg-card border-primary/20 max-h-[calc(100vh-150px)] overflow-y-auto">
+                <DialogHeader>
+                  <DialogTitle className="flex items-center gap-2 gradient-text">
+                    <Truck className="h-5 w-5" />
+                    Agendar Nova Entrega
+                  </DialogTitle>
+                </DialogHeader>
+                <EntregaForm
+                  onSave={handleAddEntrega}
+                  onCancel={() => setIsAddDialogOpen(false)}
+                  isPending={addEntregaMutation.isPending}
+                />
+              </DialogContent>
+            </Dialog>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            {entregas && entregas.length > 0 ? (
+              entregas.map((entrega, index) => (
+                <EntregaListItem
+                  key={entrega.id}
+                  entrega={entrega}
+                  index={index}
+                  onEdit={handleEditEntrega}
+                  onDelete={handleDeleteEntrega}
+                  onWhatsApp={handleWhatsAppClick}
+                  onEmail={handleEmailClick}
+                  onUpdateStatus={handleUpdateStatus}
+                  onUpdateResponsible={handleUpdateResponsible}
+                  isDeleting={deleteEntregaMutation.isPending}
+                />
+              ))
+            ) : (
+              <div className="p-12 text-center text-muted-foreground">
+                <Truck className="h-12 w-12 mx-auto mb-4" />
+                <p>Nenhuma entrega ativa encontrada.</p>
+                <p className="text-sm">Agende uma nova entrega para começar.</p>
               </div>
-            </CardContent>
-          </Card>
-
-          <Card className="card-futuristic">
-            <CardHeader className="flex flex-row items-center justify-between">
-              <CardTitle className="flex items-center gap-2">
-                <Truck className="h-5 w-5 text-primary" />
-                Minhas Entregas Ativas
-              </CardTitle>
-              <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
-                <DialogTrigger asChild>
-                  <Button size="sm" className="bg-gradient-primary hover:bg-gradient-primary/80">
-                    <PlusCircle className="mr-2 h-4 w-4" />
-                    Nova Entrega
-                  </Button>
-                </DialogTrigger>
-                <DialogContent className="sm:max-w-[900px] bg-card border-primary/20 max-h-[calc(100vh-150px)] overflow-y-auto">
-                  <DialogHeader>
-                    <DialogTitle className="flex items-center gap-2 gradient-text">
-                      <Truck className="h-5 w-5" />
-                      Agendar Nova Entrega
-                    </DialogTitle>
-                  </DialogHeader>
-                  {/* EntregaForm now handles attachments internally */}
-                  <EntregaForm
-                    onSave={({ entrega, items, attachments }) => addEntregaMutation.mutate({ entrega, items, attachments })}
-                    onCancel={() => setIsAddDialogOpen(false)}
-                    isPending={addEntregaMutation.isPending}
-                  />
-                </DialogContent>
-              </Dialog>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              {entregas && entregas.length > 0 ? (
-                entregas.map((entrega, index) => (
-                  <div
-                    key={entrega.id}
-                    className="flex flex-col lg:flex-row items-start lg:items-center justify-between p-4 rounded-lg border border-primary/10 bg-slate-darker/10 animate-slide-up"
-                    style={{ animationDelay: `${index * 100}ms` }}
-                  >
-                    <div className="flex-1 min-w-0 mb-3 lg:mb-0">
-                      <h3 className="font-semibold text-lg">{entrega.parceiro}</h3>
-                      <p className="text-sm text-muted-foreground flex items-center gap-1">
-                        <Tag className="h-3 w-3" /> {entrega.unique_number}
-                        {entrega.client_control && (
-                          <span className="ml-2 flex items-center gap-1">
-                            <ClipboardList className="h-3 w-3" /> {entrega.client_control}
-                          </span>
-                        )}
-                      </p>
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-sm text-muted-foreground mt-1">
-                        {entrega.endereco_origem && (
-                          <div className="flex items-center gap-1">
-                            <Home className="h-3 w-3" /> Origem: {entrega.endereco_origem}
-                          </div>
-                        )}
-                        {entrega.endereco_destino && (
-                          <div className="flex items-center gap-1">
-                            <Flag className="h-3 w-3" /> Destino: {entrega.endereco_destino}
-                          </div>
-                        )}
-                        <div className="flex items-center gap-1">
-                          <CalendarIcon className="h-3 w-3" /> Previsão: {entrega.previsao_coleta ? (isValid(new Date(entrega.previsao_coleta)) ? format(new Date(entrega.previsao_coleta), 'dd/MM/yyyy', { locale: ptBR }) : 'Data inválida') : 'N/A'}
-                        </div>
-                        <div className="flex items-center gap-1">
-                          <Hash className="h-3 w-3" /> Qtd Total: {getTotalQuantityOfItems(entrega.items)}
-                        </div>
-                        <div className="flex items-center gap-1 col-span-full">
-                          <Package className="h-3 w-3" /> Materiais: {formatItemsForColetaModeloAparelho(entrega.items)}
-                        </div>
-                        {entrega.contrato && (
-                          <div className="flex items-center gap-1">
-                            <FileText className="h-3 w-3" /> Nr. Contrato: {entrega.contrato}
-                          </div>
-                        )}
-                        {entrega.nf_glbl && (
-                          <div className="flex items-center gap-1">
-                            <Hash className="h-3 w-3" /> CONTRATO SANKHYA: {entrega.nf_glbl}
-                          </div>
-                        )}
-                        {entrega.partner_code && (
-                          <div className="flex items-center gap-1">
-                            <Tag className="h-3 w-3" /> CÓD. PARC: {entrega.partner_code}
-                          </div>
-                        )}
-                        <div className="flex items-center gap-1">
-                          <User className="h-3 w-3" /> Responsável: {entrega.responsavel || 'Não atribuído'}
-                        </div>
-                        <div className="flex items-center gap-1">
-                          <Truck className="h-3 w-3" /> Motorista: {entrega.driver?.name || 'Não atribuído'}
-                        </div>
-                        <div className="flex items-center gap-1">
-                          <Building className="h-3 w-3" /> Transportadora: {entrega.transportadora?.name || 'Não atribuída'}
-                        </div>
-                        <div className="flex items-center gap-1">
-                          <DollarSign className="h-3 w-3" /> Frete: {entrega.freight_value ? `R$ ${entrega.freight_value.toFixed(2)}` : 'N/A'}
-                        </div>
-                        <div className="flex items-center gap-1">
-                          <Clock className="h-3 w-3" /> Status: <Badge className={getStatusBadgeColor(entrega.status_coleta)}>{getStatusText(entrega.status_coleta)}</Badge>
-                        </div>
-                        {entrega.attachments && entrega.attachments.length > 0 && (
-                          <div className="flex items-center gap-1 col-span-full">
-                            <Paperclip className="h-3 w-3" /> Anexos: {entrega.attachments.length}
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                    <div className="flex gap-2 flex-wrap justify-end">
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        className="border-accent text-accent hover:bg-accent/10"
-                        onClick={() => handleEditEntrega(entrega)}
-                      >
-                        <Edit className="mr-1 h-3 w-3" />
-                        Editar
-                      </Button>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        className="border-success-green text-success-green hover:bg-success-green/10"
-                        onClick={() => handleWhatsAppClick(entrega)}
-                        disabled={!entrega.telefone || !entrega.parceiro || !entrega.previsao_coleta}
-                      >
-                        <MessageSquare className="mr-1 h-3 w-3" />
-                        WhatsApp
-                      </Button>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        className="border-neural text-neural hover:bg-neural/10"
-                        onClick={() => handleEmailClick(entrega)}
-                        disabled={!entrega.email || !entrega.parceiro || !entrega.previsao_coleta}
-                      >
-                        <Send className="mr-1 h-3 w-3" />
-                        E-mail
-                      </Button>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        className="border-accent text-accent hover:bg-accent/10"
-                        onClick={() => {
-                          setSelectedEntregaForStatus({ id: entrega.id, name: entrega.parceiro || 'Entrega', status: entrega.status_coleta });
-                          setIsStatusUpdateDialogOpen(true);
-                        }}
-                      >
-                        <Edit className="mr-1 h-3 w-3" />
-                        Status
-                      </Button>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        className="border-primary text-primary hover:bg-primary/10"
-                        onClick={() => {
-                          setSelectedEntregaForResponsible({ id: entrega.id, name: entrega.parceiro || 'Entrega', responsible_user_id: entrega.responsible_user_id });
-                          setIsEditResponsibleDialogOpen(true);
-                        }}
-                      >
-                        <User className="mr-1 h-3 w-3" />
-                        Responsável
-                      </Button>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        className="border-destructive text-destructive hover:bg-destructive/10"
-                        onClick={() => handleDeleteEntrega(entrega.id)}
-                        disabled={deleteEntregaMutation.isPending}
-                      >
-                        <Trash2 className="mr-1 h-3 w-3" />
-                        Excluir
-                      </Button>
-                    </div>
-                  </div>
-                ))
-              ) : (
-                <div className="p-12 text-center text-muted-foreground">
-                  <Truck className="h-12 w-12 mx-auto mb-4" />
-                  <p>Nenhuma entrega ativa encontrada.</p>
-                  <p className="text-sm">Agende uma nova entrega para começar.</p>
-                </div>
-              )}
-            </CardContent>
-          </Card>
-        </div>
+            )}
+          </CardContent>
+        </Card>
       </div>
 
       {selectedEntregaForStatus && (
