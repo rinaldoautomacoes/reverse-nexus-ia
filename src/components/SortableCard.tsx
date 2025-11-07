@@ -51,7 +51,7 @@ export const SortableCard: React.FC<SortableCardProps> = ({
       ref={setNodeRef}
       style={style}
       className={cn(
-        "card-futuristic border-0 animate-slide-up transition-all duration-300 ease-in-out relative",
+        "card-futuristic border-0 animate-slide-up transition-all duration-300 ease-in-out relative h-[208px]", // Altura fixa adicionada aqui
         isDragging ? "ring-2 ring-primary-foreground" : "",
         className
       )}
@@ -62,13 +62,17 @@ export const SortableCard: React.FC<SortableCardProps> = ({
           {title}
         </CardTitle>
         <div className="flex items-center gap-2">
-          {customHeaderButton} {/* Render custom button here */}
-          {Icon && (
-            <div className={cn("p-2 rounded-lg", iconBgColorClass)}>
-              <Icon className={cn("h-4 w-4", iconColorClass)} />
-            </div>
+          {/* Metric-specific icon or custom button */}
+          {customHeaderButton ? (
+            customHeaderButton
+          ) : (
+            Icon && (
+              <div className={cn("p-2 rounded-full", iconBgColorClass)}> {/* Alterado para rounded-full */}
+                <Icon className={cn("h-4 w-4", iconColorClass)} />
+              </div>
+            )
           )}
-          {/* O ícone GripVertical agora é o handle de arrastar */}
+          {/* Drag handle */}
           <div className="cursor-grab" {...attributes} {...listeners}> 
             <GripVertical className="h-5 w-5 text-muted-foreground" /> 
           </div>

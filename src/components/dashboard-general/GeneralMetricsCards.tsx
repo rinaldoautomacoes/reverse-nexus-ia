@@ -20,6 +20,7 @@ import { MetricDetailsDialog } from './MetricDetailsDialog';
 import { OutstandingItemsSummaryCardContent } from './OutstandingItemsSummaryCardContent';
 import { GeneralMetricCardContent } from './GeneralMetricCardContent'; // New import
 import { ManageOutstandingItemsDialog } from './ManageOutstandingItemsDialog'; // New import
+import { Button } from '@/components/ui/button'; // Import Button
 
 type Coleta = Tables<'coletas'> & { items?: Array<Tables<'items'>> | null; };
 type OutstandingCollectionItem = Tables<'outstanding_collection_items'>;
@@ -179,7 +180,13 @@ export const GeneralMetricsCards: React.FC<GeneralMetricsCardsProps> = ({ allCol
             selectedYear={selectedYear}
           />
         ),
-        customHeaderButton: <ManageOutstandingItemsDialog outstandingItems={outstanding} />,
+        customHeaderButton: (
+          <ManageOutstandingItemsDialog outstandingItems={outstanding}>
+            <Button variant="ghost" size="icon" className="h-8 w-8 p-0 rounded-full bg-primary/10 text-primary">
+              <Settings className="h-4 w-4" />
+            </Button>
+          </ManageOutstandingItemsDialog>
+        ),
       },
       {
         id: 'total-operacoes',
