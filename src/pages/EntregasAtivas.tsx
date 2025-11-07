@@ -9,10 +9,8 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import type { Tables, TablesUpdate, TablesInsert } from "@/integrations/supabase/types_generated";
 import { useToast } from "@/hooks/use-toast";
-import { useAuth } from "@/hooks/use-auth";
+import { useAuth } from "@/hooks/useAuth";
 import { Badge } from "@/components/ui/badge";
-import { CollectionStatusUpdateDialog } from "@/components/CollectionStatusUpdateDialog";
-import { EditResponsibleDialog } from "@/components/EditResponsibleDialog";
 import { format, isValid } from "date-fns"; // Importar isValid
 import { ptBR } from "date-fns/locale";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
@@ -20,6 +18,8 @@ import { Calendar } from "@/components/ui/calendar";
 import { cn, formatItemsForColetaModeloAparelho, getTotalQuantityOfItems } from "@/lib/utils";
 import { EntregaForm } from "@/components/EntregaForm";
 import { EditEntregaDialog } from "@/components/EditEntregaDialog";
+import { CollectionStatusUpdateDialog } from "@/components/CollectionStatusUpdateDialog";
+import { EditResponsibleDialog } from "@/components/EditResponsibleDialog";
 import { ItemData } from "@/components/coleta-form-sections/ColetaItemRow"; // Importa a interface ItemData
 
 interface FileAttachment {
