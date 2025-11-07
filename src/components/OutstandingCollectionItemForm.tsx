@@ -9,7 +9,7 @@ import type { TablesInsert, TablesUpdate, Tables } from "@/integrations/supabase
 import { useToast } from "@/hooks/use-toast";
 import { useQuery } from "@tanstack/react-query"; // Added useQuery
 import { supabase } from "@/integrations/supabase/client"; // Added supabase
-import { useAuth } from "@/hooks/use-auth"; // Added useAuth
+import { useAuth } from "@/hooks/useAuth"; // Added useAuth
 
 type OutstandingCollectionItemInsert = TablesInsert<'outstanding_collection_items'>;
 type OutstandingCollectionItemUpdate = TablesUpdate<'outstanding_collection_items'>;

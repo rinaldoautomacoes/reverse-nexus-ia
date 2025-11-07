@@ -3,7 +3,7 @@ import { Badge } from "@/components/ui/badge";
 import { TrendingUp, Truck, CheckCircle } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { useAuth } from "@/hooks/use-auth";
+import { useAuth } from "@/hooks/useAuth";
 import { format, parseISO, startOfMonth, isValid } from "date-fns"; // Importar isValid
 import { ptBR } from "date-fns/locale";
 import { useEffect } from "react";
@@ -238,7 +238,7 @@ export const EntregasConcluidasStatusChart: React.FC<EntregasConcluidasStatusCha
       <CardContent>
         <div className="space-y-6">
           <div className="h-64 relative">
-            {totalAllItems > 0 ? (
+            {totalAll > 0 ? (
               <ResponsiveContainer width="100%" height="100%">
                 <AreaChart
                   data={chartData}
@@ -275,7 +275,7 @@ export const EntregasConcluidasStatusChart: React.FC<EntregasConcluidasStatusCha
                     type="monotone"
                     dataKey="entregues"
                     stroke="hsl(var(--success-green))"
-                    fill="url(#gradientEntregues)"
+                    fill="url(#gradientEntregas)"
                     strokeWidth={2}
                     name="Entregas Concluídas"
                   />
@@ -292,7 +292,7 @@ export const EntregasConcluidasStatusChart: React.FC<EntregasConcluidasStatusCha
             )}
           </div>
 
-          {totalAllItems > 0 && (
+          {totalAll > 0 && (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="flex items-center gap-3 p-3 bg-secondary/10 rounded-lg">
                 <div className="w-4 h-4 rounded" style={{ backgroundColor: 'hsl(var(--success-green))' }} />
