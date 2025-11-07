@@ -7,7 +7,8 @@ import {
   ListChecks, // Icon for 'Total de Coletas'
   Box, // Icon for 'Total de Produtos'
   TrendingUp, // General trend icon
-  Settings // Import Settings icon
+  Settings, // Import Settings icon
+  Tag // Import Tag icon
 } from "lucide-react";
 import React, { useState, useEffect } from "react";
 import type { Tables } from "@/integrations/supabase/types";
@@ -45,7 +46,8 @@ const iconMap: { [key: string]: React.ElementType } = {
   ListChecks,
   Box,
   TrendingUp,
-  Settings // Add Settings to the map
+  Settings, // Add Settings to the map
+  Tag // Add Tag to the map
 };
 
 interface MetricItem {
