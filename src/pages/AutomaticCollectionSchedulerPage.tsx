@@ -7,7 +7,7 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import type { TablesInsert, Tables, TablesUpdate } from "@/integrations/supabase/types_generated";
 import { useToast } from "@/hooks/use-toast";
-import { useAuth } from "@/hooks/useAuth"; // Corrigido: importação de useAuth
+import { useAuth } from "@/hooks/use-auth";
 import { generateUniqueNumber, formatItemsForColetaModeloAparelho, getTotalQuantityOfItems, cn } from "@/lib/utils";
 import { format, isValid } from "date-fns";
 import { Label } from "@/components/ui/label";
