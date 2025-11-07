@@ -19,7 +19,7 @@ import {
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import heroBackground from "@/assets/hero-background.jpg";
-import { useAuth } from "@/hooks/use-auth";
+import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { EntregasAtivasStatusDonutChart } from "@/components/EntregasAtivasStatusDonutChart";
 import { EntregasMetricsCards } from "@/components/EntregasMetricsCards";

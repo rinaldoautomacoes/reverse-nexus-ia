@@ -6,7 +6,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Package, Tag, FileText, Box, Hash, Image as ImageIcon, Upload, Loader2, XCircle } from "lucide-react";
 import type { TablesInsert, TablesUpdate } from "@/integrations/supabase/types";
 import { supabase } from "@/integrations/supabase/client";
-import { useAuth } from "@/hooks/use-auth";
+import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
 
 type ProductInsert = TablesInsert<'products'>;

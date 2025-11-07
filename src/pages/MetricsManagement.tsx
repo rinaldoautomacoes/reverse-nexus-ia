@@ -9,7 +9,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import type { Tables, TablesInsert, TablesUpdate } from "@/integrations/supabase/types_generated";
 import { useToast } from "@/hooks/use-toast";
-import { useAuth } from "@/hooks/use-auth";
+import { useAuth } from "@/hooks/useAuth";
 import { MetricForm } from "@/components/MetricForm"; // Assuming you have a MetricForm component
 
 type Metric = Tables<'metrics'>;
@@ -263,35 +263,34 @@ export const MetricsManagement = () => {
                               <DialogTitle className="flex items-center gap-2 gradient-text">
                                 <Gauge className="h-5 w-5" />
                                 Editar Métrica
-                              </DialogTitle>
-                            </DialogHeader>
-                            {editingMetric && editingMetric.id === metric.id && (
-                              <MetricForm
-                                initialData={editingMetric}
-                                onSave={handleUpdateMetric}
-                                onCancel={() => {
-                                  setIsEditDialogOpen(false);
-                                  setEditingMetric(null);
-                                }}
-                                isPending={updateMetricMutation.isPending}
-                              />
-                            )}
-                          </DialogContent>
-                        </Dialog>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          className="border-destructive text-destructive hover:bg-destructive/10"
-                          onClick={() => handleDeleteMetric(metric.id)}
-                          disabled={deleteMetricMutation.isPending}
-                        >
-                          <Trash2 className="mr-1 h-3 w-3" />
-                          Excluir
-                        </Button>
-                      </div>
+                            </DialogTitle>
+                          </DialogHeader>
+                          {editingMetric && editingMetric.id === metric.id && (
+                            <MetricForm
+                              initialData={editingMetric}
+                              onSave={handleUpdateMetric}
+                              onCancel={() => {
+                                setIsEditDialogOpen(false);
+                                setEditingMetric(null);
+                              }}
+                              isPending={updateMetricMutation.isPending}
+                            />
+                          )}
+                        </DialogContent>
+                      </Dialog>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="border-destructive text-destructive hover:bg-destructive/10"
+                        onClick={() => handleDeleteMetric(metric.id)}
+                        disabled={deleteMetricMutation.isPending}
+                      >
+                        <Trash2 className="mr-1 h-3 w-3" />
+                        Excluir
+                      </Button>
                     </div>
-                  );
-                })
+                  </div>
+                ))
               ) : (
                 <div className="p-12 text-center text-muted-foreground">
                   <Gauge className="h-12 w-12 mx-auto mb-4" />

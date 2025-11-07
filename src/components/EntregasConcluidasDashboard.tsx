@@ -20,7 +20,7 @@ import { useNavigate } from "react-router-dom";
 import heroBackground from "@/assets/hero-background.jpg";
 import { EntregasMetricsCards } from "./EntregasMetricsCards"; // Importar o novo componente
 import { EntregasConcluidasStatusChart } from "./EntregasConcluidasStatusChart";
-import { useAuth } from "@/hooks/use-auth";
+import { useAuth } from "@/hooks/useAuth";
 import { EntregasConcluidasStatusDonutChart } from "./EntregasConcluidasStatusDonutChart";
 
 interface EntregasConcluidasDashboardProps {

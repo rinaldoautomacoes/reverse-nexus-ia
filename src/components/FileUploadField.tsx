@@ -5,7 +5,7 @@ import { Label } from '@/components/ui/label';
 import { Paperclip, Upload, Loader2, XCircle, FileText, Image as ImageIcon, FileQuestion } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
-import { useAuth } from '@/hooks/use-auth';
+import { useAuth } from '@/hooks/useAuth';
 import { cn } from '@/lib/utils';
 
 interface FileAttachment {

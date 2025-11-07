@@ -13,6 +13,7 @@ import {
 } from 'recharts';
 import type { Tables } from "@/integrations/supabase/types";
 import { getTotalQuantityOfItems } from "@/lib/utils"; // Import new util
+import { useAuth } from "@/hooks/useAuth"; // Import useAuth
 
 type Coleta = Tables<'coletas'> & { items?: Array<Tables<'items'>> | null; }; // Add items to Coleta type
 type Product = Tables<'products'>;
@@ -24,6 +25,21 @@ interface GeneralStatusChartProps {
 }
 
 export const GeneralStatusChart: React.FC<GeneralStatusChartProps> = ({ allColetas, productDescriptionsMap, selectedYear }) => {
+  const { user } = useAuth(); // Use useAuth to ensure user is loaded
+
+  if (!user) {
+    // Optionally, render a loading state or redirect if user is not available
+    return (
+      <Card className="card-futuristic border-0 animate-pulse">
+        <CardHeader>
+          <CardTitle className="h-6 w-48 bg-muted rounded" />
+        </CardHeader>
+        <CardContent className="flex items-center justify-center h-64">
+          <div className="w-16 h-16 border-4 border-primary border-t-transparent rounded-full animate-spin" />
+        </CardContent>
+      </Card>
+    );
+  }
 
   const generateItemDescription = (items: Array<Tables<'items'>> | null) => {
     if (!items || items.length === 0) return "Nenhum item";
@@ -73,13 +89,13 @@ export const GeneralStatusChart: React.FC<GeneralStatusChartProps> = ({ allColet
       // Explicitly parse year, month, day to avoid timezone issues with DATE column
       const [year, month, day] = item.previsao_coleta.split('-').map(Number);
       const itemDate = new Date(year, month - 1, day); // month is 0-indexed
-      const monthKey = format(startOfMonth(itemDate), 'MMM', { locale: ptBR });
+      const coletaMonthKey = format(startOfMonth(itemDate), 'MMM', { locale: ptBR });
       
       const itemsInColeta = item.items || []; // Ensure it's an array
       const totalItemsInColeta = getTotalQuantityOfItems(itemsInColeta);
 
-      if (monthlyDataMap.has(monthKey)) {
-        const currentMonthData = monthlyDataMap.get(monthKey)!;
+      if (monthlyDataMap.has(coletaMonthKey)) {
+        const currentMonthData = monthlyDataMap.get(coletaMonthKey)!;
         switch (item.status_coleta) {
           case 'pendente':
             currentMonthData.coletas_pendente.push(...itemsInColeta);
@@ -96,7 +112,7 @@ export const GeneralStatusChart: React.FC<GeneralStatusChartProps> = ({ allColet
         }
         currentMonthData.total_items_month += totalItemsInColeta;
         totalAllItems += totalItemsInColeta;
-        monthlyDataMap.set(monthKey, currentMonthData);
+        monthlyDataMap.set(coletaMonthKey, currentMonthData);
       }
     });
     console.log("Generated chart data for general coletas:", allMonths.map(monthKey => monthlyDataMap.get(monthKey))); // Added log

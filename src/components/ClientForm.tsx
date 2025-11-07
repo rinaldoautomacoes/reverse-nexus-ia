@@ -6,6 +6,7 @@ import { UserPlus, User, Phone, Mail, MapPin, Building, Briefcase, Hash, Loader2
 import type { TablesInsert, TablesUpdate } from "@/integrations/supabase/types";
 import axios from "axios";
 import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/hooks/useAuth"; // Import useAuth
 
 type ClientInsert = TablesInsert<'clients'>;
 type ClientUpdate = TablesUpdate<'clients'>;
@@ -19,6 +20,7 @@ interface ClientFormProps {
 
 export const ClientForm: React.FC<ClientFormProps> = ({ initialData, onSave, onCancel, isPending }) => {
   const { toast } = useToast();
+  const { user } = useAuth(); // Get current user
   const [formData, setFormData] = useState<ClientInsert | ClientUpdate>(initialData || {
     name: "",
     phone: "",
@@ -28,15 +30,17 @@ export const ClientForm: React.FC<ClientFormProps> = ({ initialData, onSave, onC
     cep: "", // Novo campo
     cnpj: "",
     contact_person: "",
-    user_id: "", // Será preenchido pela mutação
+    user_id: user?.id || "", // Set user_id from auth
   });
   const [isFetchingAddress, setIsFetchingAddress] = useState(false);
 
   useEffect(() => {
     if (initialData) {
       setFormData(initialData);
+    } else {
+      setFormData(prev => ({ ...prev, user_id: user?.id || "" })); // Ensure user_id is set for new forms
     }
-  }, [initialData]);
+  }, [initialData, user?.id]);
 
   const handleInputChange = (field: keyof (ClientInsert | ClientUpdate), value: string | number | null) => {
     setFormData(prev => ({ ...prev, [field]: value }));

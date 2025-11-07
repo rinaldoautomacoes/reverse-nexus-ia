@@ -4,6 +4,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Building, User as UserIcon, Phone, Mail, MapPin, Hash, Loader2 } from "lucide-react"; // Renomeado User para UserIcon
 import type { TablesInsert, TablesUpdate } from "@/integrations/supabase/types";
+import { useAuth } from "@/hooks/useAuth"; // Import useAuth
 
 type TransportadoraInsert = TablesInsert<'transportadoras'>;
 type TransportadoraUpdate = TablesUpdate<'transportadoras'>;
@@ -16,6 +17,7 @@ interface TransportadoraFormProps {
 }
 
 export const TransportadoraForm: React.FC<TransportadoraFormProps> = ({ initialData, onSave, onCancel, isPending }) => {
+  const { user } = useAuth(); // Get current user
   const [formData, setFormData] = useState<TransportadoraInsert | TransportadoraUpdate>(initialData || {
     name: "",
     cnpj: "",
@@ -23,14 +25,16 @@ export const TransportadoraForm: React.FC<TransportadoraFormProps> = ({ initialD
     phone: "",
     email: "",
     address: "",
-    user_id: "", // Será preenchido pela mutação
+    user_id: user?.id || "", // Set user_id from auth
   });
 
   useEffect(() => {
     if (initialData) {
       setFormData(initialData);
+    } else {
+      setFormData(prev => ({ ...prev, user_id: user?.id || "" })); // Ensure user_id is set for new forms
     }
-  }, [initialData]);
+  }, [initialData, user?.id]);
 
   const handleInputChange = (field: keyof (TransportadoraInsert | TransportadoraUpdate), value: string | null) => {
     setFormData(prev => ({ ...prev, [field]: value }));
