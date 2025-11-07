@@ -159,7 +159,7 @@ export const OutstandingCollectionItemsList: React.FC<OutstandingCollectionItems
                     Status: {getStatusBadge(item.status)}
                   </p>
                   {item.notes && (
-                    <p className="text-xs text-muted-foreground mt-0.5">Notas: {item.notes}</p> {/* Reduced font size */}
+                    <p className="text-xs text-muted-foreground mt-0.5">Notas: {item.notes}</p>
                   )}
                   <p className="text-xs text-muted-foreground mt-1"> {/* Reduced font size and margin */}
                     Criado em: {item.created_at ? format(new Date(item.created_at), 'dd/MM/yyyy HH:mm', { locale: ptBR }) : 'N/A'}
