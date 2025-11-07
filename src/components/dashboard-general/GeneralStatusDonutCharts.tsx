@@ -4,7 +4,6 @@ import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, Legend } from 'recha
 import { Package, Truck } from "lucide-react";
 import type { Tables } from "@/integrations/supabase/types";
 import { getTotalQuantityOfItems } from "@/lib/utils"; // Import new util
-import { useAuth } from "@/hooks/useAuth"; // Import useAuth
 
 type Coleta = Tables<'coletas'> & { items?: Array<Tables<'items'>> | null; }; // Add items to Coleta type
 
@@ -51,31 +50,6 @@ interface GeneralStatusDonutChartsProps {
 }
 
 export const GeneralStatusDonutCharts: React.FC<GeneralStatusDonutChartsProps> = ({ allColetas, selectedYear }) => {
-  const { user } = useAuth(); // Use useAuth to ensure user is loaded
-
-  if (!user) {
-    // Optionally, render a loading state or redirect if user is not available
-    return (
-      <div className="space-y-8">
-        <Card className="card-futuristic border-0 animate-pulse">
-          <CardHeader>
-            <CardTitle className="h-6 w-48 bg-muted rounded" />
-          </CardHeader>
-          <CardContent className="flex items-center justify-center h-[400px]">
-            <div className="w-16 h-16 border-4 border-primary border-t-transparent rounded-full animate-spin" />
-          </CardContent>
-        </Card>
-        <Card className="card-futuristic border-0 animate-pulse">
-          <CardHeader>
-            <CardTitle className="h-6 w-48 bg-muted rounded" />
-          </CardHeader>
-          <CardContent className="flex items-center justify-center h-[400px]">
-            <div className="w-16 h-16 border-4 border-primary border-t-transparent rounded-full animate-spin" />
-          </CardContent>
-        </Card>
-      </div>
-    );
-  }
 
   const calculateStatusData = (data: Coleta[], type: 'coleta' | 'entrega') => {
     console.log(`Calculating status data for ${type} with data:`, data); // Added log

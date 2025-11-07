@@ -9,7 +9,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import type { Tables, TablesInsert, TablesUpdate } from "@/integrations/supabase/types_generated";
 import { useToast } from "@/hooks/use-toast";
-import { useAuth } from "@/hooks/useAuth";
+import { useAuth } from "@/hooks/use-auth";
 import { ClientForm } from "@/components/ClientForm";
 
 type Client = Tables<'clients'>;
@@ -244,6 +244,11 @@ export const ClientManagement = () => {
                         {client.cnpj && (
                           <div className="flex items-center gap-1">
                             <Building className="h-3 w-3" /> {client.cnpj}
+                          </div>
+                        )}
+                        {client.registration_number && ( // Exibindo o novo campo
+                          <div className="flex items-center gap-1">
+                            <Hash className="h-3 w-3" /> Reg.: {client.registration_number}
                           </div>
                         )}
                         {client.address_number && ( // Exibindo o novo campo

@@ -6,7 +6,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import type { TablesInsert } from "@/integrations/supabase/types_generated";
-import { useAuth } from "@/hooks/useAuth";
+import { useAuth } from "@/hooks/use-auth";
 import { ReportForm } from "./ReportForm"; // Importar o novo ReportForm
 import { generateReport } from "@/lib/report-utils"; // Importar a função de geração de relatório do utilitário
 

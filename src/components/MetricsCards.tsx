@@ -14,7 +14,7 @@ import { supabase } from "@/integrations/supabase/client";
 import type { Tables } from "@/integrations/supabase/types";
 import { useToast } from "@/hooks/use-toast";
 import { useEffect } from "react";
-import { useAuth } from "@/hooks/useAuth";
+import { useAuth } from "@/hooks/use-auth";
 import { getTotalQuantityOfItems } from "@/lib/utils"; // Import new util
 
 // Mapeamento de nomes de ícones para componentes Lucide React

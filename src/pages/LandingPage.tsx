@@ -18,7 +18,7 @@ import {
   Route,
 } from 'lucide-react';
 import heroLogisticsFuturistic from "@/assets/hero-logistics-futuristic.png"; // Nova imagem de fundo
-import { useAuth } from '@/hooks/useAuth';
+import { useAuth } from '@/hooks/use-auth';
 import { FeatureCards } from '@/components/FeatureCards';
 import { VideoCarousel } from '@/components/VideoCarousel'; // Importar o novo componente
 

@@ -3,23 +3,9 @@ import { Button } from '@/components/ui/button';
 import { ArrowLeft, DatabaseZap } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { DataImporter } from '@/components/DataImporter';
-import { useAuth } from '@/hooks/useAuth'; // Import useAuth
 
 export const DataImportPage: React.FC = () => {
   const navigate = useNavigate();
-  const { user } = useAuth(); // Use useAuth to ensure user is loaded
-
-  if (!user) {
-    // Optionally, render a loading state or redirect if user is not available
-    return (
-      <div className="min-h-screen bg-background ai-pattern p-6 flex items-center justify-center">
-        <div className="text-center">
-          <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin mx-auto mb-2" />
-          <p className="text-sm text-muted-foreground">Carregando autenticação...</p>
-        </div>
-      </div>
-    );
-  }
 
   return (
     <div className="min-h-screen bg-background ai-pattern p-6">

@@ -5,7 +5,6 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Loader2, User as UserIcon, Mail, Phone, Briefcase } from "lucide-react"; // Renomeado User para UserIcon para evitar conflito
 import type { TablesInsert, TablesUpdate } from "@/integrations/supabase/types_generated";
-import { useAuth } from "@/hooks/useAuth"; // Import useAuth
 
 type ProfileInsert = TablesInsert<'profiles'>;
 type ProfileUpdate = TablesUpdate<'profiles'>;
@@ -18,23 +17,20 @@ interface UserFormProps {
 }
 
 export const UserForm: React.FC<UserFormProps> = ({ initialData, onSave, onCancel, isPending }) => {
-  const { user } = useAuth(); // Get current user
   const [formData, setFormData] = useState<ProfileInsert | ProfileUpdate>(initialData || {
     first_name: "",
     last_name: "",
     role: "standard", // Default role
     phone_number: "",
     avatar_url: "",
-    id: initialData?.id || user?.id || "", // Use existing ID, current user ID, or empty
+    id: "", // Will be filled by mutation or existing user
   });
 
   useEffect(() => {
     if (initialData) {
       setFormData(initialData);
-    } else {
-      setFormData(prev => ({ ...prev, id: user?.id || "" })); // Ensure ID is set for new forms
     }
-  }, [initialData, user?.id]);
+  }, [initialData]);
 
   const handleInputChange = (field: keyof (ProfileInsert | ProfileUpdate), value: string | null) => {
     setFormData(prev => ({ ...prev, [field]: value }));

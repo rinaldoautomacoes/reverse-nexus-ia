@@ -13,7 +13,6 @@ import {
 } from 'recharts';
 import type { Tables } from "@/integrations/supabase/types";
 import { getTotalQuantityOfItems } from "@/lib/utils"; // Import new util
-import { useAuth } from "@/hooks/useAuth"; // Import useAuth
 
 type Coleta = Tables<'coletas'> & { items?: Array<Tables<'items'>> | null; }; // Add items to Coleta type
 type Product = Tables<'products'>;
@@ -25,21 +24,6 @@ interface GeneralDeliveriesStatusChartProps {
 }
 
 export const GeneralDeliveriesStatusChart: React.FC<GeneralDeliveriesStatusChartProps> = ({ allColetas, productDescriptionsMap, selectedYear }) => {
-  const { user } = useAuth(); // Use useAuth to ensure user is loaded
-
-  if (!user) {
-    // Optionally, render a loading state or redirect if user is not available
-    return (
-      <Card className="card-futuristic border-0 animate-pulse">
-        <CardHeader>
-          <CardTitle className="h-6 w-48 bg-muted rounded" />
-        </CardHeader>
-        <CardContent className="flex items-center justify-center h-64">
-          <div className="w-16 h-16 border-4 border-primary border-t-transparent rounded-full animate-spin" />
-        </CardContent>
-      </Card>
-    );
-  }
 
   const generateItemDescription = (items: Array<Tables<'items'>> | null) => {
     if (!items || items.length === 0) return "Nenhum item";

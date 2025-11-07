@@ -22,7 +22,6 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import { useAuth } from "@/hooks/useAuth";
 
 type Coleta = Tables<'coletas'> & { items?: Array<Tables<'items'>> | null; }; // Add items to Coleta type
 type OutstandingCollectionItem = Tables<'outstanding_collection_items'>; // Import type
@@ -305,4 +304,165 @@ export const GeneralMetricsCards: React.FC<GeneralMetricsCardsProps> = ({ allCol
     } else {
       setMetrics(initialMetrics);
     }
-  </codeblock>
+  }, [allColetas, outstandingItems, selectedYear]); // Recalculate if data or year changes
+
+  const sensors = useSensors(
+    useSensor(PointerSensor),
+    useSensor(KeyboardSensor, {
+      coordinateGetter: sortableKeyboardCoordinates,
+    })
+  );
+
+  const handleDragEnd = (event: DragEndEvent) => {
+    const { active, over } = event;
+
+    if (active.id !== over?.id) {
+      setMetrics((items) => {
+        const oldIndex = items.findIndex((item) => item.id === active.id);
+        const newIndex = items.findIndex((item) => item.id === over?.id);
+        const newOrder = arrayMove(items, oldIndex, newIndex);
+        localStorage.setItem('general_dashboard_card_order', JSON.stringify(newOrder.map(item => item.id)));
+        return newOrder;
+      });
+    }
+  };
+
+  const handleCardClick = (metricId: string) => {
+    const metric = metrics.find(m => m.id === metricId);
+    if (metric) {
+      setSelectedMetric(metric);
+      setIsDetailsDialogOpen(true);
+    }
+  };
+
+  return (
+    <>
+      <DndContext 
+        sensors={sensors} 
+        collisionDetection={closestCenter} 
+        onDragEnd={handleDragEnd}
+      >
+        <SortableContext items={metrics.map(m => m.id)}>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6"> {/* Changed to xl:grid-cols-4 */}
+            {metrics.map((metric, index) => {
+              const Icon = iconMap[metric.icon_name || ''];
+              if (!Icon) {
+                console.warn(`Ícone não encontrado para: ${metric.icon_name}`);
+                return null;
+              }
+              return (
+                <SortableCard
+                  key={metric.id}
+                  id={metric.id}
+                  title={metric.title}
+                  icon={Icon}
+                  iconColorClass={metric.color}
+                  iconBgColorClass={metric.bg_color}
+                  delay={index * 100}
+                  onDetailsClick={handleCardClick}
+                >
+                  {metric.id === 'outstanding-collection-items' ? (
+                    <div className="space-y-2">
+                      <div className="text-3xl font-bold font-orbitron gradient-text mb-1">
+                        {metric.value}
+                      </div>
+                      <p className="text-sm text-muted-foreground mb-1">{metric.description}</p>
+                      {metric.outstandingItems && metric.outstandingItems.length > 0 ? (
+                        <ScrollArea className="h-24 pr-2">
+                          <div className="space-y-1">
+                            {metric.outstandingItems.slice(0, 5).map((item, itemIndex) => (
+                              <div key={item.id} className="flex items-center justify-between text-xs text-muted-foreground">
+                                <div className="flex items-center gap-1">
+                                  <Tag className="h-3 w-3 text-primary" />
+                                  <span className="font-semibold text-foreground">{item.product_code}</span>
+                                </div>
+                                <span>{item.quantity_pending} unid.</span>
+                              </div>
+                            ))}
+                            {metric.outstandingItems.length > 5 && (
+                              <p className="text-xs text-muted-foreground text-center mt-2">
+                                E mais {metric.outstandingItems.length - 5} itens...
+                              </p>
+                            )}
+                          </div>
+                        </ScrollArea>
+                      ) : (
+                        <div className="text-center text-muted-foreground py-4">
+                          <Package className="h-8 w-8 mx-auto mb-2" />
+                          <p className="text-xs">Nenhum item pendente.</p>
+                        </div>
+                      )}
+                    </div>
+                  ) : (
+                    <>
+                      <div className="text-3xl font-bold font-orbitron gradient-text mb-1">
+                        {metric.value}
+                      </div>
+                      {metric.id === 'total-operacoes' && (
+                        <div className="space-y-1 text-sm text-muted-foreground mt-1">
+                          <div className="flex items-center gap-1">
+                            <Package className="h-3 w-3 text-primary" />
+                            <span>{metric.coletasCount} Coletas</span>
+                          </div>
+                          <div className="flex items-center gap-1">
+                            <Truck className="h-3 w-3 text-accent" />
+                            <span>{metric.entregasCount} Entregas</span>
+                          </div>
+                        </div>
+                      )}
+                      {metric.id === 'operacoes-em-transito' && (
+                        <div className="space-y-1 text-sm text-muted-foreground mt-1">
+                          <div className="flex items-center gap-1">
+                            <Package className="h-3 w-3 text-primary" />
+                            <span>{metric.coletasCount} Coletas em andamento</span>
+                          </div>
+                          <div className="flex items-center gap-1">
+                            <Truck className="h-3 w-3 text-accent" />
+                            <span>{metric.entregasCount} Entregas em andamento</span>
+                          </div>
+                        </div>
+                      )}
+                      {metric.id === 'operacoes-pendentes' && (
+                        <div className="space-y-1 text-sm text-muted-foreground mt-1">
+                          <div className="flex items-center gap-1">
+                            <Package className="h-3 w-3 text-primary" />
+                            <span>{metric.coletasCount} Coletas pendentes</span>
+                          </div>
+                          <div className="flex items-center gap-1">
+                            <Truck className="h-3 w-3 text-accent" />
+                            <span>{metric.entregasCount} Entregas pendentes</span>
+                          </div>
+                        </div>
+                      )}
+                      {metric.id === 'operacoes-concluidas' && (
+                        <div className="space-y-1 text-sm text-muted-foreground mt-1">
+                          <div className="flex items-center gap-1">
+                            <Package className="h-3 w-3 text-primary" />
+                            <span>{metric.coletasCount} Coletas finalizadas</span>
+                          </div>
+                          <div className="flex items-center gap-1">
+                            <Truck className="h-3 w-3 text-accent" />
+                            <span>{metric.entregasCount} Entregas finalizadas</span>
+                          </div>
+                        </div>
+                      )}
+                      {metric.description && metric.id !== 'total-operacoes' && metric.id !== 'operacoes-em-transito' && metric.id !== 'operacoes-concluidas' && metric.id !== 'operacoes-pendentes' && (
+                        <p className="text-sm text-muted-foreground mb-1">{metric.description}</p>
+                      )}
+                    </>
+                  )}
+                </SortableCard>
+              );
+            })}
+          </div>
+        </SortableContext>
+      </DndContext>
+
+      <MetricDetailsDialog
+        metric={selectedMetric}
+        isOpen={isDetailsDialogOpen}
+        onClose={() => setIsDetailsDialogOpen(false)}
+      />
+    </>
+  );
+};

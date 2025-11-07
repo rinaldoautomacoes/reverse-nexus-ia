@@ -5,7 +5,6 @@ import { DollarSign } from "lucide-react";
 import { DriverCombobox } from "@/components/DriverCombobox";
 import { TransportadoraCombobox } from "@/components/TransportadoraCombobox";
 import type { Tables, TablesInsert, TablesUpdate } from "@/integrations/supabase/types_generated";
-import { useAuth } from "@/hooks/useAuth"; // Import useAuth
 
 type ColetaFormData = TablesInsert<'coletas'> | TablesUpdate<'coletas'>;
 type Driver = Tables<'drivers'>;
@@ -26,17 +25,6 @@ export const ColetaLogisticsDetails: React.FC<ColetaLogisticsDetailsProps> = ({
   handleTransportadoraSelect,
   isPending,
 }) => {
-  const { user } = useAuth(); // Use useAuth to ensure user is loaded
-
-  if (!user) {
-    // Optionally, render a loading state or redirect if user is not available
-    return (
-      <div className="space-y-2">
-        <p className="text-sm text-muted-foreground">Carregando detalhes de logística...</p>
-      </div>
-    );
-  }
-
   return (
     <>
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">

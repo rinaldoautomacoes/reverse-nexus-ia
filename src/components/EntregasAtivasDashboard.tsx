@@ -20,7 +20,7 @@ import { useNavigate } from "react-router-dom";
 import heroBackground from "@/assets/hero-background.jpg";
 import { MetricsCards } from "./MetricsCards";
 import { EntregasAtivasStatusChart } from "./EntregasAtivasStatusChart";
-import { useAuth } from "@/hooks/useAuth";
+import { useAuth } from "@/hooks/use-auth";
 import { EntregasAtivasStatusDonutChart } from "./EntregasAtivasStatusDonutChart";
 import { EntregasMetricsCards } from "./EntregasMetricsCards"; // Importar o componente correto para entregas
 
