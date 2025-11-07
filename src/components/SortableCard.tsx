@@ -1,5 +1,5 @@
 import React from 'react';
-import { useSortable } from '@dnd-kit/core'; // Importar useSortable do @dnd-kit/sortable
+import { useSortable } from '@dnd-kit/sortable'; // Importar useSortable do @dnd-kit/sortable
 import { CSS } from '@dnd-kit/utilities';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { cn } from '@/lib/utils';
