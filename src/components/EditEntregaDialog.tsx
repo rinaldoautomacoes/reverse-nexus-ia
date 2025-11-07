@@ -9,13 +9,13 @@ import { useMutation, useQueryClient, useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import type { Tables, TablesUpdate, TablesInsert } from "@/integrations/supabase/types_generated";
 import { useToast } from "@/hooks/use-toast";
-import { useAuth } from "@/hooks/use-auth";
+import { useAuth } from "@/hooks/useAuth";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { CalendarIcon, PlusCircle, MinusCircle, Package } from "lucide-react";
 import { format, isValid } from "date-fns"; // Importar isValid
 import { ptBR } from "date-fns/locale";
 import { Calendar } from "@/components/ui/calendar";
-import { cn } from "@/lib/utils";
+import { cn, formatItemsForColetaModeloAparelho, getTotalQuantityOfItems } from "@/lib/utils";
 import { EntregaForm } from "./EntregaForm"; // Importa o EntregaForm refatorado
 import { ItemData } from "./coleta-form-sections/ColetaItemRow"; // Importa a interface ItemData
 import { formatItemsForColetaModeloAparelho, getTotalQuantityOfItems } from "@/lib/utils";
