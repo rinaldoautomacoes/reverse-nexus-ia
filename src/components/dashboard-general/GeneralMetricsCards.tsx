@@ -453,7 +453,7 @@ export const GeneralMetricsCards: React.FC<GeneralMetricsCardsProps> = ({ allCol
         onDragEnd={handleDragEnd}
       >
         <SortableContext items={metrics.map(m => m.id)}>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
             {metrics.map((metric, index) => {
               const Icon = metric.icon_name ? iconMap[metric.icon_name] : null;
               return (
