@@ -10,7 +10,6 @@ import { GeneralStatusChart } from '@/components/dashboard-general/GeneralStatus
 import { GeneralStatusDonutCharts } from '@/components/dashboard-general/GeneralStatusDonutCharts';
 import { GeneralDeliveriesStatusChart } from '@/components/dashboard-general/GeneralDeliveriesStatusChart';
 import { CreateOutstandingCollectionItemDialog } from '@/components/CreateOutstandingCollectionItemDialog';
-import { OutstandingCollectionItemsList } from '@/components/OutstandingCollectionItemsList';
 import { Button } from '@/components/ui/button';
 import { Package } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'; // Import Card components
@@ -117,12 +116,13 @@ export const GeneralDashboard: React.FC<GeneralDashboardProps> = ({ selectedYear
 
       {/* Main Dashboard Content */}
       <div className="px-6 lg:px-8 py-8 space-y-8">
-        {/* Outstanding Collection Items List - now as a metric card */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-6">
-          <OutstandingCollectionItemsList selectedYear={selectedYear} />
-          {/* Metrics Cards */}
-          <GeneralMetricsCards allColetas={allColetas || []} selectedYear={selectedYear} />
+        {/* Action button for creating outstanding items */}
+        <div className="flex justify-end mb-4">
+          <CreateOutstandingCollectionItemDialog />
         </div>
+        
+        {/* Metrics Cards (now includes Outstanding Collection Items) */}
+        <GeneralMetricsCards allColetas={allColetas || []} selectedYear={selectedYear} />
 
         {/* Main Grid */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">

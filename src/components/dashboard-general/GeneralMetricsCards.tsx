@@ -6,7 +6,8 @@ import {
   CheckCircle,
   ListChecks, // Icon for 'Total de Coletas'
   Box, // Icon for 'Total de Produtos'
-  TrendingUp // General trend icon
+  TrendingUp, // General trend icon
+  Settings // Icon for managing outstanding items
 } from "lucide-react";
 import React, { useState, useEffect } from "react";
 import type { Tables } from "@/integrations/supabase/types";
@@ -17,8 +18,13 @@ import { DndContext, closestCenter, KeyboardSensor, PointerSensor, useSensor, us
 import { SortableContext, sortableKeyboardCoordinates, arrayMove, useSortable } from '@dnd-kit/sortable';
 import { SortableCard } from '@/components/SortableCard'; // Import the new SortableCard
 import { MetricDetailsDialog } from './MetricDetailsDialog'; // Import the new dialog component
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
+import { format } from "date-fns";
+import { ptBR } from "date-fns/locale";
 
 type Coleta = Tables<'coletas'> & { items?: Array<Tables<'items'>> | null; }; // Add items to Coleta type
+type OutstandingCollectionItem = Tables<'outstanding_collection_items'>; // Import type
 
 // Mapeamento de nomes de ícones para componentes Lucide React
 const iconMap: { [key: string]: React.ElementType } = {
@@ -28,7 +34,8 @@ const iconMap: { [key: string]: React.ElementType } = {
   CheckCircle,
   ListChecks,
   Box,
-  TrendingUp
+  TrendingUp,
+  Settings
 };
 
 interface MetricItem {
@@ -45,6 +52,7 @@ interface MetricItem {
   pendingItemsDetails?: { quantity: number; name: string; description: string; type: 'coleta' | 'entrega'; }[];
   inTransitItemsDetails?: { quantity: number; name: string; description: string; type: 'coleta' | 'entrega'; }[]; // Novo campo
   completedItemsDetails?: { quantity: number; name: string; description: string; type: 'coleta' | 'entrega'; }[]; // Novo campo
+  outstandingItems?: OutstandingCollectionItem[]; // New field for outstanding items
 }
 
 interface GeneralMetricsCardsProps {
@@ -55,8 +63,27 @@ interface GeneralMetricsCardsProps {
 export const GeneralMetricsCards: React.FC<GeneralMetricsCardsProps> = ({ allColetas, selectedYear }) => {
   const [selectedMetric, setSelectedMetric] = useState<MetricItem | null>(null);
   const [isDetailsDialogOpen, setIsDetailsDialogOpen] = useState(false);
+  const { user } = useAuth();
 
-  const calculateMetrics = (data: Coleta[]) => {
+  // Fetch outstanding collection items
+  const { data: outstandingItems, isLoading: isLoadingOutstandingItems, error: outstandingItemsError } = useQuery<OutstandingCollectionItem[], Error>({
+    queryKey: ['outstandingCollectionItems', user?.id, selectedYear],
+    queryFn: async () => {
+      if (!user?.id) return [];
+      const { data, error } = await supabase
+        .from('outstanding_collection_items')
+        .select('*')
+        .eq('user_id', user.id)
+        .gte('created_at', `${selectedYear}-01-01T00:00:00.000Z`)
+        .lte('created_at', `${parseInt(selectedYear) + 1}-01-01T00:00:00.000Z`)
+        .order('created_at', { ascending: false });
+      if (error) throw new Error(error.message);
+      return data;
+    },
+    enabled: !!user?.id,
+  });
+
+  const calculateMetrics = (data: Coleta[], outstanding: OutstandingCollectionItem[] | undefined) => {
     console.log("Calculating general metrics with allColetas data:", data); // Added log
     const coletas = data.filter(item => item.type === 'coleta');
     const entregas = data.filter(item => item.type === 'entrega');
@@ -190,7 +217,19 @@ export const GeneralMetricsCards: React.FC<GeneralMetricsCardsProps> = ({ allCol
       });
     });
 
+    const totalOutstandingItems = outstanding?.reduce((sum, item) => sum + (item.quantity_pending || 0), 0) || 0;
+
     return [
+      {
+        id: 'outstanding-collection-items',
+        title: 'Itens Pendentes de Coleta',
+        value: totalOutstandingItems.toString(),
+        description: `${outstanding?.length || 0} registros pendentes`,
+        icon_name: 'Package',
+        color: 'text-primary',
+        bg_color: 'bg-primary/10',
+        outstandingItems: outstanding,
+      },
       {
         id: 'total-operacoes',
         title: 'Total de Operações',
@@ -247,7 +286,7 @@ export const GeneralMetricsCards: React.FC<GeneralMetricsCardsProps> = ({ allCol
     ];
   };
 
-  const initialMetrics = calculateMetrics(allColetas);
+  const initialMetrics = calculateMetrics(allColetas, outstandingItems);
   const [metrics, setMetrics] = useState<MetricItem[]>(initialMetrics);
 
   // Load order from local storage on mount
@@ -265,7 +304,7 @@ export const GeneralMetricsCards: React.FC<GeneralMetricsCardsProps> = ({ allCol
     } else {
       setMetrics(initialMetrics);
     }
-  }, [allColetas, selectedYear]); // Recalculate if data or year changes
+  }, [allColetas, outstandingItems, selectedYear]); // Recalculate if data or year changes
 
   const sensors = useSensors(
     useSensor(PointerSensor),
@@ -296,8 +335,6 @@ export const GeneralMetricsCards: React.FC<GeneralMetricsCardsProps> = ({ allCol
     }
   };
 
-  // Removed renderItemsDetails from here as it's now handled by MetricDetailsDialog
-
   return (
     <>
       <DndContext 
@@ -306,7 +343,7 @@ export const GeneralMetricsCards: React.FC<GeneralMetricsCardsProps> = ({ allCol
         onDragEnd={handleDragEnd}
       >
         <SortableContext items={metrics.map(m => m.id)}>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6"> {/* Changed to xl:grid-cols-4 */}
             {metrics.map((metric, index) => {
               const Icon = iconMap[metric.icon_name || ''];
               if (!Icon) {
@@ -324,59 +361,95 @@ export const GeneralMetricsCards: React.FC<GeneralMetricsCardsProps> = ({ allCol
                   delay={index * 100}
                   onDetailsClick={handleCardClick}
                 >
-                  <div className="text-3xl font-bold font-orbitron gradient-text mb-1">
-                    {metric.value}
-                  </div>
-                  {metric.id === 'total-operacoes' && (
-                    <div className="space-y-1 text-sm text-muted-foreground mt-1">
-                      <div className="flex items-center gap-1">
-                        <Package className="h-3 w-3 text-primary" />
-                        <span>{metric.coletasCount} Coletas</span>
+                  {metric.id === 'outstanding-collection-items' ? (
+                    <div className="space-y-2">
+                      <div className="text-3xl font-bold font-orbitron gradient-text mb-1">
+                        {metric.value}
                       </div>
-                      <div className="flex items-center gap-1">
-                        <Truck className="h-3 w-3 text-accent" />
-                        <span>{metric.entregasCount} Entregas</span>
-                      </div>
+                      <p className="text-sm text-muted-foreground mb-1">{metric.description}</p>
+                      {metric.outstandingItems && metric.outstandingItems.length > 0 ? (
+                        <ScrollArea className="h-24 pr-2">
+                          <div className="space-y-1">
+                            {metric.outstandingItems.slice(0, 5).map((item, itemIndex) => (
+                              <div key={item.id} className="flex items-center justify-between text-xs text-muted-foreground">
+                                <div className="flex items-center gap-1">
+                                  <Tag className="h-3 w-3 text-primary" />
+                                  <span className="font-semibold text-foreground">{item.product_code}</span>
+                                </div>
+                                <span>{item.quantity_pending} unid.</span>
+                              </div>
+                            ))}
+                            {metric.outstandingItems.length > 5 && (
+                              <p className="text-xs text-muted-foreground text-center mt-2">
+                                E mais {metric.outstandingItems.length - 5} itens...
+                              </p>
+                            )}
+                          </div>
+                        </ScrollArea>
+                      ) : (
+                        <div className="text-center text-muted-foreground py-4">
+                          <Package className="h-8 w-8 mx-auto mb-2" />
+                          <p className="text-xs">Nenhum item pendente.</p>
+                        </div>
+                      )}
                     </div>
-                  )}
-                  {metric.id === 'operacoes-em-transito' && (
-                    <div className="space-y-1 text-sm text-muted-foreground mt-1">
-                      <div className="flex items-center gap-1">
-                        <Package className="h-3 w-3 text-primary" />
-                        <span>{metric.coletasCount} Coletas em andamento</span>
+                  ) : (
+                    <>
+                      <div className="text-3xl font-bold font-orbitron gradient-text mb-1">
+                        {metric.value}
                       </div>
-                      <div className="flex items-center gap-1">
-                        <Truck className="h-3 w-3 text-accent" />
-                        <span>{metric.entregasCount} Entregas em andamento</span>
-                      </div>
-                    </div>
-                  )}
-                  {metric.id === 'operacoes-pendentes' && (
-                    <div className="space-y-1 text-sm text-muted-foreground mt-1">
-                      <div className="flex items-center gap-1">
-                        <Package className="h-3 w-3 text-primary" />
-                        <span>{metric.coletasCount} Coletas pendentes</span>
-                      </div>
-                      <div className="flex items-center gap-1">
-                        <Truck className="h-3 w-3 text-accent" />
-                        <span>{metric.entregasCount} Entregas pendentes</span>
-                      </div>
-                    </div>
-                  )}
-                  {metric.id === 'operacoes-concluidas' && (
-                    <div className="space-y-1 text-sm text-muted-foreground mt-1">
-                      <div className="flex items-center gap-1">
-                        <Package className="h-3 w-3 text-primary" />
-                        <span>{metric.coletasCount} Coletas finalizadas</span>
-                      </div>
-                      <div className="flex items-center gap-1">
-                        <Truck className="h-3 w-3 text-accent" />
-                        <span>{metric.entregasCount} Entregas finalizadas</span>
-                      </div>
-                    </div>
-                  )}
-                  {metric.description && metric.id !== 'total-operacoes' && metric.id !== 'operacoes-em-transito' && metric.id !== 'operacoes-concluidas' && metric.id !== 'operacoes-pendentes' && (
-                    <p className="text-sm text-muted-foreground mb-1">{metric.description}</p>
+                      {metric.id === 'total-operacoes' && (
+                        <div className="space-y-1 text-sm text-muted-foreground mt-1">
+                          <div className="flex items-center gap-1">
+                            <Package className="h-3 w-3 text-primary" />
+                            <span>{metric.coletasCount} Coletas</span>
+                          </div>
+                          <div className="flex items-center gap-1">
+                            <Truck className="h-3 w-3 text-accent" />
+                            <span>{metric.entregasCount} Entregas</span>
+                          </div>
+                        </div>
+                      )}
+                      {metric.id === 'operacoes-em-transito' && (
+                        <div className="space-y-1 text-sm text-muted-foreground mt-1">
+                          <div className="flex items-center gap-1">
+                            <Package className="h-3 w-3 text-primary" />
+                            <span>{metric.coletasCount} Coletas em andamento</span>
+                          </div>
+                          <div className="flex items-center gap-1">
+                            <Truck className="h-3 w-3 text-accent" />
+                            <span>{metric.entregasCount} Entregas em andamento</span>
+                          </div>
+                        </div>
+                      )}
+                      {metric.id === 'operacoes-pendentes' && (
+                        <div className="space-y-1 text-sm text-muted-foreground mt-1">
+                          <div className="flex items-center gap-1">
+                            <Package className="h-3 w-3 text-primary" />
+                            <span>{metric.coletasCount} Coletas pendentes</span>
+                          </div>
+                          <div className="flex items-center gap-1">
+                            <Truck className="h-3 w-3 text-accent" />
+                            <span>{metric.entregasCount} Entregas pendentes</span>
+                          </div>
+                        </div>
+                      )}
+                      {metric.id === 'operacoes-concluidas' && (
+                        <div className="space-y-1 text-sm text-muted-foreground mt-1">
+                          <div className="flex items-center gap-1">
+                            <Package className="h-3 w-3 text-primary" />
+                            <span>{metric.coletasCount} Coletas finalizadas</span>
+                          </div>
+                          <div className="flex items-center gap-1">
+                            <Truck className="h-3 w-3 text-accent" />
+                            <span>{metric.entregasCount} Entregas finalizadas</span>
+                          </div>
+                        </div>
+                      )}
+                      {metric.description && metric.id !== 'total-operacoes' && metric.id !== 'operacoes-em-transito' && metric.id !== 'operacoes-concluidas' && metric.id !== 'operacoes-pendentes' && (
+                        <p className="text-sm text-muted-foreground mb-1">{metric.description}</p>
+                      )}
+                    </>
                   )}
                 </SortableCard>
               );
