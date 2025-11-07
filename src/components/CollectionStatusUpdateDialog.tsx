@@ -55,7 +55,7 @@ export const CollectionStatusUpdateDialog: React.FC<CollectionStatusUpdateDialog
         .update({ status_coleta: updatedStatus })
         .eq('id', collectionId)
         .eq('user_id', user.id) // Adicionado user_id para RLS
-        .select(`*, items(product_code, quantity)`) // Select items to debit from outstanding
+        .select(`*, items(name, quantity)`) // Corrected: Select 'name' instead of 'product_code' from items
         .single();
       
       if (updateError) throw new Error(updateError.message);
@@ -63,20 +63,20 @@ export const CollectionStatusUpdateDialog: React.FC<CollectionStatusUpdateDialog
       // 2. If status is 'concluida', debit from outstanding_collection_items
       if (updatedStatus === 'concluida' && updatedColeta?.items && updatedColeta.items.length > 0) {
         for (const collectedItem of updatedColeta.items) {
-          if (!collectedItem.product_code || !collectedItem.quantity) continue;
+          if (!collectedItem.name || !collectedItem.quantity) continue; // Corrected: Use collectedItem.name
 
           // Find matching outstanding item
           const { data: outstandingItems, error: fetchOutstandingError } = await supabase
             .from('outstanding_collection_items')
             .select('*')
             .eq('user_id', user.id)
-            .eq('product_code', collectedItem.product_code)
+            .eq('product_code', collectedItem.name) // Corrected: Use collectedItem.name to match product_code in outstanding_collection_items
             .eq('status', 'pendente') // Only debit from 'pendente' items
             .order('created_at', { ascending: true }); // Debit from older items first
 
           if (fetchOutstandingError) {
             console.error("Erro ao buscar itens pendentes para débito:", fetchOutstandingError.message);
-            toast({ title: "Erro no débito de itens pendentes", description: `Falha ao buscar itens pendentes para ${collectedItem.product_code}.`, variant: "destructive" });
+            toast({ title: "Erro no débito de itens pendentes", description: `Falha ao buscar itens pendentes para ${collectedItem.name}.`, variant: "destructive" }); // Corrected: Use collectedItem.name
             continue;
           }
 
@@ -110,7 +110,7 @@ export const CollectionStatusUpdateDialog: React.FC<CollectionStatusUpdateDialog
           }
 
           if (remainingToDebit > 0) {
-            toast({ title: "Aviso de Débito", description: `A quantidade coletada de ${collectedItem.product_code} (${collectedItem.quantity}) excedeu o saldo pendente registrado. ${remainingToDebit} unidades não foram debitadas.`, variant: "warning" });
+            toast({ title: "Aviso de Débito", description: `A quantidade coletada de ${collectedItem.name} (${collectedItem.quantity}) excedeu o saldo pendente registrado. ${remainingToDebit} unidades não foram debitadas.`, variant: "warning" }); // Corrected: Use collectedItem.name
           }
         }
         queryClient.invalidateQueries({ queryKey: ['outstandingCollectionItems', user?.id] }); // Invalida a lista de itens pendentes
