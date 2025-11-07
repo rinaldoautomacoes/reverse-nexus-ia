@@ -10,16 +10,12 @@ type OutstandingCollectionItem = Tables<'outstanding_collection_items'>;
 
 interface OutstandingItemListItemProps {
   item: OutstandingCollectionItem;
-  onEdit: (item: OutstandingCollectionItem) => void;
-  onDelete: (itemId: string) => void;
-  isDeleting: boolean;
+  // Removido onEdit, onDelete, isDeleting pois não são exibidos na imagem
 }
 
 export const OutstandingItemListItem: React.FC<OutstandingItemListItemProps> = ({
   item,
-  onEdit,
-  onDelete,
-  isDeleting,
+  // Removido onEdit, onDelete, isDeleting
 }) => {
   const getStatusBadge = (status: string) => {
     switch (status) {
@@ -37,7 +33,7 @@ export const OutstandingItemListItem: React.FC<OutstandingItemListItemProps> = (
   return (
     <div className="flex flex-col p-3 rounded-lg border border-primary/10 bg-slate-darker/10">
       <div className="flex-1 min-w-0">
-        <p className="font-semibold text-base flex items-center gap-2">
+        <p className="font-semibold text-base flex items-center gap-2 text-primary">
           <Tag className="h-4 w-4 text-primary" />
           {item.product_code}
         </p>
@@ -54,31 +50,7 @@ export const OutstandingItemListItem: React.FC<OutstandingItemListItemProps> = (
           Criado em: {item.created_at ? format(new Date(item.created_at), 'dd/MM/yyyy HH:mm', { locale: ptBR }) : 'N/A'}
         </p>
       </div>
-      <div className="flex gap-2 justify-end mt-3">
-        <Button
-          variant="outline"
-          size="sm"
-          className="border-accent text-accent hover:bg-accent/10"
-          onClick={() => onEdit(item)}
-        >
-          <Edit className="mr-1 h-3 w-3" />
-          Editar
-        </Button>
-        <Button
-          variant="outline"
-          size="sm"
-          className="border-destructive text-destructive hover:bg-destructive/10"
-          onClick={() => onDelete(item.id)}
-          disabled={isDeleting}
-        >
-          {isDeleting ? (
-            <Loader2 className="mr-1 h-3 w-3 animate-spin" />
-          ) : (
-            <Trash2 className="mr-1 h-3 w-3" />
-          )}
-          Excluir
-        </Button>
-      </div>
+      {/* Botões de ação removidos para corresponder à imagem */}
     </div>
   );
 };

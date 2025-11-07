@@ -75,7 +75,7 @@ export const ManageOutstandingItemsDialog: React.FC<ManageOutstandingItemsDialog
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2 gradient-text">
             <Package className="h-5 w-5" />
-            Gerenciar Itens Pendentes
+            Itens Pendentes de Coleta {/* Título atualizado aqui */}
           </DialogTitle>
         </DialogHeader>
         <div className="space-y-4 py-4">
@@ -95,9 +95,9 @@ export const ManageOutstandingItemsDialog: React.FC<ManageOutstandingItemsDialog
                 <OutstandingItemListItem
                   key={item.id}
                   item={item}
-                  onEdit={handleEditItem}
-                  onDelete={handleDeleteItem}
-                  isDeleting={deleteOutstandingCollectionItemMutation.isPending}
+                  // onEdit={handleEditItem} // Removido para corresponder à imagem
+                  // onDelete={handleDeleteItem} // Removido para corresponder à imagem
+                  // isDeleting={deleteOutstandingCollectionItemMutation.isPending} // Removido para corresponder à imagem
                 />
               ))}
             </div>
