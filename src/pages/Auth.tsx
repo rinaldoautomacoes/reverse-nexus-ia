@@ -7,7 +7,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Brain, Mail, Lock, Zap } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-import { useAuth } from "@/hooks/use-auth";
+import { useAuth } from "@/hooks/useAuth";
 import { z } from "zod";
 // Removido: import aiAssistantBg from "@/assets/ai-assistant-login-bg.png";
 
@@ -104,10 +104,7 @@ export const Auth = () => {
   }
 
   return (
-    <div className="min-h-screen login-background-pattern flex flex-col relative overflow-hidden">
-      {/* Removido: AI Assistant Background */}
-      {/* Removido: Subtle Gradient Overlay */}
-      
+    <div className="min-h-screen login-background-pattern flex flex-col relative z-0 overflow-hidden">
       {/* Main Content */}
       <div className="flex-1 flex items-center justify-center px-6 py-12 relative z-10">
         <div className="w-full max-w-md">

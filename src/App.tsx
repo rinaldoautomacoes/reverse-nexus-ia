@@ -21,7 +21,7 @@ import { EntregasConcluidasPage } from "./pages/EntregasConcluidasPage";
 import EntregasConcluidasList from "./pages/EntregasConcluidasList";
 import { Debug } from "./pages/Debug";
 import Roteirizacao from "./pages/Roteirizacao";
-import { AuthProvider } from "./hooks/use-auth";
+import { AuthProvider } from "./hooks/useAuth";
 import { ProtectedRoute } from "./components/ProtectedRoute";
 import { ErrorBoundary } from "./components/ErrorBoundary";
 import { useIsMobile } from "./hooks/use-mobile";
@@ -73,8 +73,6 @@ const AppLayout = () => {
       <main className={cn("flex-1 transition-all duration-300 ease-in-out", showSidebar && !isMobile ? mainContentMarginClass : 'ml-0')}>
         <Routes>
           <Route path="/auth" element={<Auth />} />
-          <Route path="/debug" element={<Debug />} />
-          
           {/* Rotas protegidas para usuários padrão e administradores */}
           <Route element={<ProtectedRoute allowedRoles={['standard', 'admin']} />}>
             <Route path="/" element={<LandingPage />} />

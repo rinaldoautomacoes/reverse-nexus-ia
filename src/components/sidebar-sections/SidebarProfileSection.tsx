@@ -2,7 +2,7 @@
 
 import React from 'react';
 import { UserProfileCard } from '@/components/UserProfileCard';
-import { useAuth } from '@/hooks/use-auth';
+import { useAuth } from '@/hooks/useAuth';
 
 interface SidebarProfileSectionProps {
   isCollapsed: boolean;
