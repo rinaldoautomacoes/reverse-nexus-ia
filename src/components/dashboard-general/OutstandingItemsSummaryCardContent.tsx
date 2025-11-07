@@ -32,8 +32,6 @@ export const OutstandingItemsSummaryCardContent: React.FC<OutstandingItemsSummar
         return <Badge variant="outline" className="bg-destructive/20 text-destructive px-2 py-0.5 text-xs"><Clock className="h-3 w-3 mr-1" /> Pendente</Badge>;
       case 'coletado':
         return <Badge variant="outline" className="bg-success-green/20 text-success-green px-2 py-0.5 text-xs"><CheckCircle className="h-3 w-3 mr-1" /> Coletado</Badge>;
-      case 'cancelado':
-        return <Badge variant="outline" className="bg-muted/20 text-muted-foreground px-2 py-0.5 text-xs"><XCircle className="h-3 w-3 mr-1" /> Cancelado</Badge>;
       default:
         return <Badge variant="outline" className="px-2 py-0.5 text-xs">{status}</Badge>;
     }
@@ -50,7 +48,7 @@ export const OutstandingItemsSummaryCardContent: React.FC<OutstandingItemsSummar
   }
 
   return (
-    <div className="space-y-3">
+    <div className="space-y-3"> {/* Removido p-4 aqui */}
       <div className="flex items-center justify-between">
         <h4 className="text-lg font-semibold text-foreground">Itens Pendentes</h4>
         <Badge variant="secondary" className="bg-primary/10 text-primary">
@@ -62,14 +60,26 @@ export const OutstandingItemsSummaryCardContent: React.FC<OutstandingItemsSummar
           <Package className="h-4 w-4 text-primary" />
           Total: <span className="font-bold text-foreground">{totalOutstanding}</span>
         </div>
-        {/* Removido: Pendentes e Coletados */}
+        <div className="flex items-center gap-1">
+          <Clock className="h-4 w-4 text-destructive" />
+          Pendentes: <span className="font-bold text-foreground">{pendingItemsCount}</span>
+        </div>
+        <div className="flex items-center gap-1">
+          <CheckCircle className="h-4 w-4 text-success-green" />
+          Coletados: <span className="font-bold text-foreground">{collectedItemsCount}</span>
+        </div>
         <div className="flex items-center gap-1">
           <Tag className="h-4 w-4 text-neural" />
           Qtd. Total: <span className="font-bold text-foreground">{totalQuantityPending}</span>
         </div>
       </div>
+      {/* Removido: Barra de progresso */}
+      {/* <div className="space-y-1">
+        <p className="text-sm text-muted-foreground">Progresso: {completionRate.toFixed(0)}%</p>
+        <Progress value={completionRate} className="h-2 [&>div]:bg-success-green" />
+      </div> */}
       {outstandingItems.length > 0 && (
-        <div className="mt-2 space-y-1">
+        <div className="mt-2 space-y-1"> {/* Removido max-h e overflow-auto */}
           <p className="text-xs font-semibold text-muted-foreground">Próximos itens:</p>
           {outstandingItems.slice(0, 2).map((item, index) => (
             <div key={item.id} className="flex items-center justify-between text-xs text-muted-foreground">
