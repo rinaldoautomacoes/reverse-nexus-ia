@@ -84,13 +84,13 @@ export const OutstandingCollectionItemsList: React.FC<OutstandingCollectionItems
   const getStatusBadge = (status: string) => {
     switch (status) {
       case 'pendente':
-        return <Badge variant="outline" className="bg-destructive/20 text-destructive"><Clock className="h-3 w-3 mr-1" /> Pendente</Badge>;
+        return <Badge variant="outline" className="bg-destructive/20 text-destructive px-2 py-0.5 text-xs"><Clock className="h-3 w-3 mr-1" /> Pendente</Badge>;
       case 'coletado':
-        return <Badge variant="outline" className="bg-success-green/20 text-success-green"><CheckCircle className="h-3 w-3 mr-1" /> Coletado</Badge>;
+        return <Badge variant="outline" className="bg-success-green/20 text-success-green px-2 py-0.5 text-xs"><CheckCircle className="h-3 w-3 mr-1" /> Coletado</Badge>;
       case 'cancelado':
-        return <Badge variant="outline" className="bg-muted/20 text-muted-foreground"><XCircle className="h-3 w-3 mr-1" /> Cancelado</Badge>;
+        return <Badge variant="outline" className="bg-muted/20 text-muted-foreground px-2 py-0.5 text-xs"><XCircle className="h-3 w-3 mr-1" /> Cancelado</Badge>;
       default:
-        return <Badge variant="outline">{status}</Badge>;
+        return <Badge variant="outline" className="px-2 py-0.5 text-xs">{status}</Badge>;
     }
   };
 
@@ -119,49 +119,49 @@ export const OutstandingCollectionItemsList: React.FC<OutstandingCollectionItems
 
   return (
     <Card className="card-futuristic">
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2">
+      <CardHeader className="pb-3"> {/* Reduced padding */}
+        <CardTitle className="flex items-center gap-2 text-lg"> {/* Reduced font size */}
           <Package className="h-5 w-5 text-primary" />
           Itens Pendentes de Coleta
         </CardTitle>
       </CardHeader>
-      <CardContent className="p-6 space-y-4">
+      <CardContent className="p-4 space-y-3"> {/* Reduced padding and spacing */}
         <div className="relative">
           <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
           <Input
             placeholder="Buscar por código, descrição, notas ou status..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="pl-10"
+            className="pl-10 h-9 text-sm" // Reduced height and font size
           />
         </div>
 
         {filteredItems && filteredItems.length > 0 ? (
-          <div className="space-y-4">
+          <div className="space-y-3"> {/* Reduced spacing */}
             {filteredItems.map((item, index) => (
               <div
                 key={item.id}
-                className="flex flex-col lg:flex-row items-start lg:items-center justify-between p-4 rounded-lg border border-primary/10 bg-slate-darker/10 animate-slide-up"
+                className="flex flex-col lg:flex-row items-start lg:items-center justify-between p-3 rounded-lg border border-primary/10 bg-slate-darker/10 animate-slide-up" // Reduced padding
                 style={{ animationDelay: `${index * 100}ms` }}
               >
-                <div className="flex-1 min-w-0 mb-3 lg:mb-0">
-                  <h3 className="font-semibold text-lg flex items-center gap-2">
-                    <Tag className="h-5 w-5 text-primary" />
+                <div className="flex-1 min-w-0 mb-2 lg:mb-0"> {/* Reduced margin */}
+                  <h3 className="font-semibold text-base flex items-center gap-2"> {/* Reduced font size */}
+                    <Tag className="h-4 w-4 text-primary" /> {/* Reduced icon size */}
                     {item.product_code}
                   </h3>
-                  <p className="text-sm text-muted-foreground mt-1">
+                  <p className="text-xs text-muted-foreground mt-0.5"> {/* Reduced font size */}
                     Descrição: <span className="font-bold text-foreground">{item.product_description || 'N/A'}</span>
                   </p>
-                  <p className="text-sm text-muted-foreground">
+                  <p className="text-xs text-muted-foreground"> {/* Reduced font size */}
                     Quantidade Pendente: <span className="font-bold text-foreground">{item.quantity_pending}</span>
                   </p>
-                  <p className="text-sm text-muted-foreground">
+                  <p className="text-xs text-muted-foreground"> {/* Reduced font size */}
                     Status: {getStatusBadge(item.status)}
                   </p>
                   {item.notes && (
-                    <p className="text-xs text-muted-foreground mt-1">Notas: {item.notes}</p>
+                    <p className="text-xs text-muted-foreground mt-0.5">Notas: {item.notes}</p> {/* Reduced font size */}
                   )}
-                  <p className="text-xs text-muted-foreground mt-2">
+                  <p className="text-xs text-muted-foreground mt-1"> {/* Reduced font size and margin */}
                     Criado em: {item.created_at ? format(new Date(item.created_at), 'dd/MM/yyyy HH:mm', { locale: ptBR }) : 'N/A'}
                   </p>
                 </div>
@@ -169,23 +169,23 @@ export const OutstandingCollectionItemsList: React.FC<OutstandingCollectionItems
                   <Button
                     variant="outline"
                     size="sm"
-                    className="border-accent text-accent hover:bg-accent/10"
+                    className="border-accent text-accent hover:bg-accent/10 h-8 px-3 text-xs" // Reduced height, padding, font size
                     onClick={() => handleEditItem(item)}
                   >
-                    <Edit className="mr-1 h-3 w-3" />
+                    <Edit className="mr-1 h-3 w-3" /> {/* Reduced icon size */}
                     Editar
                   </Button>
                   <Button
                     variant="outline"
                     size="sm"
-                    className="border-destructive text-destructive hover:bg-destructive/10"
+                    className="border-destructive text-destructive hover:bg-destructive/10 h-8 px-3 text-xs" // Reduced height, padding, font size
                     onClick={() => handleDeleteItem(item.id)}
                     disabled={deleteOutstandingCollectionItemMutation.isPending}
                   >
                     {deleteOutstandingCollectionItemMutation.isPending ? (
-                      <Loader2 className="mr-1 h-3 w-3 animate-spin" />
+                      <Loader2 className="mr-1 h-3 w-3 animate-spin" /> {/* Reduced icon size */}
                     ) : (
-                      <Trash2 className="mr-1 h-3 w-3" />
+                      <Trash2 className="mr-1 h-3 w-3" /> {/* Reduced icon size */}
                     )}
                     Excluir
                   </Button>
@@ -194,10 +194,10 @@ export const OutstandingCollectionItemsList: React.FC<OutstandingCollectionItems
             ))}
           </div>
         ) : (
-          <div className="p-12 text-center text-muted-foreground">
-            <Package className="h-12 w-12 mx-auto mb-4" />
-            <p>Nenhum item pendente de coleta encontrado.</p>
-            <p className="text-sm">Clique em "Novo Item Pendente" para adicionar um.</p>
+          <div className="p-8 text-center text-muted-foreground"> {/* Reduced padding */}
+            <Package className="h-10 w-10 mx-auto mb-3" /> {/* Reduced icon size and margin */}
+            <p className="text-sm">Nenhum item pendente de coleta encontrado.</p> {/* Reduced font size */}
+            <p className="text-xs mt-1">Clique em "Novo Item Pendente" para adicionar um.</p> {/* Reduced font size */}
           </div>
         )}
       </CardContent>

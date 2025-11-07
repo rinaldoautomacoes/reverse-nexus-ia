@@ -116,14 +116,14 @@ export const GeneralDashboard: React.FC<GeneralDashboardProps> = ({ selectedYear
 
       {/* Main Dashboard Content */}
       <div className="px-6 lg:px-8 py-8 space-y-8">
-        {/* Metrics Cards */}
-        <GeneralMetricsCards allColetas={allColetas || []} selectedYear={selectedYear} />
-
         {/* New Section for Outstanding Collection Items */}
         <div className="flex justify-end mb-4">
           <CreateOutstandingCollectionItemDialog />
         </div>
         <OutstandingCollectionItemsList selectedYear={selectedYear} />
+
+        {/* Metrics Cards */}
+        <GeneralMetricsCards allColetas={allColetas || []} selectedYear={selectedYear} />
 
         {/* Main Grid */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
