@@ -199,16 +199,6 @@ export const GeneralMetricsCards: React.FC<GeneralMetricsCardsProps> = ({ allCol
         bg_color: 'bg-primary/10',
       },
       {
-        id: 'total-items-geral',
-        title: 'Total de Itens (Geral)',
-        value: totalItemsGeral.toString(),
-        description: itemsDescription,
-        icon_name: 'Box',
-        color: 'text-neural',
-        bg_color: 'bg-neural/10',
-        allItemsDetails: allItemsDetails,
-      },
-      {
         id: 'operacoes-em-transito',
         title: 'Operações Em Trânsito',
         value: operacoesEmTransito.toString(),
@@ -240,6 +230,16 @@ export const GeneralMetricsCards: React.FC<GeneralMetricsCardsProps> = ({ allCol
         color: 'text-success-green',
         bg_color: 'bg-success-green/10',
         completedItemsDetails: completedItemsDetails,
+      },
+      { // Moved to the end
+        id: 'total-items-geral',
+        title: 'Total de Itens (Geral)',
+        value: totalItemsGeral.toString(),
+        description: itemsDescription,
+        icon_name: 'Box',
+        color: 'text-neural',
+        bg_color: 'bg-neural/10',
+        allItemsDetails: allItemsDetails,
       },
     ];
   };
