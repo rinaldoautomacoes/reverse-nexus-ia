@@ -7,12 +7,10 @@ import { ArrowLeft, PlusCircle, Edit, Trash2, Package, Search, Clock, Truck, Che
 import { useNavigate } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import type { Tables, TablesUpdate, TablesInsert } from "@/integrations/supabase/types_generated";
+import type { Tables, TablesInsert } from "@/integrations/supabase/types_generated";
 import { useToast } from "@/hooks/use-toast";
-import { useAuth } from "@/hooks/use-auth";
+import { useAuth } from "@/hooks/useAuth";
 import { Badge } from "@/components/ui/badge";
-import { CollectionStatusUpdateDialog } from "@/components/CollectionStatusUpdateDialog";
-import { EditResponsibleDialog } from "@/components/EditResponsibleDialog";
 import { format, isValid } from "date-fns"; // Importar isValid
 import { ptBR } from "date-fns/locale";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
@@ -20,7 +18,8 @@ import { Calendar } from "@/components/ui/calendar";
 import { cn, formatItemsForColetaModeloAparelho, getTotalQuantityOfItems } from "@/lib/utils";
 import { ColetaForm } from "@/components/ColetaForm";
 import { EditColetaDialog } from "@/components/EditColetaDialog";
-import { ItemData } from "@/components/coleta-form-sections/ColetaItemRow"; // Importa a interface ItemData
+import { CollectionStatusUpdateDialog } from "@/components/CollectionStatusUpdateDialog";
+import { EditResponsibleDialog } from "@/components/EditResponsibleDialog";
 
 interface FileAttachment {
   name: string;
@@ -35,7 +34,6 @@ type Coleta = Tables<'coletas'> & {
   items?: Array<Tables<'items'>> | null; // Adicionado items relation
   attachments?: FileAttachment[] | null; // Adicionado attachments
 };
-type ColetaInsert = TablesInsert<'coletas'>;
 
 interface ColetasProps {
   selectedYear: string;
@@ -208,10 +206,6 @@ export const Coletas: React.FC<ColetasProps> = ({ selectedYear }) => {
 
   const getStatusBadgeColor = (status: string) => {
     switch (status) {
-      case 'pendente':
-        return 'bg-destructive/20 text-destructive';
-      case 'agendada':
-        return 'bg-warning-yellow/20 text-warning-yellow';
       case 'concluida':
         return 'bg-success-green/20 text-success-green';
       default:
@@ -221,10 +215,6 @@ export const Coletas: React.FC<ColetasProps> = ({ selectedYear }) => {
 
   const getStatusText = (status: string) => {
     switch (status) {
-      case 'pendente':
-        return 'Pendente';
-      case 'agendada':
-        return 'Em Trânsito';
       case 'concluida':
         return 'Concluída';
       default:
@@ -237,7 +227,7 @@ export const Coletas: React.FC<ColetasProps> = ({ selectedYear }) => {
       <div className="min-h-screen bg-background ai-pattern p-6 flex items-center justify-center">
         <div className="text-center">
           <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin mx-auto mb-2" />
-          <p className="text-sm text-muted-foreground">Carregando coletas ativas...</p>
+          <p className="text-sm text-muted-foreground">Carregando coletas concluídas...</p>
         </div>
       </div>
     );
@@ -268,10 +258,10 @@ export const Coletas: React.FC<ColetasProps> = ({ selectedYear }) => {
         <div className="space-y-6">
           <div className="text-center">
             <h1 className="text-4xl font-bold font-orbitron gradient-text mb-4">
-              Coletas Ativas
+              Coletas Concluídas
             </h1>
             <p className="text-muted-foreground">
-              Gerencie todas as coletas que ainda não foram concluídas.
+              Histórico de todas as coletas que foram finalizadas.
             </p>
           </div>
 
@@ -281,7 +271,7 @@ export const Coletas: React.FC<ColetasProps> = ({ selectedYear }) => {
                 <div className="flex-1 relative">
                   <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
                   <Input
-                    placeholder="Buscar por parceiro, endereço, modelo, status, número único, controle do cliente, contrato ou CÓD. PARC..."
+                    placeholder="Buscar por parceiro, endereço, modelo, responsável, número único, controle do cliente, contrato ou CÓD. PARC..."
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
                     className="pl-10"
@@ -297,7 +287,7 @@ export const Coletas: React.FC<ColetasProps> = ({ selectedYear }) => {
                       )}
                     >
                       <CalendarIcon className="mr-2 h-4 w-4" />
-                      {filterDate ? (isValid(filterDate) ? format(filterDate, "dd/MM/yyyy", { locale: ptBR }) : "Data inválida") : "Filtrar por data"}
+                      {filterDate ? (isValid(new Date(filterDate)) ? format(new Date(filterDate), "dd/MM/yyyy", { locale: ptBR }) : "Data inválida") : "Filtrar por data"}
                     </Button>
                   </PopoverTrigger>
                   <PopoverContent className="w-auto p-0">
@@ -320,33 +310,11 @@ export const Coletas: React.FC<ColetasProps> = ({ selectedYear }) => {
           </Card>
 
           <Card className="card-futuristic">
-            <CardHeader className="flex flex-row items-center justify-between">
+            <CardHeader>
               <CardTitle className="flex items-center gap-2">
-                <Package className="h-5 w-5 text-primary" />
-                Minhas Coletas Ativas
+                <CheckCircle className="h-5 w-5 text-primary" />
+                Minhas Coletas Concluídas
               </CardTitle>
-              <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
-                <DialogTrigger asChild>
-                  <Button size="sm" className="bg-gradient-primary hover:bg-gradient-primary/80">
-                    <PlusCircle className="mr-2 h-4 w-4" />
-                    Nova Coleta
-                  </Button>
-                </DialogTrigger>
-                <DialogContent className="sm:max-w-[900px] bg-card border-primary/20 max-h-[calc(100vh-150px)] overflow-y-auto">
-                  <DialogHeader>
-                    <DialogTitle className="flex items-center gap-2 gradient-text">
-                      <Package className="h-5 w-5" />
-                      Agendar Nova Coleta
-                    </DialogTitle>
-                  </DialogHeader>
-                  {/* ColetaForm now handles attachments internally */}
-                  <ColetaForm
-                    onSave={({ coleta, items, attachments }) => addColetaMutation.mutate({ coleta, items, attachments })}
-                    onCancel={() => setIsAddDialogOpen(false)}
-                    isPending={addColetaMutation.isPending}
-                  />
-                </DialogContent>
-              </Dialog>
             </CardHeader>
             <CardContent className="space-y-4">
               {coletas && coletas.length > 0 ? (
@@ -378,7 +346,7 @@ export const Coletas: React.FC<ColetasProps> = ({ selectedYear }) => {
                           </div>
                         )}
                         <div className="flex items-center gap-1">
-                          <CalendarIcon className="h-3 w-3" /> Previsão: {coleta.previsao_coleta ? (isValid(new Date(coleta.previsao_coleta)) ? format(new Date(coleta.previsao_coleta), 'dd/MM/yyyy', { locale: ptBR }) : 'Data inválida') : 'N/A'}
+                          <CalendarIcon className="h-3 w-3" /> Concluída em: {coleta.previsao_coleta ? (isValid(new Date(coleta.previsao_coleta)) ? format(new Date(coleta.previsao_coleta), 'dd/MM/yyyy', { locale: ptBR }) : 'Data inválida') : 'N/A'}
                         </div>
                         <div className="flex items-center gap-1">
                           <Hash className="h-3 w-3" /> Qtd Total: {getTotalQuantityOfItems(coleta.items)}
@@ -492,9 +460,8 @@ export const Coletas: React.FC<ColetasProps> = ({ selectedYear }) => {
                 ))
               ) : (
                 <div className="p-12 text-center text-muted-foreground">
-                  <Package className="h-12 w-12 mx-auto mb-4" />
-                  <p>Nenhuma coleta ativa encontrada.</p>
-                  <p className="text-sm">Agende uma nova coleta para começar.</p>
+                  <CheckCircle className="h-12 w-12 mx-auto mb-4" />
+                  <p>Nenhuma coleta concluída encontrada para {selectedYear}.</p>
                 </div>
               )}
             </CardContent>
@@ -535,3 +502,5 @@ export const Coletas: React.FC<ColetasProps> = ({ selectedYear }) => {
     </div>
   );
 };
+
+export default ColetasConcluidas;
