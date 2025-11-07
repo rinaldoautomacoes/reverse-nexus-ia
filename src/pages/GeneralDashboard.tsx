@@ -9,14 +9,15 @@ import { GeneralMetricsCards } from '@/components/dashboard-general/GeneralMetri
 import { GeneralStatusChart } from '@/components/dashboard-general/GeneralStatusChart';
 import { GeneralStatusDonutCharts } from '@/components/dashboard-general/GeneralStatusDonutCharts';
 import { GeneralDeliveriesStatusChart } from '@/components/dashboard-general/GeneralDeliveriesStatusChart';
-import { CreateOutstandingCollectionItemDialog } from '@/components/CreateOutstandingCollectionItemDialog';
-import { OutstandingCollectionItemsList } from '@/components/OutstandingCollectionItemsList';
-import { Button } from '@/components/ui/button';
-import { Package } from 'lucide-react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'; // Import Card components
+// Removed: import { CreateOutstandingCollectionItemDialog } from '@/components/CreateOutstandingCollectionItemDialog';
+// Removed: import { OutstandingCollectionItemsList } from '@/components/OutstandingCollectionItemsList';
+// Removed: import { Button } from '@/components/ui/button';
+// Removed: import { Package } from 'lucide-react';
+// Removed: import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'; // Import Card components
 
 type Coleta = Tables<'coletas'> & { items?: Array<Tables<'items'>> | null; };
 type Product = Tables<'products'>;
+type OutstandingCollectionItem = Tables<'outstanding_collection_items'>; // Import type
 
 interface GeneralDashboardProps {
   selectedYear: string;
@@ -66,6 +67,23 @@ export const GeneralDashboard: React.FC<GeneralDashboardProps> = ({ selectedYear
     enabled: !!user?.id,
   });
 
+  const { data: outstandingCollectionItems, isLoading: isLoadingOutstandingItems, error: outstandingItemsError } = useQuery<OutstandingCollectionItem[], Error>({
+    queryKey: ['outstandingCollectionItems', user?.id, selectedYear],
+    queryFn: async () => {
+      if (!user?.id) return [];
+      const { data, error } = await supabase
+        .from('outstanding_collection_items')
+        .select('*')
+        .eq('user_id', user.id)
+        .gte('created_at', `${selectedYear}-01-01T00:00:00.000Z`)
+        .lte('created_at', `${parseInt(selectedYear) + 1}-01-01T00:00:00.000Z`)
+        .order('created_at', { ascending: false });
+      if (error) throw new Error(error.message);
+      return data;
+    },
+    enabled: !!user?.id,
+  });
+
   const productDescriptionsMap = new Map<string, string>();
   products?.forEach(p => {
     if (p.code && p.description) {
@@ -73,7 +91,7 @@ export const GeneralDashboard: React.FC<GeneralDashboardProps> = ({ selectedYear
     }
   });
 
-  if (isLoadingAllColetas || isLoadingProducts) {
+  if (isLoadingAllColetas || isLoadingProducts || isLoadingOutstandingItems) {
     return (
       <div className="min-h-screen bg-background ai-pattern p-6 flex items-center justify-center">
         <div className="text-center">
@@ -84,11 +102,11 @@ export const GeneralDashboard: React.FC<GeneralDashboardProps> = ({ selectedYear
     );
   }
 
-  if (allColetasError || productsError) {
+  if (allColetasError || productsError || outstandingItemsError) {
     return (
       <div className="min-h-screen bg-background ai-pattern p-6">
         <div className="max-w-6xl mx-auto text-center text-destructive">
-          <p>Erro ao carregar dados do dashboard: {allColetasError?.message || productsError?.message}</p>
+          <p>Erro ao carregar dados do dashboard: {allColetasError?.message || productsError?.message || outstandingItemsError?.message}</p>
         </div>
       </div>
     );
@@ -117,12 +135,12 @@ export const GeneralDashboard: React.FC<GeneralDashboardProps> = ({ selectedYear
 
       {/* Main Dashboard Content */}
       <div className="px-6 lg:px-8 py-8 space-y-8">
-        {/* Outstanding Collection Items List - now as a metric card */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-6">
-          <OutstandingCollectionItemsList selectedYear={selectedYear} />
-          {/* Metrics Cards */}
-          <GeneralMetricsCards allColetas={allColetas || []} selectedYear={selectedYear} />
-        </div>
+        {/* Metrics Cards */}
+        <GeneralMetricsCards 
+          allColetas={allColetas || []} 
+          selectedYear={selectedYear} 
+          outstandingItems={outstandingCollectionItems || []} // Pass outstanding items
+        />
 
         {/* Main Grid */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">

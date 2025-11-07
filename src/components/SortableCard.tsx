@@ -14,6 +14,7 @@ interface SortableCardProps extends React.ComponentPropsWithoutRef<typeof Card> 
   iconBgColorClass?: string;
   delay?: number;
   onDetailsClick?: (id: string) => void; // Nova prop para o clique de detalhes, passando o ID
+  customHeaderButton?: React.ReactNode; // New prop for custom button
 }
 
 export const SortableCard: React.FC<SortableCardProps> = ({
@@ -26,6 +27,7 @@ export const SortableCard: React.FC<SortableCardProps> = ({
   delay,
   className,
   onDetailsClick,
+  customHeaderButton,
   ...props
 }) => {
   const {
@@ -60,6 +62,7 @@ export const SortableCard: React.FC<SortableCardProps> = ({
           {title}
         </CardTitle>
         <div className="flex items-center gap-2">
+          {customHeaderButton} {/* Render custom button here */}
           {Icon && (
             <div className={cn("p-2 rounded-lg", iconBgColorClass)}>
               <Icon className={cn("h-4 w-4", iconColorClass)} />
