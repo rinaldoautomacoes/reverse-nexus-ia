@@ -8,13 +8,15 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Package, Edit, ListChecks, Truck, CheckCircle, Clock } from "lucide-react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import type { Tables, TablesUpdate } from "@/integrations/supabase/types";
+import type { Tables, TablesUpdate } from "@/integrations/supabase/types_generated";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/use-auth";
 import { Badge } from "@/components/ui/badge";
 
-type Coleta = Tables<'coletas'>;
+type Coleta = Tables<'coletas'> & { items?: Array<Tables<'items'>> | null; }; // Adicionado items relation
 type ColetaUpdate = TablesUpdate<'coletas'>;
+type OutstandingCollectionItem = Tables<'outstanding_collection_items'>;
+type OutstandingCollectionItemUpdate = TablesUpdate<'outstanding_collection_items'>;
 
 interface CollectionStatusUpdateDialogProps {
   collectionId: string;
@@ -46,19 +48,84 @@ export const CollectionStatusUpdateDialog: React.FC<CollectionStatusUpdateDialog
       if (!user?.id) {
         throw new Error("Usuário não autenticado. Faça login para atualizar o status da coleta.");
       }
-      const { data, error } = await supabase
+
+      // 1. Update the collection status
+      const { data: updatedColeta, error: updateError } = await supabase
         .from('coletas')
         .update({ status_coleta: updatedStatus })
         .eq('id', collectionId)
         .eq('user_id', user.id) // Adicionado user_id para RLS
-        .select()
+        .select(`*, items(product_code, quantity)`) // Select items to debit from outstanding
         .single();
-      if (error) throw new Error(error.message);
-      return data;
+      
+      if (updateError) throw new Error(updateError.message);
+
+      // 2. If status is 'concluida', debit from outstanding_collection_items
+      if (updatedStatus === 'concluida' && updatedColeta?.items && updatedColeta.items.length > 0) {
+        for (const collectedItem of updatedColeta.items) {
+          if (!collectedItem.product_code || !collectedItem.quantity) continue;
+
+          // Find matching outstanding item
+          const { data: outstandingItems, error: fetchOutstandingError } = await supabase
+            .from('outstanding_collection_items')
+            .select('*')
+            .eq('user_id', user.id)
+            .eq('product_code', collectedItem.product_code)
+            .eq('status', 'pendente') // Only debit from 'pendente' items
+            .order('created_at', { ascending: true }); // Debit from older items first
+
+          if (fetchOutstandingError) {
+            console.error("Erro ao buscar itens pendentes para débito:", fetchOutstandingError.message);
+            toast({ title: "Erro no débito de itens pendentes", description: `Falha ao buscar itens pendentes para ${collectedItem.product_code}.`, variant: "destructive" });
+            continue;
+          }
+
+          let remainingToDebit = collectedItem.quantity;
+
+          for (const outstandingItem of outstandingItems || []) {
+            if (remainingToDebit <= 0) break; // All collected quantity has been debited
+
+            const currentPending = outstandingItem.quantity_pending || 0;
+            const debitedAmount = Math.min(remainingToDebit, currentPending);
+            const newPending = currentPending - debitedAmount;
+            remainingToDebit -= debitedAmount;
+
+            const updateData: OutstandingCollectionItemUpdate = {
+              quantity_pending: newPending,
+              status: newPending <= 0 ? 'coletado' : 'pendente',
+            };
+
+            const { error: updateOutstandingError } = await supabase
+              .from('outstanding_collection_items')
+              .update(updateData)
+              .eq('id', outstandingItem.id)
+              .eq('user_id', user.id); // RLS check
+
+            if (updateOutstandingError) {
+              console.error("Erro ao atualizar item pendente:", updateOutstandingError.message);
+              toast({ title: "Erro no débito de itens pendentes", description: `Falha ao atualizar item pendente ${outstandingItem.product_code}.`, variant: "destructive" });
+            } else {
+              console.log(`Debited ${debitedAmount} from outstanding item ${outstandingItem.product_code}. New pending: ${newPending}`);
+            }
+          }
+
+          if (remainingToDebit > 0) {
+            toast({ title: "Aviso de Débito", description: `A quantidade coletada de ${collectedItem.product_code} (${collectedItem.quantity}) excedeu o saldo pendente registrado. ${remainingToDebit} unidades não foram debitadas.`, variant: "warning" });
+          }
+        }
+        queryClient.invalidateQueries({ queryKey: ['outstandingCollectionItems', user?.id] }); // Invalida a lista de itens pendentes
+      }
+
+      return updatedColeta;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['coletas', user?.id] }); // Invalida a lista de coletas
       queryClient.invalidateQueries({ queryKey: ['collectionStatusChart', user?.id] }); // Invalida o gráfico de rosca
+      queryClient.invalidateQueries({ queryKey: ['coletasAtivas', user?.id] });
+      queryClient.invalidateQueries({ queryKey: ['coletasConcluidas', user?.id] });
+      queryClient.invalidateQueries({ queryKey: ['dashboardColetasMetrics', user?.id] });
+      queryClient.invalidateQueries({ queryKey: ['productStatusChart', user?.id] });
+      queryClient.invalidateQueries({ queryKey: ['items', user?.id] });
       toast({ title: "Status da Coleta Atualizado!", description: `O status da coleta "${collectionName}" foi salvo com sucesso.` });
       onClose();
     },
