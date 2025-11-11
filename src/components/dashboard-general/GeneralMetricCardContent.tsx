@@ -72,22 +72,22 @@ export const GeneralMetricCardContent: React.FC<GeneralMetricCardContentProps> =
             // Ajustado tamanho do texto e adicionado limite de 2 linhas
             <p className="text-xs text-muted-foreground mb-1 line-clamp-2">{metric.description}</p> 
           )}
-          <div className="mt-2 max-h-[80px] overflow-y-auto overflow-x-auto">
+          <div className="mt-2 max-h-[200px] overflow-y-auto overflow-x-auto"> {/* Aumentado max-h aqui */}
             <Table className="min-w-full text-xs">
-              <TableHeader className="sticky top-0 bg-card z-10"> {/* Adicionado sticky, top-0, bg-card, z-10 */}
+              <TableHeader className="sticky top-0 bg-card z-10">
                 <TableRow className="border-b border-border/50">
-                  <TableHead className="h-6 p-1 text-muted-foreground w-[40px]">Qtd</TableHead> {/* Largura ajustada */}
-                  <TableHead className="h-6 p-1 text-muted-foreground w-[80px]">Item</TableHead> {/* Largura ajustada */}
-                  <TableHead className="h-6 p-1 text-muted-foreground w-auto">Descrição</TableHead> {/* Largura automática */}
-                  <TableHead className="h-6 p-1 text-muted-foreground text-right w-[60px]">Tipo</TableHead> {/* Largura ajustada */}
+                  <TableHead className="h-6 p-1 text-muted-foreground w-[40px]">Qtd</TableHead>
+                  <TableHead className="h-6 p-1 text-muted-foreground w-[80px]">Item</TableHead>
+                  <TableHead className="h-6 p-1 text-muted-foreground w-auto">Descrição</TableHead>
+                  <TableHead className="h-6 p-1 text-muted-foreground text-right w-[60px]">Tipo</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {metric.allItemsDetails.map((item, index) => (
                   <TableRow key={index} className="border-b border-border/20 last:border-b-0">
                     <TableCell className="p-1 font-medium text-foreground">{item.quantity}</TableCell>
-                    <TableCell className="p-1 text-foreground whitespace-nowrap overflow-hidden text-ellipsis" title={item.name}>{item.name}</TableCell> {/* Truncado com reticências e título ao passar o mouse */}
-                    <TableCell className="p-1 text-foreground whitespace-nowrap overflow-hidden text-ellipsis" title={item.description}>{item.description}</TableCell> {/* Truncado com reticências e título ao passar o mouse */}
+                    <TableCell className="p-1 text-foreground whitespace-nowrap overflow-hidden text-ellipsis" title={item.name}>{item.name}</TableCell>
+                    <TableCell className="p-1 text-foreground whitespace-nowrap overflow-hidden text-ellipsis" title={item.description}>{item.description}</TableCell>
                     <TableCell className="p-1 text-right">
                         <Badge
                           variant="secondary"
