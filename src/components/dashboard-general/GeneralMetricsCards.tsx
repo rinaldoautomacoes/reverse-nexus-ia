@@ -227,7 +227,8 @@ export const GeneralMetricsCards: React.FC<GeneralMetricsCardsProps> = ({ allCol
     } else {
       setMetrics(initialMetrics);
     }
-  }, [allColetas, selectedYear, outstandingItems]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [allColetas, selectedYear, outstandingItems]); // Adicionado initialMetrics como dependência
 
   const sensors = useSensors(
     useSensor(PointerSensor),
@@ -270,6 +271,7 @@ export const GeneralMetricsCards: React.FC<GeneralMetricsCardsProps> = ({ allCol
             {metrics.map((metric, index) => {
               const Icon = metric.icon_name ? iconMap[metric.icon_name] : null;
               const isTotalItemsCard = metric.id === 'total-items-geral'; // Identifica o card específico
+              const isOperationsCard = metric.id === 'operacoes-pendentes' || metric.id === 'operacoes-em-transito' || metric.id === 'operacoes-concluidas';
               return (
                 <SortableCard
                   key={metric.id}
@@ -281,8 +283,8 @@ export const GeneralMetricsCards: React.FC<GeneralMetricsCardsProps> = ({ allCol
                   delay={index * 100}
                   onDetailsClick={metric.id === 'outstanding-collection-items' ? undefined : handleCardClick}
                   customHeaderButton={metric.customHeaderButton}
-                  cardHeight={isTotalItemsCard ? "h-[250px]" : undefined} // Aplica altura personalizada
-                  cardWidth={isTotalItemsCard ? "w-[450px]" : undefined}   // Aplica largura personalizada
+                  cardHeight={isTotalItemsCard ? "h-[250px]" : isOperationsCard ? "h-[180px]" : undefined} // Aplica altura personalizada
+                  cardWidth={isTotalItemsCard ? "w-[450px]" : isOperationsCard ? "w-[340px]" : undefined}   // Aplica largura personalizada
                 >
                   {metric.customComponent ? (
                     metric.customComponent
