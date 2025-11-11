@@ -173,7 +173,7 @@ export const GeneralStatusChart: React.FC<GeneralStatusChartProps> = ({ allColet
       </CardHeader>
       <CardContent>
         <div className="space-y-6">
-          <div className="h-64 relative">
+          <div className="h-48 relative"> {/* Altura ajustada aqui de h-64 para h-48 */}
             <ResponsiveContainer width="100%" height="100%">
               <AreaChart
                 data={chartData}
