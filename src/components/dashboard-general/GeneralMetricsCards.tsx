@@ -188,16 +188,17 @@ export const GeneralMetricsCards: React.FC<GeneralMetricsCardsProps> = ({ allCol
           </ManageOutstandingItemsDialog>
         ),
       },
-      {
-        id: 'total-operacoes',
-        title: 'Total de Operações',
-        value: totalOperacoes.toString(),
-        coletasCount: totalColetas,
-        entregasCount: totalEntregas,
-        icon_name: 'ListChecks',
-        color: 'text-primary',
-        bg_color: 'bg-primary/10',
-      },
+      // Removido o card 'total-operacoes'
+      // {
+      //   id: 'total-operacoes',
+      //   title: 'Total de Operações',
+      //   value: totalOperacoes.toString(),
+      //   coletasCount: totalColetas,
+      //   entregasCount: totalEntregas,
+      //   icon_name: 'ListChecks',
+      //   color: 'text-primary',
+      //   bg_color: 'bg-primary/10',
+      // },
       {
         id: 'operacoes-em-transito',
         title: 'Operações Em Trânsito',
@@ -231,16 +232,17 @@ export const GeneralMetricsCards: React.FC<GeneralMetricsCardsProps> = ({ allCol
         bg_color: 'bg-success-green/10',
         completedItemsDetails: completedItemsDetails,
       },
-      { // Moved to the end
-        id: 'total-items-geral',
-        title: 'Total de Itens (Geral)',
-        value: totalItemsGeral.toString(),
-        description: itemsDescription,
-        icon_name: 'Box',
-        color: 'text-neural',
-        bg_color: 'bg-neural/10',
-        allItemsDetails: allItemsDetails,
-      },
+      // Removido o card 'total-items-geral'
+      // { // Moved to the end
+      //   id: 'total-items-geral',
+      //   title: 'Total de Itens (Geral)',
+      //   value: totalItemsGeral.toString(),
+      //   description: itemsDescription,
+      //   icon_name: 'Box',
+      //   color: 'text-neural',
+      //   bg_color: 'bg-neural/10',
+      //   allItemsDetails: allItemsDetails,
+      // },
     ];
   };
 
