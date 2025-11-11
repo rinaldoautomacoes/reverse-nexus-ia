@@ -351,28 +351,16 @@ export const EntregaForm: React.FC<EntregaFormProps> = ({ initialData, onSave, o
 
       <ColetaOriginAddress
         formData={formData}
-        handleInputChange={(field, value) => {
-          handleInputChange(field, value);
-          if (field === "origin_lat" || field === "origin_lng") {
-            setIsFetchingOriginAddress(false);
-          } else if (field === "cep_origem" && value === "") {
-            setIsFetchingOriginAddress(true);
-          }
-        }}
-        isPending={isPending}
+        handleInputChange={handleInputChange} // Passa o handleInputChange diretamente
+        isFormDisabled={isPending}
+        setIsGeocoding={setIsFetchingOriginAddress} // Passa o setter de estado diretamente
       />
 
       <ColetaDestinationAddress
         formData={formData}
-        handleInputChange={(field, value) => {
-          handleInputChange(field, value);
-          if (field === "destination_lat" || field === "destination_lng") {
-            setIsFetchingDestinationAddress(false);
-          } else if (field === "cep_destino" && value === "") {
-            setIsFetchingDestinationAddress(true);
-          }
-        }}
-        isPending={isPending}
+        handleInputChange={handleInputChange} // Passa o handleInputChange diretamente
+        isFormDisabled={isPending}
+        setIsGeocoding={setIsFetchingDestinationAddress} // Passa o setter de estado diretamente
       />
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
