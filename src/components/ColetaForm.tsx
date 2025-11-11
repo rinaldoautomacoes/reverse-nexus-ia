@@ -20,6 +20,7 @@ import { ItemData } from "./coleta-form-sections/ColetaItemRow"; // Importa a in
 import { ColetaLogisticsDetails } from "./coleta-form-sections/ColetaLogisticsDetails";
 import { ColetaResponsibleUser } from "./coleta-form-sections/ColetaResponsibleUser";
 import { ColetaObservation } from "./coleta-form-sections/ColetaObservation";
+import { FileUploadField } from "@/components/FileUploadField"; // Adicionado: Importação do componente FileUploadField
 
 // Import types
 import type { TablesInsert, Tables, TablesUpdate } from "@/integrations/supabase/types_generated";

@@ -33,6 +33,7 @@ import { ColetaDestinationAddress } from "./coleta-form-sections/ColetaDestinati
 import { ColetaLogisticsDetails } from "./coleta-form-sections/ColetaLogisticsDetails";
 import { ColetaResponsibleUser } from "./coleta-form-sections/ColetaResponsibleUser";
 import { ColetaObservation } from "./coleta-form-sections/ColetaObservation";
+import { FileUploadField } from "@/components/FileUploadField"; // Adicionado: Importação do componente FileUploadField
 
 
 type ColetaInsert = TablesInsert<'coletas'>;
