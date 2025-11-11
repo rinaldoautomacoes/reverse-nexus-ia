@@ -165,30 +165,16 @@ export const GeneralMetricsCards: React.FC<GeneralMetricsCardsProps> = ({ allCol
     });
 
     return [
-      // Removido o card 'outstanding-collection-items'
-      // {
-      //   id: 'outstanding-collection-items',
-      //   title: 'Itens Pendentes de Coleta',
-      //   value: outstanding.length.toString(),
-      //   description: 'Itens aguardando coleta',
-      //   icon_name: 'Package',
-      //   color: 'text-primary',
-      //   bg_color: 'bg-primary/10',
-      //   customComponent: (
-      //     <OutstandingItemsSummaryCardContent
-      //       outstandingItems={outstanding}
-      //       isLoading={false}
-      //       selectedYear={selectedYear}
-      //     />
-      //   ),
-      //   customHeaderButton: (
-      //     <ManageOutstandingItemsDialog outstandingItems={outstanding}>
-      //       <Button variant="ghost" size="icon" className="h-8 w-8 p-0 rounded-full bg-primary/10 text-primary">
-      //         <Settings className="h-4 w-4" />
-      //       </Button>
-      //     </ManageOutstandingItemsDialog>
-      //   ),
-      // },
+      {
+        id: 'total-items-geral',
+        title: 'Total de Itens (Geral)',
+        value: totalItemsGeral.toString(),
+        description: itemsDescription,
+        icon_name: 'Box',
+        color: 'text-neural',
+        bg_color: 'bg-neural/10',
+        allItemsDetails: allItemsDetails,
+      },
       {
         id: 'operacoes-em-transito',
         title: 'Operações Em Trânsito',
