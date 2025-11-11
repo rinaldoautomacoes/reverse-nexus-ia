@@ -1,5 +1,5 @@
 import React from 'react';
-import { useSortable } from '@dnd-kit/sortable'; // Importar useSortable do @dnd-kit/sortable
+import { useSortable } from '@dnd-kit/core'; // Corrigido: Importar useSortable do @dnd-kit/core
 import { CSS } from '@dnd-kit/utilities';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { cn } from '@/lib/utils';
@@ -15,6 +15,8 @@ interface SortableCardProps extends React.ComponentPropsWithoutRef<typeof Card> 
   delay?: number;
   onDetailsClick?: (id: string) => void; // Nova prop para o clique de detalhes, passando o ID
   customHeaderButton?: React.ReactNode; // New prop for custom button
+  cardHeight?: string; // Nova prop para altura personalizada
+  cardWidth?: string;  // Nova prop para largura personalizada
 }
 
 export const SortableCard: React.FC<SortableCardProps> = ({
@@ -28,6 +30,8 @@ export const SortableCard: React.FC<SortableCardProps> = ({
   className,
   onDetailsClick,
   customHeaderButton,
+  cardHeight, // Desestruturar a nova prop
+  cardWidth,  // Desestruturar a nova prop
   ...props
 }) => {
   const {
@@ -51,7 +55,9 @@ export const SortableCard: React.FC<SortableCardProps> = ({
       ref={setNodeRef}
       style={style}
       className={cn(
-        "card-futuristic border-0 animate-slide-up transition-all duration-300 ease-in-out relative h-[170px]", // Altura ajustada para 170px
+        "card-futuristic border-0 animate-slide-up transition-all duration-300 ease-in-out relative",
+        cardHeight || "h-[170px]", // Usar cardHeight se fornecido, caso contrário, o padrão
+        cardWidth || "w-full",     // Usar cardWidth se fornecido, caso contrário, o padrão
         isDragging ? "ring-2 ring-primary-foreground" : "",
         className
       )}

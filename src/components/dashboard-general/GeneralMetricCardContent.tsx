@@ -78,7 +78,7 @@ export const GeneralMetricCardContent: React.FC<GeneralMetricCardContentProps> =
           {metric.description && ( // Keep the description above the table
             <p className="text-sm text-muted-foreground mb-1">{metric.description}</p>
           )}
-          <div className="mt-2 max-h-[52px] overflow-y-auto overflow-x-auto"> {/* Ajustado max-h para 52px */}
+          <div className="mt-2 max-h-[90px] overflow-y-auto overflow-x-auto"> {/* Ajustado max-h para 90px */}
             <Table className="min-w-full text-xs"> {/* Changed w-full to min-w-full */}
               <TableHeader>
                 <TableRow className="border-b border-border/50">
