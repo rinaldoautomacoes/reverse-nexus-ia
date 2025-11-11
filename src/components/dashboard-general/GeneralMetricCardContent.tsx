@@ -78,7 +78,7 @@ export const GeneralMetricCardContent: React.FC<GeneralMetricCardContentProps> =
           {metric.description && ( // Keep the description above the table
             <p className="text-sm text-muted-foreground mb-1">{metric.description}</p>
           )}
-          <div className="mt-2 max-h-[100px] overflow-y-auto overflow-x-auto"> {/* Added overflow-x-auto */}
+          <div className="mt-2 max-h-[80px] overflow-y-auto overflow-x-auto"> {/* Ajustado max-h para 80px */}
             <Table className="min-w-full text-xs"> {/* Changed w-full to min-w-full */}
               <TableHeader>
                 <TableRow className="border-b border-border/50">
@@ -89,7 +89,7 @@ export const GeneralMetricCardContent: React.FC<GeneralMetricCardContentProps> =
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {metric.allItemsDetails.slice(0, 5).map((item, index) => ( // Limit to 5 items for brevity
+                {metric.allItemsDetails.slice(0, 3).map((item, index) => ( // Limit to 3 items for brevity
                   <TableRow key={index} className="border-b border-border/20 last:border-b-0">
                     <TableCell className="p-1 font-medium text-foreground">{item.quantity}</TableCell>
                     <TableCell className="p-1 text-foreground">{truncateText(item.name, 8)}</TableCell> {/* Truncate item name */}
