@@ -90,16 +90,8 @@ export const GeneralMetricsCards: React.FC<GeneralMetricsCardsProps> = ({ allCol
     const entregasPendente = entregas.filter(e => e.status_coleta === 'pendente').length;
     const operacoesPendente = coletasPendente + entregasPendente;
 
-    let itemsDescription = '';
-    if (totalColetaItems > 0 && totalEntregaItems > 0) {
-      itemsDescription = `${totalColetaItems} itens de coleta e ${totalEntregaItems} itens de entrega em ${selectedYear}`;
-    } else if (totalColetaItems > 0) {
-      itemsDescription = `${totalColetaItems} itens de coleta em ${selectedYear}`;
-    } else if (totalEntregaItems > 0) {
-      itemsDescription = `${totalEntregaItems} itens de entrega em ${selectedYear}`;
-    } else {
-      itemsDescription = `Nenhum item em ${selectedYear}`;
-    }
+    // Removido a descrição detalhada para o card 'Total de Itens (Geral)'
+    const itemsDescription = ''; 
 
     const allItemsDetails: {
       quantity: number;
@@ -169,7 +161,7 @@ export const GeneralMetricsCards: React.FC<GeneralMetricsCardsProps> = ({ allCol
         id: 'total-items-geral',
         title: 'Total de Itens (Geral)',
         value: totalItemsGeral.toString(),
-        description: itemsDescription,
+        description: itemsDescription, // Agora será uma string vazia
         icon_name: 'Box',
         color: 'text-neural',
         bg_color: 'bg-neural/10',
