@@ -165,39 +165,29 @@ export const GeneralMetricsCards: React.FC<GeneralMetricsCardsProps> = ({ allCol
     });
 
     return [
-      {
-        id: 'outstanding-collection-items',
-        title: 'Itens Pendentes de Coleta',
-        value: outstanding.length.toString(),
-        description: 'Itens aguardando coleta',
-        icon_name: 'Package',
-        color: 'text-primary',
-        bg_color: 'bg-primary/10',
-        customComponent: (
-          <OutstandingItemsSummaryCardContent
-            outstandingItems={outstanding}
-            isLoading={false}
-            selectedYear={selectedYear}
-          />
-        ),
-        customHeaderButton: (
-          <ManageOutstandingItemsDialog outstandingItems={outstanding}>
-            <Button variant="ghost" size="icon" className="h-8 w-8 p-0 rounded-full bg-primary/10 text-primary">
-              <Settings className="h-4 w-4" />
-            </Button>
-          </ManageOutstandingItemsDialog>
-        ),
-      },
-      // Removido o card 'total-operacoes'
+      // Removido o card 'outstanding-collection-items'
       // {
-      //   id: 'total-operacoes',
-      //   title: 'Total de Operações',
-      //   value: totalOperacoes.toString(),
-      //   coletasCount: totalColetas,
-      //   entregasCount: totalEntregas,
-      //   icon_name: 'ListChecks',
+      //   id: 'outstanding-collection-items',
+      //   title: 'Itens Pendentes de Coleta',
+      //   value: outstanding.length.toString(),
+      //   description: 'Itens aguardando coleta',
+      //   icon_name: 'Package',
       //   color: 'text-primary',
       //   bg_color: 'bg-primary/10',
+      //   customComponent: (
+      //     <OutstandingItemsSummaryCardContent
+      //       outstandingItems={outstanding}
+      //       isLoading={false}
+      //       selectedYear={selectedYear}
+      //     />
+      //   ),
+      //   customHeaderButton: (
+      //     <ManageOutstandingItemsDialog outstandingItems={outstanding}>
+      //       <Button variant="ghost" size="icon" className="h-8 w-8 p-0 rounded-full bg-primary/10 text-primary">
+      //         <Settings className="h-4 w-4" />
+      //       </Button>
+      //     </ManageOutstandingItemsDialog>
+      //   ),
       // },
       {
         id: 'operacoes-em-transito',
@@ -232,17 +222,6 @@ export const GeneralMetricsCards: React.FC<GeneralMetricsCardsProps> = ({ allCol
         bg_color: 'bg-success-green/10',
         completedItemsDetails: completedItemsDetails,
       },
-      // Removido o card 'total-items-geral'
-      // { // Moved to the end
-      //   id: 'total-items-geral',
-      //   title: 'Total de Itens (Geral)',
-      //   value: totalItemsGeral.toString(),
-      //   description: itemsDescription,
-      //   icon_name: 'Box',
-      //   color: 'text-neural',
-      //   bg_color: 'bg-neural/10',
-      //   allItemsDetails: allItemsDetails,
-      // },
     ];
   };
 
