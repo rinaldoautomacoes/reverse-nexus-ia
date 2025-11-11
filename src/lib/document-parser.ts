@@ -22,6 +22,8 @@ export const parseReturnDocumentText = (text: string): ParsedCollectionData => {
     contrato: null, // Novo campo
     nf_glbl: null, // Novo campo
     partner_code: null, // Novo campo
+    origin_address_number: null, // Novo campo
+    destination_address_number: null, // Novo campo
   };
 
   let currentObservacao = [];
@@ -90,6 +92,19 @@ export const parseReturnDocumentText = (text: string): ParsedCollectionData => {
       if (cepMatch) {
         parsedData.cep_origem = cepMatch[1].replace(/\D/g, '');
       }
+      const numberMatch = addressText.match(/nº\s*(\d+)/i); // Tenta extrair "nº 123"
+      if (numberMatch && numberMatch[1]) {
+        parsedData.origin_address_number = numberMatch[1].trim();
+      } else {
+        const lastWord = addressText.split(' ').pop(); // Tenta a última palavra como número
+        if (lastWord && !isNaN(Number(lastWord))) {
+          parsedData.origin_address_number = lastWord;
+        }
+      }
+    } else if (lowerLine.startsWith('número do endereço de origem:') || lowerLine.startsWith('número de origem:')) {
+      parsedData.origin_address_number = line.split(':').slice(1).join(':').trim();
+    } else if (lowerLine.startsWith('número do endereço de destino:') || lowerLine.startsWith('número de destino:')) {
+      parsedData.destination_address_number = line.split(':').slice(1).join(':').trim();
     } else if (
       lowerLine.includes('telefone') || 
       lowerLine.includes('phone') || 
@@ -310,6 +325,8 @@ export const parseSelectedSpreadsheetCells = (
     contrato: null, // Novo campo
     nf_glbl: null, // Novo campo
     partner_code: null, // Novo campo
+    origin_address_number: null, // Novo campo
+    destination_address_number: null, // Novo campo
   };
 
   const selectedCells: { rowIndex: number; colIndex: number; value: string | number | null }[] = [];
@@ -360,6 +377,10 @@ export const parseSelectedSpreadsheetCells = (
       const value = getValue(cell);
       if (value) parsedData.cep_origem = value.replace(/\D/g, '');
     }
+    if (lowerCellValue.includes('número do endereço de origem') || lowerCellValue.includes('número de origem')) {
+      const value = getValue(cell);
+      if (value) parsedData.origin_address_number = value;
+    }
     if (lowerCellValue.includes('endereço de destino')) {
       const value = getValue(cell);
       if (value) parsedData.endereco_destino = value;
@@ -370,6 +391,10 @@ export const parseSelectedSpreadsheetCells = (
     } else if (lowerCellValue.includes('cep de destino')) {
       const value = getValue(cell);
       if (value) parsedData.cep_destino = value.replace(/\D/g, '');
+    }
+    if (lowerCellValue.includes('número do endereço de destino') || lowerCellValue.includes('número de destino')) {
+      const value = getValue(cell);
+      if (value) parsedData.destination_address_number = value;
     }
 
     if (lowerCellValue.includes('contato') || lowerCellValue.includes('pessoa de contato')) {

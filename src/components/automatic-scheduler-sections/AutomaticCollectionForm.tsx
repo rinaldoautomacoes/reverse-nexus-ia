@@ -13,8 +13,8 @@ import { ptBR } from "date-fns/locale";
 
 // Import modular components
 import { ColetaClientDetails } from "@/components/shared-scheduler-sections/ColetaClientDetails";
-import { OriginAddressSection } from "@/components/shared-scheduler-sections/OriginAddressSection";
-import { DestinationAddressSection } from "@/components/shared-scheduler-sections/DestinationAddressSection";
+import { ColetaOriginAddress } from "@/components/coleta-form-sections/ColetaOriginAddress"; // Usar o componente atualizado
+import { ColetaDestinationAddress } from "@/components/coleta-form-sections/ColetaDestinationAddress"; // Usar o componente atualizado
 import { ItemsTableSection } from "@/components/shared-scheduler-sections/ItemsTableSection";
 import { ColetaLogisticsDetails } from "@/components/coleta-form-sections/ColetaLogisticsDetails";
 import { ColetaResponsibleUser } from "@/components/coleta-form-sections/ColetaResponsibleUser";
@@ -213,7 +213,7 @@ export const AutomaticCollectionForm: React.FC<AutomaticCollectionFormProps> = (
         isFormDisabled={isFormDisabled}
       />
 
-      <OriginAddressSection
+      <ColetaOriginAddress
         formData={formData}
         handleInputChange={handleParsedDataChange}
         isFormDisabled={isFormDisabled}
@@ -223,7 +223,7 @@ export const AutomaticCollectionForm: React.FC<AutomaticCollectionFormProps> = (
         addressLabel="Endereço de Origem"
       />
 
-      <DestinationAddressSection
+      <ColetaDestinationAddress
         formData={formData}
         handleInputChange={handleParsedDataChange}
         isFormDisabled={isFormDisabled}

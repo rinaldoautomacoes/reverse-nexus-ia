@@ -53,11 +53,13 @@ export const AutomaticCollectionSchedulerPage: React.FC = () => {
     items: [],
     status_coleta: "pendente",
     type: "coleta",
-    unique_number: generateUniqueNumber('COL'), // Always generate a unique number on initial state
+    unique_number: generateUniqueNumber('COL'), // Always generate a new unique number on initial state
     client_control: null,
     contrato: null,
     nf_glbl: null,
     partner_code: null,
+    origin_address_number: "", // Novo campo
+    destination_address_number: "", // Novo campo
   });
 
   const [attachments, setAttachments] = useState<FileAttachment[]>([]); // Estado para os anexos
@@ -204,6 +206,8 @@ export const AutomaticCollectionSchedulerPage: React.FC = () => {
         modelo_aparelho: formatItemsForColetaModeloAparelho(items), // Resumo dos itens
         qtd_aparelhos_solicitado: getTotalQuantityOfItems(items), // Quantidade total
         attachments: currentAttachments, // Salvar os anexos
+        origin_address_number: coletaData.origin_address_number, // Novo campo
+        destination_address_number: coletaData.destination_address_number, // Novo campo
       };
 
       const { data: insertedColeta, error: coletaError } = await supabase
@@ -294,6 +298,8 @@ export const AutomaticCollectionSchedulerPage: React.FC = () => {
       qtd_aparelhos_solicitado: getTotalQuantityOfItems(formData.items), // Quantidade total
       items: formData.items,
       attachments: attachments, // Passar os anexos
+      origin_address_number: formData.origin_address_number, // Novo campo
+      destination_address_number: formData.destination_address_number, // Novo campo
     };
 
     addColetaMutation.mutate(coletaToInsert);
@@ -313,6 +319,8 @@ export const AutomaticCollectionSchedulerPage: React.FC = () => {
       contrato: null,
       nf_glbl: null,
       partner_code: null,
+      origin_address_number: "", // Resetar
+      destination_address_number: "", // Resetar
     });
     setAttachments([]); // Clear attachments
     toast({ title: "Pré-visualização Limpa", description: "Todos os dados do formulário foram resetados." });

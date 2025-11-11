@@ -1,7 +1,7 @@
 import React from 'react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { MapPin, Home, Loader2 } from 'lucide-react';
+import { MapPin, Home, Loader2, Hash } from 'lucide-react'; // Importar Hash
 import type { TablesInsert, TablesUpdate } from '@/integrations/supabase/types_generated';
 import { CepInputWithRecents } from '@/components/CepInputWithRecents';
 import { useAddressLookup } from '@/hooks/useAddressLookup';
@@ -86,7 +86,7 @@ export const ColetaOriginAddress: React.FC<OriginAddressSectionProps> = ({
             value={cepInput}
             onChange={(value) => {
               setCepInput(value);
-              handleInputChange('cep_origem', value); // <-- Adicionado esta linha
+              handleInputChange('cep_origem', value);
             }}
             onBlur={fetchAddress}
             disabled={isFormDisabled || isFetching}
@@ -95,24 +95,39 @@ export const ColetaOriginAddress: React.FC<OriginAddressSectionProps> = ({
           {isFetching && <Loader2 className="absolute right-3 top-3 h-4 w-4 animate-spin text-primary" />}
         </div>
       </div>
-      <div className="space-y-2">
-        <Label>{addressLabel} *</Label>
-        <div className="relative">
-          <MapPin className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-          <Input
-            id="endereco_origem"
-            value={addressInput}
-            onChange={(e) => {
-              setAddressInput(e.target.value);
-              handleInputChange('endereco_origem', e.target.value);
-              // Also update the main 'endereco' for backward compatibility/display
-              handleInputChange('endereco', e.target.value);
-            }}
-            placeholder="Endereço completo para coleta"
-            className="pl-10"
-            disabled={isFormDisabled || isFetching}
-            required
-          />
+      <div className="grid grid-cols-3 gap-4"> {/* Usar grid para endereço e número */}
+        <div className="space-y-2 col-span-2">
+          <Label>{addressLabel} *</Label>
+          <div className="relative">
+            <MapPin className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+            <Input
+              id="endereco_origem"
+              value={addressInput}
+              onChange={(e) => {
+                setAddressInput(e.target.value);
+                handleInputChange('endereco_origem', e.target.value);
+                handleInputChange('endereco', e.target.value); // For backward compatibility/display
+              }}
+              placeholder="Endereço completo para coleta"
+              className="pl-10"
+              disabled={isFormDisabled || isFetching}
+              required
+            />
+          </div>
+        </div>
+        <div className="space-y-2 col-span-1">
+          <Label htmlFor="origin_address_number">Número</Label>
+          <div className="relative">
+            <Hash className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+            <Input
+              id="origin_address_number"
+              value={formData.origin_address_number || ''}
+              onChange={(e) => handleInputChange("origin_address_number", e.target.value)}
+              placeholder="Nº"
+              className="pl-10"
+              disabled={isFormDisabled}
+            />
+          </div>
         </div>
       </div>
     </div>

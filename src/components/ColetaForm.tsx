@@ -92,6 +92,8 @@ export const ColetaForm: React.FC<ColetaFormProps> = ({ initialData, onSave, onC
     client_control: null, // Alterado para null
     attachments: [], // Novo campo para anexos
     created_at: format(new Date(), "yyyy-MM-dd'T'HH:mm:ss.SSSXXX"), // Initialize created_at for new forms
+    origin_address_number: "", // Novo campo
+    destination_address_number: "", // Novo campo
   });
 
   const [collectionItems, setCollectionItems] = useState<ItemData[]>(initialData?.items || []);
@@ -149,6 +151,8 @@ export const ColetaForm: React.FC<ColetaFormProps> = ({ initialData, onSave, onC
         client_control: null, // Alterado para null
         attachments: [], // Initialize attachments for new forms
         created_at: format(new Date(), "yyyy-MM-dd'T'HH:mm:ss.SSSXXX"), // Ensure created_at is set for new forms
+        origin_address_number: "", // Novo campo
+        destination_address_number: "", // Novo campo
       });
       setCollectionItems([]);
       setAttachments([]);

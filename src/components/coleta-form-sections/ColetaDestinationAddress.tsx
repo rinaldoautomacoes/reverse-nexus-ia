@@ -1,7 +1,7 @@
 import React from 'react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { MapPin, Flag, Loader2 } from 'lucide-react';
+import { MapPin, Flag, Loader2, Hash } from 'lucide-react'; // Importar Hash
 import type { TablesInsert, TablesUpdate } from '@/integrations/supabase/types_generated';
 import { CepInputWithRecents } from '@/components/CepInputWithRecents';
 import { useAddressLookup } from '@/hooks/useAddressLookup';
@@ -83,7 +83,7 @@ export const ColetaDestinationAddress: React.FC<DestinationAddressSectionProps> 
             value={cepInput}
             onChange={(value) => {
               setCepInput(value);
-              handleInputChange('cep_destino', value); // <-- Adicionado esta linha
+              handleInputChange('cep_destino', value);
             }}
             onBlur={fetchAddress}
             disabled={isFormDisabled || isFetching}
@@ -92,21 +92,37 @@ export const ColetaDestinationAddress: React.FC<DestinationAddressSectionProps> 
           {isFetching && <Loader2 className="absolute right-3 top-3 h-4 w-4 animate-spin text-accent" />}
         </div>
       </div>
-      <div className="space-y-2">
-        <Label>{addressLabel}</Label>
-        <div className="relative">
-          <MapPin className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-          <Input
-            id="endereco_destino"
-            value={addressInput}
-            onChange={(e) => {
-              setAddressInput(e.target.value);
-              handleInputChange('endereco_destino', e.target.value);
-            }}
-            placeholder="Endereço completo de destino"
-            className="pl-10"
-            disabled={isFormDisabled || isFetching}
-          />
+      <div className="grid grid-cols-3 gap-4"> {/* Usar grid para endereço e número */}
+        <div className="space-y-2 col-span-2">
+          <Label>{addressLabel}</Label>
+          <div className="relative">
+            <MapPin className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+            <Input
+              id="endereco_destino"
+              value={addressInput}
+              onChange={(e) => {
+                setAddressInput(e.target.value);
+                handleInputChange('endereco_destino', e.target.value);
+              }}
+              placeholder="Endereço completo de destino"
+              className="pl-10"
+              disabled={isFormDisabled || isFetching}
+            />
+          </div>
+        </div>
+        <div className="space-y-2 col-span-1">
+          <Label htmlFor="destination_address_number">Número</Label>
+          <div className="relative">
+            <Hash className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+            <Input
+              id="destination_address_number"
+              value={formData.destination_address_number || ''}
+              onChange={(e) => handleInputChange("destination_address_number", e.target.value)}
+              placeholder="Nº"
+              className="pl-10"
+              disabled={isFormDisabled}
+            />
+          </div>
         </div>
       </div>
     </div>

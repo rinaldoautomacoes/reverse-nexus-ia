@@ -27,8 +27,10 @@ export const parseXLSX = (file: File): Promise<ColetaImportData[]> => {
           cnpj: row['CNPJ'] ? String(row['CNPJ']) : null,
           endereco_origem: row['Endereço de Origem'] || row['Endereço'] || 'Endereço Desconhecido',
           cep_origem: row['CEP de Origem'] ? String(row['CEP de Origem']) : null,
+          origin_address_number: row['Número Endereço Origem'] ? String(row['Número Endereço Origem']) : null, // Novo campo
           endereco_destino: row['Endereço de Destino'] || null,
           cep_destino: row['CEP de Destino'] ? String(row['CEP de Destino']) : null,
+          destination_address_number: row['Número Endereço Destino'] ? String(row['Número Endereço Destino']) : null, // Novo campo
           previsao_coleta: parseDateSafely(row['Data da Coleta']),
           qtd_aparelhos_solicitado: parseInt(row['Quantidade']) || 1,
           modelo_aparelho: row['Produto'] || 'Produto Desconhecido',
@@ -72,8 +74,10 @@ export const parseCSV = (file: File): Promise<ColetaImportData[]> => {
           cnpj: row['CNPJ'] ? String(row['CNPJ']) : null,
           endereco_origem: row['Endereço de Origem'] || row['Endereço'] || 'Endereço Desconhecido',
           cep_origem: row['CEP de Origem'] ? String(row['CEP de Origem']) : null,
+          origin_address_number: row['Número Endereço Origem'] ? String(row['Número Endereço Origem']) : null, // Novo campo
           endereco_destino: row['Endereço de Destino'] || null,
           cep_destino: row['CEP de Destino'] ? String(row['CEP de Destino']) : null,
+          destination_address_number: row['Número Endereço Destino'] ? String(row['Número Endereço Destino']) : null, // Novo campo
           previsao_coleta: parseDateSafely(row['Data da Coleta']),
           qtd_aparelhos_solicitado: parseInt(row['Quantidade']) || 1,
           modelo_aparelho: row['Produto'] || 'Produto Desconhecido',
@@ -108,7 +112,8 @@ export const parsePDF = (file: File): Promise<ColetaImportData[]> => {
           telefone: cleanPhoneNumber('11987654321'), // Aplicado cleanPhoneNumber
           email: 'joao.silva@pdf.com',
           cnpj: '00.000.000/0001-00',
-          endereco_origem: 'Rua da Amostra, 100, Bairro Teste, Cidade Fictícia - SP',
+          endereco_origem: 'Rua da Amostra, Bairro Teste, Cidade Fictícia - SP',
+          origin_address_number: '100', // Novo campo
           cep_origem: '01000-000',
           previsao_coleta: parseDateSafely(new Date()),
           qtd_aparelhos_solicitado: 3,
@@ -129,7 +134,8 @@ export const parsePDF = (file: File): Promise<ColetaImportData[]> => {
           telefone: cleanPhoneNumber('21912345678'), // Aplicado cleanPhoneNumber
           email: 'maria.souza@pdf.com',
           cnpj: '00.000.000/0002-00',
-          endereco_origem: 'Av. Simulação, 50, Centro, Rio de Janeiro - RJ',
+          endereco_origem: 'Av. Simulação, Centro, Rio de Janeiro - RJ',
+          origin_address_number: '50', // Novo campo
           cep_origem: '20000-000',
           previsao_coleta: parseDateSafely(new Date()),
           qtd_aparelhos_solicitado: 1,

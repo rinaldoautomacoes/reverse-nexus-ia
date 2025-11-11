@@ -19,8 +19,8 @@ import { ptBR } from "date-fns/locale";
 
 // Import modular components
 import { ColetaClientDetails } from "@/components/shared-scheduler-sections/ColetaClientDetails";
-import { OriginAddressSection } from "@/components/shared-scheduler-sections/OriginAddressSection";
-import { DestinationAddressSection } from "@/components/shared-scheduler-sections/DestinationAddressSection";
+import { ColetaOriginAddress } from "@/components/coleta-form-sections/ColetaOriginAddress"; // Usar o componente atualizado
+import { ColetaDestinationAddress } from "@/components/coleta-form-sections/ColetaDestinationAddress"; // Usar o componente atualizado
 import { ColetaItemsSection } from "@/components/coleta-form-sections/ColetaItemsSection"; // Novo componente
 import { ItemData } from "@/components/coleta-form-sections/ColetaItemRow"; // Importa a interface ItemData
 import { ColetaLogisticsDetails } from "@/components/coleta-form-sections/ColetaLogisticsDetails";
@@ -92,6 +92,8 @@ export const AgendarColetaPage: React.FC = () => {
     client_control: null, // Alterado para null
     attachments: [], // Novo campo para anexos
     created_at: format(new Date(), "yyyy-MM-dd'T'HH:mm:ss.SSSXXX"), // Initialize created_at
+    origin_address_number: "", // Novo campo
+    destination_address_number: "", // Novo campo
   });
 
   const [collectionItems, setCollectionItems] = useState<ItemData[]>([]);
@@ -345,12 +347,13 @@ export const AgendarColetaPage: React.FC = () => {
               </div>
 
               <ColetaClientDetails
-                parsedData={formData}
-                handleParsedDataChange={handleInputChange}
-                isFormDisabled={isFormDisabled}
+                formData={formData}
+                handleInputChange={handleInputChange}
+                handleClientComboboxSelect={handleClientComboboxSelect}
+                isPending={isFormDisabled}
               />
 
-              <OriginAddressSection
+              <ColetaOriginAddress
                 formData={formData}
                 handleInputChange={handleInputChange}
                 isFormDisabled={isFormDisabled}
@@ -360,7 +363,7 @@ export const AgendarColetaPage: React.FC = () => {
                 addressLabel="Endereço de Origem"
               />
 
-              <DestinationAddressSection
+              <ColetaDestinationAddress
                 formData={formData}
                 handleInputChange={handleInputChange}
                 isFormDisabled={isFormDisabled}

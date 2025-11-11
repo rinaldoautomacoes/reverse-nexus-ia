@@ -16,10 +16,12 @@ export interface ParsedCollectionData {
   cep_origem?: string | null;
   origin_lat?: number | null;
   origin_lng?: number | null;
+  origin_address_number?: string | null; // Novo campo
   endereco_destino?: string | null;
   cep_destino?: string | null;
   destination_lat?: number | null;
   destination_lng?: number | null;
+  destination_address_number?: string | null; // Novo campo
   previsao_coleta: string; // Formato 'yyyy-MM-dd'
   observacao?: string | null;
   responsavel?: string | null; // Técnico Responsável
@@ -45,10 +47,12 @@ export interface ColetaImportData {
   cep_origem?: string | null;
   origin_lat?: number | null;
   origin_lng?: number | null;
+  origin_address_number?: string | null; // Novo campo
   endereco_destino?: string | null;
   cep_destino?: string | null;
   destination_lat?: number | null;
   destination_lng?: number | null;
+  destination_address_number?: string | null; // Novo campo
   previsao_coleta: string; // Formato 'yyyy-MM-dd'
   qtd_aparelhos_solicitado: number;
   modelo_aparelho: string;

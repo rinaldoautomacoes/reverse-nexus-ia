@@ -19,8 +19,8 @@ import { ptBR } from "date-fns/locale";
 
 // Import modular components
 // import { ColetaClientDetails } from "@/components/shared-scheduler-sections/ColetaClientDetails"; // Removido
-import { OriginAddressSection } from "@/components/shared-scheduler-sections/OriginAddressSection";
-import { DestinationAddressSection } from "@/components/shared-scheduler-sections/DestinationAddressSection";
+import { ColetaOriginAddress } from "@/components/coleta-form-sections/ColetaOriginAddress"; // Usar o componente atualizado
+import { ColetaDestinationAddress } from "@/components/coleta-form-sections/ColetaDestinationAddress"; // Usar o componente atualizado
 import { ColetaItemsSection } from "@/components/coleta-form-sections/ColetaItemsSection"; // Novo componente
 import { ItemData } from "@/components/coleta-form-sections/ColetaItemRow"; // Importa a interface ItemData
 import { ColetaLogisticsDetails } from "@/components/coleta-form-sections/ColetaLogisticsDetails";
@@ -93,6 +93,8 @@ export const AgendarEntregaPage: React.FC = () => {
     client_control: "",
     attachments: [], // Novo campo para anexos
     created_at: format(new Date(), "yyyy-MM-dd'T'HH:mm:ss.SSSXXX"), // Initialize created_at
+    origin_address_number: "", // Novo campo
+    destination_address_number: "", // Novo campo
   });
 
   const [deliveryItems, setDeliveryItems] = useState<ItemData[]>([]);
@@ -354,7 +356,7 @@ export const AgendarEntregaPage: React.FC = () => {
                 isPending={isFormDisabled}
               />
 
-              <OriginAddressSection
+              <ColetaOriginAddress
                 formData={formData}
                 handleInputChange={handleInputChange}
                 isFormDisabled={isFormDisabled}
@@ -364,7 +366,7 @@ export const AgendarEntregaPage: React.FC = () => {
                 addressLabel="Endereço de Origem"
               />
 
-              <DestinationAddressSection
+              <ColetaDestinationAddress
                 formData={formData}
                 handleInputChange={handleInputChange}
                 isFormDisabled={isFormDisabled}
