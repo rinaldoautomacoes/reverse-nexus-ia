@@ -1,13 +1,11 @@
 import React from 'react';
 import { Card, CardContent } from '@/components/ui/card';
-import { Label } from '@/components/ui/label'; // Adicionado: Importação do componente Label
+import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
-import { Combobox } from '@/components/Combobox';
-import { useQuery } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
-import type { Tables } from '@/integrations/supabase/types_generated';
 import { Mail, Phone, Building, Contact } from 'lucide-react';
-import type { ParsedCollectionData } from '@/lib/types'; // Updated import path
+import { ClientCombobox } from '@/components/ClientCombobox'; // Usar o ClientCombobox dedicado
+import type { ParsedCollectionData } from '@/lib/types';
+import type { Tables } from '@/integrations/supabase/types_generated';
 
 type Client = Tables<'clients'>;
 
@@ -22,43 +20,33 @@ export const ColetaClientDetails: React.FC<ColetaClientDetailsProps> = ({
   handleParsedDataChange,
   isFormDisabled,
 }) => {
-  const { data: clients, isLoading: isLoadingClients } = useQuery<Client[]>({
-    queryKey: ['clients'],
-    queryFn: async () => {
-      const { data, error } = await supabase.from('clients').select('*');
-      if (error) throw error;
-      return data;
-    },
-  });
+  // Handler para quando um cliente é selecionado no ClientCombobox
+  const handleClientSelect = (clientName: string, client: Client | null) => {
+    // Atualiza o campo 'parceiro' com o nome do cliente selecionado/digitado
+    handleParsedDataChange("parceiro", clientName);
 
-  const clientOptions = clients?.map(client => ({
-    value: client.id,
-    label: client.name,
-    data: client,
-  })) || [];
-
-  const selectedClient = clients?.find(client => client.id === parsedData.client_id);
-
-  const handleClientSelect = (value: string) => {
-    const client = clients?.find(c => c.id === value) || null;
     if (client) {
+      // Se um cliente existente foi selecionado, preenche os outros campos
       handleParsedDataChange("client_id", client.id);
-      handleParsedDataChange("parceiro", client.name);
       handleParsedDataChange("telefone", client.phone || '');
       handleParsedDataChange("email", client.email || '');
       handleParsedDataChange("cnpj", client.cnpj || '');
       handleParsedDataChange("contato", client.contact_person || '');
       if (client.address) {
         handleParsedDataChange("endereco_origem", client.address);
+        handleParsedDataChange("cep_origem", client.cep || null);
       }
     } else {
+      // Se o cliente foi desmarcado ou um novo nome foi digitado, limpa os campos relacionados ao cliente
       handleParsedDataChange("client_id", null);
-      handleParsedDataChange("parceiro", '');
+      // Não limpa 'parceiro' aqui, pois ele já foi atualizado com clientName
       handleParsedDataChange("telefone", '');
       handleParsedDataChange("email", '');
       handleParsedDataChange("cnpj", '');
       handleParsedDataChange("contato", '');
-      handleParsedDataChange("endereco_origem", '');
+      // Opcionalmente, limpa os campos de endereço se eles foram derivados do cliente
+      // handleParsedDataChange("endereco_origem", '');
+      // handleParsedDataChange("cep_origem", null);
     }
   };
 
@@ -68,15 +56,11 @@ export const ColetaClientDetails: React.FC<ColetaClientDetailsProps> = ({
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div className="space-y-2">
             <Label htmlFor="client-name">Cliente</Label>
-            <Combobox
-              id="client-name"
-              options={clientOptions}
-              value={parsedData.client_id || ''}
-              onValueChange={handleClientSelect}
-              placeholder="Selecione ou digite o cliente"
-              searchPlaceholder="Buscar cliente..."
-              disabled={isFormDisabled || isLoadingClients}
-              currentValueDisplay={selectedClient?.name || parsedData.parceiro || ''}
+            <ClientCombobox
+              value={parsedData.parceiro || ''} // O ClientCombobox espera o nome do cliente como valor
+              onValueChange={(name) => handleClientSelect(name, null)} // Atualiza o nome no formulário
+              onClientSelect={(client) => handleClientSelect(client?.name || '', client)} // Passa o objeto cliente completo
+              disabled={isFormDisabled}
             />
           </div>
           <div className="space-y-2">

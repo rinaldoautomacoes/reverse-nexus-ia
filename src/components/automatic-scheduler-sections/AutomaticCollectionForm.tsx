@@ -87,7 +87,8 @@ export const AutomaticCollectionForm: React.FC<AutomaticCollectionFormProps> = (
     });
   }, [setFormData]);
 
-  const handleClientComboboxSelect = useCallback((client: Client | null) => {
+  // Handler para quando um cliente é selecionado no ClientCombobox dentro de ColetaClientDetails
+  const handleClientSelectedInDetails = useCallback((client: Client | null) => {
     if (client) {
       setFormData(prev => ({
         ...prev,
@@ -97,21 +98,23 @@ export const AutomaticCollectionForm: React.FC<AutomaticCollectionFormProps> = (
         cnpj: client.cnpj || '',
         contato: client.contact_person || '',
         client_id: client.id,
+        endereco_origem: client.address || prev.endereco_origem, // Atualiza endereço de origem se disponível
+        cep_origem: client.cep || prev.cep_origem, // Atualiza CEP de origem se disponível
       }));
-      if (client.address) {
-        handleParsedDataChange("endereco_origem", client.address);
-      }
     } else {
       setFormData(prev => ({
         ...prev,
         client_id: null,
+        parceiro: '', // Limpa o nome do parceiro se nenhum cliente for selecionado
         telefone: '',
         email: '',
         cnpj: '',
         contato: '',
+        // Não limpa endereco_origem/cep_origem automaticamente aqui,
+        // pois podem ter sido preenchidos pelo parser de documento.
       }));
     }
-  }, [setFormData, handleParsedDataChange]);
+  }, [setFormData]);
 
   const handleResponsibleUserSelect = useCallback((userProfile: Profile | null) => {
     handleParsedDataChange("responsible_user_id", userProfile?.id || null);
@@ -205,7 +208,8 @@ export const AutomaticCollectionForm: React.FC<AutomaticCollectionFormProps> = (
 
       <ColetaClientDetails
         parsedData={formData}
-        handleParsedDataChange={handleClientComboboxSelect} // Pass the specific handler for client
+        handleParsedDataChange={handleParsedDataChange} // Passa o handler genérico
+        onClientSelected={handleClientSelectedInDetails} // Passa o handler específico para seleção de cliente
         isFormDisabled={isFormDisabled}
       />
 

@@ -18,7 +18,7 @@ import { ptBR } from "date-fns/locale";
 
 
 // Import modular components
-import { ColetaClientDetails } from "@/components/shared-scheduler-sections/ColetaClientDetails";
+// import { ColetaClientDetails } from "@/components/shared-scheduler-sections/ColetaClientDetails"; // Removido
 import { OriginAddressSection } from "@/components/shared-scheduler-sections/OriginAddressSection";
 import { DestinationAddressSection } from "@/components/shared-scheduler-sections/DestinationAddressSection";
 import { ColetaItemsSection } from "@/components/coleta-form-sections/ColetaItemsSection"; // Novo componente
@@ -28,6 +28,7 @@ import { ColetaResponsibleUser } from "@/components/coleta-form-sections/ColetaR
 import { ColetaObservation } from "@/components/coleta-form-sections/ColetaObservation";
 import { ManualSchedulerActionButtons } from "@/components/manual-scheduler-sections/ManualSchedulerActionButtons";
 import { FileUploadField } from "@/components/FileUploadField"; // Import the new component
+import { ColetaClientDetails as ManualColetaClientDetails } from "@/components/coleta-form-sections/ColetaClientDetails"; // Importa a versão manual
 
 type EntregaInsert = TablesInsert<'coletas'>;
 type EntregaUpdate = TablesUpdate<'coletas'>;
@@ -272,7 +273,7 @@ export const AgendarEntregaPage: React.FC = () => {
             <CardContent className="p-6 space-y-6">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label htmlFor="unique_number">Número Único da Entrega</Label>
+                  <Label htmlFor="unique_number">Código da Entrega</Label>
                   <div className="relative">
                     <Tag className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
                     <Input
@@ -346,7 +347,7 @@ export const AgendarEntregaPage: React.FC = () => {
                 </div>
               </div>
 
-              <ColetaClientDetails
+              <ManualColetaClientDetails // Usando a versão manual
                 formData={formData}
                 handleInputChange={handleInputChange}
                 handleClientComboboxSelect={handleClientComboboxSelect}
