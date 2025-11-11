@@ -51,7 +51,7 @@ export const SortableCard: React.FC<SortableCardProps> = ({
       ref={setNodeRef}
       style={style}
       className={cn(
-        "card-futuristic border-0 animate-slide-up transition-all duration-300 ease-in-out relative h-[186px]", // Altura ajustada para 186px
+        "card-futuristic border-0 animate-slide-up transition-all duration-300 ease-in-out relative h-[170px]", // Altura ajustada para 170px
         isDragging ? "ring-2 ring-primary-foreground" : "",
         className
       )}
