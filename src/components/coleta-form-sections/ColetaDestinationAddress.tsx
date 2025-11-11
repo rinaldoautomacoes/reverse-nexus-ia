@@ -1,23 +1,31 @@
 import React from 'react';
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { MapPin, Flag, Loader2 } from "lucide-react";
-import { useAddressLookup } from "@/hooks/useAddressLookup";
-import type { TablesInsert, TablesUpdate } from "@/integrations/supabase/types_generated";
-import { CepInputWithRecents } from '@/components/CepInputWithRecents'; // Import the new component
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { MapPin, Flag, Loader2 } from 'lucide-react';
+import type { TablesInsert, TablesUpdate } from '@/integrations/supabase/types_generated';
+import { CepInputWithRecents } from '@/components/CepInputWithRecents';
+import { useAddressLookup } from '@/hooks/useAddressLookup';
 
 type ColetaFormData = TablesInsert<'coletas'> | TablesUpdate<'coletas'>;
 
-interface ColetaDestinationAddressProps {
+interface DestinationAddressSectionProps {
   formData: ColetaFormData;
   handleInputChange: (field: keyof ColetaFormData, value: string | number | null) => void;
-  isPending: boolean;
+  isFormDisabled: boolean;
+  setIsGeocoding: (value: boolean) => void;
+  title?: string;
+  cepLabel?: string;
+  addressLabel?: string;
 }
 
-export const ColetaDestinationAddress: React.FC<ColetaDestinationAddressProps> = ({
+export const ColetaDestinationAddress: React.FC<DestinationAddressSectionProps> = ({
   formData,
   handleInputChange,
-  isPending,
+  isFormDisabled,
+  setIsGeocoding,
+  title = 'Destino da Coleta',
+  cepLabel = 'CEP de Destino',
+  addressLabel = 'Endereço de Destino',
 }) => {
   const onAddressFound = (
     fullAddress: string,
@@ -26,12 +34,14 @@ export const ColetaDestinationAddress: React.FC<ColetaDestinationAddressProps> =
     lng: number | null,
     isOrigin: boolean
   ) => {
+    console.log("DestinationAddressSection: onAddressFound called with:", { fullAddress, cep, lat, lng, isOrigin });
     if (!isOrigin) {
       handleInputChange("endereco_destino", fullAddress);
       handleInputChange("cep_destino", cep);
       handleInputChange("destination_lat", lat);
       handleInputChange("destination_lng", lng);
     }
+    setIsGeocoding(false); // Ensure geocoding state is reset
   };
 
   const {
@@ -54,40 +64,48 @@ export const ColetaDestinationAddress: React.FC<ColetaDestinationAddressProps> =
     setAddressInput(formData.endereco_destino || '');
   }, [formData.cep_destino, formData.endereco_destino, setCepInput, setAddressInput]);
 
+  // Update parent's isGeocoding state
+  React.useEffect(() => {
+    setIsGeocoding(isFetching);
+  }, [isFetching, setIsGeocoding]);
+
   return (
     <div className="space-y-2 border-t border-border/30 pt-4">
       <h3 className="text-lg font-semibold flex items-center gap-2 text-accent">
-        <Flag className="h-5 w-5" /> Destino da Coleta
+        <Flag className="h-5 w-5" /> {title}
       </h3>
       <div className="space-y-2">
-        <Label htmlFor="cep_destino">CEP de Destino</Label>
+        <Label>{cepLabel}</Label>
         <div className="relative">
-          <CepInputWithRecents // Using the new component
+          <CepInputWithRecents
             id="cep_destino"
             placeholder="Ex: 02000-000"
             value={cepInput}
-            onChange={(value) => setCepInput(value)}
+            onChange={(value) => {
+              setCepInput(value);
+              handleInputChange('cep_destino', value); // <-- Adicionado esta linha
+            }}
             onBlur={fetchAddress}
-            disabled={isPending || isFetching}
+            disabled={isFormDisabled || isFetching}
             isOrigin={false}
           />
           {isFetching && <Loader2 className="absolute right-3 top-3 h-4 w-4 animate-spin text-accent" />}
         </div>
       </div>
       <div className="space-y-2">
-        <Label htmlFor="endereco_destino">Endereço de Destino</Label>
+        <Label>{addressLabel}</Label>
         <div className="relative">
           <MapPin className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
           <Input
             id="endereco_destino"
-            placeholder="Endereço completo de destino"
-            className="pl-10"
             value={addressInput}
             onChange={(e) => {
               setAddressInput(e.target.value);
-              handleInputChange("endereco_destino", e.target.value);
+              handleInputChange('endereco_destino', e.target.value);
             }}
-            disabled={isPending || isFetching}
+            placeholder="Endereço completo de destino"
+            className="pl-10"
+            disabled={isFormDisabled || isFetching}
           />
         </div>
       </div>
