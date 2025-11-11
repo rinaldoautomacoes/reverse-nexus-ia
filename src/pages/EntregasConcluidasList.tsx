@@ -124,26 +124,22 @@ const EntregasConcluidasList: React.FC<EntregasConcluidasListProps> = ({ selecte
   };
 
   const handleWhatsAppClick = (entrega: Entrega) => {
-    if (entrega.telefone && entrega.parceiro && entrega.previsao_coleta) {
+    if (entrega.telefone) {
       const cleanedPhone = entrega.telefone.replace(/\D/g, '');
-      const formattedDate = isValid(new Date(entrega.previsao_coleta)) ? format(new Date(entrega.previsao_coleta), 'dd/MM/yyyy', { locale: ptBR }) : 'N/A';
-      const transportadoraName = entrega.transportadora?.name ? ` pela transportadora ${entrega.transportadora.name}` : '';
-      const message = `Olá ${entrega.parceiro},\n\nGostaríamos de confirmar sua entrega agendada para o dia ${formattedDate}${transportadoraName}. Número da Entrega: ${entrega.unique_number}.`;
+      const message = "Olá, tudo bem? Me chamo Rinaldo, representante logístico da empresa Método Telecomunicações, tentei te ligar e não obtive retorno, meu contato é referente ao recolhimento de aparelhos e equipamentos, quando possível me retorne , desde já agradeço.";
       window.open(`https://wa.me/${cleanedPhone}?text=${encodeURIComponent(message)}`, '_blank');
     } else {
-      toast({ title: "Dados incompletos", description: "Telefone, nome do parceiro ou data de previsão da entrega não disponíveis.", variant: "destructive" });
+      toast({ title: "Dados incompletos", description: "Telefone do cliente não disponível.", variant: "destructive" });
     }
   };
 
   const handleEmailClick = (entrega: Entrega) => {
-    if (entrega.email && entrega.parceiro && entrega.previsao_coleta) {
-      const formattedDate = isValid(new Date(entrega.previsao_coleta)) ? format(new Date(entrega.previsao_coleta), 'dd/MM/yyyy', { locale: ptBR }) : 'N/A';
-      const transportadoraName = entrega.transportadora?.name ? ` pela transportadora ${entrega.transportadora.name}` : '';
-      const subject = encodeURIComponent(`Confirmação de Agendamento de Entrega - ${entrega.parceiro} - ${entrega.unique_number}`);
-      const body = encodeURIComponent(`Olá ${entrega.parceiro},\n\nGostaríamos de confirmar sua entrega agendada para o dia ${formattedDate}${transportadoraName}. Número da Entrega: ${entrega.unique_number}.\n\nAtenciosamente,\nSua Equipe de Logística`);
+    if (entrega.email) {
+      const subject = encodeURIComponent("Contato referente ao recolhimento de aparelhos e equipamentos");
+      const body = encodeURIComponent("Olá, tudo bem? Me chamo Rinaldo, representante logístico da empresa Método Telecomunicações, tentei te ligar e não obtive retorno, meu contato é referente ao recolhimento de aparelhos e equipamentos, quando possível me retorne , desde já agradeço.");
       window.open(`mailto:${entrega.email}?subject=${subject}&body=${body}`, '_blank');
     } else {
-      toast({ title: "Dados incompletos", description: "Email, nome do parceiro ou data de previsão da entrega não disponíveis.", variant: "destructive" });
+      toast({ title: "Dados incompletos", description: "Email do cliente não disponível.", variant: "destructive" });
     }
   };
 
@@ -349,7 +345,7 @@ const EntregasConcluidasList: React.FC<EntregasConcluidasListProps> = ({ selecte
                         size="sm"
                         className="border-success-green text-success-green hover:bg-success-green/10"
                         onClick={() => handleWhatsAppClick(entrega)}
-                        disabled={!entrega.telefone || !entrega.parceiro || !entrega.previsao_coleta}
+                        disabled={!entrega.telefone}
                       >
                         <MessageSquare className="mr-1 h-3 w-3" />
                         WhatsApp
@@ -359,7 +355,7 @@ const EntregasConcluidasList: React.FC<EntregasConcluidasListProps> = ({ selecte
                         size="sm"
                         className="border-neural text-neural hover:bg-neural/10"
                         onClick={() => handleEmailClick(entrega)}
-                        disabled={!entrega.email || !entrega.parceiro || !entrega.previsao_coleta}
+                        disabled={!entrega.email}
                       >
                         <Send className="mr-1 h-3 w-3" />
                         E-mail

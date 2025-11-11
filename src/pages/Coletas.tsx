@@ -114,7 +114,7 @@ export const Coletas: React.FC<ColetasProps> = ({ selectedYear }) => {
         .select()
         .single();
       
-      if (coletaError) throw new Error(coletaError.message);
+      if (coletaError) throw new Error(coleta.message);
 
       for (const item of data.items) {
         if (item.modelo_aparelho && item.qtd_aparelhos_solicitado && item.qtd_aparelhos_solicitado > 0) {
@@ -183,26 +183,22 @@ export const Coletas: React.FC<ColetasProps> = ({ selectedYear }) => {
   };
 
   const handleWhatsAppClick = (coleta: Coleta) => {
-    if (coleta.telefone && coleta.parceiro && coleta.previsao_coleta) {
+    if (coleta.telefone) {
       const cleanedPhone = coleta.telefone.replace(/\D/g, '');
-      const formattedDate = isValid(new Date(coleta.previsao_coleta)) ? format(new Date(coleta.previsao_coleta), 'dd/MM/yyyy', { locale: ptBR }) : 'N/A';
-      const transportadoraName = coleta.transportadora?.name ? ` pela transportadora ${coleta.transportadora.name}` : '';
-      const message = `Olá ${coleta.parceiro},\n\nGostaríamos de confirmar sua coleta agendada para o dia ${formattedDate}${transportadoraName}. Número da Coleta: ${coleta.unique_number}.`;
+      const message = "Olá, tudo bem? Me chamo Rinaldo, representante logístico da empresa Método Telecomunicações, tentei te ligar e não obtive retorno, meu contato é referente ao recolhimento de aparelhos e equipamentos, quando possível me retorne , desde já agradeço.";
       window.open(`https://wa.me/${cleanedPhone}?text=${encodeURIComponent(message)}`, '_blank');
     } else {
-      toast({ title: "Dados incompletos", description: "Telefone, nome do parceiro ou data de previsão da coleta não disponíveis.", variant: "destructive" });
+      toast({ title: "Dados incompletos", description: "Telefone do cliente não disponível.", variant: "destructive" });
     }
   };
 
   const handleEmailClick = (coleta: Coleta) => {
-    if (coleta.email && coleta.parceiro && coleta.previsao_coleta) {
-      const formattedDate = isValid(new Date(coleta.previsao_coleta)) ? format(new Date(coleta.previsao_coleta), 'dd/MM/yyyy', { locale: ptBR }) : 'N/A';
-      const transportadoraName = coleta.transportadora?.name ? ` pela transportadora ${coleta.transportadora.name}` : '';
-      const subject = encodeURIComponent(`Confirmação de Agendamento de Coleta - ${coleta.parceiro} - ${coleta.unique_number}`);
-      const body = encodeURIComponent(`Olá ${coleta.parceiro},\n\nGostaríamos de confirmar sua coleta agendada para o dia ${formattedDate}${transportadoraName}. Número da Coleta: ${coleta.unique_number}.\n\nAtenciosamente,\nSua Equipe de Logística`);
+    if (coleta.email) {
+      const subject = encodeURIComponent("Contato referente ao recolhimento de aparelhos e equipamentos");
+      const body = encodeURIComponent("Olá, tudo bem? Me chamo Rinaldo, representante logístico da empresa Método Telecomunicações, tentei te ligar e não obtive retorno, meu contato é referente ao recolhimento de aparelhos e equipamentos, quando possível me retorne , desde já agradeço.");
       window.open(`mailto:${coleta.email}?subject=${subject}&body=${body}`, '_blank');
     } else {
-      toast({ title: "Dados incompletos", description: "Email, nome do parceiro ou data de previsão da coleta não disponíveis.", variant: "destructive" });
+      toast({ title: "Dados incompletos", description: "Email do cliente não disponível.", variant: "destructive" });
     }
   };
 
@@ -438,7 +434,7 @@ export const Coletas: React.FC<ColetasProps> = ({ selectedYear }) => {
                         size="sm"
                         className="border-success-green text-success-green hover:bg-success-green/10"
                         onClick={() => handleWhatsAppClick(coleta)}
-                        disabled={!coleta.telefone || !coleta.parceiro || !coleta.previsao_coleta}
+                        disabled={!coleta.telefone}
                       >
                         <MessageSquare className="mr-1 h-3 w-3" />
                         WhatsApp
@@ -448,7 +444,7 @@ export const Coletas: React.FC<ColetasProps> = ({ selectedYear }) => {
                         size="sm"
                         className="border-neural text-neural hover:bg-neural/10"
                         onClick={() => handleEmailClick(coleta)}
-                        disabled={!coleta.email || !coleta.parceiro || !coleta.previsao_coleta}
+                        disabled={!coleta.email}
                       >
                         <Send className="mr-1 h-3 w-3" />
                         E-mail
