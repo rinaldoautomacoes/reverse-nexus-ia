@@ -10,11 +10,7 @@ interface GeneralMetricCardContentProps {
 }
 
 export const GeneralMetricCardContent: React.FC<GeneralMetricCardContentProps> = ({ metric }) => {
-  const truncateText = (text: string | null | undefined, maxLength: number) => {
-    if (!text) return 'N/A';
-    if (text.length <= maxLength) return text;
-    return text.substring(0, maxLength) + '...';
-  };
+  // Removido truncateText, pois as colunas terão espaço suficiente para o texto completo
 
   return (
     <>
@@ -78,22 +74,22 @@ export const GeneralMetricCardContent: React.FC<GeneralMetricCardContentProps> =
           {metric.description && ( // Keep the description above the table
             <p className="text-sm text-muted-foreground mb-1">{metric.description}</p>
           )}
-          <div className="mt-2 max-h-[90px] overflow-y-auto overflow-x-auto"> {/* Ajustado max-h para 90px */}
-            <Table className="min-w-full text-xs"> {/* Changed w-full to min-w-full */}
+          <div className="mt-2 max-h-[140px] overflow-y-auto overflow-x-auto"> {/* Ajustado max-h para 140px */}
+            <Table className="min-w-full text-xs">
               <TableHeader>
                 <TableRow className="border-b border-border/50">
-                  <TableHead className="h-6 p-1 text-muted-foreground">Qtd</TableHead>
-                  <TableHead className="h-6 p-1 text-muted-foreground">Item</TableHead>
-                  <TableHead className="h-6 p-1 text-muted-foreground">Descrição</TableHead>
-                  <TableHead className="h-6 p-1 text-muted-foreground text-right">Tipo</TableHead>
+                  <TableHead className="h-6 p-1 text-muted-foreground w-[50px]">Qtd</TableHead>
+                  <TableHead className="h-6 p-1 text-muted-foreground min-w-[100px]">Item</TableHead> {/* Ajustado min-w */}
+                  <TableHead className="h-6 p-1 text-muted-foreground min-w-[180px]">Descrição</TableHead> {/* Ajustado min-w */}
+                  <TableHead className="h-6 p-1 text-muted-foreground text-right w-[80px]">Tipo</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {metric.allItemsDetails.slice(0, 3).map((item, index) => ( // Limit to 3 items for brevity
+                {metric.allItemsDetails.map((item, index) => ( // Removido o slice para mostrar todos os itens
                   <TableRow key={index} className="border-b border-border/20 last:border-b-0">
                     <TableCell className="p-1 font-medium text-foreground">{item.quantity}</TableCell>
-                    <TableCell className="p-1 text-foreground">{truncateText(item.name, 8)}</TableCell> {/* Truncate item name */}
-                    <TableCell className="p-1 text-foreground">{truncateText(item.description, 15)}</TableCell> {/* Truncate description */}
+                    <TableCell className="p-1 text-foreground whitespace-normal">{item.name}</TableCell> {/* Removido truncateText e adicionado whitespace-normal */}
+                    <TableCell className="p-1 text-foreground whitespace-normal">{item.description}</TableCell> {/* Removido truncateText e adicionado whitespace-normal */}
                     <TableCell className="p-1 text-right">
                       <Badge
                         variant="secondary"
