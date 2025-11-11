@@ -12,104 +12,108 @@ interface GeneralMetricCardContentProps {
 export const GeneralMetricCardContent: React.FC<GeneralMetricCardContentProps> = ({ metric }) => {
   return (
     <>
-      <div className="text-4xl font-bold font-orbitron gradient-text mb-1">
-        {metric.value}
-      </div>
-
-      {/* Conditional rendering for specific metric types */}
-      {metric.id === 'total-operacoes' && (
-        <div className="space-y-1 text-sm text-muted-foreground mt-1">
-          <div className="flex items-center gap-1">
-            <Package className="h-3 w-3 text-primary" />
-            <span>{metric.coletasCount} Coletas</span>
-          </div>
-          <div className="flex items-center gap-1">
-            <Truck className="h-3 w-3 text-accent" />
-            <span>{metric.entregasCount} Entregas</span>
-          </div>
-        </div>
-      )}
-      {metric.id === 'operacoes-em-transito' && (
-        <div className="space-y-1 text-sm text-muted-foreground mt-1">
-          <div className="flex items-center gap-1">
-            <Package className="h-3 w-3 text-primary" />
-            <span>{metric.coletasCount} Coletas em trânsito</span>
-          </div>
-          <div className="flex items-center gap-1">
-            <Truck className="h-3 w-3 text-accent" />
-            <span>{metric.entregasCount} Entregas em trânsito</span>
-          </div>
-        </div>
-      )}
-      {metric.id === 'operacoes-pendentes' && (
-        <div className="space-y-1 text-sm text-muted-foreground mt-1">
-          <div className="flex items-center gap-1">
-            <Package className="h-3 w-3 text-primary" />
-            <span>{metric.coletasCount} Coletas pendentes</span>
-          </div>
-          <div className="flex items-center gap-1">
-            <Truck className="h-3 w-3 text-accent" />
-            <span>{metric.entregasCount} Entregas pendentes</span>
-          </div>
-        </div>
-      )}
-      {metric.id === 'operacoes-concluidas' && (
-        <div className="space-y-1 text-sm text-muted-foreground mt-1">
-          <div className="flex items-center gap-1">
-            <Package className="h-3 w-3 text-primary" />
-            <span>{metric.coletasCount} Coletas finalizadas</span>
-          </div>
-          <div className="flex items-center gap-1">
-            <Truck className="h-3 w-3 text-accent" />
-            <span>{metric.entregasCount} Entregas finalizadas</span>
-          </div>
-        </div>
-      )}
-
-      {metric.id === 'total-items-geral' && metric.allItemsDetails && metric.allItemsDetails.length > 0 ? (
+      {metric.id === 'total-items-geral' ? (
         <>
           {metric.description && (
-            // Ajustado tamanho do texto e adicionado limite de 2 linhas
-            <p className="text-xs text-muted-foreground mb-1 line-clamp-2">{metric.description}</p> 
+            <p className="text-xs text-muted-foreground mb-1 line-clamp-2">{metric.description}</p>
           )}
-          <div className="mt-2 max-h-[80px] overflow-y-auto overflow-x-auto">
-            <Table className="min-w-full text-xs">
-              <TableHeader>
-                <TableRow className="border-b border-border/50">
-                  <TableHead className="h-6 p-1 text-muted-foreground w-[40px]">Qtd</TableHead> {/* Largura ajustada */}
-                  <TableHead className="h-6 p-1 text-muted-foreground w-[80px]">Item</TableHead> {/* Largura ajustada */}
-                  <TableHead className="h-6 p-1 text-muted-foreground w-auto">Descrição</TableHead> {/* Largura automática */}
-                  <TableHead className="h-6 p-1 text-muted-foreground text-right w-[60px]">Tipo</TableHead> {/* Largura ajustada */}
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {metric.allItemsDetails.map((item, index) => (
-                  <TableRow key={index} className="border-b border-border/20 last:border-b-0">
-                    <TableCell className="p-1 font-medium text-foreground">{item.quantity}</TableCell>
-                    <TableCell className="p-1 text-foreground whitespace-nowrap overflow-hidden text-ellipsis" title={item.name}>{item.name}</TableCell> {/* Truncado com reticências e título ao passar o mouse */}
-                    <TableCell className="p-1 text-foreground whitespace-nowrap overflow-hidden text-ellipsis" title={item.description}>{item.description}</TableCell> {/* Truncado com reticências e título ao passar o mouse */}
-                    <TableCell className="p-1 text-right">
-                      <Badge
-                        variant="secondary"
-                        className={cn(
-                          "px-1 py-0.5 text-[0.6rem]",
-                          item.type === 'coleta' ? 'bg-primary/10 text-primary' : 'bg-accent/10 text-accent'
-                        )}
-                      >
-                        {item.type === 'coleta' ? 'Coleta' : 'Entrega'}
-                      </Badge>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
+          <div className="text-4xl font-bold font-orbitron gradient-text mb-1">
+            {metric.value}
           </div>
+          {metric.allItemsDetails && metric.allItemsDetails.length > 0 && (
+            <div className="mt-2 max-h-[80px] overflow-y-auto overflow-x-auto">
+              <Table className="min-w-full text-xs">
+                <TableHeader>
+                  <TableRow className="border-b border-border/50">
+                    <TableHead className="h-6 p-1 text-muted-foreground w-[40px]">Qtd</TableHead>
+                    <TableHead className="h-6 p-1 text-muted-foreground w-[80px]">Item</TableHead>
+                    <TableHead className="h-6 p-1 text-muted-foreground w-auto">Descrição</TableHead>
+                    <TableHead className="h-6 p-1 text-muted-foreground text-right w-[60px]">Tipo</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {metric.allItemsDetails.map((item, index) => (
+                    <TableRow key={index} className="border-b border-border/20 last:border-b-0">
+                      <TableCell className="p-1 font-medium text-foreground">{item.quantity}</TableCell>
+                      <TableCell className="p-1 text-foreground whitespace-nowrap overflow-hidden text-ellipsis" title={item.name}>{item.name}</TableCell>
+                      <TableCell className="p-1 text-foreground whitespace-nowrap overflow-hidden text-ellipsis" title={item.description}>{item.description}</TableCell>
+                      <TableCell className="p-1 text-right">
+                        <Badge
+                          variant="secondary"
+                          className={cn(
+                            "px-1 py-0.5 text-[0.6rem]",
+                            item.type === 'coleta' ? 'bg-primary/10 text-primary' : 'bg-accent/10 text-accent'
+                          )}
+                        >
+                          {item.type === 'coleta' ? 'Coleta' : 'Entrega'}
+                        </Badge>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
+          )}
         </>
       ) : (
-        // Descrição padrão para outras métricas se nenhum conteúdo específico for definido
-        metric.description && metric.id !== 'total-operacoes' && metric.id !== 'operacoes-em-transito' && metric.id !== 'operacoes-concluidas' && metric.id !== 'operacoes-pendentes' && (
-          <p className="text-sm text-muted-foreground mb-1">{metric.description}</p>
-        )
+        // Renderização padrão para outras métricas: valor, depois descrição/detalhes
+        <>
+          <div className="text-4xl font-bold font-orbitron gradient-text mb-1">
+            {metric.value}
+          </div>
+          {metric.description && (
+            <p className="text-sm text-muted-foreground mb-1">{metric.description}</p>
+          )}
+          {/* Detalhes específicos para outras métricas */}
+          {metric.id === 'total-operacoes' && (
+            <div className="space-y-1 text-sm text-muted-foreground mt-1">
+              <div className="flex items-center gap-1">
+                <Package className="h-3 w-3 text-primary" />
+                <span>{metric.coletasCount} Coletas</span>
+              </div>
+              <div className="flex items-center gap-1">
+                <Truck className="h-3 w-3 text-accent" />
+                <span>{metric.entregasCount} Entregas</span>
+              </div>
+            </div>
+          )}
+          {metric.id === 'operacoes-em-transito' && (
+            <div className="space-y-1 text-sm text-muted-foreground mt-1">
+              <div className="flex items-center gap-1">
+                <Package className="h-3 w-3 text-primary" />
+                <span>{metric.coletasCount} Coletas em trânsito</span>
+              </div>
+              <div className="flex items-center gap-1">
+                <Truck className="h-3 w-3 text-accent" />
+                <span>{metric.entregasCount} Entregas em trânsito</span>
+              </div>
+            </div>
+          )}
+          {metric.id === 'operacoes-pendentes' && (
+            <div className="space-y-1 text-sm text-muted-foreground mt-1">
+              <div className="flex items-center gap-1">
+                <Package className="h-3 w-3 text-primary" />
+                <span>{metric.coletasCount} Coletas pendentes</span>
+              </div>
+              <div className="flex items-center gap-1">
+                <Truck className="h-3 w-3 text-accent" />
+                <span>{metric.entregasCount} Entregas pendentes</span>
+              </div>
+            </div>
+          )}
+          {metric.id === 'operacoes-concluidas' && (
+            <div className="space-y-1 text-sm text-muted-foreground mt-1">
+              <div className="flex items-center gap-1">
+                <Package className="h-3 w-3 text-primary" />
+                <span>{metric.coletasCount} Coletas finalizadas</span>
+              </div>
+              <div className="flex items-center gap-1">
+                <Truck className="h-3 w-3 text-accent" />
+                <span>{metric.entregasCount} Entregas finalizadas</span>
+              </div>
+            </div>
+          )}
+        </>
       )}
     </>
   );
