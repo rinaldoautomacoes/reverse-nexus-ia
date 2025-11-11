@@ -69,7 +69,8 @@ export const GeneralMetricCardContent: React.FC<GeneralMetricCardContentProps> =
       {metric.id === 'total-items-geral' && metric.allItemsDetails && metric.allItemsDetails.length > 0 ? (
         <>
           {metric.description && (
-            <p className="text-xs text-muted-foreground mb-1 line-clamp-2">{metric.description}</p> {/* Ajustado tamanho do texto e adicionado limite de 2 linhas */}
+            // Ajustado tamanho do texto e adicionado limite de 2 linhas
+            <p className="text-xs text-muted-foreground mb-1 line-clamp-2">{metric.description}</p> 
           )}
           <div className="mt-2 max-h-[80px] overflow-y-auto overflow-x-auto">
             <Table className="min-w-full text-xs">
