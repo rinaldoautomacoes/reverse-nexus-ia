@@ -136,7 +136,7 @@ export const MetricDetailsDialog: React.FC<MetricDetailsDialogProps> = ({ metric
               {/* Substituindo ScrollArea e div por um div com overflow-auto e o componente Table */}
               <div className="h-48 border rounded-md overflow-auto">
                 <Table className="min-w-full"> {/* min-w-full para forçar a rolagem horizontal se o conteúdo for muito largo */}
-                  <TableHeader>
+                  <TableHeader className="sticky top-0 bg-card z-10"> {/* Adicionado sticky, top-0, bg-card, z-10 */}
                     <TableRow>
                       <TableHead className="w-[50px]">Qtd</TableHead>
                       <TableHead className="min-w-[150px]">Item</TableHead>
