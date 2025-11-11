@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Button } from "@/components/ui/button"; // Adicionado: Importação do componente Button
 import { Loader2, Package, Tag, ClipboardList, Calendar as CalendarIcon, FileText, Hash } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/use-auth";
