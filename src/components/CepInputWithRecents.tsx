@@ -74,10 +74,13 @@ export const CepInputWithRecents: React.FC<CepInputWithRecentsProps> = ({
   }, []);
 
   const handleSelectRecentCep = (selectedCep: string) => {
-    onChange(selectedCep);
+    onChange(selectedCep); // Update the parent's state
     setOpen(false);
-    // Optionally, trigger blur to fetch address immediately
-    // This would require simulating a blur event or calling the fetchAddress directly
+    // Create a synthetic event to trigger the parent's onBlur handler
+    const syntheticEvent = {
+      target: { value: selectedCep, id: id || '' }
+    } as React.FocusEvent<HTMLInputElement>;
+    onBlur(syntheticEvent); // Trigger the parent's onBlur handler
   };
 
   const handleInputBlur = (e: React.FocusEvent<HTMLInputElement>) => {

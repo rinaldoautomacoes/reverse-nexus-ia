@@ -1,7 +1,6 @@
 import { useState, useCallback } from "react";
 import axios from "axios";
 import { useToast } from "@/hooks/use-toast";
-import type { TablesInsert, TablesUpdate } from "@/integrations/supabase/types_generated";
 
 interface UseAddressLookupProps {
   isOrigin: boolean;
@@ -54,16 +53,20 @@ export const useAddressLookup = ({
 
       const mapboxAccessToken = localStorage.getItem("mapbox_token");
       if (mapboxAccessToken) {
-        const geoResponse = await axios.get(
-          `https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(fullAddress)}.json?access_token=${mapboxAccessToken}`
-        );
-        if (geoResponse.data.features && geoResponse.data.features.length > 0) {
-          [lng, lat] = geoResponse.data.features[0].center;
-        } else {
-          toast({ title: "Geocodificação Falhou", description: "Não foi possível obter as coordenadas para o endereço.", variant: "destructive" });
+        try {
+          const geoResponse = await axios.get(
+            `https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(fullAddress)}.json?access_token=${mapboxAccessToken}`
+          );
+          if (geoResponse.data.features && geoResponse.data.features.length > 0) {
+            [lng, lat] = geoResponse.data.features[0].center;
+          } else {
+            console.warn("Mapbox geocoding failed for address:", fullAddress);
+          }
+        } catch (geoError) {
+          console.error("Error during Mapbox geocoding:", geoError);
         }
       } else {
-        toast({ title: "Token Mapbox Ausente", description: "Insira seu token Mapbox para geocodificação.", variant: "destructive" });
+        console.info("Mapbox token not found. Skipping geocoding for address:", fullAddress);
       }
 
       onAddressFound(fullAddress, cleanedCep, lat, lng, isOrigin);
