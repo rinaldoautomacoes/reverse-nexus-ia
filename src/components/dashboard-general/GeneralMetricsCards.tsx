@@ -270,8 +270,6 @@ export const GeneralMetricsCards: React.FC<GeneralMetricsCardsProps> = ({ allCol
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
             {metrics.map((metric, index) => {
               const Icon = metric.icon_name ? iconMap[metric.icon_name] : null;
-              const isTotalItemsCard = metric.id === 'total-items-geral'; // Identifica o card específico
-              const isOperationsCard = metric.id === 'operacoes-pendentes' || metric.id === 'operacoes-em-transito' || metric.id === 'operacoes-concluidas';
               return (
                 <SortableCard
                   key={metric.id}
@@ -283,8 +281,8 @@ export const GeneralMetricsCards: React.FC<GeneralMetricsCardsProps> = ({ allCol
                   delay={index * 100}
                   onDetailsClick={metric.id === 'outstanding-collection-items' ? undefined : handleCardClick}
                   customHeaderButton={metric.customHeaderButton}
-                  cardHeight={isTotalItemsCard ? "h-[250px]" : isOperationsCard ? "h-[180px]" : undefined} // Aplica altura personalizada
-                  cardWidth={isTotalItemsCard ? "w-[450px]" : isOperationsCard ? "w-[340px]" : undefined}   // Aplica largura personalizada
+                  cardHeight="h-[180px]" 
+                  cardWidth="w-[340px]"
                 >
                   {metric.customComponent ? (
                     metric.customComponent
