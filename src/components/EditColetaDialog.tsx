@@ -54,6 +54,8 @@ export const EditColetaDialog: React.FC<EditColetaDialogProps> = ({ coleta, isOp
         attachments: updatedAttachments, // Salvar os anexos atualizados
       };
 
+      console.log("EditColetaDialog: Sending to Supabase update:", coletaToUpdate);
+
       const { data: updatedColetaResult, error: coletaError } = await supabase
         .from('coletas')
         .update(coletaToUpdate)

@@ -6,7 +6,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ArrowLeft, Truck, Calendar as CalendarIcon, User, Phone, Mail, MapPin, Building, Briefcase, Loader2, Hash, Package, DollarSign, Tag, Home, Flag, ClipboardList, FileText } from "lucide-react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import type { TablesInsert, Tables, TablesUpdate } from "@/integrations/supabase/types_generated";
@@ -45,9 +45,16 @@ type Transportadora = Tables<'transportadoras'>;
 type ItemInsert = TablesInsert<'items'>;
 type ItemUpdate = TablesUpdate<'items'>;
 
+interface FileAttachment {
+  name: string;
+  url: string;
+  type: string;
+  size: number;
+}
+
 interface EntregaFormProps {
   initialData?: ColetaUpdate & { items?: ItemData[] }; // Adicionado items ao initialData
-  onSave: (data: ColetaInsert | ColetaUpdate, items: ItemData[]) => void; // onSave agora recebe os itens
+  onSave: (data: ColetaInsert | ColetaUpdate, items: ItemData[], attachments: FileAttachment[]) => void; // onSave agora recebe os itens e anexos
   onCancel: () => void;
   isPending: boolean;
 }
@@ -95,19 +102,22 @@ export const EntregaForm: React.FC<EntregaFormProps> = ({ initialData, onSave, o
     destination_lat: null,
     destination_lng: null,
     client_control: "",
+    attachments: [], // Novo campo para anexos
     created_at: format(new Date(), "yyyy-MM-dd'T'HH:mm:ss.SSSXXX"), // Initialize created_at for new forms
   });
 
   const [deliveryItems, setDeliveryItems] = useState<ItemData[]>(initialData?.items || []);
+  const [attachments, setAttachments] = useState<FileAttachment[]>(initialData?.attachments || []); // Estado para os anexos
 
   const [isFetchingOriginAddress, setIsFetchingOriginAddress] = useState(false);
   const [isFetchingDestinationAddress, setIsFetchingDestinationAddress] = useState(false);
 
   useEffect(() => {
     if (initialData) {
-      const { items, ...restOfEntregaData } = initialData;
+      const { items, attachments: initialAttachments, ...restOfEntregaData } = initialData;
       setFormData(restOfEntregaData);
       setDeliveryItems(items || []);
+      setAttachments(initialAttachments || []);
     } else {
       setFormData({
         parceiro: "",
@@ -148,13 +158,15 @@ export const EntregaForm: React.FC<EntregaFormProps> = ({ initialData, onSave, o
         destination_lat: null,
         destination_lng: null,
         client_control: null, // Alterado para null
+        attachments: [], // Initialize attachments for new forms
         created_at: format(new Date(), "yyyy-MM-dd'T'HH:mm:ss.SSSXXX"), // Ensure created_at is set for new forms
       });
       setDeliveryItems([]);
+      setAttachments([]);
     }
   }, [initialData, user?.id]);
 
-  const handleInputChange = useCallback((field: keyof (ColetaInsert | ColetaUpdate), value: string | number | null) => {
+  const handleInputChange = useCallback((field: keyof (ColetaInsert | ColetaUpdate), value: string | number | null | FileAttachment[]) => {
     setFormData(prev => ({ ...prev, [field]: value }));
   }, []);
 
@@ -240,11 +252,15 @@ export const EntregaForm: React.FC<EntregaFormProps> = ({ initialData, onSave, o
       endereco: formData.endereco_destino,
       cep: formData.cep_destino,
       user_id: user.id,
-      modelo_aparelho: formatItemsForColetaModeloAaparelho(deliveryItems), // Resumo dos itens
+      modelo_aparelho: formatItemsForColetaModeloAparelho(deliveryItems), // Resumo dos itens
       qtd_aparelhos_solicitado: getTotalQuantityOfItems(deliveryItems), // Quantidade total
     };
 
-    onSave(dataToSave, deliveryItems);
+    console.log("EntregaForm: Submitting dataToSave:", dataToSave);
+    console.log("EntregaForm: Submitting deliveryItems:", deliveryItems);
+    console.log("EntregaForm: Submitting attachments:", attachments);
+
+    onSave(dataToSave, deliveryItems, attachments);
   };
 
   return (
@@ -440,6 +456,13 @@ export const EntregaForm: React.FC<EntregaFormProps> = ({ initialData, onSave, o
         formData={formData}
         handleInputChange={handleInputChange}
         isPending={isPending}
+      />
+
+      <FileUploadField
+        label="Anexos da Entrega"
+        initialFiles={attachments}
+        onFilesChange={setAttachments}
+        disabled={isPending}
       />
 
       <div className="flex justify-end gap-4 pt-6">

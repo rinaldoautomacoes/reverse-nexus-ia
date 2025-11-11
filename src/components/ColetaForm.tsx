@@ -34,9 +34,16 @@ type Transportadora = Tables<'transportadoras'>;
 
 interface ColetaFormProps {
   initialData?: ColetaUpdate & { items?: ItemData[] }; // Adicionado items ao initialData
-  onSave: (data: ColetaInsert | ColetaUpdate, items: ItemData[]) => void; // onSave agora recebe os itens
+  onSave: (data: ColetaInsert | ColetaUpdate, items: ItemData[], attachments: FileAttachment[]) => void; // onSave agora recebe os itens e anexos
   onCancel: () => void;
   isPending: boolean;
+}
+
+interface FileAttachment {
+  name: string;
+  url: string;
+  type: string;
+  size: number;
 }
 
 export const ColetaForm: React.FC<ColetaFormProps> = ({ initialData, onSave, onCancel, isPending }) => {
@@ -82,10 +89,12 @@ export const ColetaForm: React.FC<ColetaFormProps> = ({ initialData, onSave, onC
     destination_lat: null,
     destination_lng: null,
     client_control: null, // Alterado para null
+    attachments: [], // Novo campo para anexos
     created_at: format(new Date(), "yyyy-MM-dd'T'HH:mm:ss.SSSXXX"), // Initialize created_at for new forms
   });
 
   const [collectionItems, setCollectionItems] = useState<ItemData[]>(initialData?.items || []);
+  const [attachments, setAttachments] = useState<FileAttachment[]>(initialData?.attachments || []); // Estado para os anexos
 
   // State for fetching status from address lookup hooks
   const [isFetchingOriginAddress, setIsFetchingOriginAddress] = useState(false);
@@ -93,9 +102,10 @@ export const ColetaForm: React.FC<ColetaFormProps> = ({ initialData, onSave, onC
 
   useEffect(() => {
     if (initialData) {
-      const { items, ...restOfColetaData } = initialData;
+      const { items, attachments: initialAttachments, ...restOfColetaData } = initialData;
       setFormData(restOfColetaData);
       setCollectionItems(items || []);
+      setAttachments(initialAttachments || []);
     } else {
       setFormData({
         parceiro: "",
@@ -136,13 +146,15 @@ export const ColetaForm: React.FC<ColetaFormProps> = ({ initialData, onSave, onC
         destination_lat: null,
         destination_lng: null,
         client_control: null, // Alterado para null
+        attachments: [], // Initialize attachments for new forms
         created_at: format(new Date(), "yyyy-MM-dd'T'HH:mm:ss.SSSXXX"), // Ensure created_at is set for new forms
       });
       setCollectionItems([]);
+      setAttachments([]);
     }
   }, [initialData, user?.id]);
 
-  const handleInputChange = useCallback((field: keyof (ColetaInsert | ColetaUpdate), value: string | number | null) => {
+  const handleInputChange = useCallback((field: keyof (ColetaInsert | ColetaUpdate), value: string | number | null | FileAttachment[]) => {
     setFormData(prev => ({ ...prev, [field]: value }));
   }, []);
 
@@ -217,13 +229,17 @@ export const ColetaForm: React.FC<ColetaFormProps> = ({ initialData, onSave, onC
       }
     }
 
+    console.log("ColetaForm: Submitting formData:", formData);
+    console.log("ColetaForm: Submitting collectionItems:", collectionItems);
+    console.log("ColetaForm: Submitting attachments:", attachments);
+
     onSave({
       ...formData,
       endereco: formData.endereco_origem,
       cep: formData.cep_origem,
       modelo_aparelho: formatItemsForColetaModeloAparelho(collectionItems), // Resumo dos itens
       qtd_aparelhos_solicitado: getTotalQuantityOfItems(collectionItems), // Quantidade total
-    }, collectionItems);
+    }, collectionItems, attachments);
   };
 
   return (
@@ -418,6 +434,13 @@ export const ColetaForm: React.FC<ColetaFormProps> = ({ initialData, onSave, onC
         formData={formData}
         handleInputChange={handleInputChange}
         isPending={isPending}
+      />
+
+      <FileUploadField
+        label="Anexos da Coleta"
+        initialFiles={attachments}
+        onFilesChange={setAttachments}
+        disabled={isPending}
       />
 
       <div className="flex justify-end gap-4 pt-6">

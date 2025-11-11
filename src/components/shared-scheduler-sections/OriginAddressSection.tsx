@@ -34,6 +34,7 @@ export const OriginAddressSection: React.FC<OriginAddressSectionProps> = ({
     lng: number | null,
     isOrigin: boolean
   ) => {
+    console.log("OriginAddressSection: onAddressFound called with:", { fullAddress, cep, lat, lng, isOrigin });
     if (isOrigin) {
       handleInputChange("endereco_origem", fullAddress);
       handleInputChange("cep_origem", cep);

@@ -31,6 +31,7 @@ type Entrega = Tables<'coletas'> & {
   driver?: { name: string } | null;
   transportadora?: { name: string } | null;
   items?: Array<Tables<'items'>> | null;
+  attachments?: FileAttachment[] | null; // Adicionado attachments
 };
 type EntregaUpdate = TablesUpdate<'coletas'>;
 type ItemInsert = TablesInsert<'items'>;
@@ -64,6 +65,8 @@ export const EditEntregaDialog: React.FC<EditEntregaDialogProps> = ({ entrega, i
         qtd_aparelhos_solicitado: getTotalQuantityOfItems(updatedItems),
         attachments: updatedAttachments, // Salvar os anexos atualizados
       };
+
+      console.log("EditEntregaDialog: Sending to Supabase update:", entregaToUpdate);
 
       const { error: updateError } = await supabase
         .from('coletas')
