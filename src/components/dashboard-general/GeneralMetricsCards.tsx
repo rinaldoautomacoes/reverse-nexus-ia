@@ -273,7 +273,7 @@ export const GeneralMetricsCards: React.FC<GeneralMetricsCardsProps> = ({ allCol
                   delay={index * 100}
                   onDetailsClick={metric.id === 'outstanding-collection-items' ? undefined : handleCardClick}
                   customHeaderButton={metric.customHeaderButton}
-                  cardHeight={metric.id === 'total-items-geral' ? "h-[320px]" : "h-[180px]"} 
+                  cardHeight="h-[180px]" // Definido para 180px para todos os cards
                   cardWidth="w-full"
                 >
                   {metric.customComponent ? (

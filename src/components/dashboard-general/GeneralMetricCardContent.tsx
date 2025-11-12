@@ -79,7 +79,7 @@ export const GeneralMetricCardContent: React.FC<GeneralMetricCardContentProps> =
               {metric.description || "Ver Detalhes dos Itens"}
             </AccordionTrigger>
             <AccordionContent className="pt-2 pb-0">
-              <div className="max-h-[150px] overflow-y-auto overflow-x-auto border rounded-md"> {/* Ajustado max-h para caber no card */}
+              <div className="max-h-[80px] overflow-y-auto overflow-x-auto border rounded-md"> {/* Ajustado max-h para 80px */}
                 <Table className="min-w-full text-xs">
                   <TableHeader className="sticky top-0 bg-card z-10">
                     <TableRow className="border-b border-border/50">
