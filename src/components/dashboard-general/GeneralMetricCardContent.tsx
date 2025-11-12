@@ -1,9 +1,15 @@
 import React from 'react';
-import { Package, Truck } from 'lucide-react';
-import type { MetricItem } from './GeneralMetricsCards'; // Importando o tipo MetricItem
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'; // Import Table components
-import { Badge } from '@/components/ui/badge'; // Import Badge
-import { cn } from '@/lib/utils'; // Import cn for conditional classes
+import { Package, Truck, ChevronDown } from 'lucide-react'; // Adicionado ChevronDown para o ícone do acordeão
+import type { MetricItem } from './GeneralMetricsCards';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Badge } from '@/components/ui/badge';
+import { cn } from '@/lib/utils';
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from "@/components/ui/accordion"; // Importado Accordion
 
 interface GeneralMetricCardContentProps {
   metric: MetricItem;
@@ -67,46 +73,48 @@ export const GeneralMetricCardContent: React.FC<GeneralMetricCardContentProps> =
       )}
 
       {metric.id === 'total-items-geral' && metric.allItemsDetails && metric.allItemsDetails.length > 0 ? (
-        <>
-          {metric.description && (
-            // Ajustado tamanho do texto e adicionado limite de 2 linhas
-            <p className="text-xs text-muted-foreground mb-1 line-clamp-2">{metric.description}</p> 
-          )}
-          <div className="mt-2 max-h-[200px] overflow-y-auto overflow-x-auto"> {/* Aumentado max-h aqui */}
-            <Table className="min-w-full text-xs">
-              <TableHeader className="sticky top-0 bg-card z-10">
-                <TableRow className="border-b border-border/50">
-                  <TableHead className="h-6 p-1 text-muted-foreground w-[30px]">Qtd</TableHead> {/* Reduzido largura */}
-                  <TableHead className="h-6 p-1 text-muted-foreground w-[100px]">Item</TableHead> {/* Aumentado largura */}
-                  <TableHead className="h-6 p-1 text-muted-foreground w-auto">Descrição</TableHead>
-                  <TableHead className="h-6 p-1 text-muted-foreground text-right w-[50px]">Tipo</TableHead> {/* Reduzido largura */}
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {metric.allItemsDetails.map((item, index) => (
-                  <TableRow key={index} className="border-b border-border/20 last:border-b-0">
-                    <TableCell className="p-1 font-medium text-muted-foreground">{item.quantity}</TableCell>
-                    <TableCell className="p-1 text-muted-foreground text-wrap overflow-hidden text-ellipsis" title={item.name}>{item.name}</TableCell>
-                    <TableCell className="p-1 text-muted-foreground text-wrap overflow-hidden text-ellipsis" title={item.description}>{item.description}</TableCell>
-                    <TableCell className="p-1 text-right">
-                        <Badge
-                          variant="secondary"
-                          className={cn(
-                            "px-1 py-0.5 text-[0.6rem]",
-                            item.type === 'coleta' ? 'bg-primary/10 text-primary' : 'bg-accent/10 text-accent'
-                          )}
-                        >
-                          {item.type === 'coleta' ? 'Coleta' : 'Entrega'}
-                        </Badge>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </div>
-        </>
+        <Accordion type="single" collapsible className="w-full mt-2">
+          <AccordionItem value="items-details" className="border-b-0">
+            <AccordionTrigger className="py-2 text-xs font-semibold text-muted-foreground hover:no-underline hover:text-foreground transition-colors">
+              {metric.description || "Ver Detalhes dos Itens"}
+            </AccordionTrigger>
+            <AccordionContent className="pt-2 pb-0">
+              <div className="max-h-[150px] overflow-y-auto overflow-x-auto border rounded-md"> {/* Ajustado max-h para caber no card */}
+                <Table className="min-w-full text-xs">
+                  <TableHeader className="sticky top-0 bg-card z-10">
+                    <TableRow className="border-b border-border/50">
+                      <TableHead className="h-6 p-1 text-muted-foreground w-[30px]">Qtd</TableHead>
+                      <TableHead className="h-6 p-1 text-muted-foreground w-[100px]">Item</TableHead>
+                      <TableHead className="h-6 p-1 text-muted-foreground w-auto">Descrição</TableHead>
+                      <TableHead className="h-6 p-1 text-muted-foreground text-right w-[50px]">Tipo</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {metric.allItemsDetails.map((item, index) => (
+                      <TableRow key={index} className="border-b border-border/20 last:border-b-0">
+                        <TableCell className="p-1 font-medium text-muted-foreground">{item.quantity}</TableCell>
+                        <TableCell className="p-1 text-muted-foreground text-wrap overflow-hidden text-ellipsis" title={item.name}>{item.name}</TableCell>
+                        <TableCell className="p-1 text-muted-foreground text-wrap overflow-hidden text-ellipsis" title={item.description}>{item.description}</TableCell>
+                        <TableCell className="p-1 text-right">
+                            <Badge
+                              variant="secondary"
+                              className={cn(
+                                "px-1 py-0.5 text-[0.6rem]",
+                                item.type === 'coleta' ? 'bg-primary/10 text-primary' : 'bg-accent/10 text-accent'
+                              )}
+                            >
+                              {item.type === 'coleta' ? 'Coleta' : 'Entrega'}
+                            </Badge>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
+            </AccordionContent>
+          </AccordionItem>
+        </Accordion>
       ) : (
-        // Descrição padrão para outras métricas se nenhum conteúdo específico for definido
         metric.description && metric.id !== 'total-operacoes' && metric.id !== 'operacoes-em-transito' && metric.id !== 'operacoes-concluidas' && metric.id !== 'operacoes-pendentes' && (
           <p className="text-sm text-muted-foreground mb-1">{metric.description}</p>
         )
