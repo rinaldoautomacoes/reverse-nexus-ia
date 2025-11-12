@@ -85,9 +85,9 @@ export const GeneralMetricCardContent: React.FC<GeneralMetricCardContentProps> =
               <TableBody>
                 {metric.allItemsDetails.map((item, index) => (
                   <TableRow key={index} className="border-b border-border/20 last:border-b-0">
-                    <TableCell className="p-1 font-medium text-foreground">{item.quantity}</TableCell>
-                    <TableCell className="p-1 text-foreground text-wrap overflow-hidden text-ellipsis" title={item.name}>{item.name}</TableCell>
-                    <TableCell className="p-1 text-foreground text-wrap overflow-hidden text-ellipsis" title={item.description}>{item.description}</TableCell>
+                    <TableCell className="p-1 font-medium text-muted-foreground">{item.quantity}</TableCell>
+                    <TableCell className="p-1 text-muted-foreground text-wrap overflow-hidden text-ellipsis" title={item.name}>{item.name}</TableCell>
+                    <TableCell className="p-1 text-muted-foreground text-wrap overflow-hidden text-ellipsis" title={item.description}>{item.description}</TableCell>
                     <TableCell className="p-1 text-right">
                         <Badge
                           variant="secondary"
