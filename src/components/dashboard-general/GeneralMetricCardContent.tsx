@@ -76,10 +76,10 @@ export const GeneralMetricCardContent: React.FC<GeneralMetricCardContentProps> =
             <Table className="min-w-full text-xs">
               <TableHeader className="sticky top-0 bg-card z-10">
                 <TableRow className="border-b border-border/50">
-                  <TableHead className="h-6 p-1 text-muted-foreground w-[40px]">Qtd</TableHead>
-                  <TableHead className="h-6 p-1 text-muted-foreground w-[80px]">Item</TableHead>
+                  <TableHead className="h-6 p-1 text-muted-foreground w-[30px]">Qtd</TableHead> {/* Reduzido largura */}
+                  <TableHead className="h-6 p-1 text-muted-foreground w-[100px]">Item</TableHead> {/* Aumentado largura */}
                   <TableHead className="h-6 p-1 text-muted-foreground w-auto">Descrição</TableHead>
-                  <TableHead className="h-6 p-1 text-muted-foreground text-right w-[60px]">Tipo</TableHead>
+                  <TableHead className="h-6 p-1 text-muted-foreground text-right w-[50px]">Tipo</TableHead> {/* Reduzido largura */}
                 </TableRow>
               </TableHeader>
               <TableBody>
