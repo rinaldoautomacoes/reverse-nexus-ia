@@ -486,15 +486,27 @@ export const generateItemsReport = async (items: ItemDetails[], formatType: 'pdf
       currentY += 10;
     };
 
+    // Calculate total quantity of items
+    const totalQuantity = items.reduce((sum, item) => sum + item.quantity, 0);
+
+    // Main title for the report
     doc.setFontSize(18);
     doc.setTextColor(...COLOR_BLACK);
     doc.setFont("helvetica", "bold");
-    doc.text(`Relatório de Itens: ${title}`, pageWidth / 2, currentY + 5, { align: "center" });
-    currentY += 15;
+    doc.text(`Relatório de Itens`, margin, currentY + 5); // General title on the left
+    currentY += 10; // Adjust Y after this line
+
+    // Display total quantity below the title
+    doc.setFontSize(12); // Smaller font for the quantity
+    doc.setTextColor(...COLOR_BLACK);
+    doc.setFont("helvetica", "normal");
+    doc.text(`Quantitativo Total: ${totalQuantity}`, margin, currentY + 5);
+    currentY += 10; // Adjust Y after this line
+
     doc.setDrawColor(...COLOR_BLACK);
     doc.setLineWidth(0.5);
-    doc.line(margin, currentY, pageWidth - margin, currentY);
-    currentY += 10;
+    doc.line(margin, currentY, pageWidth - margin, currentY); // Keep the separator line
+    currentY += 10; // Adjust Y after the separator line
 
     // Removida a coluna "Item"
     const tableColumnNames = ["Qtd", "Descrição", "Tipo"];
@@ -604,7 +616,6 @@ export const generateItemsReport = async (items: ItemDetails[], formatType: 'pdf
     window.open(pdfUrl, '_blank');
 
   } else if (formatType === 'csv') {
-    // Ajustar headers e rows para CSV também
     const headers = ["Qtd", "Descrição", "Tipo"];
     const rows = items.map(item => [
       item.quantity.toString(),
