@@ -496,12 +496,13 @@ export const generateItemsReport = async (items: ItemDetails[], formatType: 'pdf
     doc.line(margin, currentY, pageWidth - margin, currentY);
     currentY += 10;
 
-    const tableColumnNames = ["Qtd", "Item", "Descrição", "Tipo"];
+    // Removida a coluna "Item"
+    const tableColumnNames = ["Qtd", "Descrição", "Tipo"];
     const itemTableUsableWidth = pageWidth - 2 * margin;
+    // Ajustadas as larguras das colunas para redistribuir o espaço
     const itemTableColumnWidths = [
-      itemTableUsableWidth * 0.15, // Qtd
-      itemTableUsableWidth * 0.30, // Item
-      itemTableUsableWidth * 0.35, // Descrição
+      itemTableUsableWidth * 0.20, // Qtd (aumentado)
+      itemTableUsableWidth * 0.60, // Descrição (aumentado)
       itemTableUsableWidth * 0.20, // Tipo
     ];
     const itemTableRowHeight = 8;
@@ -535,9 +536,9 @@ export const generateItemsReport = async (items: ItemDetails[], formatType: 'pdf
     doc.setTextColor(...COLOR_BLACK); // Black text for item table content
 
     for (const item of items) {
+      // Removido item.name da lista de dados da linha
       const itemRowData = [
         item.quantity.toString(),
-        item.name || 'N/A',
         item.description || 'N/A',
         item.type === 'coleta' ? 'Coleta' : 'Entrega',
       ];
@@ -576,8 +577,8 @@ export const generateItemsReport = async (items: ItemDetails[], formatType: 'pdf
         let textY = currentY + itemTableCellPadding + doc.getFontSize() / doc.internal.scaleFactor;
         let align: 'left' | 'center' | 'right' = 'left';
 
-        // Ajustar alinhamento para as colunas de quantidade e tipo
-        if (i === 0 || i === 3) { // Qtd and Tipo columns
+        // Ajustar alinhamento para as colunas de quantidade e tipo (agora nos índices 0 e 2)
+        if (i === 0 || i === 2) { // Qtd and Tipo columns
           textX = currentX + itemTableColumnWidths[i] / 2;
           align = 'center';
         }
@@ -603,11 +604,11 @@ export const generateItemsReport = async (items: ItemDetails[], formatType: 'pdf
     window.open(pdfUrl, '_blank');
 
   } else if (formatType === 'csv') {
-    const headers = ["Qtd", "Item", "Descrição", "Tipo"];
+    // Ajustar headers e rows para CSV também
+    const headers = ["Qtd", "Descrição", "Tipo"];
     const rows = items.map(item => [
       item.quantity.toString(),
-      `"${item.name.replace(/"/g, '""')}"`, // Escape double quotes
-      `"${item.description.replace(/"/g, '""')}"`,
+      `"${item.description.replace(/"/g, '""')}"`, // Escape double quotes
       `"${(item.type === 'coleta' ? 'Coleta' : 'Entrega').replace(/"/g, '""')}"`,
     ].join(','));
 
