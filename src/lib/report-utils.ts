@@ -1,5 +1,6 @@
 import { jsPDF } from "jspdf";
 import html22canvas from "html22canvas"; // Renamed to avoid conflict with html2canvas import
+import * as XLSX from 'xlsx'; // Importar XLSX para CSV
 
 import { supabase } from "@/integrations/supabase/client";
 import type { Tables } from "@/integrations/supabase/types_generated";
@@ -28,6 +29,13 @@ const COLOR_MUTED_FOREGROUND_DARK = [100, 100, 100]; // Cinza escuro para texto 
 const COLOR_BORDER_LIGHT = [200, 200, 200]; // Borda clara para elementos
 const COLOR_BLACK = [0, 0, 0]; // Preto puro
 const COLOR_GRAY_DARK = [50, 50, 50]; // Cinza escuro
+
+interface ItemDetails {
+  quantity: number;
+  name: string;
+  description: string;
+  type: 'coleta' | 'entrega';
+}
 
 export const generateReport = async (report: Report, userId: string) => {
   try {
@@ -99,7 +107,7 @@ export const generateReport = async (report: Report, userId: string) => {
 };
 
 const uploadFileToStorage = async (userId: string, fileName: string, fileBlob: Blob, contentType: string) => {
-  const filePath = `${userId}/${fileName}`;
+  const filePath = `${userId}/reports-files/${fileName}`; // Changed to a subfolder for reports
   const { error: uploadError } = await supabase.storage
     .from('reports-files')
     .upload(filePath, fileBlob, {
@@ -447,4 +455,89 @@ const generateCsvReportContent = (report: Report, data: Coleta[]): Blob => {
   ].join('\n');
 
   return new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+};
+
+export const generateItemsReport = async (items: ItemDetails[], formatType: 'pdf' | 'csv', title: string): Promise<void> => {
+  const fileName = `${title.replace(/\s/g, '_')}_itens_${format(new Date(), 'yyyyMMdd_HHmmss')}`;
+
+  if (formatType === 'pdf') {
+    const doc = new jsPDF();
+    const pageWidth = doc.internal.pageSize.getWidth();
+    const margin = 10;
+    let currentY = margin;
+
+    doc.setFontSize(18);
+    doc.setTextColor(...COLOR_BLACK);
+    doc.setFont("helvetica", "bold");
+    doc.text(`Relatório de Itens: ${title}`, pageWidth / 2, currentY + 5, { align: "center" });
+    currentY += 15;
+    doc.setDrawColor(...COLOR_BLACK);
+    doc.setLineWidth(0.5);
+    doc.line(margin, currentY, pageWidth - margin, currentY);
+    currentY += 10;
+
+    const tableColumnNames = ["Qtd", "Item", "Descrição", "Tipo"];
+    const tableRows = items.map(item => [
+      item.quantity.toString(),
+      item.name,
+      item.description,
+      item.type === 'coleta' ? 'Coleta' : 'Entrega',
+    ]);
+
+    (doc as any).autoTable({
+      startY: currentY,
+      head: [tableColumnNames],
+      body: tableRows,
+      theme: 'grid',
+      styles: {
+        font: "helvetica",
+        fontSize: 8,
+        cellPadding: 2,
+        textColor: COLOR_BLACK,
+        lineColor: COLOR_BORDER_LIGHT,
+        lineWidth: 0.1,
+      },
+      headStyles: {
+        fillColor: COLOR_GRAY_DARK,
+        textColor: COLOR_BACKGROUND_WHITE,
+        fontStyle: 'bold',
+        halign: 'center',
+      },
+      alternateRowStyles: {
+        fillColor: COLOR_BACKGROUND_ALT_ROW,
+      },
+      margin: { left: margin, right: margin },
+      didDrawPage: function (data: any) {
+        // Footer
+        doc.setFontSize(9);
+        doc.setTextColor(...COLOR_MUTED_FOREGROUND_DARK);
+        doc.text("Plataforma Inteligente de Logística", margin, doc.internal.pageSize.getHeight() - margin);
+        doc.text(`Página ${data.pageNumber}`, pageWidth - margin, doc.internal.pageSize.getHeight() - margin, { align: "right" });
+      }
+    });
+
+    doc.save(`${fileName}.pdf`);
+
+  } else if (formatType === 'csv') {
+    const headers = ["Qtd", "Item", "Descrição", "Tipo"];
+    const rows = items.map(item => [
+      item.quantity.toString(),
+      `"${item.name.replace(/"/g, '""')}"`, // Escape double quotes
+      `"${item.description.replace(/"/g, '""')}"`,
+      `"${(item.type === 'coleta' ? 'Coleta' : 'Entrega').replace(/"/g, '""')}"`,
+    ].join(','));
+
+    const csvContent = [
+      headers.join(','),
+      ...rows
+    ].join('\n');
+
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    link.href = URL.createObjectURL(blob);
+    link.download = `${fileName}.csv`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  }
 };

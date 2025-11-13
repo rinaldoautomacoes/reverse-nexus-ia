@@ -10,9 +10,21 @@ import {
   CheckCircle,
   ListChecks, 
   Box, 
-  TrendingUp 
+  TrendingUp,
+  Download, // Importar ícone de download
+  FileText, // Ícone para PDF
+  FileSpreadsheet, // Ícone para CSV
 } from "lucide-react";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'; // Importar componentes de tabela
+import { Button } from '@/components/ui/button'; // Importar Button
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"; // Importar DropdownMenu components
+import { generateItemsReport } from '@/lib/report-utils'; // Importar a nova função de utilitário
+import { useToast } from '@/hooks/use-toast'; // Importar useToast
 
 // Mapeamento de nomes de ícones para componentes Lucide React
 const iconMap: { [key: string]: React.ElementType } = {
@@ -48,14 +60,13 @@ interface MetricDetailsDialogProps {
 }
 
 export const MetricDetailsDialog: React.FC<MetricDetailsDialogProps> = ({ metric, isOpen, onClose }) => {
-  console.log("MetricDetailsDialog: metric prop", metric); // Debug log
-  console.log("MetricDetailsDialog: isOpen prop", isOpen); // Debug log
+  const { toast } = useToast();
+  const [isExporting, setIsExporting] = React.useState(false);
 
   if (!metric) return null;
 
   const Icon = metric.icon_name ? iconMap[metric.icon_name] : null;
 
-  // Determina qual array de itens deve ser exibido no diálogo
   let itemsToDisplay: MetricItem['allItemsDetails'] | undefined;
   let itemsSectionTitle = '';
 
@@ -65,28 +76,70 @@ export const MetricDetailsDialog: React.FC<MetricDetailsDialogProps> = ({ metric
   } else if (metric.id === 'operacoes-pendentes') {
     itemsToDisplay = metric.pendingItemsDetails;
     itemsSectionTitle = 'Itens Pendentes:';
-  } else if (metric.id === 'operacoes-em-transito') { // Novo
+  } else if (metric.id === 'operacoes-em-transito') {
     itemsToDisplay = metric.inTransitItemsDetails;
     itemsSectionTitle = 'Itens Em Trânsito:';
-  } else if (metric.id === 'operacoes-concluidas') { // Novo
+  } else if (metric.id === 'operacoes-concluidas') {
     itemsToDisplay = metric.completedItemsDetails;
     itemsSectionTitle = 'Itens Concluídos:';
   }
 
   const showItemsSection = itemsToDisplay && itemsToDisplay.length > 0;
 
+  const handleExport = async (format: 'pdf' | 'csv') => {
+    if (!itemsToDisplay || itemsToDisplay.length === 0) {
+      toast({ title: "Nenhum item para exportar", description: "Não há dados de itens para gerar o relatório.", variant: "warning" });
+      return;
+    }
+
+    setIsExporting(true);
+    try {
+      await generateItemsReport(itemsToDisplay, format, metric.title);
+      toast({ title: "Exportação Concluída", description: `O relatório de itens foi exportado com sucesso para ${format.toUpperCase()}.` });
+    } catch (error: any) {
+      console.error("Erro ao exportar relatório de itens:", error);
+      toast({ title: "Erro na Exportação", description: error.message || "Ocorreu um erro ao gerar o relatório.", variant: "destructive" });
+    } finally {
+      setIsExporting(false);
+    }
+  };
+
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="sm:max-w-[600px] bg-card border-primary/20 max-h-[90vh] overflow-y-auto">
-        <DialogHeader>
-          <DialogTitle className="flex items-center gap-2 gradient-text">
+        <DialogHeader className="flex flex-row items-center justify-between space-y-0 pb-3">
+          <div className="flex items-center gap-2">
             {Icon && <Icon className={cn("h-6 w-6", metric.color)} />}
-            Detalhes: {metric.title}
-          </DialogTitle>
-          <DialogDescription>
-            Informações detalhadas sobre a métrica "{metric.title}".
-          </DialogDescription>
+            <DialogTitle className="gradient-text">
+              Detalhes: {metric.title}
+            </DialogTitle>
+          </div>
+          {showItemsSection && (
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline" size="sm" disabled={isExporting}>
+                  {isExporting ? (
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  ) : (
+                    <Download className="mr-2 h-4 w-4" />
+                  )}
+                  Exportar
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuItem onClick={() => handleExport('pdf')} disabled={isExporting}>
+                  <FileText className="mr-2 h-4 w-4" /> Exportar para PDF
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => handleExport('csv')} disabled={isExporting}>
+                  <FileSpreadsheet className="mr-2 h-4 w-4" /> Exportar para CSV
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          )}
         </DialogHeader>
+        <DialogDescription>
+          Informações detalhadas sobre a métrica "{metric.title}".
+        </DialogDescription>
         <div className="py-4 space-y-4">
           <div className="flex items-center justify-between">
             <p className="text-lg font-semibold text-foreground">Valor Principal:</p>
@@ -133,10 +186,9 @@ export const MetricDetailsDialog: React.FC<MetricDetailsDialogProps> = ({ metric
               <p className="text-sm font-semibold text-muted-foreground">
                 {itemsSectionTitle}
               </p>
-              {/* Substituindo ScrollArea e div por um div com overflow-auto e o componente Table */}
               <div className="h-48 border rounded-md overflow-auto">
-                <Table className="min-w-full"> {/* min-w-full para forçar a rolagem horizontal se o conteúdo for muito largo */}
-                  <TableHeader className="sticky top-0 bg-card z-10"> {/* Adicionado sticky, top-0, bg-card, z-10 */}
+                <Table className="min-w-full">
+                  <TableHeader className="sticky top-0 bg-card z-10">
                     <TableRow>
                       <TableHead className="w-[50px]">Qtd</TableHead>
                       <TableHead className="min-w-[150px]">Item</TableHead>
@@ -148,8 +200,8 @@ export const MetricDetailsDialog: React.FC<MetricDetailsDialogProps> = ({ metric
                     {itemsToDisplay?.map((item, itemIndex) => (
                       <TableRow key={itemIndex}>
                         <TableCell className="font-medium">{item.quantity}</TableCell>
-                        <TableCell className="whitespace-nowrap">{item.name}</TableCell> {/* Adicionado whitespace-nowrap */}
-                        <TableCell className="whitespace-nowrap">{item.description}</TableCell> {/* Adicionado whitespace-nowrap */}
+                        <TableCell className="whitespace-nowrap">{item.name}</TableCell>
+                        <TableCell className="whitespace-nowrap">{item.description}</TableCell>
                         <TableCell className="text-right">
                           <Badge variant="secondary" className={cn(
                             "px-1 py-0.5 text-[0.6rem]",
