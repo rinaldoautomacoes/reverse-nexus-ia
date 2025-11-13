@@ -141,7 +141,7 @@ const generatePdfReportContent = async (report: Report, data: Coleta[]): Promise
     doc.setFontSize(10);
     doc.setTextColor(...COLOR_MUTED_FOREGROUND_DARK);
     doc.setFont("helvetica", "normal");
-    doc.text("LogiReverseIA", margin, currentY + 4);
+    doc.text("Plataforma Logística 360", margin, currentY + 4); // Alterado aqui
     doc.text(`Gerado em: ${format(new Date(), 'dd/MM/yyyy HH:mm:ss', { locale: ptBR })}`, pageWidth - margin, currentY + 4, { align: "right" });
     currentY += 15;
     doc.setDrawColor(...COLOR_BORDER_LIGHT);
@@ -377,7 +377,7 @@ const generatePdfReportContent = async (report: Report, data: Coleta[]): Promise
   // Rodapé para a última página
   doc.setFontSize(9);
   doc.setTextColor(...COLOR_MUTED_FOREGROUND_DARK);
-  doc.text("LogiReverseIA | Contato: contato@logireverseia.com", margin, pageHeight - margin);
+  doc.text("Plataforma Inteligente de Logística | Contato: rinaldo@solucoes.com", margin, pageHeight - margin); // Alterado aqui
   doc.text(`Página ${doc.internal.getNumberOfPages()}`, pageWidth - margin, pageHeight - margin, { align: "right" });
 
   // Adicionar espaço para assinatura do responsável
