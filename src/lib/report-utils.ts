@@ -463,8 +463,28 @@ export const generateItemsReport = async (items: ItemDetails[], formatType: 'pdf
   if (formatType === 'pdf') {
     const doc = new jsPDF();
     const pageWidth = doc.internal.pageSize.getWidth();
+    const pageHeight = doc.internal.pageSize.getHeight();
     const margin = 10;
     let currentY = margin;
+
+    // Helper para adicionar nova página e cabeçalho/rodapé
+    const addPageWithHeaderAndFooter = (pageNumber: number) => {
+      doc.addPage();
+      doc.setFillColor(...COLOR_BACKGROUND_WHITE);
+      doc.rect(0, 0, pageWidth, pageHeight, 'F'); // Redraw background for new page
+      currentY = margin;
+      
+      // Header for new page
+      doc.setFontSize(10);
+      doc.setTextColor(...COLOR_MUTED_FOREGROUND_DARK);
+      doc.setFont("helvetica", "normal");
+      doc.text("Plataforma Logística 360", margin, currentY + 4);
+      doc.text(`Gerado em: ${format(new Date(), 'dd/MM/yyyy HH:mm:ss', { locale: ptBR })}`, pageWidth - margin, currentY + 4, { align: "right" });
+      currentY += 15;
+      doc.setDrawColor(...COLOR_BORDER_LIGHT);
+      doc.line(margin, currentY, pageWidth - margin, currentY);
+      currentY += 10;
+    };
 
     doc.setFontSize(18);
     doc.setTextColor(...COLOR_BLACK);
@@ -477,46 +497,110 @@ export const generateItemsReport = async (items: ItemDetails[], formatType: 'pdf
     currentY += 10;
 
     const tableColumnNames = ["Qtd", "Item", "Descrição", "Tipo"];
-    const tableRows = items.map(item => [
-      item.quantity.toString(),
-      item.name,
-      item.description,
-      item.type === 'coleta' ? 'Coleta' : 'Entrega',
-    ]);
+    const itemTableUsableWidth = pageWidth - 2 * margin;
+    const itemTableColumnWidths = [
+      itemTableUsableWidth * 0.15, // Qtd
+      itemTableUsableWidth * 0.30, // Item
+      itemTableUsableWidth * 0.35, // Descrição
+      itemTableUsableWidth * 0.20, // Tipo
+    ];
+    const itemTableRowHeight = 8;
+    const itemTableHeaderHeight = 10;
+    const itemTableCellPadding = 2;
 
-    (doc as any).autoTable({
-      startY: currentY,
-      head: [tableColumnNames],
-      body: tableRows,
-      theme: 'grid',
-      styles: {
-        font: "helvetica",
-        fontSize: 8,
-        cellPadding: 2,
-        textColor: COLOR_BLACK,
-        lineColor: COLOR_BORDER_LIGHT,
-        lineWidth: 0.1,
-      },
-      headStyles: {
-        fillColor: COLOR_GRAY_DARK,
-        textColor: COLOR_BACKGROUND_WHITE,
-        fontStyle: 'bold',
-        halign: 'center',
-      },
-      alternateRowStyles: {
-        fillColor: COLOR_BACKGROUND_ALT_ROW,
-      },
-      margin: { left: margin, right: margin },
-      didDrawPage: function (data: any) {
-        // Footer
-        doc.setFontSize(9);
-        doc.setTextColor(...COLOR_MUTED_FOREGROUND_DARK);
-        doc.text("Plataforma Inteligente de Logística", margin, doc.internal.pageSize.getHeight() - margin);
-        doc.text(`Página ${data.pageNumber}`, pageWidth - margin, doc.internal.pageSize.getHeight() - margin, { align: "right" });
+    const drawItemTableHeader = () => {
+      doc.setFillColor(...COLOR_GRAY_DARK); // Dark gray background for item table header
+      doc.rect(margin, currentY, itemTableUsableWidth, itemTableHeaderHeight, 'F');
+      doc.setDrawColor(...COLOR_BLACK);
+      doc.setLineWidth(0.2);
+      doc.rect(margin, currentY, itemTableUsableWidth, itemTableHeaderHeight, 'S');
+
+      let currentX = margin;
+      doc.setFontSize(8);
+      doc.setTextColor(255, 255, 255); // White text for item table header
+      doc.setFont("helvetica", "bold");
+      tableColumnNames.forEach((header, i) => {
+        doc.text(header, currentX + itemTableColumnWidths[i] / 2, currentY + itemTableHeaderHeight / 2 + 1, { align: "center" });
+        currentX += itemTableColumnWidths[i];
+        if (i < tableColumnNames.length - 1) {
+          doc.line(currentX, currentY, currentX, currentY + itemTableHeaderHeight);
+        }
+      });
+      currentY += itemTableHeaderHeight;
+    };
+
+    drawItemTableHeader();
+
+    doc.setFont("helvetica", "normal");
+    doc.setTextColor(...COLOR_BLACK); // Black text for item table content
+
+    for (const item of items) {
+      const itemRowData = [
+        item.quantity.toString(),
+        item.name || 'N/A',
+        item.description || 'N/A',
+        item.type === 'coleta' ? 'Coleta' : 'Entrega',
+      ];
+
+      let maxItemLineHeight = itemTableRowHeight;
+      const wrappedItemLines: string[][] = [];
+      itemRowData.forEach((cellText, i) => {
+        const lines = doc.splitTextToSize(cellText, itemTableColumnWidths[i] - 2 * itemTableCellPadding);
+        wrappedItemLines.push(lines);
+        if (lines.length * (doc.getFontSize() / doc.internal.scaleFactor + 1) > maxItemLineHeight) {
+          maxItemLineHeight = lines.length * (doc.getFontSize() / doc.internal.scaleFactor + 1);
+        }
+      });
+
+      if (currentY + maxItemLineHeight + 2 * itemTableCellPadding > pageHeight - margin) {
+        addPageWithHeaderAndFooter(doc.internal.getNumberOfPages() + 1);
+        drawItemTableHeader(); // Redraw header on new page
       }
-    });
 
-    doc.save(`${fileName}.pdf`);
+      let currentX = margin;
+      doc.setDrawColor(...COLOR_BORDER_LIGHT);
+      doc.setLineWidth(0.1);
+      doc.setFontSize(8);
+      
+      if (items.indexOf(item) % 2 === 0) {
+        doc.setFillColor(...COLOR_BACKGROUND_ALT_ROW);
+      } else {
+        doc.setFillColor(...COLOR_BACKGROUND_WHITE);
+      }
+      doc.rect(margin, currentY, itemTableUsableWidth, maxItemLineHeight + 2 * itemTableCellPadding, 'F');
+
+      itemRowData.forEach((cellText, i) => {
+        doc.rect(currentX, currentY, itemTableColumnWidths[i], maxItemLineHeight + 2 * itemTableCellPadding, 'S');
+        
+        let textX = currentX + itemTableCellPadding;
+        let textY = currentY + itemTableCellPadding + doc.getFontSize() / doc.internal.scaleFactor;
+        let align: 'left' | 'center' | 'right' = 'left';
+
+        // Ajustar alinhamento para as colunas de quantidade e tipo
+        if (i === 0 || i === 3) { // Qtd and Tipo columns
+          textX = currentX + itemTableColumnWidths[i] / 2;
+          align = 'center';
+        }
+
+        doc.setTextColor(...COLOR_BLACK);
+        doc.text(wrappedItemLines[i], textX, textY, { align: align });
+        currentX += itemTableColumnWidths[i];
+      });
+      currentY += maxItemLineHeight + 2 * itemTableCellPadding;
+    }
+
+    currentY += 10; // Space after items table
+
+    // Footer for the last page
+    doc.setFontSize(9);
+    doc.setTextColor(...COLOR_MUTED_FOREGROUND_DARK);
+    doc.text("Plataforma Inteligente de Logística | Contato: rinaldo@solucoes.com", margin, pageHeight - margin);
+    doc.text(`Página ${doc.internal.getNumberOfPages()}`, pageWidth - margin, pageHeight - margin, { align: "right" });
+
+    // Open PDF in a new tab
+    const pdfBlob = doc.output('blob');
+    const pdfUrl = URL.createObjectURL(pdfBlob);
+    window.open(pdfUrl, '_blank');
 
   } else if (formatType === 'csv') {
     const headers = ["Qtd", "Item", "Descrição", "Tipo"];
