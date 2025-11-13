@@ -21,6 +21,7 @@ import { cn, formatItemsForColetaModeloAparelho, getTotalQuantityOfItems } from 
 import { EntregaForm } from "@/components/EntregaForm";
 import { EditEntregaDialog } from "@/components/EditEntregaDialog";
 import { ItemData } from "@/components/coleta-form-sections/ColetaItemRow"; // Importa a interface ItemData
+import { CollectionAttachmentsDialog } from "@/components/CollectionAttachmentsDialog"; // Importar o novo diálogo
 
 interface FileAttachment {
   name: string;
@@ -56,6 +57,10 @@ export const EntregasAtivas: React.FC<EntregasAtivasProps> = ({ selectedYear }) 
   const [selectedEntregaForResponsible, setSelectedEntregaForResponsible] = useState<{ id: string; name: string; responsible_user_id: string | null } | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
   const [filterDate, setFilterDate] = useState<Date | undefined>(undefined);
+
+  const [isAttachmentsDialogOpen, setIsAttachmentsDialogOpen] = useState(false); // Novo estado
+  const [selectedCollectionAttachments, setSelectedCollectionAttachments] = useState<FileAttachment[]>([]); // Novo estado
+  const [selectedCollectionName, setSelectedCollectionName] = useState<string>(''); // Novo estado
 
   const { data: entregas, isLoading: isLoadingEntregas, error: entregasError } = useQuery<Entrega[], Error>({
     queryKey: ['entregasAtivas', user?.id, searchTerm, filterDate?.toISOString().split('T')[0]],
@@ -200,6 +205,12 @@ export const EntregasAtivas: React.FC<EntregasAtivasProps> = ({ selectedYear }) 
     } else {
       toast({ title: "Dados incompletos", description: "Email do cliente não disponível.", variant: "destructive" });
     }
+  };
+
+  const handleViewAttachments = (attachments: FileAttachment[], collectionName: string) => {
+    setSelectedCollectionAttachments(attachments);
+    setSelectedCollectionName(collectionName);
+    setIsAttachmentsDialogOpen(true);
   };
 
   const getStatusBadgeColor = (status: string) => {
@@ -415,6 +426,14 @@ export const EntregasAtivas: React.FC<EntregasAtivasProps> = ({ selectedYear }) 
                         {entrega.attachments && entrega.attachments.length > 0 && (
                           <div className="flex items-center gap-1 col-span-full">
                             <Paperclip className="h-3 w-3" /> Anexos: {entrega.attachments.length}
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="ml-2 h-6 px-2 text-xs text-primary hover:bg-primary/10"
+                              onClick={() => handleViewAttachments(entrega.attachments as FileAttachment[], entrega.parceiro || 'Entrega')}
+                            >
+                              Ver Anexos
+                            </Button>
                           </div>
                         )}
                       </div>
@@ -528,6 +547,13 @@ export const EntregasAtivas: React.FC<EntregasAtivasProps> = ({ selectedYear }) 
           }}
         />
       )}
+
+      <CollectionAttachmentsDialog
+        collectionName={selectedCollectionName}
+        attachments={selectedCollectionAttachments}
+        isOpen={isAttachmentsDialogOpen}
+        onClose={() => setIsAttachmentsDialogOpen(false)}
+      />
     </div>
   );
 };

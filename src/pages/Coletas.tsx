@@ -21,6 +21,7 @@ import { cn, formatItemsForColetaModeloAparelho, getTotalQuantityOfItems } from 
 import { ColetaForm } from "@/components/ColetaForm";
 import { EditColetaDialog } from "@/components/EditColetaDialog";
 import { ItemData } from "@/components/coleta-form-sections/ColetaItemRow"; // Importa a interface ItemData
+import { CollectionAttachmentsDialog } from "@/components/CollectionAttachmentsDialog"; // Importar o novo diálogo
 
 interface FileAttachment {
   name: string;
@@ -56,6 +57,10 @@ export const Coletas: React.FC<ColetasProps> = ({ selectedYear }) => {
   const [selectedCollectionForResponsible, setSelectedCollectionForResponsible] = useState<{ id: string; name: string; responsible_user_id: string | null } | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
   const [filterDate, setFilterDate] = useState<Date | undefined>(undefined);
+
+  const [isAttachmentsDialogOpen, setIsAttachmentsDialogOpen] = useState(false); // Novo estado
+  const [selectedCollectionAttachments, setSelectedCollectionAttachments] = useState<FileAttachment[]>([]); // Novo estado
+  const [selectedCollectionName, setSelectedCollectionName] = useState<string>(''); // Novo estado
 
   const { data: coletas, isLoading: isLoadingColetas, error: coletasError } = useQuery<Coleta[], Error>({
     queryKey: ['coletasAtivas', user?.id, searchTerm, filterDate?.toISOString().split('T')[0]],
@@ -114,7 +119,7 @@ export const Coletas: React.FC<ColetasProps> = ({ selectedYear }) => {
         .select()
         .single();
       
-      if (coletaError) throw new Error(coleta.message);
+      if (coletaError) throw new Error(coletaError.message);
 
       for (const item of data.items) {
         if (item.modelo_aparelho && item.qtd_aparelhos_solicitado && item.qtd_aparelhos_solicitado > 0) {
@@ -200,6 +205,12 @@ export const Coletas: React.FC<ColetasProps> = ({ selectedYear }) => {
     } else {
       toast({ title: "Dados incompletos", description: "Email do cliente não disponível.", variant: "destructive" });
     }
+  };
+
+  const handleViewAttachments = (attachments: FileAttachment[], collectionName: string) => {
+    setSelectedCollectionAttachments(attachments);
+    setSelectedCollectionName(collectionName);
+    setIsAttachmentsDialogOpen(true);
   };
 
   const getStatusBadgeColor = (status: string) => {
@@ -415,6 +426,14 @@ export const Coletas: React.FC<ColetasProps> = ({ selectedYear }) => {
                         {coleta.attachments && coleta.attachments.length > 0 && (
                           <div className="flex items-center gap-1 col-span-full">
                             <Paperclip className="h-3 w-3" /> Anexos: {coleta.attachments.length}
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="ml-2 h-6 px-2 text-xs text-primary hover:bg-primary/10"
+                              onClick={() => handleViewAttachments(coleta.attachments as FileAttachment[], coleta.parceiro || 'Coleta')}
+                            >
+                              Ver Anexos
+                            </Button>
                           </div>
                         )}
                       </div>
@@ -528,6 +547,13 @@ export const Coletas: React.FC<ColetasProps> = ({ selectedYear }) => {
           }}
         />
       )}
+
+      <CollectionAttachmentsDialog
+        collectionName={selectedCollectionName}
+        attachments={selectedCollectionAttachments}
+        isOpen={isAttachmentsDialogOpen}
+        onClose={() => setIsAttachmentsDialogOpen(false)}
+      />
     </div>
   );
 };
