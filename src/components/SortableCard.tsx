@@ -85,7 +85,7 @@ export const SortableCard: React.FC<SortableCardProps> = ({
         </div>
       </CardHeader>
       {/* Conteúdo clicável para detalhes */}
-      <CardContent className="p-4 cursor-pointer text-center" onClick={() => onDetailsClick?.(id)}>
+      <CardContent className="p-4 cursor-pointer" onClick={() => onDetailsClick?.(id)}>
         {children}
       </CardContent>
     </Card>
