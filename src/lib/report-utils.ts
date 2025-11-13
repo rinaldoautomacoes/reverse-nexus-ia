@@ -141,7 +141,7 @@ const generatePdfReportContent = async (report: Report, data: Coleta[]): Promise
     doc.setFontSize(10);
     doc.setTextColor(...COLOR_MUTED_FOREGROUND_DARK);
     doc.setFont("helvetica", "normal");
-    doc.text("Plataforma Logística 360", margin, currentY + 4); // Alterado aqui
+    doc.text("Plataforma Logística 360", margin, currentY + 4);
     doc.text(`Gerado em: ${format(new Date(), 'dd/MM/yyyy HH:mm:ss', { locale: ptBR })}`, pageWidth - margin, currentY + 4, { align: "right" });
     currentY += 15;
     doc.setDrawColor(...COLOR_BORDER_LIGHT);
@@ -149,14 +149,12 @@ const generatePdfReportContent = async (report: Report, data: Coleta[]): Promise
     currentY += 10;
   };
 
-  // --- Company Header (Placeholder for now) ---
-  doc.setFontSize(10);
+  // --- Report Title ---
+  doc.setFontSize(18); // Increased font size for title
   doc.setTextColor(...COLOR_BLACK);
   doc.setFont("helvetica", "bold");
-  doc.text("CNPJ: 00.000.000/0000-00 Razão social: LogiReverseIA S.A.", margin, currentY);
-  currentY += 5;
-  doc.text("Endereço: Rua da Inovação, 1000, Centro, São Paulo - SP", margin, currentY);
-  currentY += 8;
+  doc.text("Relatório Logístico", pageWidth / 2, currentY + 5, { align: "center" }); // Centered title
+  currentY += 15; // Adjust Y position after title
   doc.setDrawColor(...COLOR_BLACK);
   doc.setLineWidth(0.5);
   doc.line(margin, currentY, pageWidth - margin, currentY); // Separator line
@@ -377,7 +375,7 @@ const generatePdfReportContent = async (report: Report, data: Coleta[]): Promise
   // Rodapé para a última página
   doc.setFontSize(9);
   doc.setTextColor(...COLOR_MUTED_FOREGROUND_DARK);
-  doc.text("Plataforma Inteligente de Logística | Contato: rinaldo@solucoes.com", margin, pageHeight - margin); // Alterado aqui
+  doc.text("Plataforma Inteligente de Logística | Contato: rinaldo@solucoes.com", margin, pageHeight - margin);
   doc.text(`Página ${doc.internal.getNumberOfPages()}`, pageWidth - margin, pageHeight - margin, { align: "right" });
 
   // Adicionar espaço para assinatura do responsável
