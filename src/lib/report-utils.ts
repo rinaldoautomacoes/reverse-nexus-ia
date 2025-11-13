@@ -1,5 +1,5 @@
 import { jsPDF } from "jspdf";
-import html22canvas from "html2canvas"; // Renamed to avoid conflict with html2canvas import
+import html22canvas from "html22canvas"; // Renamed to avoid conflict with html2canvas import
 
 import { supabase } from "@/integrations/supabase/client";
 import type { Tables } from "@/integrations/supabase/types_generated";
@@ -253,14 +253,15 @@ const generatePdfReportContent = async (report: Report, data: Coleta[]): Promise
     doc.text("Itens:", margin, currentY);
     currentY += 7;
 
-    const itemTableHeaders = ["DESCRIÇÃO", "NÚMERO DE SÉRIE", "QUANTIDADE", "ESPÉCIE", "OBS"];
+    // Removida a coluna "NÚMERO DE SÉRIE"
+    const itemTableHeaders = ["DESCRIÇÃO", "QUANTIDADE", "ESPÉCIE", "OBS"];
     const itemTableUsableWidth = pageWidth - 2 * margin;
+    // Ajustadas as larguras das colunas para redistribuir o espaço
     const itemTableColumnWidths = [
-      itemTableUsableWidth * 0.25, // DESCRIÇÃO
-      itemTableUsableWidth * 0.30, // NÚMERO DE SÉRIE (using item.description as placeholder)
-      itemTableUsableWidth * 0.15, // QUANTIDADE
-      itemTableUsableWidth * 0.15, // ESPÉCIE
-      itemTableUsableWidth * 0.15, // OBS
+      itemTableUsableWidth * 0.40, // DESCRIÇÃO (aumentado)
+      itemTableUsableWidth * 0.20, // QUANTIDADE
+      itemTableUsableWidth * 0.20, // ESPÉCIE
+      itemTableUsableWidth * 0.20, // OBS
     ];
     const itemTableRowHeight = 8;
     const itemTableHeaderHeight = 10;
@@ -294,9 +295,9 @@ const generatePdfReportContent = async (report: Report, data: Coleta[]): Promise
 
     if (item.items && item.items.length > 0) {
       for (const subItem of item.items) {
+        // Removido subItem.description da lista de dados da linha
         const itemRowData = [
           subItem.name || 'N/A', // Product Code for DESCRIÇÃO
-          subItem.description || 'N/A', // Product Description for NÚMERO DE SÉRIE (placeholder)
           (subItem.quantity || 0).toString(),
           "UNIDADE", // ESPÉCIE
           "", // OBS
@@ -336,10 +337,8 @@ const generatePdfReportContent = async (report: Report, data: Coleta[]): Promise
           let textY = currentY + itemTableCellPadding + doc.getFontSize() / doc.internal.scaleFactor;
           let align: 'left' | 'center' | 'right' = 'left';
 
-          if (i === 2) { // QUANTIDADE column
-            textX = currentX + itemTableColumnWidths[i] / 2;
-            align = 'center';
-          } else if (i === 3 || i === 4) { // ESPÉCIE, OBS columns
+          // Ajustar alinhamento para as colunas restantes
+          if (i === 1 || i === 2 || i === 3) { // QUANTIDADE, ESPÉCIE, OBS columns
             textX = currentX + itemTableColumnWidths[i] / 2;
             align = 'center';
           }
