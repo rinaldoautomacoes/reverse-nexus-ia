@@ -27,7 +27,7 @@ export const GeneralMetricCardContent: React.FC<GeneralMetricCardContentProps> =
     return (
       <Accordion type="single" collapsible className="w-full mt-2">
         <AccordionItem value={accordionValue} className="border-b-0">
-          <AccordionTrigger className="py-2 text-xs font-semibold text-muted-foreground hover:no-underline hover:text-foreground transition-colors">
+          <AccordionTrigger className="py-2 text-xs font-semibold text-muted-foreground hover:no-underline hover:text-foreground transition-colors justify-center">
             {title}
           </AccordionTrigger>
           <AccordionContent className="pt-2 pb-0">
@@ -85,11 +85,11 @@ export const GeneralMetricCardContent: React.FC<GeneralMetricCardContentProps> =
       {/* Conditional rendering for specific metric types */}
       {metric.id === 'total-operacoes' && (
         <div className="space-y-1 text-sm text-muted-foreground mt-1">
-          <div className="flex items-center gap-1">
+          <div className="flex items-center gap-1 justify-center">
             <Package className="h-3 w-3 text-primary" />
             <span>{metric.coletasCount} Coletas</span>
           </div>
-          <div className="flex items-center gap-1">
+          <div className="flex items-center gap-1 justify-center">
             <Truck className="h-3 w-3 text-accent" />
             <span>{metric.entregasCount} Entregas</span>
           </div>
@@ -97,11 +97,11 @@ export const GeneralMetricCardContent: React.FC<GeneralMetricCardContentProps> =
       )}
       {metric.id === 'operacoes-em-transito' && (
         <div className="space-y-1 text-sm text-muted-foreground mt-1">
-          <div className="flex items-center gap-1">
+          <div className="flex items-center gap-1 justify-center">
             <Package className="h-3 w-3 text-primary" />
             <span>{metric.coletasCount} Coletas em trânsito</span>
           </div>
-          <div className="flex items-center gap-1">
+          <div className="flex items-center gap-1 justify-center">
             <Truck className="h-3 w-3 text-accent" />
             <span>{metric.entregasCount} Entregas em trânsito</span>
           </div>
@@ -109,11 +109,11 @@ export const GeneralMetricCardContent: React.FC<GeneralMetricCardContentProps> =
       )}
       {metric.id === 'operacoes-pendentes' && (
         <div className="space-y-1 text-sm text-muted-foreground mt-1">
-          <div className="flex items-center gap-1">
+          <div className="flex items-center gap-1 justify-center">
             <Package className="h-3 w-3 text-primary" />
             <span>{metric.coletasCount} Coletas pendentes</span>
           </div>
-          <div className="flex items-center gap-1">
+          <div className="flex items-center gap-1 justify-center">
             <Truck className="h-3 w-3 text-accent" />
             <span>{metric.entregasCount} Entregas pendentes</span>
           </div>
@@ -121,11 +121,11 @@ export const GeneralMetricCardContent: React.FC<GeneralMetricCardContentProps> =
       )}
       {metric.id === 'operacoes-concluidas' && (
         <div className="space-y-1 text-sm text-muted-foreground mt-1">
-          <div className="flex items-center gap-1">
+          <div className="flex items-center gap-1 justify-center">
             <Package className="h-3 w-3 text-primary" />
             <span>{metric.coletasCount} Coletas finalizadas</span>
           </div>
-          <div className="flex items-center gap-1">
+          <div className="flex items-center gap-1 justify-center">
             <Truck className="h-3 w-3 text-accent" />
             <span>{metric.entregasCount} Entregas finalizadas</span>
           </div>
