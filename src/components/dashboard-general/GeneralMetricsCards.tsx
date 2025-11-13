@@ -48,6 +48,7 @@ export interface MetricItem { // Exportado para ser usado por GeneralMetricCardC
   bg_color?: string;
   coletasCount?: number;
   entregasCount?: number;
+  totalItemsSum?: number; // Novo campo para o somatório de itens
   allItemsDetails?: { quantity: number; name: string; description: string; type: 'coleta' | 'entrega'; }[];
   pendingItemsDetails?: { quantity: number; name: string; description: string; type: 'coleta' | 'entrega'; }[];
   inTransitItemsDetails?: { quantity: number; name: string; description: string; type: 'coleta' | 'entrega'; }[];
@@ -160,12 +161,13 @@ export const GeneralMetricsCards: React.FC<GeneralMetricsCardsProps> = ({ allCol
       {
         id: 'total-items-geral',
         title: 'Total de Itens (Geral)',
-        value: totalItemsGeral.toString(),
+        value: totalItemsGeral.toString(), // O valor principal agora é o somatório de itens
         description: itemsDescription, // Agora será uma string vazia
         icon_name: 'Box',
         color: 'text-neural',
         bg_color: 'bg-neural/10',
         allItemsDetails: allItemsDetails,
+        totalItemsSum: totalItemsGeral, // Adicionado o somatório de itens
       },
       {
         id: 'operacoes-em-transito',
@@ -177,6 +179,7 @@ export const GeneralMetricsCards: React.FC<GeneralMetricsCardsProps> = ({ allCol
         color: 'text-warning-yellow',
         bg_color: 'bg-warning-yellow/10',
         inTransitItemsDetails: inTransitItemsDetails,
+        totalItemsSum: getTotalQuantityOfItems(inTransitItemsDetails), // Somatório de itens em trânsito
       },
       {
         id: 'operacoes-pendentes',
@@ -188,6 +191,7 @@ export const GeneralMetricsCards: React.FC<GeneralMetricsCardsProps> = ({ allCol
         color: 'text-destructive',
         bg_color: 'bg-destructive/10',
         pendingItemsDetails: pendingItemsDetails,
+        totalItemsSum: getTotalQuantityOfItems(pendingItemsDetails), // Somatório de itens pendentes
       },
       {
         id: 'operacoes-concluidas',
@@ -199,6 +203,7 @@ export const GeneralMetricsCards: React.FC<GeneralMetricsCardsProps> = ({ allCol
         color: 'text-success-green',
         bg_color: 'bg-success-green/10',
         completedItemsDetails: completedItemsDetails,
+        totalItemsSum: getTotalQuantityOfItems(completedItemsDetails), // Somatório de itens concluídos
       },
     ];
   };
