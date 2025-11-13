@@ -14,6 +14,7 @@ import {
   Download, // Importar ícone de download
   FileText, // Ícone para PDF
   FileSpreadsheet, // Ícone para CSV
+  Loader2, // Importar Loader2
 } from "lucide-react";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'; // Importar componentes de tabela
 import { Button } from '@/components/ui/button'; // Importar Button
