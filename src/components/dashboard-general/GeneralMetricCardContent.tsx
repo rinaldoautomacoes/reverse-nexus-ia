@@ -75,8 +75,8 @@ export const GeneralMetricCardContent: React.FC<GeneralMetricCardContentProps> =
         {metric.value}
       </div>
 
-      {/* Exibir o somatório de itens se disponível */}
-      {metric.totalItemsSum !== undefined && (
+      {/* Exibir o somatório de itens se disponível e não for o card de 'Total de Itens (Geral)' */}
+      {metric.totalItemsSum !== undefined && metric.id !== 'total-items-geral' && (
         <p className="text-sm text-muted-foreground mt-1">
           Total de Itens: <span className="font-bold text-foreground">{metric.totalItemsSum}</span>
         </p>
