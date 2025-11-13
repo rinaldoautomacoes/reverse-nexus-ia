@@ -16,6 +16,59 @@ interface GeneralMetricCardContentProps {
 }
 
 export const GeneralMetricCardContent: React.FC<GeneralMetricCardContentProps> = ({ metric }) => {
+  // Função auxiliar para renderizar a seção de itens
+  const renderItemsSection = (
+    items: MetricItem['allItemsDetails'],
+    title: string,
+    accordionValue: string
+  ) => {
+    if (!items || items.length === 0) return null;
+
+    return (
+      <Accordion type="single" collapsible className="w-full mt-2">
+        <AccordionItem value={accordionValue} className="border-b-0">
+          <AccordionTrigger className="py-2 text-xs font-semibold text-muted-foreground hover:no-underline hover:text-foreground transition-colors">
+            {title}
+          </AccordionTrigger>
+          <AccordionContent className="pt-2 pb-0">
+            <div className="max-h-[80px] overflow-y-auto overflow-x-auto border rounded-md">
+              <Table className="min-w-full text-xs">
+                <TableHeader className="sticky top-0 bg-card z-10">
+                  <TableRow className="border-b border-border/50">
+                    <TableHead className="h-6 p-1 text-muted-foreground w-[30px]">Qtd</TableHead>
+                    <TableHead className="h-6 p-1 text-muted-foreground w-[100px]">Item</TableHead>
+                    <TableHead className="h-6 p-1 text-muted-foreground w-auto">Descrição</TableHead>
+                    <TableHead className="h-6 p-1 text-muted-foreground text-right w-[50px]">Tipo</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {items.map((item, index) => (
+                    <TableRow key={index} className="border-b border-border/20 last:border-b-0">
+                      <TableCell className="p-1 font-medium text-muted-foreground">{item.quantity}</TableCell>
+                      <TableCell className="p-1 text-muted-foreground text-wrap overflow-hidden text-ellipsis" title={item.name}>{item.name}</TableCell>
+                      <TableCell className="p-1 text-muted-foreground text-wrap overflow-hidden text-ellipsis" title={item.description}>{item.description}</TableCell>
+                      <TableCell className="p-1 text-right">
+                          <Badge
+                            variant="secondary"
+                            className={cn(
+                              "px-1 py-0.5 text-[0.6rem]",
+                              item.type === 'coleta' ? 'bg-primary/10 text-primary' : 'bg-accent/10 text-accent'
+                            )}
+                          >
+                            {item.type === 'coleta' ? 'Coleta' : 'Entrega'}
+                          </Badge>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
+          </AccordionContent>
+        </AccordionItem>
+      </Accordion>
+    );
+  };
+
   return (
     <>
       <div className="text-4xl font-bold font-orbitron gradient-text mb-1">
@@ -72,52 +125,32 @@ export const GeneralMetricCardContent: React.FC<GeneralMetricCardContentProps> =
         </div>
       )}
 
-      {metric.id === 'total-items-geral' && metric.allItemsDetails && metric.allItemsDetails.length > 0 ? (
-        <Accordion type="single" collapsible className="w-full mt-2">
-          <AccordionItem value="items-details" className="border-b-0">
-            <AccordionTrigger className="py-2 text-xs font-semibold text-muted-foreground hover:no-underline hover:text-foreground transition-colors">
-              {metric.description || "Ver Detalhes dos Itens"}
-            </AccordionTrigger>
-            <AccordionContent className="pt-2 pb-0">
-              <div className="max-h-[80px] overflow-y-auto overflow-x-auto border rounded-md"> {/* Ajustado max-h para 80px */}
-                <Table className="min-w-full text-xs">
-                  <TableHeader className="sticky top-0 bg-card z-10">
-                    <TableRow className="border-b border-border/50">
-                      <TableHead className="h-6 p-1 text-muted-foreground w-[30px]">Qtd</TableHead>
-                      <TableHead className="h-6 p-1 text-muted-foreground w-[100px]">Item</TableHead>
-                      <TableHead className="h-6 p-1 text-muted-foreground w-auto">Descrição</TableHead>
-                      <TableHead className="h-6 p-1 text-muted-foreground text-right w-[50px]">Tipo</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {metric.allItemsDetails.map((item, index) => (
-                      <TableRow key={index} className="border-b border-border/20 last:border-b-0">
-                        <TableCell className="p-1 font-medium text-muted-foreground">{item.quantity}</TableCell>
-                        <TableCell className="p-1 text-muted-foreground text-wrap overflow-hidden text-ellipsis" title={item.name}>{item.name}</TableCell>
-                        <TableCell className="p-1 text-muted-foreground text-wrap overflow-hidden text-ellipsis" title={item.description}>{item.description}</TableCell>
-                        <TableCell className="p-1 text-right">
-                            <Badge
-                              variant="secondary"
-                              className={cn(
-                                "px-1 py-0.5 text-[0.6rem]",
-                                item.type === 'coleta' ? 'bg-primary/10 text-primary' : 'bg-accent/10 text-accent'
-                              )}
-                            >
-                              {item.type === 'coleta' ? 'Coleta' : 'Entrega'}
-                            </Badge>
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              </div>
-            </AccordionContent>
-          </AccordionItem>
-        </Accordion>
-      ) : (
-        metric.description && metric.id !== 'total-operacoes' && metric.id !== 'operacoes-em-transito' && metric.id !== 'operacoes-concluidas' && metric.id !== 'operacoes-pendentes' && (
-          <p className="text-sm text-muted-foreground mb-1">{metric.description}</p>
-        )
+      {/* Seção de itens para 'Total de Itens (Geral)' */}
+      {renderItemsSection(
+        metric.allItemsDetails,
+        metric.description || "Ver Detalhes dos Itens",
+        "total-items-details"
+      )}
+
+      {/* Seção de itens para 'Operações Pendentes' */}
+      {renderItemsSection(
+        metric.pendingItemsDetails,
+        "Ver Detalhes dos Itens Pendentes",
+        "pending-items-details"
+      )}
+
+      {/* Seção de itens para 'Operações Em Trânsito' */}
+      {renderItemsSection(
+        metric.inTransitItemsDetails,
+        "Ver Detalhes dos Itens Em Trânsito",
+        "in-transit-items-details"
+      )}
+
+      {/* Seção de itens para 'Operações Concluídas' */}
+      {renderItemsSection(
+        metric.completedItemsDetails,
+        "Ver Detalhes dos Itens Concluídos",
+        "completed-items-details"
       )}
     </>
   );
