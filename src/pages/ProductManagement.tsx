@@ -3,7 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { ArrowLeft, PlusCircle, Edit, Trash2, Package, Search, Tag, Box, Hash, Image as ImageIcon, CheckSquare, Square } from "lucide-react"; // Adicionado CheckSquare e Square
+import { ArrowLeft, PlusCircle, Edit, Trash2, Package, Search, Tag, Box, Hash, Image as ImageIcon, CheckSquare, Square, Loader2 } from "lucide-react"; // Adicionado Loader2 aqui
 import { useNavigate } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
