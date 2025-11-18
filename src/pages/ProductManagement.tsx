@@ -3,7 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { ArrowLeft, PlusCircle, Edit, Trash2, Package, Search, Tag, Box, Hash, Image as ImageIcon } from "lucide-react"; // Removed FileUp
+import { ArrowLeft, PlusCircle, Edit, Trash2, Package, Search, Tag, Box, Hash, Image as ImageIcon, CheckSquare, Square } from "lucide-react"; // Adicionado CheckSquare e Square
 import { useNavigate } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -11,7 +11,7 @@ import type { Tables, TablesInsert, TablesUpdate } from "@/integrations/supabase
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/use-auth";
 import { ProductForm } from "@/components/ProductForm";
-// Removed DataImporter import as it's now a standalone page
+import { Checkbox } from "@/components/ui/checkbox"; // Importar Checkbox
 
 type Product = Tables<'products'>;
 type ProductInsert = TablesInsert<'products'>;
@@ -25,9 +25,9 @@ export const ProductManagement = () => {
 
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
-  // Removed isImportDialogOpen state
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
+  const [selectedProductIds, setSelectedProductIds] = useState<Set<string>>(new Set()); // Estado para IDs selecionados
 
   const { data: products, isLoading: isLoadingProducts, error: productsError } = useQuery<Product[], Error>({
     queryKey: ['products', user?.id],
@@ -106,6 +106,24 @@ export const ProductManagement = () => {
     },
   });
 
+  const bulkDeleteProductsMutation = useMutation({
+    mutationFn: async (productIds: string[]) => {
+      const { error } = await supabase
+        .from('products')
+        .delete()
+        .in('id', productIds);
+      if (error) throw new Error(error.message);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['products', user?.id] });
+      setSelectedProductIds(new Set()); // Limpa a seleção após a exclusão
+      toast({ title: "Produtos excluídos!", description: `${selectedProductIds.size} produtos removidos com sucesso.` });
+    },
+    onError: (err) => {
+      toast({ title: "Erro ao excluir produtos", description: err.message, variant: "destructive" });
+    },
+  });
+
   const handleAddProduct = (data: ProductInsert) => {
     addProductMutation.mutate(data);
   };
@@ -120,12 +138,46 @@ export const ProductManagement = () => {
     }
   };
 
+  const handleBulkDeleteProducts = () => {
+    if (selectedProductIds.size === 0) {
+      toast({ title: "Nenhum produto selecionado", description: "Selecione os produtos que deseja excluir.", variant: "warning" });
+      return;
+    }
+    if (window.confirm(`Tem certeza que deseja excluir ${selectedProductIds.size} produtos selecionados? Esta ação não pode ser desfeita.`)) {
+      bulkDeleteProductsMutation.mutate(Array.from(selectedProductIds));
+    }
+  };
+
+  const handleToggleSelectProduct = (productId: string) => {
+    setSelectedProductIds(prev => {
+      const newSelection = new Set(prev);
+      if (newSelection.has(productId)) {
+        newSelection.delete(productId);
+      } else {
+        newSelection.add(productId);
+      }
+      return newSelection;
+    });
+  };
+
+  const handleSelectAllProducts = () => {
+    if (selectedProductIds.size === filteredProducts.length) {
+      setSelectedProductIds(new Set()); // Desselecionar todos
+    } else {
+      const allProductIds = new Set(filteredProducts.map(p => p.id));
+      setSelectedProductIds(allProductIds); // Selecionar todos
+    }
+  };
+
   const filteredProducts = products?.filter(product =>
     product.code.toLowerCase().includes(searchTerm.toLowerCase()) ||
     product.description?.toLowerCase().includes(searchTerm.toLowerCase()) ||
     product.model?.toLowerCase().includes(searchTerm.toLowerCase()) ||
     product.serial_number?.toLowerCase().includes(searchTerm.toLowerCase())
   ) || [];
+
+  const isAnyProductSelected = selectedProductIds.size > 0;
+  const isAllProductsSelected = filteredProducts.length > 0 && selectedProductIds.size === filteredProducts.length;
 
   if (isLoadingProducts) {
     return (
@@ -193,8 +245,36 @@ export const ProductManagement = () => {
                 Meus Produtos
               </CardTitle>
               <div className="flex gap-2">
-                {/* Removed the import button from here */}
-
+                {isAnyProductSelected && (
+                  <Button
+                    size="sm"
+                    variant="destructive"
+                    onClick={handleBulkDeleteProducts}
+                    disabled={bulkDeleteProductsMutation.isPending}
+                    className="bg-destructive hover:bg-destructive/80"
+                  >
+                    {bulkDeleteProductsMutation.isPending ? (
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    ) : (
+                      <Trash2 className="mr-2 h-4 w-4" />
+                    )}
+                    Excluir Selecionados ({selectedProductIds.size})
+                  </Button>
+                )}
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={handleSelectAllProducts}
+                  disabled={filteredProducts.length === 0}
+                  className="border-primary text-primary hover:bg-primary/10"
+                >
+                  {isAllProductsSelected ? (
+                    <Square className="mr-2 h-4 w-4" />
+                  ) : (
+                    <CheckSquare className="mr-2 h-4 w-4" />
+                  )}
+                  {isAllProductsSelected ? "Desselecionar Todos" : "Selecionar Todos"}
+                </Button>
                 <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
                   <DialogTrigger asChild>
                     <Button size="sm" className="bg-gradient-primary hover:bg-gradient-primary/80">
@@ -226,26 +306,34 @@ export const ProductManagement = () => {
                     className="flex flex-col lg:flex-row items-start lg:items-center justify-between p-4 rounded-lg border border-primary/10 bg-slate-darker/10 animate-slide-up"
                     style={{ animationDelay: `${index * 100}ms` }}
                   >
-                    <div className="flex-1 min-w-0 mb-3 lg:mb-0">
-                      <h3 className="font-semibold text-lg">{product.code}</h3>
-                      <p className="text-sm text-muted-foreground">{product.description}</p>
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-sm text-muted-foreground mt-1">
-                        {product.model && (
-                          <div className="flex items-center gap-1">
-                            <Box className="h-3 w-3" /> {product.model}
-                          </div>
-                        )}
-                        {product.serial_number && (
-                          <div className="flex items-center gap-1">
-                            <Hash className="h-3 w-3" /> {product.serial_number}
+                    <div className="flex items-center gap-3 flex-1 min-w-0 mb-3 lg:mb-0">
+                      <Checkbox
+                        checked={selectedProductIds.has(product.id)}
+                        onCheckedChange={() => handleToggleSelectProduct(product.id)}
+                        id={`select-product-${product.id}`}
+                        className="h-5 w-5"
+                      />
+                      <div>
+                        <h3 className="font-semibold text-lg">{product.code}</h3>
+                        <p className="text-sm text-muted-foreground">{product.description}</p>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-sm text-muted-foreground mt-1">
+                          {product.model && (
+                            <div className="flex items-center gap-1">
+                              <Box className="h-3 w-3" /> {product.model}
+                            </div>
+                          )}
+                          {product.serial_number && (
+                            <div className="flex items-center gap-1">
+                              <Hash className="h-3 w-3" /> {product.serial_number}
+                            </div>
+                          )}
+                        </div>
+                        {product.image_url && (
+                          <div className="mt-2">
+                            <img src={product.image_url} alt={product.code} className="w-16 h-16 object-cover rounded-md" />
                           </div>
                         )}
                       </div>
-                      {product.image_url && (
-                        <div className="mt-2">
-                          <img src={product.image_url} alt={product.code} className="w-16 h-16 object-cover rounded-md" />
-                        </div>
-                      )}
                     </div>
                     <div className="flex gap-2 flex-wrap justify-end">
                       <Dialog open={isEditDialogOpen && editingProduct?.id === product.id} onOpenChange={setIsEditDialogOpen}>
