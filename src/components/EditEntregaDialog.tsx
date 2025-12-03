@@ -11,7 +11,7 @@ import type { Tables, TablesUpdate, TablesInsert } from "@/integrations/supabase
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/use-auth";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { CalendarIcon, PlusCircle, MinusCircle, Package } from "lucide-react";
+import { CalendarIcon, PlusCircle, MinusCircle, Package, Edit } from "lucide-react";
 import { format, isValid } from "date-fns"; // Importar isValid
 import { ptBR } from "date-fns/locale";
 import { Calendar } from "@/components/ui/calendar";
@@ -152,8 +152,11 @@ export const EditEntregaDialog: React.FC<EditEntregaDialogProps> = ({ entrega, i
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="sm:max-w-[900px] max-h-[90vh] overflow-y-auto">
-        <DialogHeader>
-          <DialogTitle>Editar Entrega: {entrega.parceiro}</DialogTitle>
+        <DialogHeader className="flex flex-row items-center justify-between space-y-0 pb-3">
+          <DialogTitle className="flex items-center gap-2 gradient-text">
+            <Edit className="h-5 w-5" />
+            Editar Entrega: {entrega.parceiro ?? 'N/A'}
+          </DialogTitle>
         </DialogHeader>
         <EntregaForm
           initialData={{ ...entrega, items: initialItemsForForm, attachments: initialAttachmentsForForm }}

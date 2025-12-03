@@ -149,7 +149,7 @@ export const EditColetaDialog: React.FC<EditColetaDialogProps> = ({ coleta, isOp
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2 gradient-text">
             <Edit className="h-5 w-5" />
-            Editar Coleta: {coleta.parceiro}
+            Editar Coleta: {coleta.parceiro ?? 'N/A'}
           </DialogTitle>
         </DialogHeader>
         <ColetaForm
