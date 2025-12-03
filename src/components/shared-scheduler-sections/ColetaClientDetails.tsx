@@ -22,6 +22,12 @@ export const ColetaClientDetails: React.FC<ColetaClientDetailsProps> = ({
   onClientSelected, // Desestruturado
   isFormDisabled,
 }) => {
+  // Adição da verificação defensiva
+  if (!parsedData) {
+    console.error("ColetaClientDetails (shared-scheduler-sections): parsedData é undefined ou null.");
+    return null; 
+  }
+
   return (
     <Card className="card-futuristic">
       <CardContent className="p-6 space-y-4">

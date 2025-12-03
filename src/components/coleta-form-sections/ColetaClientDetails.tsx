@@ -21,6 +21,12 @@ export const ColetaClientDetails: React.FC<ColetaClientDetailsProps> = ({
   handleClientComboboxSelect,
   isPending,
 }) => {
+  // Adição da verificação defensiva
+  if (!formData) {
+    console.error("ColetaClientDetails (coleta-form-sections): formData é undefined ou null.");
+    return null; 
+  }
+
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
       <div className="space-y-2">
@@ -29,6 +35,7 @@ export const ColetaClientDetails: React.FC<ColetaClientDetailsProps> = ({
           value={formData.parceiro || ''}
           onValueChange={(name) => handleInputChange("parceiro", name)}
           onClientSelect={handleClientComboboxSelect}
+          disabled={isPending}
         />
       </div>
       <div className="space-y-2">
