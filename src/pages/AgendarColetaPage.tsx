@@ -18,7 +18,7 @@ import { ptBR } from "date-fns/locale";
 
 
 // Import modular components
-import { ColetaClientDetails } from "@/components/shared-scheduler-sections/ColetaClientDetails";
+import { ColetaClientDetails } from "@/components/coleta-form-sections/ColetaClientDetails"; // Corrigido: Usar o componente da pasta coleta-form-sections
 import { ColetaOriginAddress } from "@/components/coleta-form-sections/ColetaOriginAddress"; // Usar o componente atualizado
 import { ColetaDestinationAddress } from "@/components/coleta-form-sections/ColetaDestinationAddress"; // Usar o componente atualizado
 import { ColetaItemsSection } from "@/components/coleta-form-sections/ColetaItemsSection"; // Novo componente
