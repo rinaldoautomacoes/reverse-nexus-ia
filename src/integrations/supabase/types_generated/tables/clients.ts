@@ -2,6 +2,8 @@ import type { Json } from '../database';
 
 export type ClientRow = {
   address: string | null
+  address_number: string | null
+  cep: string | null
   cnpj: string | null
   contact_person: string | null
   created_at: string | null
@@ -10,12 +12,12 @@ export type ClientRow = {
   name: string
   phone: string | null
   user_id: string
-  address_number: string | null
-  cep: string | null
 }
 
 export type ClientInsert = {
   address?: string | null
+  address_number?: string | null
+  cep?: string | null
   cnpj?: string | null
   contact_person?: string | null
   created_at?: string | null
@@ -24,12 +26,12 @@ export type ClientInsert = {
   name: string
   phone?: string | null
   user_id: string
-  address_number?: string | null
-  cep?: string | null
 }
 
 export type ClientUpdate = {
   address?: string | null
+  address_number?: string | null
+  cep?: string | null
   cnpj?: string | null
   contact_person?: string | null
   created_at?: string | null
@@ -38,8 +40,6 @@ export type ClientUpdate = {
   name?: string
   phone?: string | null
   user_id?: string
-  address_number?: string | null
-  cep?: string | null
 }
 
 export type ClientRelationships = []

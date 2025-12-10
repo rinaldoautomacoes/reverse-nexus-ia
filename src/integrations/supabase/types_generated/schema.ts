@@ -13,7 +13,8 @@ import type { ReportRow, ReportInsert, ReportUpdate, ReportRelationships } from 
 import type { RouteStopRow, RouteStopInsert, RouteStopUpdate, RouteStopRelationships } from './tables/route_stops';
 import type { RouteRow, RouteInsert, RouteUpdate, RouteRelationships } from './tables/routes';
 import type { TransportadoraRow, TransportadoraInsert, TransportadoraUpdate, TransportadoraRelationships } from './tables/transportadoras';
-import type { OutstandingCollectionItemRow, OutstandingCollectionItemInsert, OutstandingCollectionItemUpdate, OutstandingCollectionItemRelationships } from './tables/outstanding_collection_items'; // New import
+import type { OutstandingCollectionItemRow, OutstandingCollectionItemInsert, OutstandingCollectionItemUpdate, OutstandingCollectionItemRelationships } from './tables/outstanding_collection_items';
+import type { DebtRecordRow, DebtRecordInsert, DebtRecordUpdate, DebtRecordRelationships } from './tables/debt_records'; // New import
 
 export type PublicSchema = {
   Tables: {
@@ -35,7 +36,7 @@ export type PublicSchema = {
       Update: ColetasUpdate;
       Relationships: ColetasRelationships;
     };
-    outstanding_collection_items: { // New table definition
+    outstanding_collection_items: {
       Row: OutstandingCollectionItemRow;
       Insert: OutstandingCollectionItemInsert;
       Update: OutstandingCollectionItemUpdate;
@@ -95,15 +96,32 @@ export type PublicSchema = {
       Update: TransportadoraUpdate;
       Relationships: TransportadoraRelationships;
     };
+    debt_records: { // New table definition
+      Row: DebtRecordRow;
+      Insert: DebtRecordInsert;
+      Update: DebtRecordUpdate;
+      Relationships: DebtRecordRelationships;
+    };
   }
   Views: {
     [_ in never]: never
   }
   Functions: {
-    [_ in never]: never
+    get_user_role: {
+      Args: { _user_id: string }
+      Returns: string
+    }
+    has_role: {
+      Args: { _user_id: string; _role: string }
+      Returns: boolean
+    }
+    handle_new_user: {
+      Args: Record<PropertyKey, never>
+      Returns: string
+    }
   }
   Enums: {
-    [_ in never]: never
+    app_role: "admin" | "standard"
   }
   CompositeTypes: {
     [_ in never]: never

@@ -8,6 +8,7 @@ export type ReportRow = {
   end_date: string | null
   format: string
   id: string
+  report_url: string | null
   start_date: string | null
   status: string
   title: string
@@ -23,6 +24,7 @@ export type ReportInsert = {
   end_date?: string | null
   format?: string
   id?: string
+  report_url?: string | null
   start_date?: string | null
   status?: string
   title: string
@@ -38,6 +40,7 @@ export type ReportUpdate = {
   end_date?: string | null
   format?: string
   id?: string
+  report_url?: string | null
   start_date?: string | null
   status?: string
   title?: string
