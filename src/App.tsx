@@ -9,7 +9,8 @@ import NotFound from "./pages/NotFound";
 import { AgendarColetaPage } from "./pages/AgendarColetaPage";
 import { AgendarEntregaPage } from "./pages/AgendarEntregaPage";
 import { Relatorios } from "./pages/Relatorios";
-import { RelatoriosEntregas } from "./pages/RelatoriosEntregas";
+import { RelatoriosEntregas }
+ from "./pages/RelatoriosEntregas";
 import { Coletas } from "./pages/Coletas";
 import ColetasConcluidas from "./pages/ColetasConcluidas";
 import { Auth } from "./pages/Auth";
@@ -46,13 +47,13 @@ const App = () => (
     <BrowserRouter>
       <QueryClientProvider client={queryClient}>
         <AuthProvider>
-          <TooltipProvider>
-            <Toaster />
-            <Sonner />
-            <SidebarProvider> {/* Adicionado o SidebarProvider aqui */}
+          <SidebarProvider> {/* Movido o SidebarProvider para aqui */}
+            <TooltipProvider>
+              <Toaster />
+              <Sonner />
               <AppLayout />
-            </SidebarProvider>
-          </TooltipProvider>
+            </TooltipProvider>
+          </SidebarProvider>
         </AuthProvider>
       </QueryClientProvider>
     </BrowserRouter>
