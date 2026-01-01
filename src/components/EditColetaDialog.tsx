@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -126,9 +126,9 @@ export const EditColetaDialog: React.FC<EditColetaDialogProps> = ({ coleta, isOp
     },
   });
 
-  const handleSave = useCallback((data: ColetaUpdate, items: ItemData[], attachments: FileAttachment[]) => {
+  const handleSave = (data: ColetaUpdate, items: ItemData[], attachments: FileAttachment[]) => {
     updateColetaMutation.mutate({ coleta: data, items, attachments });
-  }, [updateColetaMutation]);
+  };
 
   if (!coleta) return null;
 

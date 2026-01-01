@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -134,9 +134,9 @@ export const EditEntregaDialog: React.FC<EditEntregaDialogProps> = ({ entrega, i
     },
   });
 
-  const handleSave = useCallback((data: EntregaUpdate, items: ItemData[], attachments: FileAttachment[]) => {
+  const handleSave = (data: EntregaUpdate, items: ItemData[], attachments: FileAttachment[]) => {
     updateEntregaMutation.mutate({ entrega: data, items, attachments });
-  }, [updateEntregaMutation]);
+  };
 
   // Mapeia os itens do banco de dados para o formato ItemData para o formulário
   const initialItemsForForm: ItemData[] = entrega.items?.map(item => ({
