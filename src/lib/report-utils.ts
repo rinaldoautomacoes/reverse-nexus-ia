@@ -301,9 +301,9 @@ const generatePdfReportContent = async (report: Report, data: Coleta[]): Promise
 
     if (item.items && item.items.length > 0) {
       for (const subItem of item.items) {
-        // Removido subItem.description da lista de dados da linha
+        const descriptionText = `${subItem.name || 'N/A'}${subItem.description && subItem.description !== subItem.name ? ' - ' + subItem.description : ''}`;
         const itemRowData = [
-          subItem.name || 'N/A', // Product Code for DESCRIÇÃO
+          descriptionText, // Combined Product Code and Description for DESCRIÇÃO
           (subItem.quantity || 0).toString(),
           "UNIDADE", // ESPÉCIE
           "", // OBS
@@ -548,18 +548,18 @@ export const generateItemsReport = async (items: ItemDetails[], formatType: 'pdf
     doc.setTextColor(...COLOR_BLACK); // Black text for item table content
 
     for (const item of items) {
-      // Removido item.name da lista de dados da linha
+      const descriptionText = `${item.name || 'N/A'}${item.description && item.description !== item.name ? ' - ' + item.description : ''}`;
       const itemRowData = [
         item.quantity.toString(),
-        item.description || 'N/A',
+        descriptionText, // Combined Product Code and Description for DESCRIÇÃO
         item.type === 'coleta' ? 'Coleta' : 'Entrega',
       ];
 
       let maxItemLineHeight = itemTableRowHeight;
-      const wrappedItemLines: string[][] = [];
+      wrappedItemLines.push([]); // Initialize for each item
       itemRowData.forEach((cellText, i) => {
         const lines = doc.splitTextToSize(cellText, itemTableColumnWidths[i] - 2 * itemTableCellPadding);
-        wrappedItemLines.push(lines);
+        wrappedItemLines[wrappedItemLines.length - 1].push(...lines); // Add lines to the last item's array
         if (lines.length * (doc.getFontSize() / doc.internal.scaleFactor + 1) > maxItemLineHeight) {
           maxItemLineHeight = lines.length * (doc.getFontSize() / doc.internal.scaleFactor + 1);
         }
@@ -596,7 +596,7 @@ export const generateItemsReport = async (items: ItemDetails[], formatType: 'pdf
         }
 
         doc.setTextColor(...COLOR_BLACK);
-        doc.text(wrappedItemLines[i], textX, textY, { align: align });
+        doc.text(wrappedItemLines[items.indexOf(item)][i], textX, textY, { align: align }); // Use the correct wrapped lines
         currentX += itemTableColumnWidths[i];
       });
       currentY += maxItemLineHeight + 2 * itemTableCellPadding;
@@ -617,11 +617,14 @@ export const generateItemsReport = async (items: ItemDetails[], formatType: 'pdf
 
   } else if (formatType === 'csv') {
     const headers = ["Qtd", "Descrição", "Tipo"];
-    const rows = items.map(item => [
-      item.quantity.toString(),
-      `"${item.description.replace(/"/g, '""')}"`, // Escape double quotes
-      `"${(item.type === 'coleta' ? 'Coleta' : 'Entrega').replace(/"/g, '""')}"`,
-    ].join(','));
+    const rows = items.map(item => {
+      const descriptionText = `${item.name || 'N/A'}${item.description && item.description !== item.name ? ' - ' + item.description : ''}`;
+      return [
+        item.quantity.toString(),
+        `"${descriptionText.replace(/"/g, '""')}"`, // Escape double quotes
+        `"${(item.type === 'coleta' ? 'Coleta' : 'Entrega').replace(/"/g, '""')}"`,
+      ].join(',');
+    });
 
     const csvContent = [
       headers.join(','),
