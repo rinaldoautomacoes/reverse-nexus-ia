@@ -32,8 +32,8 @@ const COLOR_GRAY_DARK = [50, 50, 50]; // Cinza escuro
 
 interface ItemDetails {
   quantity: number;
-  name: string;
-  description: string;
+  name: string; // This is the product code
+  description: string; // This is the product description
   type: 'coleta' | 'entrega';
 }
 
@@ -259,14 +259,15 @@ const generatePdfReportContent = async (report: Report, data: Coleta[]): Promise
     doc.text("Itens:", margin, currentY);
     currentY += 7;
 
-    // Removida a coluna "NÚMERO DE SÉRIE"
-    const itemTableHeaders = ["DESCRIÇÃO", "QUANTIDADE", "ESPÉCIE", "OBS"];
+    // Updated headers to include "CÓDIGO" and "DESCRIÇÃO" separately
+    const itemTableHeaders = ["CÓDIGO", "DESCRIÇÃO", "QUANTIDADE", "ESPÉCIE", "OBS"];
     const itemTableUsableWidth = pageWidth - 2 * margin;
-    // Ajustadas as larguras das colunas para redistribuir o espaço
+    // Adjusted column widths for the new columns
     const itemTableColumnWidths = [
-      itemTableUsableWidth * 0.40, // DESCRIÇÃO (aumentado)
-      itemTableUsableWidth * 0.20, // QUANTIDADE
-      itemTableUsableWidth * 0.20, // ESPÉCIE
+      itemTableUsableWidth * 0.15, // CÓDIGO
+      itemTableUsableWidth * 0.35, // DESCRIÇÃO
+      itemTableUsableWidth * 0.15, // QUANTIDADE
+      itemTableUsableWidth * 0.15, // ESPÉCIE
       itemTableUsableWidth * 0.20, // OBS
     ];
     const itemTableRowHeight = 8;
@@ -301,10 +302,10 @@ const generatePdfReportContent = async (report: Report, data: Coleta[]): Promise
 
     if (item.items && item.items.length > 0) {
       for (const subItem of item.items) {
-        const descriptionText = `${subItem.name || 'N/A'}${subItem.description && subItem.description !== subItem.name ? ' - ' + subItem.description : ''}`;
         const itemRowData = [
-          descriptionText, // Combined Product Code and Description for DESCRIÇÃO
-          (subItem.quantity || 0).toString(),
+          subItem.name || 'N/A', // CÓDIGO
+          subItem.description || 'N/A', // DESCRIÇÃO
+          (subItem.quantity || 0).toString(), // QUANTIDADE
           "UNIDADE", // ESPÉCIE
           "", // OBS
         ];
@@ -343,8 +344,8 @@ const generatePdfReportContent = async (report: Report, data: Coleta[]): Promise
           let textY = currentY + itemTableCellPadding + doc.getFontSize() / doc.internal.scaleFactor;
           let align: 'left' | 'center' | 'right' = 'left';
 
-          // Ajustar alinhamento para as colunas restantes
-          if (i === 1 || i === 2 || i === 3) { // QUANTIDADE, ESPÉCIE, OBS columns
+          // Adjust alignment for specific columns
+          if (i === 0 || i === 2 || i === 3 || i === 4) { // CÓDIGO, QUANTIDADE, ESPÉCIE, OBS columns
             textX = currentX + itemTableColumnWidths[i] / 2;
             align = 'center';
           }
@@ -508,13 +509,14 @@ export const generateItemsReport = async (items: ItemDetails[], formatType: 'pdf
     doc.line(margin, currentY, pageWidth - margin, currentY); // Keep the separator line
     currentY += 10; // Adjust Y after the separator line
 
-    // Removida a coluna "Item"
-    const tableColumnNames = ["Qtd", "Descrição", "Tipo"];
+    // Updated headers to include "CÓDIGO" and "DESCRIÇÃO" separately
+    const tableColumnNames = ["Qtd", "CÓDIGO", "DESCRIÇÃO", "Tipo"];
     const itemTableUsableWidth = pageWidth - 2 * margin;
-    // Ajustadas as larguras das colunas para redistribuir o espaço
+    // Adjusted column widths for the new columns
     const itemTableColumnWidths = [
-      itemTableUsableWidth * 0.20, // Qtd (aumentado)
-      itemTableUsableWidth * 0.60, // Descrição (aumentado)
+      itemTableUsableWidth * 0.15, // Qtd
+      itemTableUsableWidth * 0.25, // CÓDIGO
+      itemTableUsableWidth * 0.40, // DESCRIÇÃO
       itemTableUsableWidth * 0.20, // Tipo
     ];
     const itemTableRowHeight = 8;
@@ -548,18 +550,18 @@ export const generateItemsReport = async (items: ItemDetails[], formatType: 'pdf
     doc.setTextColor(...COLOR_BLACK); // Black text for item table content
 
     for (const item of items) {
-      const descriptionText = `${item.name || 'N/A'}${item.description && item.description !== item.name ? ' - ' + item.description : ''}`;
       const itemRowData = [
         item.quantity.toString(),
-        descriptionText, // Combined Product Code and Description for DESCRIÇÃO
+        item.name || 'N/A', // CÓDIGO
+        item.description || 'N/A', // DESCRIÇÃO
         item.type === 'coleta' ? 'Coleta' : 'Entrega',
       ];
 
       let maxItemLineHeight = itemTableRowHeight;
-      wrappedItemLines.push([]); // Initialize for each item
+      const wrappedItemLines: string[][] = [];
       itemRowData.forEach((cellText, i) => {
         const lines = doc.splitTextToSize(cellText, itemTableColumnWidths[i] - 2 * itemTableCellPadding);
-        wrappedItemLines[wrappedItemLines.length - 1].push(...lines); // Add lines to the last item's array
+        wrappedItemLines.push(lines);
         if (lines.length * (doc.getFontSize() / doc.internal.scaleFactor + 1) > maxItemLineHeight) {
           maxItemLineHeight = lines.length * (doc.getFontSize() / doc.internal.scaleFactor + 1);
         }
@@ -589,14 +591,14 @@ export const generateItemsReport = async (items: ItemDetails[], formatType: 'pdf
         let textY = currentY + itemTableCellPadding + doc.getFontSize() / doc.internal.scaleFactor;
         let align: 'left' | 'center' | 'right' = 'left';
 
-        // Ajustar alinhamento para as colunas de quantidade e tipo (agora nos índices 0 e 2)
-        if (i === 0 || i === 2) { // Qtd and Tipo columns
+        // Adjust alignment for specific columns
+        if (i === 0 || i === 1 || i === 3) { // Qtd, CÓDIGO, Tipo columns
           textX = currentX + itemTableColumnWidths[i] / 2;
           align = 'center';
         }
 
         doc.setTextColor(...COLOR_BLACK);
-        doc.text(wrappedItemLines[items.indexOf(item)][i], textX, textY, { align: align }); // Use the correct wrapped lines
+        doc.text(wrappedItemLines[i], textX, textY, { align: align });
         currentX += itemTableColumnWidths[i];
       });
       currentY += maxItemLineHeight + 2 * itemTableCellPadding;
@@ -616,15 +618,14 @@ export const generateItemsReport = async (items: ItemDetails[], formatType: 'pdf
     window.open(pdfUrl, '_blank');
 
   } else if (formatType === 'csv') {
-    const headers = ["Qtd", "Descrição", "Tipo"];
-    const rows = items.map(item => {
-      const descriptionText = `${item.name || 'N/A'}${item.description && item.description !== item.name ? ' - ' + item.description : ''}`;
-      return [
-        item.quantity.toString(),
-        `"${descriptionText.replace(/"/g, '""')}"`, // Escape double quotes
-        `"${(item.type === 'coleta' ? 'Coleta' : 'Entrega').replace(/"/g, '""')}"`,
-      ].join(',');
-    });
+    // Updated headers for CSV to include "CÓDIGO" and "DESCRIÇÃO" separately
+    const headers = ["Qtd", "CÓDIGO", "DESCRIÇÃO", "Tipo"];
+    const rows = items.map(item => [
+      item.quantity.toString(),
+      `"${item.name.replace(/"/g, '""')}"`, // CÓDIGO
+      `"${item.description.replace(/"/g, '""')}"`, // DESCRIÇÃO
+      `"${(item.type === 'coleta' ? 'Coleta' : 'Entrega').replace(/"/g, '""')}"`,
+    ].join(','));
 
     const csvContent = [
       headers.join(','),
