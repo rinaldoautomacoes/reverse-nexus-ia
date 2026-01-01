@@ -49,7 +49,9 @@ const App = () => (
           <TooltipProvider>
             <Toaster />
             <Sonner />
-            <AppLayout />
+            <SidebarProvider> {/* Adicionado o SidebarProvider aqui */}
+              <AppLayout />
+            </SidebarProvider>
           </TooltipProvider>
         </AuthProvider>
       </QueryClientProvider>
