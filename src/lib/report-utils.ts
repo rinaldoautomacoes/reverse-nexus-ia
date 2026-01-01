@@ -58,10 +58,10 @@ export const generateReport = async (report: Report, userId: string) => {
     }
 
     if (report.start_date) {
-      query = query.gte('created_at', report.start_date);
+      query = query.gte('previsao_coleta', report.start_date); // Alterado para previsao_coleta
     }
     if (report.end_date) {
-      query = query.lte('created_at', report.end_date + 'T23:59:59.999Z');
+      query = query.lte('previsao_coleta', report.end_date); // Alterado para previsao_coleta
     }
 
     const { data: coletas, error } = await query.order('created_at', { ascending: false });
