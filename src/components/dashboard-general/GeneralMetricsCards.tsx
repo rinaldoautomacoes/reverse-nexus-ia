@@ -10,7 +10,7 @@ import {
   Settings, // Import Settings icon
   Tag // Import Tag icon
 } from "lucide-react";
-import React, { useState, useEffect, useMemo } from "react"; // Adicionado useMemo
+import React, { useState, useEffect, useMemo, useCallback } from "react"; // Adicionado useCallback aqui
 import type { Tables } from "@/integrations/supabase/types";
 import { getTotalQuantityOfItems, cn } from "@/lib/utils";
 import { DndContext, closestCenter, KeyboardSensor, PointerSensor, useSensor, useSensors, DragEndEvent } from '@dnd-kit/core';
@@ -51,8 +51,8 @@ export interface MetricItem { // Exportado para ser usado por GeneralMetricCardC
   totalItemsSum?: number; // Novo campo para o somatório de itens
   allItemsDetails?: { quantity: number; name: string; description: string; type: 'coleta' | 'entrega'; }[];
   pendingItemsDetails?: { quantity: number; name: string; description: string; type: 'coleta' | 'entrega'; }[];
-  inTransitItemsDetails?: { quantity: number; name: string; description: string; type: 'coleta' | 'entrega'; }[];
-  completedItemsDetails?: { quantity: number; name: string; description: string; type: 'coleta' | 'entrega'; }[];
+  inTransitItemsDetails?: { quantity: number; name: string; description: string; type: 'coleta' | 'entrega'; }[]; // Novo campo
+  completedItemsDetails?: { quantity: number; name: string; description: string; type: 'coleta' | 'entrega'; }[]; // Novo campo
   customComponent?: React.ReactNode;
   customHeaderButton?: React.ReactNode;
 }
