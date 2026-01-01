@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { ArrowLeft, FileText, Search, Download, Loader2, CheckCircle, XCircle, Clock, Edit, Trash2 } from "lucide-react";
+import { ArrowLeft, FileText, Search, Download, Loader2, CheckCircle, XCircle, Clock, Edit, Trash2, Square, CheckSquare } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -15,6 +15,7 @@ import { Badge } from "@/components/ui/badge";
 import { format, isValid } from "date-fns"; // Importar isValid
 import { ptBR } from "date-fns/locale";
 import { generateReport } from "@/lib/report-utils";
+import { Checkbox } from "@/components/ui/checkbox"; // Importar Checkbox
 
 type Report = Tables<'reports'>;
 
@@ -28,6 +29,7 @@ export const RelatoriosEntregas = () => {
   const [generatingReportId, setGeneratingReportId] = useState<string | null>(null);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false); // Estado para o diálogo de edição
   const [editingReport, setEditingReport] = useState<Report | null>(null); // Estado para o relatório sendo editado
+  const [selectedReportIds, setSelectedReportIds] = useState<Set<string>>(new Set()); // Estado para IDs selecionados
 
   const { data: reports, isLoading: isLoadingReports, error: reportsError } = useQuery<Report[], Error>({
     queryKey: ['reportsEntregas', user?.id],
@@ -63,6 +65,25 @@ export const RelatoriosEntregas = () => {
     },
   });
 
+  const bulkDeleteReportsMutation = useMutation({
+    mutationFn: async (reportIds: string[]) => {
+      const { error } = await supabase
+        .from('reports')
+        .delete()
+        .in('id', reportIds)
+        .eq('user_id', user?.id); // RLS check
+      if (error) throw new Error(error.message);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['reportsEntregas', user?.id] });
+      setSelectedReportIds(new Set()); // Limpa a seleção após a exclusão
+      toast({ title: "Relatórios Excluídos!", description: `${selectedReportIds.size} relatórios removidos com sucesso.` });
+    },
+    onError: (err) => {
+      toast({ title: "Erro ao excluir relatórios", description: err.message, variant: "destructive" });
+    },
+  });
+
   const handleGenerateReportClick = async (report: Report) => {
     if (!user?.id) {
       toast({ title: "Erro", description: "Usuário não autenticado.", variant: "destructive" });
@@ -91,6 +112,37 @@ export const RelatoriosEntregas = () => {
     }
   };
 
+  const handleBulkDeleteReports = () => {
+    if (selectedReportIds.size === 0) {
+      toast({ title: "Nenhum relatório selecionado", description: "Selecione os relatórios que deseja excluir.", variant: "warning" });
+      return;
+    }
+    if (window.confirm(`Tem certeza que deseja excluir ${selectedReportIds.size} relatórios selecionados? Esta ação não pode ser desfeita.`)) {
+      bulkDeleteReportsMutation.mutate(Array.from(selectedReportIds));
+    }
+  };
+
+  const handleToggleSelectReport = (reportId: string) => {
+    setSelectedReportIds(prev => {
+      const newSelection = new Set(prev);
+      if (newSelection.has(reportId)) {
+        newSelection.delete(reportId);
+      } else {
+        newSelection.add(reportId);
+      }
+      return newSelection;
+    });
+  };
+
+  const handleSelectAllReports = () => {
+    if (selectedReportIds.size === filteredReports.length) {
+      setSelectedReportIds(new Set()); // Desselecionar todos
+    } else {
+      const allReportIds = new Set(filteredReports.map(r => r.id));
+      setSelectedReportIds(allReportIds); // Selecionar todos
+    }
+  };
+
   const filteredReports = reports?.filter(report =>
     report.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
     report.description?.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -110,6 +162,9 @@ export const RelatoriosEntregas = () => {
         return <Badge variant="outline">{status}</Badge>;
     }
   };
+
+  const isAnyReportSelected = selectedReportIds.size > 0;
+  const isAllReportsSelected = filteredReports.length > 0 && selectedReportIds.size === filteredReports.length;
 
   if (isLoadingReports) {
     return (
@@ -176,7 +231,39 @@ export const RelatoriosEntregas = () => {
                 <FileText className="h-5 w-5 text-primary" />
                 Meus Relatórios de Entregas
               </CardTitle>
-              <CreateReportDialog collectionTypeFilter="entrega" />
+              <div className="flex gap-2">
+                {isAnyReportSelected && (
+                  <Button
+                    size="sm"
+                    variant="destructive"
+                    onClick={handleBulkDeleteReports}
+                    disabled={bulkDeleteReportsMutation.isPending}
+                    className="bg-destructive hover:bg-destructive/80"
+                  >
+                    {bulkDeleteReportsMutation.isPending ? (
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    ) : (
+                      <Trash2 className="mr-2 h-4 w-4" />
+                    )}
+                    Excluir Selecionados ({selectedReportIds.size})
+                  </Button>
+                )}
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={handleSelectAllReports}
+                  disabled={filteredReports.length === 0}
+                  className="border-primary text-primary hover:bg-primary/10"
+                >
+                  {isAllReportsSelected ? (
+                    <Square className="mr-2 h-4 w-4" />
+                  ) : (
+                    <CheckSquare className="mr-2 h-4 w-4" />
+                  )}
+                  {isAllReportsSelected ? "Desselecionar Todos" : "Selecionar Todos"}
+                </Button>
+                <CreateReportDialog collectionTypeFilter="entrega" />
+              </div>
             </CardHeader>
             <CardContent className="space-y-4">
               {filteredReports && filteredReports.length > 0 ? (
@@ -186,13 +273,21 @@ export const RelatoriosEntregas = () => {
                     className="flex flex-col lg:flex-row items-start lg:items-center justify-between p-4 rounded-lg border border-primary/10 bg-slate-darker/10 animate-slide-up"
                     style={{ animationDelay: `${index * 100}ms` }}
                   >
-                    <div className="flex-1 min-w-0 mb-3 lg:mb-0">
-                      <h3 className="font-semibold text-lg">{report.title}</h3>
-                      <p className="text-sm text-muted-foreground">{report.description}</p>
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-sm text-muted-foreground mt-1">
-                        <p>Período: {report.start_date ? (isValid(new Date(report.start_date)) ? format(new Date(report.start_date), 'dd/MM/yyyy', { locale: ptBR }) : 'Data inválida') : 'N/A'} - {report.end_date ? (isValid(new Date(report.end_date)) ? format(new Date(report.end_date), 'dd/MM/yyyy', { locale: ptBR }) : 'Data inválida') : 'N/A'}</p>
-                        <p>Formato: <Badge variant="secondary">{report.format.toUpperCase()}</Badge></p>
-                        <p>Status: {getStatusBadge(report.status)}</p>
+                    <div className="flex items-center gap-3 flex-1 min-w-0 mb-3 lg:mb-0">
+                      <Checkbox
+                        checked={selectedReportIds.has(report.id)}
+                        onCheckedChange={() => handleToggleSelectReport(report.id)}
+                        id={`select-report-${report.id}`}
+                        className="h-5 w-5"
+                      />
+                      <div>
+                        <h3 className="font-semibold text-lg">{report.title}</h3>
+                        <p className="text-sm text-muted-foreground">{report.description}</p>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-sm text-muted-foreground mt-1">
+                          <p>Período: {report.start_date ? (isValid(new Date(report.start_date)) ? format(new Date(report.start_date), 'dd/MM/yyyy', { locale: ptBR }) : 'Data inválida') : 'N/A'} - {report.end_date ? (isValid(new Date(report.end_date)) ? format(new Date(report.end_date), 'dd/MM/yyyy', { locale: ptBR }) : 'Data inválida') : 'N/A'}</p>
+                          <p>Formato: <Badge variant="secondary">{report.format.toUpperCase()}</Badge></p>
+                          <p>Status: {getStatusBadge(report.status)}</p>
+                        </div>
                       </div>
                     </div>
                     <div className="flex gap-2 flex-wrap justify-end">
