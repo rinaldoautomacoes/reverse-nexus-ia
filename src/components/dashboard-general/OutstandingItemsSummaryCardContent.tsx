@@ -5,6 +5,7 @@ import { Package, Clock, CheckCircle, Tag } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
 import type { Tables } from '@/integrations/supabase/types';
 import { getTotalQuantityOfItems } from '@/lib/utils';
+import { CardContent } from '@/components/ui/card'; // Importar CardContent
 
 type OutstandingCollectionItem = Tables<'outstanding_collection_items'>;
 
@@ -39,16 +40,16 @@ export const OutstandingItemsSummaryCardContent: React.FC<OutstandingItemsSummar
 
   if (isLoading) {
     return (
-      <div className="space-y-3 p-4">
+      <CardContent className="space-y-3 p-4"> {/* Adicionado CardContent e p-4 */}
         <Skeleton className="h-6 w-3/4" />
         <Skeleton className="h-4 w-full" />
         <Skeleton className="h-4 w-full" />
-      </div>
+      </CardContent>
     );
   }
 
   return (
-    <div className="space-y-3"> {/* Removido p-4 aqui */}
+    <CardContent className="space-y-3 p-4"> {/* Adicionado CardContent e p-4 */}
       <div className="flex items-center justify-between">
         <h4 className="text-lg font-semibold text-foreground">Itens Pendentes</h4>
         <Badge variant="secondary" className="bg-primary/10 text-primary">
@@ -91,6 +92,6 @@ export const OutstandingItemsSummaryCardContent: React.FC<OutstandingItemsSummar
           )}
         </div>
       )}
-    </div>
+    </CardContent>
   );
 };

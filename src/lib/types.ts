@@ -31,8 +31,6 @@ export interface ParsedCollectionData {
   contrato?: string | null; // Novo campo
   nf_glbl?: string | null; // Novo campo
   partner_code?: string | null; // Novo campo
-  modelo_aparelho?: string | null;
-  modelo_aparelho_description?: string | null;
 }
 
 export interface ColetaImportData {

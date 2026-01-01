@@ -3,7 +3,6 @@ import type { Json } from './database';
 // Import modular table types
 import type { ClientRow, ClientInsert, ClientUpdate, ClientRelationships } from './tables/clients';
 import type { ColetaRow, ColetaInsert, ColetaUpdate, ColetaRelationships } from './tables/coletas';
-import type { ColetasRow, ColetasInsert, ColetasUpdate, ColetasRelationships } from './tables/Coletas'; // Note: Capital 'C' Coletas
 import type { DriverRow, DriverInsert, DriverUpdate, DriverRelationships } from './tables/drivers';
 import type { ItemRow, ItemInsert, ItemUpdate, ItemRelationships } from './tables/items';
 import type { MetricRow, MetricInsert, MetricUpdate, MetricRelationships } from './tables/metrics';
@@ -29,12 +28,6 @@ export type PublicSchema = {
       Insert: ColetaInsert;
       Update: ColetaUpdate;
       Relationships: ColetaRelationships;
-    };
-    Coletas: { // Note: Capital 'C' Coletas
-      Row: ColetasRow;
-      Insert: ColetasInsert;
-      Update: ColetasUpdate;
-      Relationships: ColetasRelationships;
     };
     outstanding_collection_items: {
       Row: OutstandingCollectionItemRow;

@@ -10,12 +10,16 @@ type OutstandingCollectionItem = Tables<'outstanding_collection_items'>;
 
 interface OutstandingItemListItemProps {
   item: OutstandingCollectionItem;
-  // Removido onEdit, onDelete, isDeleting pois não são exibidos na imagem
+  onEdit: (item: OutstandingCollectionItem) => void; // Reativado
+  onDelete: (itemId: string) => void; // Reativado
+  isDeleting: boolean; // Reativado
 }
 
 export const OutstandingItemListItem: React.FC<OutstandingItemListItemProps> = ({
   item,
-  // Removido onEdit, onDelete, isDeleting
+  onEdit, // Reativado
+  onDelete, // Reativado
+  isDeleting, // Reativado
 }) => {
   const getStatusBadge = (status: string) => {
     switch (status) {
@@ -31,8 +35,8 @@ export const OutstandingItemListItem: React.FC<OutstandingItemListItemProps> = (
   };
 
   return (
-    <div className="flex flex-col p-3 rounded-lg border border-primary/10 bg-slate-darker/10">
-      <div className="flex-1 min-w-0">
+    <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between p-3 rounded-lg border border-primary/10 bg-slate-darker/10">
+      <div className="flex-1 min-w-0 mb-2 lg:mb-0">
         <p className="font-semibold text-base flex items-center gap-2 text-primary">
           <Tag className="h-4 w-4 text-primary" />
           {item.product_code}
@@ -50,7 +54,31 @@ export const OutstandingItemListItem: React.FC<OutstandingItemListItemProps> = (
           Criado em: {item.created_at ? format(new Date(item.created_at), 'dd/MM/yyyy HH:mm', { locale: ptBR }) : 'N/A'}
         </p>
       </div>
-      {/* Botões de ação removidos para corresponder à imagem */}
+      <div className="flex gap-2 flex-wrap justify-end"> {/* Botões de ação reativados */}
+        <Button
+          variant="outline"
+          size="sm"
+          className="border-accent text-accent hover:bg-accent/10"
+          onClick={() => onEdit(item)}
+        >
+          <Edit className="mr-1 h-3 w-3" />
+          Editar
+        </Button>
+        <Button
+          variant="outline"
+          size="sm"
+          className="border-destructive text-destructive hover:bg-destructive/10"
+          onClick={() => onDelete(item.id)}
+          disabled={isDeleting}
+        >
+          {isDeleting ? (
+            <Loader2 className="mr-1 h-3 w-3 animate-spin" />
+          ) : (
+            <Trash2 className="mr-1 h-3 w-3" />
+          )}
+          Excluir
+        </Button>
+      </div>
     </div>
   );
 };

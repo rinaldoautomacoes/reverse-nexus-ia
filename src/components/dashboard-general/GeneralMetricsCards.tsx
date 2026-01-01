@@ -10,7 +10,7 @@ import {
   Settings, // Import Settings icon
   Tag // Import Tag icon
 } from "lucide-react";
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react"; // Adicionado useMemo
 import type { Tables } from "@/integrations/supabase/types";
 import { getTotalQuantityOfItems, cn } from "@/lib/utils";
 import { DndContext, closestCenter, KeyboardSensor, PointerSensor, useSensor, useSensors, DragEndEvent } from '@dnd-kit/core';
@@ -67,7 +67,7 @@ export const GeneralMetricsCards: React.FC<GeneralMetricsCardsProps> = ({ allCol
   const [selectedMetric, setSelectedMetric] = useState<MetricItem | null>(null);
   const [isDetailsDialogOpen, setIsDetailsDialogOpen] = useState(false);
 
-  const calculateMetrics = (data: Coleta[], outstanding: OutstandingCollectionItem[]) => {
+  const calculateMetrics = useCallback((data: Coleta[], outstanding: OutstandingCollectionItem[]) => {
     const coletas = data.filter(item => item.type === 'coleta');
     const entregas = data.filter(item => item.type === 'entrega');
 
@@ -90,9 +90,6 @@ export const GeneralMetricsCards: React.FC<GeneralMetricsCardsProps> = ({ allCol
     const coletasPendente = coletas.filter(c => c.status_coleta === 'pendente').length;
     const entregasPendente = entregas.filter(e => e.status_coleta === 'pendente').length;
     const operacoesPendente = coletasPendente + entregasPendente;
-
-    // Removido a descrição detalhada para o card 'Total de Itens (Geral)'
-    const itemsDescription = ''; 
 
     const allItemsDetails: {
       quantity: number;
@@ -161,13 +158,13 @@ export const GeneralMetricsCards: React.FC<GeneralMetricsCardsProps> = ({ allCol
       {
         id: 'total-items-geral',
         title: 'Total de Itens (Geral)',
-        value: totalItemsGeral.toString(), // O valor principal agora é o somatório de itens
-        description: itemsDescription, // Agora será uma string vazia
+        value: totalItemsGeral.toString(),
+        description: 'Itens totais em coletas e entregas',
         icon_name: 'Box',
         color: 'text-neural',
         bg_color: 'bg-neural/10',
         allItemsDetails: allItemsDetails,
-        totalItemsSum: totalItemsGeral, // Adicionado o somatório de itens
+        totalItemsSum: totalItemsGeral,
       },
       {
         id: 'operacoes-em-transito',
@@ -179,7 +176,7 @@ export const GeneralMetricsCards: React.FC<GeneralMetricsCardsProps> = ({ allCol
         color: 'text-warning-yellow',
         bg_color: 'bg-warning-yellow/10',
         inTransitItemsDetails: inTransitItemsDetails,
-        totalItemsSum: getTotalQuantityOfItems(inTransitItemsDetails), // Somatório de itens em trânsito
+        totalItemsSum: getTotalQuantityOfItems(inTransitItemsDetails),
       },
       {
         id: 'operacoes-pendentes',
@@ -191,7 +188,7 @@ export const GeneralMetricsCards: React.FC<GeneralMetricsCardsProps> = ({ allCol
         color: 'text-destructive',
         bg_color: 'bg-destructive/10',
         pendingItemsDetails: pendingItemsDetails,
-        totalItemsSum: getTotalQuantityOfItems(pendingItemsDetails), // Somatório de itens pendentes
+        totalItemsSum: getTotalQuantityOfItems(pendingItemsDetails),
       },
       {
         id: 'operacoes-concluidas',
@@ -203,12 +200,32 @@ export const GeneralMetricsCards: React.FC<GeneralMetricsCardsProps> = ({ allCol
         color: 'text-success-green',
         bg_color: 'bg-success-green/10',
         completedItemsDetails: completedItemsDetails,
-        totalItemsSum: getTotalQuantityOfItems(completedItemsDetails), // Somatório de itens concluídos
+        totalItemsSum: getTotalQuantityOfItems(completedItemsDetails),
+      },
+      {
+        id: 'outstanding-collection-items',
+        title: 'Itens Pendentes de Coleta',
+        value: outstanding.filter(item => item.status === 'pendente').length.toString(),
+        description: 'Itens aguardando coleta',
+        icon_name: 'Tag',
+        color: 'text-ai-purple',
+        bg_color: 'bg-ai-purple/10',
+        customComponent: (
+          <OutstandingItemsSummaryCardContent
+            outstandingItems={outstanding}
+            isLoading={false} // This component receives already loaded data
+            selectedYear={selectedYear}
+          />
+        ),
+        customHeaderButton: (
+          <ManageOutstandingItemsDialog outstandingItems={outstanding} />
+        ),
+        totalItemsSum: outstanding.reduce((sum, item) => sum + (item.quantity_pending || 0), 0),
       },
     ];
-  };
+  }, [allColetas, outstandingItems, selectedYear]); // Adicionado allColetas, outstandingItems, selectedYear
 
-  const initialMetrics = calculateMetrics(allColetas, outstandingItems);
+  const initialMetrics = useMemo(() => calculateMetrics(allColetas, outstandingItems), [calculateMetrics, allColetas, outstandingItems]);
   const [metrics, setMetrics] = useState<MetricItem[]>(initialMetrics);
 
   useEffect(() => {
@@ -224,8 +241,7 @@ export const GeneralMetricsCards: React.FC<GeneralMetricsCardsProps> = ({ allCol
     } else {
       setMetrics(initialMetrics);
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [allColetas, selectedYear, outstandingItems]); // Adicionado initialMetrics como dependência
+  }, [initialMetrics]); // Dependência corrigida para initialMetrics
 
   const sensors = useSensors(
     useSensor(PointerSensor),
@@ -276,9 +292,9 @@ export const GeneralMetricsCards: React.FC<GeneralMetricsCardsProps> = ({ allCol
                   iconColorClass={metric.color}
                   iconBgColorClass={metric.bg_color}
                   delay={index * 100}
-                  onDetailsClick={metric.id === 'outstanding-collection-items' ? undefined : handleCardClick}
+                  onDetailsClick={handleCardClick} // Todos os cards agora podem abrir o diálogo de detalhes
                   customHeaderButton={metric.customHeaderButton}
-                  cardHeight="h-[280px]" // Aumentado para 280px
+                  cardHeight="h-[280px]"
                   cardWidth="w-full"
                 >
                   {metric.customComponent ? (
