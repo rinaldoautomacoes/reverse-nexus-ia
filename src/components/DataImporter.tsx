@@ -131,7 +131,6 @@ export const DataImporter: React.FC<DataImporterProps> = ({ initialTab = 'collec
     } catch (error: any) {
       console.error('Erro ao processar arquivo:', error);
       setParseError(error.message || 'Arquivo inválido ou dados não reconhecidos.');
-      toast({ title: 'Erro ao processar arquivo', description: error.message || 'Arquivo inválido ou dados não reconhecidos.', variant: 'destructive' });
       setExtractedData(null);
     } finally {
       setIsParsing(false);
