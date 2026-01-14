@@ -25,18 +25,6 @@ export const SidebarYearSelector: React.FC<SidebarYearSelectorProps> = ({ select
         variant="outline"
         className={cn(
           `w-full justify-start text-left h-10 text-base bg-gradient-primary text-primary-foreground hover:bg-gradient-primary/80 glow-effect`,
-          selectedYear === '2025' ? 'border-2 border-neon-cyan' : 'border-transparent',
-          isCollapsed && 'justify-center px-0'
-        )}
-        onClick={() => setSelectedYear('2025')}
-      >
-        {!isCollapsed && 'Ano 2025'}
-        {isCollapsed && <span className="font-bold text-lg">25</span>}
-      </Button>
-      <Button
-        variant="outline"
-        className={cn(
-          `w-full justify-start text-left h-10 text-base bg-gradient-primary text-primary-foreground hover:bg-gradient-primary/80 glow-effect`,
           selectedYear === '2026' ? 'border-2 border-neon-cyan' : 'border-transparent',
           isCollapsed && 'justify-center px-0'
         )}
@@ -44,6 +32,18 @@ export const SidebarYearSelector: React.FC<SidebarYearSelectorProps> = ({ select
       >
         {!isCollapsed && 'Ano 2026'}
         {isCollapsed && <span className="font-bold text-lg">26</span>}
+      </Button>
+      <Button
+        variant="outline"
+        className={cn(
+          `w-full justify-start text-left h-10 text-base bg-gradient-primary text-primary-foreground hover:bg-gradient-primary/80 glow-effect`,
+          selectedYear === '2027' ? 'border-2 border-neon-cyan' : 'border-transparent',
+          isCollapsed && 'justify-center px-0'
+        )}
+        onClick={() => setSelectedYear('2027')}
+      >
+        {!isCollapsed && 'Ano 2027'}
+        {isCollapsed && <span className="font-bold text-lg">27</span>}
       </Button>
     </div>
   );
