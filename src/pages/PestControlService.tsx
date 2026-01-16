@@ -3,7 +3,7 @@
 import React, { useState, useCallback, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
-  ArrowLeft, Bell, Building2, MapPin, Bug, Rat, // Removed Spider
+  ArrowLeft, Bell, Building2, MapPin, Bug, Rat,
   Calendar as CalendarIcon, Clock, User, CheckSquare, Camera, MessageSquare, Loader2,
   CheckCircle,
 } from 'lucide-react';
@@ -20,6 +20,9 @@ import { cn } from '@/lib/utils';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { useToast } from '@/hooks/use-toast';
+import { ClientCombobox } from '@/components/ClientCombobox'; // Import ClientCombobox
+import { ResponsibleUserCombobox } from '@/components/ResponsibleUserCombobox'; // Import ResponsibleUserCombobox
+import type { Tables } from '@/integrations/supabase/types'; // Import Tables for types
 
 // Define a interface para os anexos, reutilizando a existente
 interface FileAttachment {
@@ -33,10 +36,10 @@ interface FileAttachment {
 const pestIcons: { [key: string]: React.ElementType } = {
   baratas: Bug,
   ratos: Rat,
-  mosquitos: Bug, // Changed from Mosquito to Bug
-  cupins: Bug, // Using Bug as Termite is not available
-  formigas: Bug, // Using Bug as Ant is not available
-  aranhas: Bug, // Changed from Spider to Bug
+  mosquitos: Bug,
+  cupins: Bug,
+  formigas: Bug,
+  aranhas: Bug,
   outros: Bug,
 };
 
@@ -44,10 +47,10 @@ const pestIcons: { [key: string]: React.ElementType } = {
 const pestOptions = [
   { value: 'baratas', label: 'Baratas', icon: Bug },
   { value: 'ratos', label: 'Ratos', icon: Rat },
-  { value: 'mosquitos', label: 'Mosquitos', icon: Bug }, // Changed from Mosquito to Bug
-  { value: 'cupins', label: 'Cupins', icon: Bug }, // Using Bug as Termite is not available
-  { value: 'formigas', label: 'Formigas', icon: Bug }, // Using Bug as Ant is not available
-  { value: 'aranhas', label: 'Aranhas', icon: Bug }, // Changed from Spider to Bug
+  { value: 'mosquitos', label: 'Mosquitos', icon: Bug },
+  { value: 'cupins', label: 'Cupins', icon: Bug },
+  { value: 'formigas', label: 'Formigas', icon: Bug },
+  { value: 'aranhas', label: 'Aranhas', icon: Bug },
   { value: 'outros', label: 'Outros', icon: Bug },
 ];
 
@@ -56,13 +59,21 @@ export const PestControlService: React.FC = () => {
   const { toast } = useToast();
 
   const [serviceStatus, setServiceStatus] = useState<'agendado' | 'em_andamento' | 'concluido'>('agendado');
-  const [clientName, setClientName] = useState('');
+  
+  // States for ClientCombobox
+  const [selectedClientId, setSelectedClientId] = useState<string | null>(null);
+  const [clientNameDisplay, setClientNameDisplay] = useState<string>('');
   const [clientAddress, setClientAddress] = useState('');
   const [environmentType, setEnvironmentType] = useState('');
+
+  // States for ResponsibleUserCombobox (Technician)
+  const [selectedTechnicianId, setSelectedTechnicianId] = useState<string | null>(null);
+  const [technicianNameDisplay, setTechnicianNameDisplay] = useState<string>('');
+
   const [selectedPests, setSelectedPests] = useState<string[]>([]);
   const [serviceDate, setServiceDate] = useState<Date | undefined>(new Date());
   const [serviceTime, setServiceTime] = useState('09:00');
-  const [technicianName, setTechnicianName] = useState('');
+  
   const [checklist, setChecklist] = useState({
     inspection: false,
     application: false,
@@ -73,6 +84,18 @@ export const PestControlService: React.FC = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isRegisteringEvidence, setIsRegisteringEvidence] = useState(false);
 
+  const handleClientSelect = useCallback((client: Tables<'clients'> | null) => {
+    setSelectedClientId(client?.id || null);
+    setClientNameDisplay(client?.name || '');
+    setClientAddress(client?.address || '');
+    // You might want to derive environmentType from client data or keep it as a manual input
+  }, []);
+
+  const handleTechnicianSelect = useCallback((userProfile: Tables<'profiles'> | null) => {
+    setSelectedTechnicianId(userProfile?.id || null);
+    setTechnicianNameDisplay(userProfile ? `${userProfile.first_name || ''} ${userProfile.last_name || ''}`.trim() : '');
+  }, []);
+
   const handlePestToggle = useCallback((pestValue: string) => {
     setSelectedPests(prev =>
       prev.includes(pestValue) ? prev.filter(p => p !== pestValue) : [...prev, pestValue]
@@ -82,7 +105,7 @@ export const PestControlService: React.FC = () => {
   const handleFinalizeService = async () => {
     setIsSubmitting(true);
     // Basic validation
-    if (!clientName || !clientAddress || !technicianName || selectedPests.length === 0 || !serviceDate) {
+    if (!selectedClientId || !clientAddress || !selectedTechnicianId || selectedPests.length === 0 || !serviceDate) {
       toast({
         title: "Campos Obrigatórios",
         description: "Por favor, preencha todos os campos obrigatórios (Cliente, Endereço, Técnico, Pragas, Data).",
@@ -92,18 +115,18 @@ export const PestControlService: React.FC = () => {
       return;
     }
 
-    // Simulate API call
+    // Simulate API call (replace with actual Supabase insert/update)
     await new Promise(resolve => setTimeout(resolve, 1500));
 
     toast({
       title: "Serviço Finalizado",
-      description: `O serviço para ${clientName} foi marcado como ${serviceStatus}.`,
+      description: `O serviço para ${clientNameDisplay} foi marcado como ${serviceStatus}.`,
       variant: "success",
     });
     console.log("Service Data:", {
-      serviceStatus, clientName, clientAddress, environmentType, selectedPests,
+      serviceStatus, selectedClientId, clientNameDisplay, clientAddress, environmentType, selectedPests,
       serviceDate: serviceDate ? format(serviceDate, 'yyyy-MM-dd') : null,
-      serviceTime, technicianName, checklist, observations,
+      serviceTime, selectedTechnicianId, technicianNameDisplay, checklist, observations,
     });
     setIsSubmitting(false);
     // Optionally reset form or navigate
@@ -127,7 +150,7 @@ export const PestControlService: React.FC = () => {
       <div className="max-w-4xl mx-auto">
         {/* Adjust navigation as needed */}
         <Button
-          onClick={() => navigate('/coletas-dashboard')}
+          onClick={() => navigate('/coletas-dashboard')} // Assuming a general dashboard or pest control dashboard
           variant="ghost"
           className="mb-6 text-primary hover:bg-primary/10"
         >
@@ -173,18 +196,12 @@ export const PestControlService: React.FC = () => {
               {/* Client Information */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label htmlFor="client-name">Nome do Cliente *</Label>
-                  <div className="relative">
-                    <Building2 className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                    <Input
-                      id="client-name"
-                      placeholder="Nome da Empresa/Cliente"
-                      className="pl-10"
-                      value={clientName}
-                      onChange={(e) => setClientName(e.target.value)}
-                      required
-                    />
-                  </div>
+                  <Label htmlFor="client-combobox">Nome do Cliente *</Label>
+                  <ClientCombobox
+                    value={clientNameDisplay}
+                    onValueChange={setClientNameDisplay} // Update display value
+                    onClientSelect={handleClientSelect} // Handle full client object selection
+                  />
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="client-address">Endereço do Cliente *</Label>
@@ -197,6 +214,7 @@ export const PestControlService: React.FC = () => {
                       value={clientAddress}
                       onChange={(e) => setClientAddress(e.target.value)}
                       required
+                      disabled={!selectedClientId} // Disable if no client is selected
                     />
                   </div>
                 </div>
@@ -281,18 +299,12 @@ export const PestControlService: React.FC = () => {
 
               {/* Technician Name */}
               <div className="space-y-2">
-                <Label htmlFor="technician-name">Técnico Responsável *</Label>
-                <div className="relative">
-                  <User className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                  <Input
-                    id="technician-name"
-                    placeholder="Nome do técnico"
-                    className="pl-10"
-                    value={technicianName}
-                    onChange={(e) => setTechnicianName(e.target.value)}
-                    required
-                  />
-                </div>
+                <Label htmlFor="technician-combobox">Técnico Responsável *</Label>
+                <ResponsibleUserCombobox
+                  value={selectedTechnicianId}
+                  onValueChange={setSelectedTechnicianId}
+                  onUserSelect={handleTechnicianSelect}
+                />
               </div>
 
               {/* Service Checklist */}
