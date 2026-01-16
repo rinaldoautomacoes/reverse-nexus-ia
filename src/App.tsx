@@ -39,7 +39,7 @@ import { GeneralDashboard } from "./pages/GeneralDashboard";
 import { ExcelExtractorPage } from "./pages/ExcelExtractorPage";
 import { AutomaticCollectionSchedulerPage } from "./pages/AutomaticCollectionSchedulerPage";
 import { DataImportPage } from "./pages/DataImportPage";
-import { PestControlService } from "./pages/PestControlService";
+import { PestControlService } from "@/pages/PestControlService";
 import { PestControlDashboardPage } from "./pages/PestControlDashboardPage";
 import { TechnicianManagement } from "./pages/TechnicianManagement"; // New import
 
