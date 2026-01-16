@@ -1,7 +1,7 @@
 "use client";
 
 import React from 'react';
-import { useNavigate } => 'react-router-dom';
+import { useNavigate } from 'react-router-dom'; // Correção da sintaxe de importação
 import { Button } from '@/components/ui/button';
 import {
   Tooltip,
