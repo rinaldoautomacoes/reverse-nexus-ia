@@ -3,7 +3,7 @@
 import React, { useState, useCallback, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
-  ArrowLeft, Bell, Building2, MapPin, Bug, Rat, Spider, // Removed Mosquito
+  ArrowLeft, Bell, Building2, MapPin, Bug, Rat, // Removed Spider
   Calendar as CalendarIcon, Clock, User, CheckSquare, Camera, MessageSquare, Loader2,
   CheckCircle,
 } from 'lucide-react';
@@ -36,7 +36,7 @@ const pestIcons: { [key: string]: React.ElementType } = {
   mosquitos: Bug, // Changed from Mosquito to Bug
   cupins: Bug, // Using Bug as Termite is not available
   formigas: Bug, // Using Bug as Ant is not available
-  aranhas: Spider,
+  aranhas: Bug, // Changed from Spider to Bug
   outros: Bug,
 };
 
@@ -47,7 +47,7 @@ const pestOptions = [
   { value: 'mosquitos', label: 'Mosquitos', icon: Bug }, // Changed from Mosquito to Bug
   { value: 'cupins', label: 'Cupins', icon: Bug }, // Using Bug as Termite is not available
   { value: 'formigas', label: 'Formigas', icon: Bug }, // Using Bug as Ant is not available
-  { value: 'aranhas', label: 'Aranhas', icon: Spider },
+  { value: 'aranhas', label: 'Aranhas', icon: Bug }, // Changed from Spider to Bug
   { value: 'outros', label: 'Outros', icon: Bug },
 ];
 
@@ -165,7 +165,7 @@ export const PestControlService: React.FC = () => {
                   <SelectContent>
                     <SelectItem value="agendado">Agendado</SelectItem>
                     <SelectItem value="em_andamento">Em Andamento</SelectItem>
-                    <SelectItem value="concluido">Concluido</SelectItem>
+                    <SelectItem value="concluido">Concluído</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
