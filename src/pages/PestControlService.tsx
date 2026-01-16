@@ -3,7 +3,7 @@
 import React, { useState, useCallback, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
-  ArrowLeft, Bell, Building2, MapPin, Bug, Rat, // 'Termite' removido daqui
+  ArrowLeft, Bell, Building2, MapPin, Bug, Rat, Mosquito, Spider, // Removed Ant and Termite
   Calendar as CalendarIcon, Clock, User, CheckSquare, Camera, MessageSquare, Loader2,
   CheckCircle,
 } from 'lucide-react';
@@ -33,10 +33,10 @@ interface FileAttachment {
 const pestIcons: { [key: string]: React.ElementType } = {
   baratas: Bug,
   ratos: Rat,
-  mosquitos: Bug,
-  cupins: Bug, // 'Termite' substituído por 'Bug' aqui
-  formigas: Bug,
-  aranhas: Bug,
+  mosquitos: Mosquito,
+  cupins: Bug, // Using Bug as Termite is not available
+  formigas: Bug, // Using Bug as Ant is not available
+  aranhas: Spider,
   outros: Bug,
 };
 
@@ -44,10 +44,10 @@ const pestIcons: { [key: string]: React.ElementType } = {
 const pestOptions = [
   { value: 'baratas', label: 'Baratas', icon: Bug },
   { value: 'ratos', label: 'Ratos', icon: Rat },
-  { value: 'mosquitos', label: 'Mosquitos', icon: Bug },
-  { value: 'cupins', label: 'Cupins', icon: Bug }, // 'Termite' substituído por 'Bug' aqui
-  { value: 'formigas', label: 'Formigas', icon: Bug },
-  { value: 'aranhas', label: 'Aranhas', icon: Bug },
+  { value: 'mosquitos', label: 'Mosquitos', icon: Mosquito },
+  { value: 'cupins', label: 'Cupins', icon: Bug }, // Using Bug as Termite is not available
+  { value: 'formigas', label: 'Formigas', icon: Bug }, // Using Bug as Ant is not available
+  { value: 'aranhas', label: 'Aranhas', icon: Spider },
   { value: 'outros', label: 'Outros', icon: Bug },
 ];
 
