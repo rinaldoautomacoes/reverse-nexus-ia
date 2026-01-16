@@ -125,8 +125,9 @@ export const PestControlService: React.FC = () => {
   return (
     <div className="min-h-screen bg-background ai-pattern p-6">
       <div className="max-w-4xl mx-auto">
+        {/* Adjust navigation as needed */}
         <Button
-          onClick={() => navigate('/coletas-dashboard')} {/* Adjust navigation as needed */}
+          onClick={() => navigate('/coletas-dashboard')}
           variant="ghost"
           className="mb-6 text-primary hover:bg-primary/10"
         >
