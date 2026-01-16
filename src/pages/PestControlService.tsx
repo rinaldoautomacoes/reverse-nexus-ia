@@ -20,9 +20,12 @@ import { cn } from '@/lib/utils';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { useToast } from '@/hooks/use-toast';
-import { ClientCombobox } from '@/components/ClientCombobox'; // Import ClientCombobox
-import { ResponsibleUserCombobox } from '@/components/ResponsibleUserCombobox'; // Import ResponsibleUserCombobox
-import type { Tables } from '@/integrations/supabase/types'; // Import Tables for types
+import { ClientCombobox } from '@/components/ClientCombobox';
+import { ResponsibleUserCombobox } from '@/components/ResponsibleUserCombobox';
+import type { Tables, TablesInsert } from '@/integrations/supabase/types'; // Import TablesInsert
+import { supabase } from '@/integrations/supabase/client'; // Import supabase client
+import { useAuth } from '@/hooks/use-auth'; // Import useAuth
+import { useQueryClient } from '@tanstack/react-query'; // Import useQueryClient
 
 // Define a interface para os anexos, reutilizando a existente
 interface FileAttachment {
@@ -54,11 +57,15 @@ const pestOptions = [
   { value: 'outros', label: 'Outros', icon: Bug },
 ];
 
+type PestControlServiceInsert = TablesInsert<'pest_control_services'>;
+
 export const PestControlService: React.FC = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { user } = useAuth();
+  const queryClient = useQueryClient();
 
-  const [serviceStatus, setServiceStatus] = useState<'agendado' | 'em_andamento' | 'concluido'>('agendado');
+  const [serviceStatus, setServiceStatus] = useState<PestControlServiceInsert['status']>('agendado');
   
   // States for ClientCombobox
   const [selectedClientId, setSelectedClientId] = useState<string | null>(null);
@@ -104,6 +111,12 @@ export const PestControlService: React.FC = () => {
 
   const handleFinalizeService = async () => {
     setIsSubmitting(true);
+    if (!user?.id) {
+      toast({ title: "Erro de autenticação", description: "Usuário não logado.", variant: "destructive" });
+      setIsSubmitting(false);
+      return;
+    }
+
     // Basic validation
     if (!selectedClientId || !clientAddress || !selectedTechnicianId || selectedPests.length === 0 || !serviceDate) {
       toast({
@@ -115,22 +128,68 @@ export const PestControlService: React.FC = () => {
       return;
     }
 
-    // Simulate API call (replace with actual Supabase insert/update)
-    await new Promise(resolve => setTimeout(resolve, 1500));
+    try {
+      const newService: PestControlServiceInsert = {
+        user_id: user.id,
+        client_id: selectedClientId,
+        responsible_user_id: selectedTechnicianId,
+        status: serviceStatus,
+        service_date: format(serviceDate, 'yyyy-MM-dd'),
+        service_time: serviceTime,
+        pests_detected: selectedPests,
+        environment_type: environmentType,
+        address: clientAddress,
+        checklist: checklist,
+        observations: observations,
+        attachments: [], // Placeholder for attachments, can be implemented later
+      };
 
-    toast({
-      title: "Serviço Finalizado",
-      description: `O serviço para ${clientNameDisplay} foi marcado como ${serviceStatus}.`,
-      variant: "success",
-    });
-    console.log("Service Data:", {
-      serviceStatus, selectedClientId, clientNameDisplay, clientAddress, environmentType, selectedPests,
-      serviceDate: serviceDate ? format(serviceDate, 'yyyy-MM-dd') : null,
-      serviceTime, selectedTechnicianId, technicianNameDisplay, checklist, observations,
-    });
-    setIsSubmitting(false);
-    // Optionally reset form or navigate
-    // navigate('/dashboard');
+      const { data, error } = await supabase
+        .from('pest_control_services')
+        .insert(newService)
+        .select()
+        .single();
+
+      if (error) {
+        throw new Error(error.message);
+      }
+
+      toast({
+        title: "Serviço Finalizado",
+        description: `O serviço para ${clientNameDisplay} foi marcado como ${serviceStatus}.`,
+        variant: "success",
+      });
+
+      // Invalidate queries for the new dashboard to reflect changes
+      queryClient.invalidateQueries({ queryKey: ['pestControlServicesMetrics', user?.id] });
+      queryClient.invalidateQueries({ queryKey: ['pestControlStatusChart', user?.id] });
+      queryClient.invalidateQueries({ queryKey: ['pestControlStatusDonutChart', user?.id] });
+
+      // Reset form fields
+      setSelectedClientId(null);
+      setClientNameDisplay('');
+      setClientAddress('');
+      setEnvironmentType('');
+      setSelectedTechnicianId(null);
+      setTechnicianNameDisplay('');
+      setSelectedPests([]);
+      setServiceDate(new Date());
+      setServiceTime('09:00');
+      setChecklist({ inspection: false, application: false, monitoring: false, finalization: false });
+      setObservations('');
+      setServiceStatus('agendado');
+
+      navigate('/pest-control-dashboard'); // Navigate to the new dashboard
+    } catch (error: any) {
+      console.error("Error finalizing service:", error);
+      toast({
+        title: "Erro ao finalizar serviço",
+        description: error.message || "Ocorreu um erro inesperado. Tente novamente.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const handleRegisterEvidence = async () => {
@@ -148,14 +207,13 @@ export const PestControlService: React.FC = () => {
   return (
     <div className="min-h-screen bg-background ai-pattern p-6">
       <div className="max-w-4xl mx-auto">
-        {/* Adjust navigation as needed */}
         <Button
-          onClick={() => navigate('/coletas-dashboard')} // Assuming a general dashboard or pest control dashboard
+          onClick={() => navigate('/pest-control-dashboard')} // Navigate to the new dashboard
           variant="ghost"
           className="mb-6 text-primary hover:bg-primary/10"
         >
           <ArrowLeft className="mr-2 h-4 w-4" />
-          Voltar ao Dashboard
+          Voltar ao Dashboard de Controle de Pragas
         </Button>
 
         <div className="space-y-6">
@@ -189,6 +247,7 @@ export const PestControlService: React.FC = () => {
                     <SelectItem value="agendado">Agendado</SelectItem>
                     <SelectItem value="em_andamento">Em Andamento</SelectItem>
                     <SelectItem value="concluido">Concluído</SelectItem>
+                    <SelectItem value="cancelado">Cancelado</SelectItem>
                   </SelectContent>
                 </Select>
               </div>

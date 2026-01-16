@@ -37,7 +37,8 @@ import {
   FileUp,
   UserSquare,
   CheckCircle,
-  Bug, 
+  Bug,
+  LayoutDashboard, // New icon for Pest Control Dashboard
 } from 'lucide-react';
 
 interface NavItem {
@@ -71,11 +72,18 @@ const navItems: NavItem[] = [
     group: 'main',
   },
   {
-    label: 'Controle de Pragas', // New item
-    icon: Bug, // New icon
-    path: '/pest-control', // New path
+    label: 'Dashboard Controle de Pragas', // New item
+    icon: LayoutDashboard, // New icon
+    path: '/pest-control-dashboard', // New path
     roles: ['standard', 'admin'],
-    group: 'main', // Alterado para o grupo 'main'
+    group: 'main',
+  },
+  {
+    label: 'Controle de Pragas', // Existing item, now for the service form
+    icon: Bug,
+    path: '/pest-control',
+    roles: ['standard', 'admin'],
+    group: 'main', // Changed to 'main' group
   },
   {
     label: 'Importar Dados',
