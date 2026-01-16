@@ -3,7 +3,7 @@
 import React, { useState, useCallback, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
-  ArrowLeft, Bell, Building2, MapPin, Bug, Rat, Termite,
+  ArrowLeft, Bell, Building2, MapPin, Bug, Rat, // 'Termite' removido daqui
   Calendar as CalendarIcon, Clock, User, CheckSquare, Camera, MessageSquare, Loader2,
   CheckCircle,
 } from 'lucide-react';
@@ -17,7 +17,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
 import { cn } from '@/lib/utils';
-import { format } from 'date-fns'; // Correção da sintaxe de importação
+import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { useToast } from '@/hooks/use-toast';
 
@@ -34,7 +34,7 @@ const pestIcons: { [key: string]: React.ElementType } = {
   baratas: Bug,
   ratos: Rat,
   mosquitos: Bug,
-  cupins: Termite,
+  cupins: Bug, // 'Termite' substituído por 'Bug' aqui
   formigas: Bug,
   aranhas: Bug,
   outros: Bug,
@@ -45,7 +45,7 @@ const pestOptions = [
   { value: 'baratas', label: 'Baratas', icon: Bug },
   { value: 'ratos', label: 'Ratos', icon: Rat },
   { value: 'mosquitos', label: 'Mosquitos', icon: Bug },
-  { value: 'cupins', label: 'Cupins', icon: Termite },
+  { value: 'cupins', label: 'Cupins', icon: Bug }, // 'Termite' substituído por 'Bug' aqui
   { value: 'formigas', label: 'Formigas', icon: Bug },
   { value: 'aranhas', label: 'Aranhas', icon: Bug },
   { value: 'outros', label: 'Outros', icon: Bug },
