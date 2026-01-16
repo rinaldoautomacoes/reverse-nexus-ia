@@ -71,6 +71,13 @@ const navItems: NavItem[] = [
     group: 'main',
   },
   {
+    label: 'Controle de Pragas', // New item
+    icon: Bug, // New icon
+    path: '/pest-control', // New path
+    roles: ['standard', 'admin'],
+    group: 'main', // Alterado para o grupo 'main'
+  },
+  {
     label: 'Importar Dados',
     icon: FileUp,
     path: '/data-import',
@@ -195,13 +202,6 @@ const navItems: NavItem[] = [
     path: '/relatorios-entregas',
     roles: ['standard', 'admin'],
     group: 'entrega-services',
-  },
-  {
-    label: 'Controle de Pragas', // New item
-    icon: Bug, // New icon
-    path: '/pest-control', // New path
-    roles: ['standard', 'admin'],
-    group: 'coleta-services', // Added to existing group for now
   },
 ];
 
