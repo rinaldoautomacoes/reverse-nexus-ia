@@ -1,7 +1,7 @@
 "use client";
 
 import React from 'react';
-import { useNavigate } from 'react-router-dom'; // Correção da sintaxe de importação
+import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import {
   Tooltip,
@@ -37,8 +37,6 @@ import {
   FileUp,
   UserSquare,
   CheckCircle,
-  Bug,
-  LayoutDashboard, // New icon for Pest Control Dashboard
 } from 'lucide-react';
 
 interface NavItem {
@@ -70,20 +68,6 @@ const navItems: NavItem[] = [
     path: '/roteirizacao',
     roles: ['standard', 'admin'],
     group: 'main',
-  },
-  {
-    label: 'Dashboard Controle de Pragas', // New item
-    icon: LayoutDashboard, // New icon
-    path: '/pest-control-dashboard', // New path
-    roles: ['standard', 'admin'],
-    group: 'main',
-  },
-  {
-    label: 'Controle de Pragas', // Existing item, now for the service form
-    icon: Bug,
-    path: '/pest-control',
-    roles: ['standard', 'admin'],
-    group: 'main', // Changed to 'main' group
   },
   {
     label: 'Importar Dados',

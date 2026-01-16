@@ -141,12 +141,6 @@ export const Constants = {
         admin: "admin",
         standard: "standard",
       },
-      pest_service_status: {
-        agendado: "agendado",
-        em_andamento: "em_andamento",
-        concluido: "concluido",
-        cancelado: "cancelado",
-      },
     },
   },
 } as const
