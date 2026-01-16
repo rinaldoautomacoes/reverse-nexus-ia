@@ -37,7 +37,7 @@ import {
   FileUp,
   UserSquare,
   CheckCircle,
-  Bug, // New import for Pest Control icon
+  Bug, // 'Mosquito' removido daqui
 } from 'lucide-react';
 
 interface NavItem {
