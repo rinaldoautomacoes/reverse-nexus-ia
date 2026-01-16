@@ -6,10 +6,11 @@ import { useAuth } from '@/hooks/use-auth';
 import { 
   parseXLSX, parseCSV, parsePDF, 
   parseProductsXLSX, parseProductsCSV, parseProductsJSON,
-  parseClientsXLSX, parseClientsCSV, parseClientsJSON
+  parseClientsXLSX, parseClientsCSV, parseClientsJSON,
+  parseTechniciansXLSX, parseTechniciansCSV, parseTechniciansJSON // New imports
 } from '@/lib/data-parser';
 import type { TablesInsert } from '@/integrations/supabase/types_generated';
-import type { ColetaImportData, ProductImportData, ClientImportData } from '@/lib/types'; // Updated import path
+import type { ColetaImportData, ProductImportData, ClientImportData, TechnicianImportData } from '@/lib/types'; // Updated import path
 
 // Import new modular components
 import { ImportFileSection } from './data-importer-sections/ImportFileSection';
@@ -20,9 +21,10 @@ type ColetaInsert = TablesInsert<'coletas'>;
 type ProductInsert = TablesInsert<'products'>;
 type ClientInsert = TablesInsert<'clients'>;
 type ItemInsert = TablesInsert<'items'>;
+type ProfileInsert = TablesInsert<'profiles'>; // New type for technicians
 
 interface DataImporterProps {
-  initialTab?: 'collections' | 'products' | 'clients';
+  initialTab?: 'collections' | 'products' | 'clients' | 'technicians'; // Adicionado 'technicians'
   onImportSuccess?: () => void;
   onClose: () => void;
 }
@@ -33,9 +35,9 @@ export const DataImporter: React.FC<DataImporterProps> = ({ initialTab = 'collec
   const queryClient = useQueryClient();
 
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
-  const [extractedData, setExtractedData] = useState<ColetaImportData[] | ProductImportData[] | ClientImportData[] | null>(null);
+  const [extractedData, setExtractedData] = useState<ColetaImportData[] | ProductImportData[] | ClientImportData[] | TechnicianImportData[] | null>(null); // Updated type
   const [isParsing, setIsParsing] = useState(false);
-  const [activeTab, setActiveTab] = useState<'collections' | 'products' | 'clients'>(initialTab);
+  const [activeTab, setActiveTab] = useState<'collections' | 'products' | 'clients' | 'technicians'>(initialTab); // Updated type
   const [parseError, setParseError] = useState<string | null>(null);
 
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -47,7 +49,7 @@ export const DataImporter: React.FC<DataImporterProps> = ({ initialTab = 'collec
     }
   };
 
-  const handleTabChange = useCallback((tab: 'collections' | 'products' | 'clients') => {
+  const handleTabChange = useCallback((tab: 'collections' | 'products' | 'clients' | 'technicians') => { // Updated type
     setActiveTab(tab);
     setSelectedFile(null);
     setExtractedData(null);
@@ -67,7 +69,7 @@ export const DataImporter: React.FC<DataImporterProps> = ({ initialTab = 'collec
     const fileExtension = selectedFile.name.split('.').pop()?.toLowerCase();
 
     try {
-      let data: ColetaImportData[] | ProductImportData[] | ClientImportData[] = [];
+      let data: ColetaImportData[] | ProductImportData[] | ClientImportData[] | TechnicianImportData[] = []; // Updated type
       if (activeTab === 'collections') {
         if (fileExtension === 'xlsx') {
           data = await parseXLSX(selectedFile);
@@ -104,6 +106,16 @@ export const DataImporter: React.FC<DataImporterProps> = ({ initialTab = 'collec
         } else {
           throw new Error('Formato de arquivo não suportado para clientes. Use XLSX, CSV ou JSON.');
         }
+      } else if (activeTab === 'technicians') { // New logic for technicians
+        if (fileExtension === 'xlsx') {
+          data = await parseTechniciansXLSX(selectedFile);
+        } else if (fileExtension === 'csv') {
+          data = await parseTechniciansCSV(selectedFile);
+        } else if (fileExtension === 'json') {
+          data = await parseTechniciansJSON(selectedFile);
+        } else {
+          throw new Error('Formato de arquivo não suportado para técnicos. Use XLSX, CSV ou JSON.');
+        }
       }
 
       const filteredData = data.filter(item => {
@@ -117,6 +129,10 @@ export const DataImporter: React.FC<DataImporterProps> = ({ initialTab = 'collec
           return (item as ColetaImportData).parceiro && (item as ColetaImportData).parceiro.trim() !== '' &&
                  (item as ColetaImportData).endereco_origem && (item as ColetaImportData).endereco_origem.trim() !== '' &&
                  (item as ColetaImportData).previsao_coleta && (item as ColetaImportData).previsao_coleta.trim() !== '';
+        }
+        if (activeTab === 'technicians') { // New filter for technicians
+          return (item as TechnicianImportData).first_name && (item as TechnicianImportData).first_name.trim() !== '' &&
+                 (item as TechnicianImportData).email && (item as TechnicianImportData).email.trim() !== '';
         }
         return true;
       });
@@ -300,6 +316,90 @@ export const DataImporter: React.FC<DataImporterProps> = ({ initialTab = 'collec
     },
   });
 
+  const importTechniciansMutation = useMutation({ // New mutation for technicians
+    mutationFn: async (dataToImport: TechnicianImportData[]) => {
+      if (!user?.id) {
+        throw new Error('Usuário não autenticado. Faça login para importar técnicos.');
+      }
+
+      const validTechnicians = dataToImport.filter(tech => tech.first_name && tech.email && tech.email.trim() !== '');
+      if (validTechnicians.length === 0) {
+        throw new Error('Nenhum técnico válido encontrado para importação. Certifique-se de que as colunas "Primeiro Nome" e "Email" não estão vazias.');
+      }
+
+      const token = (await supabase.auth.getSession()).data.session?.access_token;
+      if (!token) {
+        throw new Error("Sessão de autenticação ausente. Faça login novamente.");
+      }
+
+      let importedCount = 0;
+      for (const tech of validTechnicians) {
+        try {
+          // Attempt to create user via Edge Function
+          const response = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/create-user`, {
+            method: 'POST',
+            headers: {
+              'Authorization': `Bearer ${token}`,
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              email: tech.email,
+              password: 'password123', // Placeholder password, consider a more secure flow for real apps
+              first_name: tech.first_name,
+              last_name: tech.last_name,
+              role: tech.role || 'standard',
+              phone_number: tech.phone_number,
+            }),
+          });
+
+          if (!response.ok) {
+            const errorData = await response.json();
+            console.warn(`Failed to create user ${tech.email}: ${errorData.error}`);
+            // If user already exists, try to update profile directly
+            if (errorData.error?.includes('User already registered')) {
+              const { data: existingUser, error: fetchUserError } = await supabase.auth.admin.getUserByEmail(tech.email);
+              if (fetchUserError || !existingUser?.user) {
+                console.error(`Could not fetch existing user ${tech.email}: ${fetchUserError?.message}`);
+                continue;
+              }
+              const { error: updateProfileError } = await supabase
+                .from('profiles')
+                .update({
+                  first_name: tech.first_name,
+                  last_name: tech.last_name,
+                  phone_number: tech.phone_number,
+                  role: tech.role || 'standard',
+                })
+                .eq('id', existingUser.user.id);
+              if (updateProfileError) {
+                console.error(`Failed to update profile for ${tech.email}: ${updateProfileError.message}`);
+              } else {
+                importedCount++;
+              }
+            }
+            continue;
+          }
+          importedCount++;
+        } catch (error: any) {
+          console.error(`Error processing technician ${tech.email}: ${error.message}`);
+        }
+      }
+      return importedCount;
+    },
+    onSuccess: (count) => {
+      queryClient.invalidateQueries({ queryKey: ['technicians', user?.id] });
+      queryClient.invalidateQueries({ queryKey: ['users', user?.id] }); // Invalidate general users too
+      toast({ title: 'Importação de Técnicos concluída!', description: `${count} técnicos foram salvos/atualizados com sucesso.` });
+      setSelectedFile(null);
+      setExtractedData(null);
+      onImportSuccess?.();
+      onClose();
+    },
+    onError: (error) => {
+      toast({ title: 'Erro na importação de Técnicos', description: error.message, variant: 'destructive' });
+    },
+  });
+
   const handleConfirmImport = useCallback(() => {
     if (!extractedData || extractedData.length === 0) {
       toast({ title: 'Nenhum dado para importar', description: 'Por favor, extraia dados antes de confirmar a importação.', variant: 'destructive' });
@@ -312,10 +412,12 @@ export const DataImporter: React.FC<DataImporterProps> = ({ initialTab = 'collec
       importProductsMutation.mutate(extractedData as ProductImportData[]);
     } else if (activeTab === 'clients') {
       importClientsMutation.mutate(extractedData as ClientImportData[]);
+    } else if (activeTab === 'technicians') { // New logic for technicians
+      importTechniciansMutation.mutate(extractedData as TechnicianImportData[]);
     }
-  }, [extractedData, activeTab, importCollectionsMutation, importProductsMutation, importClientsMutation, toast]);
+  }, [extractedData, activeTab, importCollectionsMutation, importProductsMutation, importClientsMutation, importTechniciansMutation, toast]);
 
-  const isImportPending = importCollectionsMutation.isPending || importProductsMutation.isPending || importClientsMutation.isPending;
+  const isImportPending = importCollectionsMutation.isPending || importProductsMutation.isPending || importClientsMutation.isPending || importTechniciansMutation.isPending;
 
   return (
     <div className="space-y-6">

@@ -2,7 +2,7 @@ import * as XLSX from 'xlsx';
 import { format } from 'date-fns';
 import { generateUniqueNumber } from './utils';
 import { parseDateSafely } from './date-utils';
-import type { ColetaImportData, ProductImportData, ClientImportData } from './types';
+import type { ColetaImportData, ProductImportData, ClientImportData, TechnicianImportData } from './types';
 import { cleanPhoneNumber } from './document-parser'; // Import cleanPhoneNumber
 
 // Função para ler dados de arquivos XLSX
@@ -35,9 +35,9 @@ export const parseXLSX = (file: File): Promise<ColetaImportData[]> => {
           qtd_aparelhos_solicitado: parseInt(row['Quantidade']) || 1,
           modelo_aparelho: row['Produto'] || 'Produto Desconhecido',
           freight_value: parseFloat(row['Valor do Frete']) || null,
+          observacao: row['Observações'] || null,
           status_coleta: (row['Status']?.toLowerCase() === 'concluida' ? 'concluida' : row['Status']?.toLowerCase() === 'agendada' ? 'agendada' : 'pendente'),
           type: (row['Tipo']?.toLowerCase() === 'entrega' ? 'entrega' : 'coleta'),
-          observacao: row['Observações'] || null,
           contrato: row['Nr. Contrato'] || null, // Novo campo
           nf_glbl: row['CONTRATO SANKHYA'] || null, // Novo campo
           partner_code: row['CÓD. PARC'] || null, // Novo campo
@@ -82,9 +82,9 @@ export const parseCSV = (file: File): Promise<ColetaImportData[]> => {
           qtd_aparelhos_solicitado: parseInt(row['Quantidade']) || 1,
           modelo_aparelho: row['Produto'] || 'Produto Desconhecido',
           freight_value: parseFloat(row['Valor do Frete']) || null,
+          observacao: row['Observações'] || null,
           status_coleta: (row['Status']?.toLowerCase() === 'concluida' ? 'concluida' : row['Status']?.toLowerCase() === 'agendada' ? 'agendada' : 'pendente'),
           type: (row['Tipo']?.toLowerCase() === 'entrega' ? 'entrega' : 'coleta'),
-          observacao: row['Observações'] || null,
           contrato: row['Nr. Contrato'] || null, // Novo campo
           nf_glbl: row['CONTRATO SANKHYA'] || null, // Novo campo
           partner_code: row['CÓD. PARC'] || null, // Novo campo
@@ -321,6 +321,90 @@ export const parseClientsJSON = (file: File): Promise<ClientImportData[]> => {
         resolve(parsedData);
       } catch (error) {
         reject(new Error('Erro ao ler arquivo JSON para produtos. Verifique o formato.'));
+      }
+    };
+    reader.onerror = (error) => reject(new Error('Erro ao ler arquivo: ' + error));
+    reader.readAsText(file);
+  });
+};
+
+// NEW: Function to read technician data from XLSX files
+export const parseTechniciansXLSX = (file: File): Promise<TechnicianImportData[]> => {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      try {
+        const data = new Uint8Array(e.target?.result as ArrayBuffer);
+        const workbook = XLSX.read(data, { type: 'array' });
+        const sheetName = workbook.SheetNames[0];
+        const worksheet = workbook.Sheets[sheetName];
+        const json: any[] = XLSX.utils.sheet_to_json(worksheet);
+
+        const parsedData: TechnicianImportData[] = json.map((row: any) => ({
+          first_name: String(row['Primeiro Nome'] || row['first_name'] || '').trim(),
+          last_name: row['Sobrenome'] || row['last_name'] || null,
+          email: String(row['Email'] || row['email'] || '').trim(),
+          phone_number: cleanPhoneNumber(row['Telefone'] || row['phone_number']),
+          role: (row['Função']?.toLowerCase() === 'admin' ? 'admin' : 'standard'), // Default to 'standard'
+        })).filter(t => t.first_name && t.email); // Ensure first_name and email are present
+        resolve(parsedData);
+      } catch (error) {
+        reject(new Error('Erro ao ler arquivo XLSX para técnicos. Verifique o formato das colunas.'));
+      }
+    };
+    reader.onerror = (error) => reject(new Error('Erro ao ler arquivo: ' + error));
+    reader.readAsArrayBuffer(file);
+  });
+};
+
+// NEW: Function to read technician data from CSV files
+export const parseTechniciansCSV = (file: File): Promise<TechnicianImportData[]> => {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      try {
+        const csv = e.target?.result as string;
+        const workbook = XLSX.read(csv, { type: 'string' });
+        const sheetName = workbook.SheetNames[0];
+        const worksheet = workbook.Sheets[sheetName];
+        const json: any[] = XLSX.utils.sheet_to_json(worksheet);
+
+        const parsedData: TechnicianImportData[] = json.map((row: any) => ({
+          first_name: String(row['Primeiro Nome'] || row['first_name'] || '').trim(),
+          last_name: row['Sobrenome'] || row['last_name'] || null,
+          email: String(row['Email'] || row['email'] || '').trim(),
+          phone_number: cleanPhoneNumber(row['Telefone'] || row['phone_number']),
+          role: (row['Função']?.toLowerCase() === 'admin' ? 'admin' : 'standard'), // Default to 'standard'
+        })).filter(t => t.first_name && t.email); // Ensure first_name and email are present
+        resolve(parsedData);
+      } catch (error) {
+        reject(new Error('Erro ao ler arquivo CSV para técnicos. Verifique o formato das colunas.'));
+      }
+    };
+    reader.onerror = (error) => reject(new Error('Erro ao ler arquivo: ' + error));
+    reader.readAsText(file);
+  });
+};
+
+// NEW: Function to read technician data from JSON files
+export const parseTechniciansJSON = (file: File): Promise<TechnicianImportData[]> => {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      try {
+        const jsonString = e.target?.result as string;
+        const json: any[] = JSON.parse(jsonString);
+
+        const parsedData: TechnicianImportData[] = json.map((row: any) => ({
+          first_name: String(row['first_name'] || row['Primeiro Nome'] || '').trim(),
+          last_name: row['last_name'] || row['Sobrenome'] || null,
+          email: String(row['email'] || row['Email'] || '').trim(),
+          phone_number: cleanPhoneNumber(row['phone_number'] || row['Telefone']),
+          role: (row['role']?.toLowerCase() === 'admin' ? 'admin' : 'standard'), // Default to 'standard'
+        })).filter(t => t.first_name && t.email); // Ensure first_name and email are present
+        resolve(parsedData);
+      } catch (error) {
+        reject(new Error('Erro ao ler arquivo JSON para técnicos. Verifique o formato.'));
       }
     };
     reader.onerror = (error) => reject(new Error('Erro ao ler arquivo: ' + error));

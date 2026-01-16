@@ -4,11 +4,11 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { CheckCircle } from 'lucide-react';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-import type { ColetaImportData, ProductImportData, ClientImportData } from '@/lib/types'; // Updated import path
+import type { ColetaImportData, ProductImportData, ClientImportData, TechnicianImportData } from '@/lib/types'; // Updated import path
 
 interface DataPreviewTableProps {
-  activeTab: 'collections' | 'products' | 'clients';
-  extractedData: ColetaImportData[] | ProductImportData[] | ClientImportData[] | null;
+  activeTab: 'collections' | 'products' | 'clients' | 'technicians'; // Adicionado 'technicians'
+  extractedData: ColetaImportData[] | ProductImportData[] | ClientImportData[] | TechnicianImportData[] | null; // Adicionado TechnicianImportData
 }
 
 export const DataPreviewTable: React.FC<DataPreviewTableProps> = ({ activeTab, extractedData }) => {
@@ -47,7 +47,7 @@ export const DataPreviewTable: React.FC<DataPreviewTableProps> = ({ activeTab, e
                     <TableHead>Modelo</TableHead>
                     <TableHead>Nº Série</TableHead>
                   </>
-                ) : (
+                ) : activeTab === 'clients' ? (
                   <>
                     <TableHead>Nome</TableHead>
                     <TableHead>Telefone</TableHead>
@@ -55,6 +55,14 @@ export const DataPreviewTable: React.FC<DataPreviewTableProps> = ({ activeTab, e
                     <TableHead>Endereço</TableHead>
                     <TableHead>CNPJ</TableHead>
                     <TableHead>Contato</TableHead>
+                  </>
+                ) : ( // activeTab === 'technicians'
+                  <>
+                    <TableHead>Primeiro Nome</TableHead>
+                    <TableHead>Sobrenome</TableHead>
+                    <TableHead>Email</TableHead>
+                    <TableHead>Telefone</TableHead>
+                    <TableHead>Função</TableHead>
                   </>
                 )}
               </TableRow>
@@ -82,7 +90,7 @@ export const DataPreviewTable: React.FC<DataPreviewTableProps> = ({ activeTab, e
                     <TableCell>{item.serial_number}</TableCell>
                   </TableRow>
                 ))
-              ) : (
+              ) : activeTab === 'clients' ? (
                 (extractedData as ClientImportData[]).map((item: ClientImportData, index) => (
                   <TableRow key={index}>
                     <TableCell>{item.name}</TableCell>
@@ -91,6 +99,16 @@ export const DataPreviewTable: React.FC<DataPreviewTableProps> = ({ activeTab, e
                     <TableCell>{item.address}</TableCell>
                     <TableCell>{item.cnpj}</TableCell>
                     <TableCell>{item.contact_person}</TableCell>
+                  </TableRow>
+                ))
+              ) : ( // activeTab === 'technicians'
+                (extractedData as TechnicianImportData[]).map((item: TechnicianImportData, index) => (
+                  <TableRow key={index}>
+                    <TableCell>{item.first_name}</TableCell>
+                    <TableCell>{item.last_name}</TableCell>
+                    <TableCell>{item.email}</TableCell>
+                    <TableCell>{item.phone_number}</TableCell>
+                    <TableCell>{item.role}</TableCell>
                   </TableRow>
                 ))
               )}

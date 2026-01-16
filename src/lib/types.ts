@@ -80,3 +80,11 @@ export interface ClientImportData {
   cnpj?: string | null;
   contact_person?: string | null;
 }
+
+export interface TechnicianImportData { // Nova interface
+  first_name: string;
+  last_name?: string | null;
+  email: string;
+  phone_number?: string | null;
+  role?: 'standard' | 'admin'; // Default to 'standard' if not provided
+}
