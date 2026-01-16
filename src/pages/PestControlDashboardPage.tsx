@@ -4,7 +4,7 @@ import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { ArrowLeft, Bug, PlusCircle } from 'lucide-react';
-import heroBackground from "@/assets/hero-ai-logistics-dashboard.png"; // Reusing a generic dashboard hero image
+import heroBackground from "@/assets/hero-background-futuristic.png"; // Changed to a more generic futuristic background
 import { useAuth } from '@/hooks/use-auth';
 import { PestControlMetricsCards } from '@/components/pest-control-dashboard/PestControlMetricsCards';
 import { PestControlStatusChart } from '@/components/pest-control-dashboard/PestControlStatusChart';
