@@ -3,7 +3,7 @@
 import React, { useState, useCallback, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
-  ArrowLeft, Bell, Building2, MapPin, Bug, Rat, Mosquito, Spider, // Removed Ant and Termite
+  ArrowLeft, Bell, Building2, MapPin, Bug, Rat, Spider, // Removed Mosquito
   Calendar as CalendarIcon, Clock, User, CheckSquare, Camera, MessageSquare, Loader2,
   CheckCircle,
 } from 'lucide-react';
@@ -33,7 +33,7 @@ interface FileAttachment {
 const pestIcons: { [key: string]: React.ElementType } = {
   baratas: Bug,
   ratos: Rat,
-  mosquitos: Mosquito,
+  mosquitos: Bug, // Changed from Mosquito to Bug
   cupins: Bug, // Using Bug as Termite is not available
   formigas: Bug, // Using Bug as Ant is not available
   aranhas: Spider,
@@ -44,7 +44,7 @@ const pestIcons: { [key: string]: React.ElementType } = {
 const pestOptions = [
   { value: 'baratas', label: 'Baratas', icon: Bug },
   { value: 'ratos', label: 'Ratos', icon: Rat },
-  { value: 'mosquitos', label: 'Mosquitos', icon: Mosquito },
+  { value: 'mosquitos', label: 'Mosquitos', icon: Bug }, // Changed from Mosquito to Bug
   { value: 'cupins', label: 'Cupins', icon: Bug }, // Using Bug as Termite is not available
   { value: 'formigas', label: 'Formigas', icon: Bug }, // Using Bug as Ant is not available
   { value: 'aranhas', label: 'Aranhas', icon: Spider },
@@ -165,7 +165,7 @@ export const PestControlService: React.FC = () => {
                   <SelectContent>
                     <SelectItem value="agendado">Agendado</SelectItem>
                     <SelectItem value="em_andamento">Em Andamento</SelectItem>
-                    <SelectItem value="concluido">Concluído</SelectItem>
+                    <SelectItem value="concluido">Concluido</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
