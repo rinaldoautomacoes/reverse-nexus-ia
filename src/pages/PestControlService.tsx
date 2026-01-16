@@ -3,7 +3,7 @@
 import React, { useState, useCallback, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
-  ArrowLeft, Bell, Building2, MapPin, Bug, Rat, Mosquito, Termite, Spider, // Removed Ant, added Bug
+  ArrowLeft, Bell, Building2, MapPin, Bug, Rat, Mosquito, Termite, Spider,
   Calendar as CalendarIcon, Clock, User, CheckSquare, Camera, MessageSquare, Loader2,
   CheckCircle,
 } from 'lucide-react';
@@ -35,7 +35,7 @@ const pestIcons: { [key: string]: React.ElementType } = {
   ratos: Rat,
   mosquitos: Mosquito,
   cupins: Termite,
-  formigas: Bug, // Changed from Ant to Bug
+  formigas: Bug,
   aranhas: Spider,
   outros: Bug,
 };
@@ -46,7 +46,7 @@ const pestOptions = [
   { value: 'ratos', label: 'Ratos', icon: Rat },
   { value: 'mosquitos', label: 'Mosquitos', icon: Mosquito },
   { value: 'cupins', label: 'Cupins', icon: Termite },
-  { value: 'formigas', label: 'Formigas', icon: Bug }, // Changed from Ant to Bug
+  { value: 'formigas', label: 'Formigas', icon: Bug },
   { value: 'aranhas', label: 'Aranhas', icon: Spider },
   { value: 'outros', label: 'Outros', icon: Bug },
 ];
