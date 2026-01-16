@@ -37,7 +37,7 @@ import {
   FileUp,
   UserSquare,
   CheckCircle,
-  Bug, // 'Mosquito' removido daqui
+  Bug, 
 } from 'lucide-react';
 
 interface NavItem {
