@@ -108,42 +108,42 @@ const navItems: NavItem[] = [
     group: 'management',
   },
   {
-    label: 'Gerenciar Motoristas',
+    label: 'Motoristas',
     icon: Truck,
     path: '/driver-management',
     roles: ['admin'],
     group: 'management',
   },
   {
-    label: 'Gerenciar Transportadoras',
+    label: 'Transportadoras',
     icon: Building,
     path: '/transportadora-management',
     roles: ['admin'],
     group: 'management',
   },
   {
-    label: 'Gerenciar Clientes',
+    label: 'Clientes',
     icon: UserSquare,
     path: '/client-management',
     roles: ['admin'],
     group: 'management',
   },
   {
-    label: 'Gerenciar Produtos',
+    label: 'Produtos',
     icon: Package,
     path: '/product-management',
     roles: ['admin'],
     group: 'management',
   },
   {
-    label: 'Gerenciar Técnicos', // New item
+    label: 'Técnicos', // New item
     icon: UserCog, // New icon
     path: '/technician-management', // New path
     roles: ['admin'], // Only admins can manage technicians
     group: 'management',
   },
   {
-    label: 'Gerenciar Usuários',
+    label: 'Usuários',
     icon: Users,
     path: '/user-management',
     roles: ['admin'],
