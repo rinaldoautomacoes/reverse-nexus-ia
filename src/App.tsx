@@ -39,6 +39,7 @@ import { GeneralDashboard } from "./pages/GeneralDashboard";
 import { ExcelExtractorPage } from "./pages/ExcelExtractorPage";
 import { AutomaticCollectionSchedulerPage } from "./pages/AutomaticCollectionSchedulerPage";
 import { DataImportPage } from "./pages/DataImportPage";
+import { PestControlService } from "./pages/PestControlService"; // New import
 
 const queryClient = new QueryClient();
 
@@ -94,6 +95,7 @@ const AppLayout = () => {
             <Route path="/excel-extractor" element={<ExcelExtractorPage />} />
             <Route path="/agendamento-automatico" element={<AutomaticCollectionSchedulerPage />} />
             <Route path="/data-import" element={<DataImportPage />} />
+            <Route path="/pest-control" element={<PestControlService />} /> {/* New route */}
           </Route>
 
           {/* Rotas protegidas APENAS para administradores */}

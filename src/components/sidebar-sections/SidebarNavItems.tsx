@@ -37,6 +37,7 @@ import {
   FileUp,
   UserSquare,
   CheckCircle,
+  Bug, // New import for Pest Control icon
 } from 'lucide-react';
 
 interface NavItem {
@@ -194,6 +195,13 @@ const navItems: NavItem[] = [
     path: '/relatorios-entregas',
     roles: ['standard', 'admin'],
     group: 'entrega-services',
+  },
+  {
+    label: 'Controle de Pragas', // New item
+    icon: Bug, // New icon
+    path: '/pest-control', // New path
+    roles: ['standard', 'admin'],
+    group: 'coleta-services', // Added to existing group for now
   },
 ];
 
