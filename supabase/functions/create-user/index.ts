@@ -1,5 +1,19 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.45.0';
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.39.0'; // Mantendo a versão 2.39.0
+
+// Definir um tipo para o cliente Supabase com funções de admin
+interface SupabaseAdminClient {
+  auth: {
+    admin: {
+      getUserByEmail: (email: string) => Promise<{ data: { user: any | null }; error: any | null }>;
+      updateUserById: (userId: string, updates: any) => Promise<{ data: { user: any | null }; error: any | null }>;
+      createUser: (params: any) => Promise<{ data: { user: any | null }; error: any | null }>;
+      // Adicione outras funções de admin que você usa aqui, se necessário
+    };
+    getUser: () => Promise<{ data: { user: any | null }; error: any | null }>;
+  };
+  from: (tableName: string) => any; // Simplificado para 'from'
+}
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -72,11 +86,15 @@ serve(async (req) => {
       return new Response(JSON.stringify({ error: 'Bad Request: Missing required fields (email, password, first_name, role)' }), { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
     }
 
-    const adminSupabase = createClient(
+    // Criar o cliente Supabase com a chave de serviço e tipagem explícita
+    const adminSupabase: SupabaseAdminClient = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     );
     console.log('[create-user] Admin Supabase client initialized.');
+    console.log('[create-user] Inspecting adminSupabase.auth.admin:', adminSupabase.auth.admin);
+    console.log('[create-user] Inspecting adminSupabase.auth.admin.getUserByEmail:', typeof adminSupabase.auth.admin?.getUserByEmail);
+
 
     let targetUserId: string | null = null;
     let operationType: 'created' | 'updated' = 'created';
@@ -84,6 +102,7 @@ serve(async (req) => {
     // First, try to get the user by email to check if they already exist
     let existingUserAuthData;
     try {
+      // Usar o cliente admin para operações de admin
       const { data, error: getUserError } = await adminSupabase.auth.admin.getUserByEmail(email);
       if (getUserError && getUserError.message !== 'User not found') {
         console.error('[create-user] Error checking for existing user by email:', getUserError.message);
