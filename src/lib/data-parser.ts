@@ -341,7 +341,7 @@ export const parseTechniciansXLSX = (file: File): Promise<TechnicianImportData[]
         const json: any[] = XLSX.utils.sheet_to_json(worksheet);
 
         const parsedData: TechnicianImportData[] = json.map((row: any) => {
-          let firstName = String(row['Primeiro Nome'] || row['first_name'] || row['Nome'] || '').trim();
+          let firstName = String(row['Primeiro Nome'] || row['first_name'] || '').trim();
           let lastName = String(row['Sobrenome'] || row['last_name'] || '').trim();
           let email = String(row['Email'] || row['e-mail'] || row['email'] || '').trim();
           let phoneNumber = cleanPhoneNumber(row['Telefone'] || row['phone_number']);
@@ -351,15 +351,7 @@ export const parseTechniciansXLSX = (file: File): Promise<TechnicianImportData[]
           // Se a coluna 'Técnico' existe e os nomes não foram definidos
           if (row['Técnico'] && (!firstName || !lastName)) {
             const tecnicoFullName = String(row['Técnico']).trim();
-            // Tenta extrair nome e sobrenome. Ex: "Alberto (joao alberto)" ou "João Silva"
-            const aliasMatch = tecnicoFullName.match(/(.+)\s*\((.+)\)/); 
-            let mainName = tecnicoFullName;
-
-            if (aliasMatch) {
-              mainName = aliasMatch[1].trim(); 
-            }
-
-            const nameParts = mainName.split(' ').filter(Boolean);
+            const nameParts = tecnicoFullName.split(' ').filter(Boolean); // Divide por espaço e remove partes vazias
             if (nameParts.length > 0) {
               firstName = nameParts[0];
               lastName = nameParts.slice(1).join(' '); // Junta o resto como sobrenome
@@ -409,7 +401,7 @@ export const parseTechniciansCSV = (file: File): Promise<TechnicianImportData[]>
         const json: any[] = XLSX.utils.sheet_to_json(worksheet);
 
         const parsedData: TechnicianImportData[] = json.map((row: any) => {
-          let firstName = String(row['Primeiro Nome'] || row['first_name'] || row['Nome'] || '').trim();
+          let firstName = String(row['Primeiro Nome'] || row['first_name'] || '').trim();
           let lastName = String(row['Sobrenome'] || row['last_name'] || '').trim();
           let email = String(row['Email'] || row['e-mail'] || row['email'] || '').trim();
           let phoneNumber = cleanPhoneNumber(row['Telefone'] || row['phone_number']);
@@ -419,14 +411,7 @@ export const parseTechniciansCSV = (file: File): Promise<TechnicianImportData[]>
           // Se a coluna 'Técnico' existe e os nomes não foram definidos
           if (row['Técnico'] && (!firstName || !lastName)) {
             const tecnicoFullName = String(row['Técnico']).trim();
-            const aliasMatch = tecnicoFullName.match(/(.+)\s*\((.+)\)/); 
-            let mainName = tecnicoFullName;
-
-            if (aliasMatch) {
-              mainName = aliasMatch[1].trim(); 
-            }
-
-            const nameParts = mainName.split(' ').filter(Boolean);
+            const nameParts = tecnicoFullName.split(' ').filter(Boolean); 
             if (nameParts.length > 0) {
               firstName = nameParts[0];
               lastName = nameParts.slice(1).join(' ');
@@ -473,7 +458,7 @@ export const parseTechniciansJSON = (file: File): Promise<TechnicianImportData[]
         const json: any[] = JSON.parse(jsonString);
 
         const parsedData: TechnicianImportData[] = json.map((row: any) => {
-          let firstName = String(row['first_name'] || row['Primeiro Nome'] || row['Nome'] || '').trim();
+          let firstName = String(row['first_name'] || row['Primeiro Nome'] || '').trim();
           let lastName = String(row['last_name'] || row['Sobrenome'] || '').trim();
           let email = String(row['email'] || row['Email'] || row['e-mail'] || '').trim();
           let phoneNumber = cleanPhoneNumber(row['phone_number'] || row['Telefone']);
@@ -483,14 +468,7 @@ export const parseTechniciansJSON = (file: File): Promise<TechnicianImportData[]
           // Se a coluna 'Técnico' existe e os nomes não foram definidos
           if (row['Técnico'] && (!firstName || !lastName)) {
             const tecnicoFullName = String(row['Técnico']).trim();
-            const aliasMatch = tecnicoFullName.match(/(.+)\s*\((.+)\)/); 
-            let mainName = tecnicoFullName;
-
-            if (aliasMatch) {
-              mainName = aliasMatch[1].trim(); 
-            }
-
-            const nameParts = mainName.split(' ').filter(Boolean);
+            const nameParts = tecnicoFullName.split(' ').filter(Boolean); 
             if (nameParts.length > 0) {
               firstName = nameParts[0];
               lastName = nameParts.slice(1).join(' ');
