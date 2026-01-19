@@ -82,23 +82,15 @@ serve(async (req) => {
     );
     console.log('[create-user] Admin Supabase client initialized.');
 
-    // Client specifically for querying the 'auth' schema tables
-    const authDbSupabase = createClient(
-      Deno.env.get('SUPABASE_URL') ?? '',
-      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '',
-      { db: { schema: 'auth' } } // Explicitly set schema to 'auth'
-    );
-    console.log('[create-user] Auth DB Supabase client initialized for auth schema queries.');
-
     let targetUserId: string | null = null;
     let operationType: 'created' | 'updated' = 'created';
 
     // First, try to get the user by email to check if they already exist
     let existingUserAuthData;
     try {
-      // Use the authDbSupabase client to query the 'users' table within the 'auth' schema
-      const { data, error: getUserError } = await authDbSupabase
-        .from('users') // Now it's just 'users' because schema is 'auth'
+      // Use adminSupabase with explicit schema for auth.users table
+      const { data, error: getUserError } = await adminSupabase
+        .from('users', { schema: 'auth' }) // Corrected: Specify schema 'auth' here
         .select('id')
         .eq('email', email)
         .single();
