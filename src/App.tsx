@@ -39,9 +39,6 @@ import { GeneralDashboard } from "./pages/GeneralDashboard";
 import { ExcelExtractorPage } from "./pages/ExcelExtractorPage";
 import { AutomaticCollectionSchedulerPage } from "./pages/AutomaticCollectionSchedulerPage";
 import { DataImportPage } from "./pages/DataImportPage";
-import { PestControlService } from "@/pages/PestControlService";
-import { PestControlDashboardPage } from "./pages/PestControlDashboardPage";
-import { TechnicianManagement } from "./pages/TechnicianManagement"; // New import
 
 const queryClient = new QueryClient();
 
@@ -50,7 +47,7 @@ const App = () => (
     <BrowserRouter>
       <QueryClientProvider client={queryClient}>
         <AuthProvider>
-          <SidebarProvider>
+          <SidebarProvider> {/* Movido o SidebarProvider para aqui */}
             <TooltipProvider>
               <Toaster />
               <Sonner />
@@ -97,8 +94,6 @@ const AppLayout = () => {
             <Route path="/excel-extractor" element={<ExcelExtractorPage />} />
             <Route path="/agendamento-automatico" element={<AutomaticCollectionSchedulerPage />} />
             <Route path="/data-import" element={<DataImportPage />} />
-            <Route path="/pest-control" element={<PestControlService />} />
-            <Route path="/pest-control-dashboard" element={<PestControlDashboardPage selectedYear={selectedYear} />} />
           </Route>
 
           {/* Rotas protegidas APENAS para administradores */}
@@ -110,7 +105,6 @@ const AppLayout = () => {
             <Route path="/product-management" element={<ProductManagement />} />
             <Route path="/driver-management" element={<DriverManagement />} />
             <Route path="/transportadora-management" element={<TransportadoraManagement />} />
-            <Route path="/technician-management" element={<TechnicianManagement />} /> {/* New route */}
           </Route>
           
           <Route path="*" element={<NotFound />} />
