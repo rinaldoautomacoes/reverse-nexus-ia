@@ -88,18 +88,14 @@ serve(async (req) => {
     // First, try to get the user by email to check if they already exist
     let existingUserAuthData;
     try {
-      // Use adminSupabase with explicit schema for auth.users table
-      const { data, error: getUserError } = await adminSupabase
-        .from('users', { schema: 'auth' }) // Corrected: Specify schema 'auth' here
-        .select('id')
-        .eq('email', email)
-        .single();
+      // Use adminSupabase.auth.admin.getUserByEmail() directly
+      const { data, error: getUserError } = await adminSupabase.auth.admin.getUserByEmail(email);
 
-      if (getUserError && getUserError.code !== 'PGRST116') { // PGRST116 means "no rows found"
+      if (getUserError && getUserError.message !== 'User not found') { // "User not found" is expected for new users
         console.error('[create-user] Error checking for existing user by email:', getUserError.message);
         throw new Error(`Error checking for existing user: ${getUserError.message}`);
       }
-      existingUserAuthData = data;
+      existingUserAuthData = data?.user; // Extract the user object
     } catch (e) {
       console.error('[create-user] Caught error during user lookup:', e instanceof Error ? e.message : String(e));
       return new Response(JSON.stringify({ error: `Internal Server Error during user lookup: ${e instanceof Error ? e.message : String(e)}` }), { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
