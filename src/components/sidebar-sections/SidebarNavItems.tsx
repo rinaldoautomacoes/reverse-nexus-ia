@@ -37,6 +37,9 @@ import {
   FileUp,
   UserSquare,
   CheckCircle,
+  Bug,
+  LayoutDashboard,
+  UserCog, // New icon for Technician Management
 } from 'lucide-react';
 
 interface NavItem {
@@ -59,7 +62,7 @@ const navItems: NavItem[] = [
     label: 'Dashboard Geral',
     icon: TrendingUp,
     path: '/dashboard-geral',
-    roles: ['admin'], // Alterado para permitir APENAS administradores
+    roles: ['admin'],
     group: 'main',
   },
   {
@@ -70,59 +73,80 @@ const navItems: NavItem[] = [
     group: 'main',
   },
   {
+    label: 'Dashboard Controle de Pragas',
+    icon: LayoutDashboard,
+    path: '/pest-control-dashboard',
+    roles: ['standard', 'admin'],
+    group: 'main',
+  },
+  {
+    label: 'Controle de Pragas',
+    icon: Bug,
+    path: '/pest-control',
+    roles: ['standard', 'admin'],
+    group: 'main',
+  },
+  {
     label: 'Importar Dados',
     icon: FileUp,
     path: '/data-import',
-    roles: ['admin'], // Alterado para permitir APENAS administradores
+    roles: ['admin'],
     group: 'management',
   },
   {
     label: 'Agendamento Automático',
     icon: ClipboardList,
     path: '/agendamento-automatico',
-    roles: ['admin'], // Alterado para permitir APENAS administradores
+    roles: ['admin'],
     group: 'management',
   },
   {
     label: 'Extrator Excel',
     icon: FileSpreadsheet,
     path: '/excel-extractor',
-    roles: ['admin'], // Alterado para permitir APENAS administradores
+    roles: ['admin'],
     group: 'management',
   },
   {
-    label: 'Gerenciar Motoristas',
+    label: 'Motoristas',
     icon: Truck,
     path: '/driver-management',
-    roles: ['admin'], // Alterado para permitir APENAS administradores
+    roles: ['admin'],
     group: 'management',
   },
   {
-    label: 'Gerenciar Transportadoras',
+    label: 'Transportadoras',
     icon: Building,
     path: '/transportadora-management',
-    roles: ['admin'], // Alterado para permitir APENAS administradores
+    roles: ['admin'],
     group: 'management',
   },
   {
-    label: 'Gerenciar Clientes',
+    label: 'Clientes',
     icon: UserSquare,
     path: '/client-management',
-    roles: ['admin'], // Alterado para permitir APENAS administradores
+    roles: ['admin'],
     group: 'management',
   },
   {
-    label: 'Gerenciar Produtos',
+    label: 'Produtos',
     icon: Package,
     path: '/product-management',
-    roles: ['admin'], // Alterado para permitir APENAS administradores
+    roles: ['admin'],
     group: 'management',
   },
   {
-    label: 'Gerenciar Usuários',
+    label: 'Técnicos', // New item
+    icon: UserCog, // New icon
+    path: '/technician-management', // New path
+    roles: ['admin'], // Only admins can manage technicians
+    group: 'management',
+  },
+  {
+    label: 'Usuários',
     icon: Users,
     path: '/user-management',
-    roles: ['admin'], // Alterado para permitir APENAS administradores
+    roles: ['admin'],
     group: 'management',
   },
   {
@@ -291,9 +315,7 @@ export const SidebarNavItems: React.FC<SidebarNavItemsProps> = ({ isCollapsed, s
                 Gerenciamento
               </AccordionTrigger>
               <AccordionContent className="pl-4">
-                {managementNavItems.map(item => (
-                  renderNavItem({ ...item, label: item.label.replace('Gerenciar ', '') }, false)
-                ))}
+                {managementNavItems.map(item => renderNavItem(item, false))}
               </AccordionContent>
             </AccordionItem>
           </Accordion>
