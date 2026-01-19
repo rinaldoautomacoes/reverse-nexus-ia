@@ -351,23 +351,28 @@ export const parseTechniciansXLSX = (file: File): Promise<TechnicianImportData[]
           // Se a coluna 'Técnico' existe e os nomes não foram definidos
           if (row['Técnico'] && (!firstName || !lastName)) {
             const tecnicoFullName = String(row['Técnico']).trim();
-            const aliasMatch = tecnicoFullName.match(/(.+)\s*\((.+)\)/); // Ex: "Alberto (joao alberto)"
+            // Tenta extrair nome e sobrenome. Ex: "Alberto (joao alberto)" ou "João Silva"
+            const aliasMatch = tecnicoFullName.match(/(.+)\s*\((.+)\)/); 
             let mainName = tecnicoFullName;
 
             if (aliasMatch) {
-              mainName = aliasMatch[1].trim(); // Pega "Alberto"
+              mainName = aliasMatch[1].trim(); 
             }
 
             const nameParts = mainName.split(' ').filter(Boolean);
             if (nameParts.length > 0) {
               firstName = nameParts[0];
-              lastName = nameParts.slice(1).join(' ');
+              lastName = nameParts.slice(1).join(' '); // Junta o resto como sobrenome
             }
           }
 
+          // Garante que first_name e last_name não sejam vazios
+          if (!firstName) firstName = 'Técnico';
+          if (!lastName) lastName = 'Desconhecido';
+
           // Gerar email se não fornecido ou inválido
           if (!email || !email.includes('@')) {
-            const baseEmail = `${firstName.toLowerCase()}.${lastName.toLowerCase().replace(/\s/g, '')}`;
+            const baseEmail = `${firstName.toLowerCase().replace(/\s/g, '')}.${lastName.toLowerCase().replace(/\s/g, '')}`;
             email = `${baseEmail}@logireverseia.com`; // Domínio padrão
           }
 
@@ -414,11 +419,11 @@ export const parseTechniciansCSV = (file: File): Promise<TechnicianImportData[]>
           // Se a coluna 'Técnico' existe e os nomes não foram definidos
           if (row['Técnico'] && (!firstName || !lastName)) {
             const tecnicoFullName = String(row['Técnico']).trim();
-            const aliasMatch = tecnicoFullName.match(/(.+)\s*\((.+)\)/); // Ex: "Alberto (joao alberto)"
+            const aliasMatch = tecnicoFullName.match(/(.+)\s*\((.+)\)/); 
             let mainName = tecnicoFullName;
 
             if (aliasMatch) {
-              mainName = aliasMatch[1].trim(); // Pega "Alberto"
+              mainName = aliasMatch[1].trim(); 
             }
 
             const nameParts = mainName.split(' ').filter(Boolean);
@@ -428,22 +433,26 @@ export const parseTechniciansCSV = (file: File): Promise<TechnicianImportData[]>
             }
           }
 
+          // Garante que first_name e last_name não sejam vazios
+          if (!firstName) firstName = 'Técnico';
+          if (!lastName) lastName = 'Desconhecido';
+
           // Gerar email se não fornecido ou inválido
           if (!email || !email.includes('@')) {
-            const baseEmail = `${firstName.toLowerCase()}.${lastName.toLowerCase().replace(/\s/g, '')}`;
-            email = `${baseEmail}@logireverseia.com`; // Domínio padrão
+            const baseEmail = `${firstName.toLowerCase().replace(/\s/g, '')}.${lastName.toLowerCase().replace(/\s/g, '')}`;
+            email = `${baseEmail}@logireverseia.com`;
           }
 
           return {
             first_name: firstName,
             last_name: lastName,
             email: email,
-            password: String(row['Senha'] || row['password'] || 'LogiReverseIA@2025'), // Senha padrão se não fornecida
+            password: String(row['Senha'] || row['password'] || 'LogiReverseIA@2025'),
             phone_number: phoneNumber,
             role: role,
             supervisor_id: supervisorId,
           };
-        }).filter(t => t.email && t.first_name && t.last_name && t.email.includes('@')); // Garante que campos essenciais estejam presentes e email seja válido
+        }).filter(t => t.email && t.first_name && t.last_name && t.email.includes('@'));
         resolve(parsedData);
       } catch (error) {
         reject(new Error('Erro ao ler arquivo CSV para técnicos. Verifique o formato das colunas.'));
@@ -474,11 +483,11 @@ export const parseTechniciansJSON = (file: File): Promise<TechnicianImportData[]
           // Se a coluna 'Técnico' existe e os nomes não foram definidos
           if (row['Técnico'] && (!firstName || !lastName)) {
             const tecnicoFullName = String(row['Técnico']).trim();
-            const aliasMatch = tecnicoFullName.match(/(.+)\s*\((.+)\)/); // Ex: "Alberto (joao alberto)"
+            const aliasMatch = tecnicoFullName.match(/(.+)\s*\((.+)\)/); 
             let mainName = tecnicoFullName;
 
             if (aliasMatch) {
-              mainName = aliasMatch[1].trim(); // Pega "Alberto"
+              mainName = aliasMatch[1].trim(); 
             }
 
             const nameParts = mainName.split(' ').filter(Boolean);
@@ -488,22 +497,26 @@ export const parseTechniciansJSON = (file: File): Promise<TechnicianImportData[]
             }
           }
 
+          // Garante que first_name e last_name não sejam vazios
+          if (!firstName) firstName = 'Técnico';
+          if (!lastName) lastName = 'Desconhecido';
+
           // Gerar email se não fornecido ou inválido
           if (!email || !email.includes('@')) {
-            const baseEmail = `${firstName.toLowerCase()}.${lastName.toLowerCase().replace(/\s/g, '')}`;
-            email = `${baseEmail}@logireverseia.com`; // Domínio padrão
+            const baseEmail = `${firstName.toLowerCase().replace(/\s/g, '')}.${lastName.toLowerCase().replace(/\s/g, '')}`;
+            email = `${baseEmail}@logireverseia.com`;
           }
 
           return {
             first_name: firstName,
             last_name: lastName,
             email: email,
-            password: String(row['password'] || row['Senha'] || 'LogiReverseIA@2025'), // Senha padrão se não fornecida
+            password: String(row['password'] || row['Senha'] || 'LogiReverseIA@2025'),
             phone_number: phoneNumber,
             role: role,
             supervisor_id: supervisorId,
           };
-        }).filter(t => t.email && t.first_name && t.last_name && t.email.includes('@')); // Garante que campos essenciais estejam presentes e email seja válido
+        }).filter(t => t.email && t.first_name && t.last_name && t.email.includes('@'));
         resolve(parsedData);
       } catch (error) {
         reject(new Error('Erro ao ler arquivo JSON para técnicos. Verifique o formato.'));
