@@ -2,8 +2,8 @@ import * as XLSX from 'xlsx';
 import { format } from 'date-fns';
 import { generateUniqueNumber } from './utils';
 import { parseDateSafely } from './date-utils';
-import type { ColetaImportData, ProductImportData, ClientImportData, TechnicianImportData } from './types'; // Adicionado TechnicianImportData
-import { cleanPhoneNumber } from './document-parser'; // Import cleanPhoneNumber
+import type { ColetaImportData, ProductImportData, ClientImportData, TechnicianImportData } from './types';
+import { cleanPhoneNumber } from './document-parser';
 
 // Função para ler dados de arquivos XLSX
 export const parseXLSX = (file: File): Promise<ColetaImportData[]> => {
@@ -22,15 +22,15 @@ export const parseXLSX = (file: File): Promise<ColetaImportData[]> => {
           client_control: row['Controle do Cliente'] || null,
           parceiro: row['Cliente'] || 'Cliente Desconhecido',
           contato: row['Contato'] || null,
-          telefone: cleanPhoneNumber(row['Telefone']), // Aplicado cleanPhoneNumber
+          telefone: cleanPhoneNumber(row['Telefone']),
           email: row['Email'] || null,
           cnpj: row['CNPJ'] ? String(row['CNPJ']) : null,
           endereco_origem: row['Endereço de Origem'] || row['Endereço'] || 'Endereço Desconhecido',
           cep_origem: row['CEP de Origem'] ? String(row['CEP de Origem']) : null,
-          origin_address_number: row['Número Endereço Origem'] ? String(row['Número Endereço Origem']) : null, // Novo campo
+          origin_address_number: row['Número Endereço Origem'] ? String(row['Número Endereço Origem']) : null,
           endereco_destino: row['Endereço de Destino'] || null,
           cep_destino: row['CEP de Destino'] ? String(row['CEP de Destino']) : null,
-          destination_address_number: row['Número Endereço Destino'] ? String(row['Número Endereço Destino']) : null, // Novo campo
+          destination_address_number: row['Número Endereço Destino'] ? String(row['Número Endereço Destino']) : null,
           previsao_coleta: parseDateSafely(row['Data da Coleta']),
           qtd_aparelhos_solicitado: parseInt(row['Quantidade']) || 1,
           modelo_aparelho: row['Produto'] || 'Produto Desconhecido',
@@ -38,9 +38,9 @@ export const parseXLSX = (file: File): Promise<ColetaImportData[]> => {
           status_coleta: (row['Status']?.toLowerCase() === 'concluida' ? 'concluida' : row['Status']?.toLowerCase() === 'agendada' ? 'agendada' : 'pendente'),
           type: (row['Tipo']?.toLowerCase() === 'entrega' ? 'entrega' : 'coleta'),
           observacao: row['Observações'] || null,
-          contrato: row['Nr. Contrato'] || null, // Novo campo
-          nf_glbl: row['CONTRATO SANKHYA'] || null, // Novo campo
-          partner_code: row['CÓD. PARC'] || null, // Novo campo
+          contrato: row['Nr. Contrato'] || null,
+          nf_glbl: row['CONTRATO SANKHYA'] || null,
+          partner_code: row['CÓD. PARC'] || null,
         }));
         resolve(parsedData);
       } catch (error) {
@@ -69,15 +69,15 @@ export const parseCSV = (file: File): Promise<ColetaImportData[]> => {
           client_control: row['Controle do Cliente'] || null,
           parceiro: row['Cliente'] || 'Cliente Desconhecido',
           contato: row['Contato'] || null,
-          telefone: cleanPhoneNumber(row['Telefone']), // Aplicado cleanPhoneNumber
+          telefone: cleanPhoneNumber(row['Telefone']),
           email: row['Email'] || null,
           cnpj: row['CNPJ'] ? String(row['CNPJ']) : null,
           endereco_origem: row['Endereço de Origem'] || row['Endereço'] || 'Endereço Desconhecido',
           cep_origem: row['CEP de Origem'] ? String(row['CEP de Origem']) : null,
-          origin_address_number: row['Número Endereço Origem'] ? String(row['Número Endereço Origem']) : null, // Novo campo
+          origin_address_number: row['Número Endereço Origem'] ? String(row['Número Endereço Origem']) : null,
           endereco_destino: row['Endereço de Destino'] || null,
           cep_destino: row['CEP de Destino'] ? String(row['CEP de Destino']) : null,
-          destination_address_number: row['Número Endereço Destino'] ? String(row['Número Endereço Destino']) : null, // Novo campo
+          destination_address_number: row['Número Endereço Destino'] ? String(row['Número Endereço Destino']) : null,
           previsao_coleta: parseDateSafely(row['Data da Coleta']),
           qtd_aparelhos_solicitado: parseInt(row['Quantidade']) || 1,
           modelo_aparelho: row['Produto'] || 'Produto Desconhecido',
@@ -85,9 +85,9 @@ export const parseCSV = (file: File): Promise<ColetaImportData[]> => {
           status_coleta: (row['Status']?.toLowerCase() === 'concluida' ? 'concluida' : row['Status']?.toLowerCase() === 'agendada' ? 'agendada' : 'pendente'),
           type: (row['Tipo']?.toLowerCase() === 'entrega' ? 'entrega' : 'coleta'),
           observacao: row['Observações'] || null,
-          contrato: row['Nr. Contrato'] || null, // Novo campo
-          nf_glbl: row['CONTRATO SANKHYA'] || null, // Novo campo
-          partner_code: row['CÓD. PARC'] || null, // Novo campo
+          contrato: row['Nr. Contrato'] || null,
+          nf_glbl: row['CONTRATO SANKHYA'] || null,
+          partner_code: row['CÓD. PARC'] || null,
         }));
         resolve(parsedData);
       } catch (error) {
@@ -109,11 +109,11 @@ export const parsePDF = (file: File): Promise<ColetaImportData[]> => {
           client_control: 'OS-PDF-001',
           parceiro: 'Cliente PDF Simulado',
           contato: '11987654321',
-          telefone: cleanPhoneNumber('11987654321'), // Aplicado cleanPhoneNumber
+          telefone: cleanPhoneNumber('11987654321'),
           email: 'joao.silva@pdf.com',
           cnpj: '00.000.000/0001-00',
           endereco_origem: 'Rua da Amostra, Bairro Teste, Cidade Fictícia - SP',
-          origin_address_number: '100', // Novo campo
+          origin_address_number: '100',
           cep_origem: '01000-000',
           previsao_coleta: parseDateSafely(new Date()),
           qtd_aparelhos_solicitado: 3,
@@ -122,20 +122,20 @@ export const parsePDF = (file: File): Promise<ColetaImportData[]> => {
           observacao: `Dados extraídos de PDF (simulado) do arquivo: ${file.name}`,
           status_coleta: 'pendente',
           type: 'coleta',
-          contrato: 'VMC10703/22', // Novo campo
-          nf_glbl: '26192', // Novo campo
-          partner_code: '53039', // Novo campo
+          contrato: 'VMC10703/22',
+          nf_glbl: '26192',
+          partner_code: '53039',
         },
         {
           unique_number: generateUniqueNumber('PDF'),
           client_control: 'OS-PDF-002',
           parceiro: 'Outro Cliente PDF',
           contato: 'Maria Souza',
-          telefone: cleanPhoneNumber('21912345678'), // Aplicado cleanPhoneNumber
+          telefone: cleanPhoneNumber('21912345678'),
           email: 'maria.souza@pdf.com',
           cnpj: '00.000.000/0002-00',
           endereco_origem: 'Av. Simulação, Centro, Rio de Janeiro - RJ',
-          origin_address_number: '50', // Novo campo
+          origin_address_number: '50',
           cep_origem: '20000-000',
           previsao_coleta: parseDateSafely(new Date()),
           qtd_aparelhos_solicitado: 1,
@@ -144,9 +144,9 @@ export const parsePDF = (file: File): Promise<ColetaImportData[]> => {
           observacao: `Dados extraídos de PDF (simulado) do arquivo: ${file.name}`,
           status_coleta: 'agendada',
           type: 'entrega',
-          contrato: 'VMC10704/22', // Novo campo
-          nf_glbl: '26193', // Novo campo
-          partner_code: '53040', // Novo campo
+          contrato: 'VMC10704/22',
+          nf_glbl: '26193',
+          partner_code: '53040',
         },
       ];
       resolve(dummyData);
@@ -249,11 +249,11 @@ export const parseClientsXLSX = (file: File): Promise<ClientImportData[]> => {
 
         const parsedData: ClientImportData[] = json.map((row: any) => ({
           name: String(row['Nome'] || row['Nome do Cliente'] || row['name'] || '').trim(),
-          phone: cleanPhoneNumber(row['Telefone']), // Aplicado cleanPhoneNumber
+          phone: cleanPhoneNumber(row['Telefone']),
           email: row['Email'] || null,
           address: row['Endereço'] || null,
-          address_number: row['Número do Endereço'] ? String(row['Número do Endereço']) : null, // Novo campo
-          cep: row['CEP'] ? String(row['CEP']) : null, // Novo campo
+          address_number: row['Número do Endereço'] ? String(row['Número do Endereço']) : null,
+          cep: row['CEP'] ? String(row['CEP']) : null,
           cnpj: row['CNPJ'] ? String(row['CNPJ']) : null,
           contact_person: row['Pessoa de Contato'] || null,
         })); 
@@ -281,11 +281,11 @@ export const parseClientsCSV = (file: File): Promise<ClientImportData[]> => {
 
         const parsedData: ClientImportData[] = json.map((row: any) => ({
           name: String(row['Nome'] || row['Nome do Cliente'] || row['name'] || '').trim(),
-          phone: cleanPhoneNumber(row['Telefone']), // Aplicado cleanPhoneNumber
+          phone: cleanPhoneNumber(row['Telefone']),
           email: row['Email'] || null,
           address: row['Endereço'] || null,
-          address_number: row['Número do Endereço'] ? String(row['Número do Endereço']) : null, // Novo campo
-          cep: row['CEP'] ? String(row['CEP']) : null, // Novo campo
+          address_number: row['Número do Endereço'] ? String(row['Número do Endereço']) : null,
+          cep: row['CEP'] ? String(row['CEP']) : null,
           cnpj: row['CNPJ'] ? String(row['CNPJ']) : null,
           contact_person: row['Pessoa de Contato'] || null,
         })); 
@@ -310,11 +310,11 @@ export const parseClientsJSON = (file: File): Promise<ClientImportData[]> => {
 
         const parsedData: ClientImportData[] = json.map((row: any) => ({
           name: String(row['name'] || row['Nome do Cliente'] || row['Nome'] || '').trim(),
-          phone: cleanPhoneNumber(row['phone'] || row['Telefone']), // Aplicado cleanPhoneNumber
+          phone: cleanPhoneNumber(row['phone'] || row['Telefone']),
           email: row['email'] || null,
           address: row['address'] || row['Endereço'] || null,
-          address_number: row['address_number'] ? String(row['address_number']) : row['Número do Endereço'] ? String(row['Número do Endereço']) : null, // Novo campo
-          cep: row['cep'] ? String(row['cep']) : row['CEP'] ? String(row['CEP']) : null, // Novo campo
+          address_number: row['address_number'] ? String(row['address_number']) : row['Número do Endereço'] ? String(row['Número do Endereço']) : null,
+          cep: row['cep'] ? String(row['cep']) : row['CEP'] ? String(row['CEP']) : null,
           cnpj: row['cnpj'] ? String(row['cnpj']) : row['CNPJ'] ? String(row['CNPJ']) : null,
           contact_person: row['contact_person'] || row['Pessoa de Contato'] || null,
         })); 
@@ -340,15 +340,47 @@ export const parseTechniciansXLSX = (file: File): Promise<TechnicianImportData[]
         const worksheet = workbook.Sheets[sheetName];
         const json: any[] = XLSX.utils.sheet_to_json(worksheet);
 
-        const parsedData: TechnicianImportData[] = json.map((row: any) => ({
-          first_name: String(row['Primeiro Nome'] || row['first_name'] || row['Nome'] || 'N/A').trim(),
-          last_name: String(row['Sobrenome'] || row['last_name'] || 'N/A').trim(),
-          email: String(row['Email'] || row['e-mail'] || row['email'] || '').trim(),
-          password: String(row['Senha'] || row['password'] || 'LogiReverseIA@2025'), // Default password if not provided
-          phone_number: cleanPhoneNumber(row['Telefone'] || row['phone_number']),
-          role: (row['Função']?.toLowerCase() === 'admin' ? 'admin' : 'standard'),
-          supervisor_id: row['ID Supervisor'] || row['supervisor_id'] || null,
-        })).filter(t => t.email && t.first_name && t.last_name && t.email.includes('@')); // Ensure essential fields are present and email is valid
+        const parsedData: TechnicianImportData[] = json.map((row: any) => {
+          let firstName = String(row['Primeiro Nome'] || row['first_name'] || row['Nome'] || '').trim();
+          let lastName = String(row['Sobrenome'] || row['last_name'] || '').trim();
+          let email = String(row['Email'] || row['e-mail'] || row['email'] || '').trim();
+          let phoneNumber = cleanPhoneNumber(row['Telefone'] || row['phone_number']);
+          let role = (row['Função']?.toLowerCase() === 'admin' ? 'admin' : 'standard');
+          let supervisorId = row['ID Supervisor'] || row['supervisor_id'] || null;
+
+          // Se a coluna 'Técnico' existe e os nomes não foram definidos
+          if (row['Técnico'] && (!firstName || !lastName)) {
+            const tecnicoFullName = String(row['Técnico']).trim();
+            const aliasMatch = tecnicoFullName.match(/(.+)\s*\((.+)\)/); // Ex: "Alberto (joao alberto)"
+            let mainName = tecnicoFullName;
+
+            if (aliasMatch) {
+              mainName = aliasMatch[1].trim(); // Pega "Alberto"
+            }
+
+            const nameParts = mainName.split(' ').filter(Boolean);
+            if (nameParts.length > 0) {
+              firstName = nameParts[0];
+              lastName = nameParts.slice(1).join(' ');
+            }
+          }
+
+          // Gerar email se não fornecido ou inválido
+          if (!email || !email.includes('@')) {
+            const baseEmail = `${firstName.toLowerCase()}.${lastName.toLowerCase().replace(/\s/g, '')}`;
+            email = `${baseEmail}@logireverseia.com`; // Domínio padrão
+          }
+
+          return {
+            first_name: firstName,
+            last_name: lastName,
+            email: email,
+            password: String(row['Senha'] || row['password'] || 'LogiReverseIA@2025'), // Senha padrão se não fornecida
+            phone_number: phoneNumber,
+            role: role,
+            supervisor_id: supervisorId,
+          };
+        }).filter(t => t.email && t.first_name && t.last_name && t.email.includes('@')); // Garante que campos essenciais estejam presentes e email seja válido
         resolve(parsedData);
       } catch (error) {
         reject(new Error('Erro ao ler arquivo XLSX para técnicos. Verifique o formato das colunas.'));
@@ -371,15 +403,47 @@ export const parseTechniciansCSV = (file: File): Promise<TechnicianImportData[]>
         const worksheet = workbook.Sheets[sheetName];
         const json: any[] = XLSX.utils.sheet_to_json(worksheet);
 
-        const parsedData: TechnicianImportData[] = json.map((row: any) => ({
-          first_name: String(row['Primeiro Nome'] || row['first_name'] || row['Nome'] || 'N/A').trim(),
-          last_name: String(row['Sobrenome'] || row['last_name'] || 'N/A').trim(),
-          email: String(row['Email'] || row['e-mail'] || row['email'] || '').trim(),
-          password: String(row['Senha'] || row['password'] || 'LogiReverseIA@2025'), // Default password if not provided
-          phone_number: cleanPhoneNumber(row['Telefone'] || row['phone_number']),
-          role: (row['Função']?.toLowerCase() === 'admin' ? 'admin' : 'standard'),
-          supervisor_id: row['ID Supervisor'] || row['supervisor_id'] || null,
-        })).filter(t => t.email && t.first_name && t.last_name && t.email.includes('@')); // Ensure essential fields are present and email is valid
+        const parsedData: TechnicianImportData[] = json.map((row: any) => {
+          let firstName = String(row['Primeiro Nome'] || row['first_name'] || row['Nome'] || '').trim();
+          let lastName = String(row['Sobrenome'] || row['last_name'] || '').trim();
+          let email = String(row['Email'] || row['e-mail'] || row['email'] || '').trim();
+          let phoneNumber = cleanPhoneNumber(row['Telefone'] || row['phone_number']);
+          let role = (row['Função']?.toLowerCase() === 'admin' ? 'admin' : 'standard');
+          let supervisorId = row['ID Supervisor'] || row['supervisor_id'] || null;
+
+          // Se a coluna 'Técnico' existe e os nomes não foram definidos
+          if (row['Técnico'] && (!firstName || !lastName)) {
+            const tecnicoFullName = String(row['Técnico']).trim();
+            const aliasMatch = tecnicoFullName.match(/(.+)\s*\((.+)\)/); // Ex: "Alberto (joao alberto)"
+            let mainName = tecnicoFullName;
+
+            if (aliasMatch) {
+              mainName = aliasMatch[1].trim(); // Pega "Alberto"
+            }
+
+            const nameParts = mainName.split(' ').filter(Boolean);
+            if (nameParts.length > 0) {
+              firstName = nameParts[0];
+              lastName = nameParts.slice(1).join(' ');
+            }
+          }
+
+          // Gerar email se não fornecido ou inválido
+          if (!email || !email.includes('@')) {
+            const baseEmail = `${firstName.toLowerCase()}.${lastName.toLowerCase().replace(/\s/g, '')}`;
+            email = `${baseEmail}@logireverseia.com`; // Domínio padrão
+          }
+
+          return {
+            first_name: firstName,
+            last_name: lastName,
+            email: email,
+            password: String(row['Senha'] || row['password'] || 'LogiReverseIA@2025'), // Senha padrão se não fornecida
+            phone_number: phoneNumber,
+            role: role,
+            supervisor_id: supervisorId,
+          };
+        }).filter(t => t.email && t.first_name && t.last_name && t.email.includes('@')); // Garante que campos essenciais estejam presentes e email seja válido
         resolve(parsedData);
       } catch (error) {
         reject(new Error('Erro ao ler arquivo CSV para técnicos. Verifique o formato das colunas.'));
@@ -399,15 +463,47 @@ export const parseTechniciansJSON = (file: File): Promise<TechnicianImportData[]
         const jsonString = e.target?.result as string;
         const json: any[] = JSON.parse(jsonString);
 
-        const parsedData: TechnicianImportData[] = json.map((row: any) => ({
-          first_name: String(row['first_name'] || row['Primeiro Nome'] || row['Nome'] || 'N/A').trim(),
-          last_name: String(row['last_name'] || row['Sobrenome'] || 'N/A').trim(),
-          email: String(row['email'] || row['Email'] || row['e-mail'] || '').trim(),
-          password: String(row['password'] || row['Senha'] || 'LogiReverseIA@2025'), // Default password if not provided
-          phone_number: cleanPhoneNumber(row['phone_number'] || row['Telefone']),
-          role: (row['role']?.toLowerCase() === 'admin' ? 'admin' : 'standard'),
-          supervisor_id: row['supervisor_id'] || row['ID Supervisor'] || null,
-        })).filter(t => t.email && t.first_name && t.last_name && t.email.includes('@')); // Ensure essential fields are present and email is valid
+        const parsedData: TechnicianImportData[] = json.map((row: any) => {
+          let firstName = String(row['first_name'] || row['Primeiro Nome'] || row['Nome'] || '').trim();
+          let lastName = String(row['last_name'] || row['Sobrenome'] || '').trim();
+          let email = String(row['email'] || row['Email'] || row['e-mail'] || '').trim();
+          let phoneNumber = cleanPhoneNumber(row['phone_number'] || row['Telefone']);
+          let role = (row['role']?.toLowerCase() === 'admin' ? 'admin' : 'standard');
+          let supervisorId = row['supervisor_id'] || row['ID Supervisor'] || null;
+
+          // Se a coluna 'Técnico' existe e os nomes não foram definidos
+          if (row['Técnico'] && (!firstName || !lastName)) {
+            const tecnicoFullName = String(row['Técnico']).trim();
+            const aliasMatch = tecnicoFullName.match(/(.+)\s*\((.+)\)/); // Ex: "Alberto (joao alberto)"
+            let mainName = tecnicoFullName;
+
+            if (aliasMatch) {
+              mainName = aliasMatch[1].trim(); // Pega "Alberto"
+            }
+
+            const nameParts = mainName.split(' ').filter(Boolean);
+            if (nameParts.length > 0) {
+              firstName = nameParts[0];
+              lastName = nameParts.slice(1).join(' ');
+            }
+          }
+
+          // Gerar email se não fornecido ou inválido
+          if (!email || !email.includes('@')) {
+            const baseEmail = `${firstName.toLowerCase()}.${lastName.toLowerCase().replace(/\s/g, '')}`;
+            email = `${baseEmail}@logireverseia.com`; // Domínio padrão
+          }
+
+          return {
+            first_name: firstName,
+            last_name: lastName,
+            email: email,
+            password: String(row['password'] || row['Senha'] || 'LogiReverseIA@2025'), // Senha padrão se não fornecida
+            phone_number: phoneNumber,
+            role: role,
+            supervisor_id: supervisorId,
+          };
+        }).filter(t => t.email && t.first_name && t.last_name && t.email.includes('@')); // Garante que campos essenciais estejam presentes e email seja válido
         resolve(parsedData);
       } catch (error) {
         reject(new Error('Erro ao ler arquivo JSON para técnicos. Verifique o formato.'));
