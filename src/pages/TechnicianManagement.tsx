@@ -160,7 +160,7 @@ export const TechnicianManagement = () => {
                       </h3>
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-sm text-muted-foreground mt-1">
                         <div className="flex items-center gap-1">
-                          <Briefcase className="h-3 w-3" /> Role: {technician.role === 'standard' ? 'Técnico' : technician.role}
+                          <Briefcase className="h-3 w-3" /> Função: {technician.role === 'standard' ? 'Técnico' : technician.role}
                         </div>
                         {technician.phone_number && (
                           <div className="flex items-center gap-1">
