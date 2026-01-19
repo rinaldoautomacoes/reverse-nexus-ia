@@ -99,8 +99,9 @@ serve(async (req) => {
       console.log(`[create-user] User ${email} already exists (ID: ${targetUserId}). Attempting to update profile.`);
 
       try {
-        const updateAuthUserOptions: { email: string; password?: string; user_metadata: object } = {
+        const updateAuthUserOptions: { email: string; password?: string; phone?: string | null; user_metadata: object } = {
           email,
+          phone: phone_number || null, // Adicionado o campo 'phone' aqui
           user_metadata: { 
             first_name: first_name || null, 
             last_name: last_name || null, 
@@ -124,7 +125,7 @@ serve(async (req) => {
           console.error(`[create-user] Error updating auth.users for ${email} (ID: ${targetUserId}):`, updateAuthUserError.message);
           throw new Error(`Falha ao atualizar usuário existente na autenticação: ${updateAuthUserError.message}`);
         }
-        console.log(`[create-user] user_metadata of auth.users updated successfully for ${email} (ID: ${targetUserId}).`);
+        console.log(`[create-user] user_metadata and phone of auth.users updated successfully for ${email} (ID: ${targetUserId}).`);
 
       } catch (e) {
         console.error('[create-user] Error caught during updateAuthUserById:', e instanceof Error ? e.message : String(e));
@@ -172,6 +173,7 @@ serve(async (req) => {
         const createUserOptions = {
           email,
           password,
+          phone: phone_number || null, // Adicionado o campo 'phone' aqui
           email_confirm: true,
           user_metadata: { 
             first_name: first_name || null, 
@@ -229,7 +231,7 @@ serve(async (req) => {
     }
 
     if (!targetUserId) {
-      console.error('[create-user] Operação concluída, mas nenhum ID de usuário foi determinado.');
+      console.error('[create-user] Operation completed, but no user ID was determined.');
       return new Response(JSON.stringify({ error: 'Erro Interno do Servidor: ID de usuário não determinado após a operação.' }), { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
     }
 
