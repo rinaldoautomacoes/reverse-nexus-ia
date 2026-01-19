@@ -38,7 +38,6 @@ serve(async (req) => {
 
     if (userError || !user) {
       console.error('[create-user] Error getting user from token:', userError?.message);
-      // Log the full userError for debugging
       console.error('[create-user] Full userSupabase.auth.getUser() error:', JSON.stringify(userError));
       return new Response(JSON.stringify({ error: 'Unauthorized: Invalid token' }), { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
     }
@@ -69,7 +68,6 @@ serve(async (req) => {
     const { email, password, first_name, last_name, role, avatar_url, phone_number, supervisor_id, address } = requestBody;
     console.log('[create-user] Destructured data for new user:', { email, password: password ? '********' : 'N/A', first_name, last_name, role, avatar_url: avatar_url ? 'Present' : 'N/A', phone_number: phone_number ? 'Present' : 'N/A', supervisor_id: supervisor_id ? 'Present' : 'N/A', address: address ? 'Present' : 'N/A' });
 
-    // Adjusted validation: last_name is optional
     if (!email || !password || !first_name || !role) {
       console.error('[create-user] Bad Request: Missing required fields in request body. Received:', { email, password: password ? '********' : 'N/A', first_name, last_name, role });
       return new Response(JSON.stringify({ error: 'Bad Request: Missing required fields (email, password, first_name, role)' }), { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
@@ -85,50 +83,26 @@ serve(async (req) => {
     let targetUserId: string | null = null;
     let operationType: 'created' | 'updated' = 'created';
 
-    // --- NOVO RECURSO: Chamada fetch direta para a API de Autenticação Admin do Supabase para verificar usuário existente ---
-    console.log(`[create-user] Tentando fetch direto para a API de Autenticação Admin para o usuário ${email}`);
-    let existingUserAuthData = null;
-    try {
-      const authAdminUrl = `${Deno.env.get('SUPABASE_URL')}/auth/v1/admin/users?email=eq.${encodeURIComponent(email)}`;
-      const authAdminResponse = await fetch(authAdminUrl, {
-        method: 'GET',
-        headers: {
-          'Authorization': `Bearer ${Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')}`,
-          'Content-Type': 'application/json',
-          'apikey': Deno.env.get('SUPABASE_ANON_KEY') ?? '', // Necessário para algumas chamadas da API Supabase
-        },
-      });
+    // 1. Check if user already exists by email
+    console.log(`[create-user] Checking for existing user with email: ${email}`);
+    const { data: existingUserAuthData, error: getAuthUserError } = await adminSupabase.auth.admin.getUserByEmail(email);
 
-      if (!authAdminResponse.ok) {
-        const errorText = await authAdminResponse.text();
-        console.error(`[create-user] Fetch direto para a API de Autenticação Admin falhou com status ${authAdminResponse.status}: ${errorText}`);
-        throw new Error(`Falha ao verificar usuário existente via API de Autenticação Admin: ${errorText}`);
-      }
-
-      const users = await authAdminResponse.json();
-      if (users && users.length > 0) {
-        existingUserAuthData = users[0]; // Pega o primeiro usuário se encontrado
-        console.log(`[create-user] Usuário existente encontrado via fetch direto: ${existingUserAuthData.id}`);
-      } else {
-        console.log(`[create-user] Nenhum usuário existente encontrado via fetch direto para o e-mail: ${email}`);
-      }
-    } catch (e) {
-      console.error('[create-user] Erro capturado durante a busca de usuário via API de Autenticação Admin:', e instanceof Error ? e.message : String(e));
-      return new Response(JSON.stringify({ error: `Erro Interno do Servidor durante a busca de usuário: ${e instanceof Error ? e.message : String(e)}` }), { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+    if (getAuthUserError && getAuthUserError.message !== 'User not found') {
+      console.error(`[create-user] Error checking for existing user ${email}:`, getAuthUserError.message);
+      throw new Error(`Falha ao verificar usuário existente: ${getAuthUserError.message}`);
     }
-    // --- FIM NOVO RECURSO ---
 
-    if (existingUserAuthData?.id) {
-      // Usuário já existe em auth.users
-      targetUserId = existingUserAuthData.id;
+    if (existingUserAuthData?.user) {
+      // User exists, update their profile
+      targetUserId = existingUserAuthData.user.id;
       operationType = 'updated';
-      console.log(`[create-user] Usuário ${email} já existe (ID: ${targetUserId}). Tentando atualizar o perfil.`);
+      console.log(`[create-user] User ${email} already exists (ID: ${targetUserId}). Attempting to update profile.`);
 
       try {
-        // Atualiza user_metadata em auth.users
+        // Update user_metadata in auth.users
         const { error: updateAuthUserError } = await adminSupabase.auth.admin.updateUserById(targetUserId, {
           email,
-          password, // A atualização da senha é opcional, mas incluída se fornecida
+          password, // Password update is optional, but included if provided
           user_metadata: { 
             first_name: first_name || null, 
             last_name: last_name || null, 
@@ -141,17 +115,17 @@ serve(async (req) => {
         });
 
         if (updateAuthUserError) {
-          console.error(`[create-user] Erro ao atualizar auth.users para ${email} (ID: ${targetUserId}):`, updateAuthUserError.message);
+          console.error(`[create-user] Error updating auth.users for ${email} (ID: ${targetUserId}):`, updateAuthUserError.message);
           throw new Error(`Falha ao atualizar usuário existente na autenticação: ${updateAuthUserError.message}`);
         }
-        console.log(`[create-user] user_metadata de auth.users atualizado com sucesso para ${email} (ID: ${targetUserId}).`);
+        console.log(`[create-user] user_metadata of auth.users updated successfully for ${email} (ID: ${targetUserId}).`);
 
       } catch (e) {
-        console.error('[create-user] Erro capturado durante updateAuthUserById:', e instanceof Error ? e.message : String(e));
+        console.error('[create-user] Error caught during updateAuthUserById:', e instanceof Error ? e.message : String(e));
         return new Response(JSON.stringify({ error: `Erro Interno do Servidor durante a atualização do usuário de autenticação: ${e instanceof Error ? e.message : String(e)}` }), { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
       }
 
-      // NEW: Use upsert for public.profiles to handle cases where auth.users exists but public.profiles doesn't
+      // Use upsert for public.profiles to handle cases where auth.users exists but public.profiles doesn't
       try {
         const { error: upsertProfileError } = await adminSupabase
           .from('profiles')
@@ -168,19 +142,19 @@ serve(async (req) => {
           }, { onConflict: 'id' }); // Conflict on 'id' will update existing row
 
         if (upsertProfileError) {
-          console.error(`[create-user] Erro ao upsert public.profiles para ${email} (ID: ${targetUserId}):`, upsertProfileError.message);
+          console.error(`[create-user] Error upserting public.profiles for ${email} (ID: ${targetUserId}):`, upsertProfileError.message);
           throw new Error(`Falha ao upsert perfil de usuário existente: ${upsertProfileError.message}`);
         }
-        console.log(`[create-user] public.profiles upserted com sucesso para o usuário existente ${email} (ID: ${targetUserId}).`);
+        console.log(`[create-user] public.profiles upserted successfully for existing user ${email} (ID: ${targetUserId}).`);
 
       } catch (e) {
-        console.error('[create-user] Erro capturado durante o upsert de public.profiles:', e instanceof Error ? e.message : String(e));
+        console.error('[create-user] Error caught during upsert of public.profiles:', e instanceof Error ? e.message : String(e));
         return new Response(JSON.stringify({ error: `Erro Interno do Servidor durante o upsert do perfil: ${e instanceof Error ? e.message : String(e)}` }), { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
       }
 
     } else {
-      // Usuário não existe, prossegue com a criação
-      console.log(`[create-user] Usuário ${email} não encontrado. Tentando criar novo usuário.`);
+      // User does not exist, proceed with creation
+      console.log(`[create-user] User ${email} not found. Attempting to create new user.`);
       try {
         const { data: newUser, error: createUserError } = await adminSupabase.auth.admin.createUser({
           email,
@@ -198,13 +172,13 @@ serve(async (req) => {
         });
 
         if (createUserError) {
-          console.error('[create-user] Erro ao criar usuário com admin.createUser:', createUserError.message); 
+          console.error('[create-user] Error creating user with admin.createUser:', createUserError.message); 
           throw new Error(createUserError.message);
         }
         targetUserId = newUser.user?.id || null;
-        console.log('[create-user] Novo usuário criado com sucesso:', targetUserId);
+        console.log('[create-user] New user created successfully:', targetUserId);
 
-        // NEW: Explicitly upsert into public.profiles after creating the auth.users entry
+        // Explicitly upsert into public.profiles after creating the auth.users entry
         if (targetUserId) {
           const { error: upsertProfileError } = await adminSupabase
             .from('profiles')
@@ -222,31 +196,31 @@ serve(async (req) => {
             }, { onConflict: 'id' }); // Use onConflict 'id' to handle potential race conditions or trigger issues
 
           if (upsertProfileError) {
-            console.error(`[create-user] Erro ao upsert public.profiles para novo usuário (ID: ${targetUserId}):`, upsertProfileError.message);
+            console.error(`[create-user] Error upserting public.profiles for new user (ID: ${targetUserId}):`, upsertProfileError.message);
             throw new Error(`Falha ao upsert perfil para novo usuário: ${upsertProfileError.message}`);
           }
-          console.log(`[create-user] public.profiles upserted com sucesso para o novo usuário (ID: ${targetUserId}).`);
+          console.log(`[create-user] public.profiles upserted successfully for the new user (ID: ${targetUserId}).`);
         }
 
 
       } catch (e) {
-        console.error('[create-user] Erro capturado durante createUser:', e instanceof Error ? e.message : String(e));
+        console.error('[create-user] Error caught during createUser:', e instanceof Error ? e.message : String(e));
         return new Response(JSON.stringify({ error: `Erro Interno do Servidor durante a criação do usuário: ${e instanceof Error ? e.message : String(e)}` }), { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
       }
     }
 
     if (!targetUserId) {
-      console.error('[create-user] Operação concluída, mas nenhum ID de usuário foi determinado.');
+      console.error('[create-user] Operation completed, but no user ID was determined.');
       return new Response(JSON.stringify({ error: 'Erro Interno do Servidor: ID de usuário não determinado após a operação.' }), { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
     }
 
     return new Response(JSON.stringify({ message: `Usuário ${operationType} com sucesso`, userId: targetUserId, operation: operationType }), {
-      status: 200, // Alterado para 200 OK para sucesso de criação e atualização
+      status: 200, // Changed to 200 OK for successful creation and update
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
 
   } catch (error) {
-    console.error('[create-user] Erro inesperado na função Edge create-user:', error instanceof Error ? error.message : String(error));
+    console.error('[create-user] Unexpected error in Edge Function create-user:', error instanceof Error ? error.message : String(error));
     return new Response(JSON.stringify({ error: 'Erro Interno do Servidor' }), {
       status: 500,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
