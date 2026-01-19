@@ -132,7 +132,7 @@ const mapRowToClient = (row: any): ClientImportData => ({
 const mapRowToTechnician = (row: any): TechnicianImportData => {
   let firstName = String(row['Primeiro Nome'] || row['first_name'] || row['Nome'] || '').trim();
   let lastName = String(row['Sobrenome'] || row['last_name'] || '').trim();
-  let email = String(row['Email'] || row['e-mail'] || row['email'] || '').trim();
+  let rawEmail = String(row['Email'] || row['e-mail'] || row['email'] || '').trim(); // Keep raw email
   let phoneNumber = cleanPhoneNumber(row['Telefone'] || row['phone_number']);
   let role = (row['Função']?.toLowerCase() === 'admin' ? 'admin' : 'standard');
   let supervisorId = row['ID Supervisor'] || row['supervisor_id'] || null;
@@ -147,28 +147,40 @@ const mapRowToTechnician = (row: any): TechnicianImportData => {
     }
   }
 
-  // Ensure first_name and last_name are not empty and are sanitized for email generation
+  // Ensure first_name and last_name are not empty
   if (!firstName) firstName = 'Tecnico'; 
   if (!lastName) lastName = 'Desconhecido';
 
-  // Generate email if not provided or invalid, ensuring it's valid
-  if (!email || !email.includes('@') || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+  let finalEmail: string;
+
+  if (rawEmail && rawEmail.includes('@')) {
+    // If an email is provided and contains '@', sanitize its parts
+    const [localPart, domainPart] = rawEmail.split('@');
+    const sanitizedLocalPart = sanitizeEmailPart(localPart);
+    const sanitizedDomainPart = sanitizeEmailPart(domainPart);
+    finalEmail = `${sanitizedLocalPart}@${sanitizedDomainPart}`;
+  } else {
+    // If no email or invalid format, generate one
     const sanitizedFirstName = sanitizeEmailPart(firstName);
     const sanitizedLastName = sanitizeEmailPart(lastName);
     const baseEmail = `${sanitizedFirstName}.${sanitizedLastName}`;
-    email = `${baseEmail}@logireverseia.com`; // Default domain
-  } else {
-    // If email is provided, ensure it's valid by re-sanitizing if necessary
-    const [localPart, domainPart] = email.split('@');
-    const sanitizedLocalPart = sanitizeEmailPart(localPart);
-    const sanitizedDomainPart = sanitizeEmailPart(domainPart); 
-    email = `${sanitizedLocalPart}@${sanitizedDomainPart}`;
+    finalEmail = `${baseEmail}@logireverseia.com`; // Default domain
+  }
+
+  // Final check for email validity using a more robust regex
+  // This regex allows for more characters in the local part (like +, !, #, etc.)
+  // but still enforces a valid overall structure.
+  const emailRegex = /^[a-z0-9!#$%&'*+/=?^_`{|}~-]+(?:\.[a-z0-9!#$%&'*+/=?^_`{|}~-]+)*@(?:[a-z0-9](?:[a-z0-9-]*[a-z0-9])?\.)+[a-z0-9](?:[a-z0-9-]*[a-z0-9])?$/;
+  if (!emailRegex.test(finalEmail)) {
+    console.warn(`[data-parser] Generated email '${finalEmail}' is still invalid. Falling back to generic.`);
+    // Fallback to a very generic, guaranteed-valid email if all else fails
+    finalEmail = `invalid.email.${generateUniqueNumber('ERR')}@logireverseia.com`;
   }
 
   return {
     first_name: firstName,
     last_name: lastName,
-    email: email,
+    email: finalEmail, // Use the final sanitized/generated email
     password: String(row['Senha'] || row['password'] || 'LogiReverseIA@2025'), // Default password if not provided
     phone_number: phoneNumber,
     role: role,
