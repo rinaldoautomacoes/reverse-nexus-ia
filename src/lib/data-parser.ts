@@ -149,7 +149,7 @@ const mapRowToTechnician = (row: any): TechnicianImportData => {
   };
 };
 
-// --- 3. Funções de Parsing Principais ---
+// --- 3. Funções de Parsing Principais (agora exportadas) ---
 
 export const parseCollectionsXLSX = async (file: File): Promise<ColetaImportData[]> => {
   const json = await readXLSX(file);
