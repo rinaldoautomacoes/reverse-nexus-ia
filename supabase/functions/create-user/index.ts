@@ -151,11 +151,12 @@ serve(async (req) => {
         return new Response(JSON.stringify({ error: `Erro Interno do Servidor durante a atualização do usuário de autenticação: ${e instanceof Error ? e.message : String(e)}` }), { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
       }
 
+      // NEW: Use upsert for public.profiles to handle cases where auth.users exists but public.profiles doesn't
       try {
-        // Também atualiza a tabela public.profiles diretamente, pois o trigger pode não ser acionado na atualização
-        const { error: updateProfileError } = await adminSupabase
+        const { error: upsertProfileError } = await adminSupabase
           .from('profiles')
-          .update({
+          .upsert({
+            id: targetUserId, // Use the existing user's ID
             first_name: first_name || null,
             last_name: last_name || null,
             role: role || 'standard',
@@ -164,18 +165,17 @@ serve(async (req) => {
             supervisor_id: supervisor_id || null,
             address: address || null,
             updated_at: new Date().toISOString(),
-          })
-          .eq('id', targetUserId);
+          }, { onConflict: 'id' }); // Conflict on 'id' will update existing row
 
-        if (updateProfileError) {
-          console.error(`[create-user] Erro ao atualizar public.profiles para ${email} (ID: ${targetUserId}):`, updateProfileError.message);
-          throw new Error(`Falha ao atualizar perfil de usuário existente: ${updateProfileError.message}`);
+        if (upsertProfileError) {
+          console.error(`[create-user] Erro ao upsert public.profiles para ${email} (ID: ${targetUserId}):`, upsertProfileError.message);
+          throw new Error(`Falha ao upsert perfil de usuário existente: ${upsertProfileError.message}`);
         }
-        console.log(`[create-user] public.profiles atualizado com sucesso para o usuário existente ${email} (ID: ${targetUserId}).`);
+        console.log(`[create-user] public.profiles upserted com sucesso para o usuário existente ${email} (ID: ${targetUserId}).`);
 
       } catch (e) {
-        console.error('[create-user] Erro capturado durante a atualização de public.profiles:', e instanceof Error ? e.message : String(e));
-        return new Response(JSON.stringify({ error: `Erro Interno do Servidor durante a atualização do perfil: ${e instanceof Error ? e.message : String(e)}` }), { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+        console.error('[create-user] Erro capturado durante o upsert de public.profiles:', e instanceof Error ? e.message : String(e));
+        return new Response(JSON.stringify({ error: `Erro Interno do Servidor durante o upsert do perfil: ${e instanceof Error ? e.message : String(e)}` }), { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
       }
 
     } else {
@@ -203,6 +203,31 @@ serve(async (req) => {
         }
         targetUserId = newUser.user?.id || null;
         console.log('[create-user] Novo usuário criado com sucesso:', targetUserId);
+
+        // NEW: Explicitly upsert into public.profiles after creating the auth.users entry
+        if (targetUserId) {
+          const { error: upsertProfileError } = await adminSupabase
+            .from('profiles')
+            .upsert({
+              id: targetUserId,
+              first_name: first_name || null,
+              last_name: last_name || null,
+              role: role || 'standard',
+              avatar_url: avatar_url || null,
+              phone_number: phone_number || null,
+              supervisor_id: supervisor_id || null,
+              address: address || null,
+              created_at: new Date().toISOString(), // Set created_at for new profiles
+              updated_at: new Date().toISOString(),
+            }, { onConflict: 'id' }); // Use onConflict 'id' to handle potential race conditions or trigger issues
+
+          if (upsertProfileError) {
+            console.error(`[create-user] Erro ao upsert public.profiles para novo usuário (ID: ${targetUserId}):`, upsertProfileError.message);
+            throw new Error(`Falha ao upsert perfil para novo usuário: ${upsertProfileError.message}`);
+          }
+          console.log(`[create-user] public.profiles upserted com sucesso para o novo usuário (ID: ${targetUserId}).`);
+        }
+
 
       } catch (e) {
         console.error('[create-user] Erro capturado durante createUser:', e instanceof Error ? e.message : String(e));
