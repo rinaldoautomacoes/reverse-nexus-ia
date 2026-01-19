@@ -8,8 +8,6 @@ export type ProfileRow = {
   phone_number: string | null
   role: string
   updated_at: string | null
-  supervisor_id: string | null
-  address: string | null // Novo campo
 }
 
 export type ProfileInsert = {
@@ -20,8 +18,6 @@ export type ProfileInsert = {
   phone_number?: string | null
   role?: string
   updated_at?: string | null
-  supervisor_id?: string | null
-  address?: string | null // Novo campo
 }
 
 export type ProfileUpdate = {
@@ -32,8 +28,6 @@ export type ProfileUpdate = {
   phone_number?: string | null
   role?: string
   updated_at?: string | null
-  supervisor_id?: string | null
-  address?: string | null // Novo campo
 }
 
 export type ProfileRelationships = []

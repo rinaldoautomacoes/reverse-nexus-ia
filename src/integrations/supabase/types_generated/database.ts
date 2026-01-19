@@ -119,7 +119,7 @@ export type Enums<
 
 export type CompositeTypes<
   PublicCompositeTypeNameOrOptions extends
-    | keyof DatabaseWithoutInternals[Extract<keyof Database, "public">]["CompositeTypes"]
+    | keyof DefaultSchema["CompositeTypes"]
     | { schema: keyof DatabaseWithoutInternals },
   CompositeTypeName extends PublicCompositeTypeNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
@@ -140,13 +140,6 @@ export const Constants = {
       app_role: {
         admin: "admin",
         standard: "standard",
-        supervisor: "supervisor",
-      },
-      pest_service_status: {
-        agendado: "agendado",
-        em_andamento: "em_andamento",
-        concluido: "concluido",
-        cancelado: "cancelado",
       },
     },
   },

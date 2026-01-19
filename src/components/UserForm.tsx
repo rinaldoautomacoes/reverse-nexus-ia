@@ -3,17 +3,15 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Loader2, User as UserIcon, Mail, Phone, Briefcase, MapPin } from "lucide-react"; // Renomeado User para UserIcon para evitar conflito, adicionado MapPin
-import type { TablesInsert, TablesUpdate, Tables } from "@/integrations/supabase/types_generated";
-import { SupervisorCombobox } from "./SupervisorCombobox";
+import { Loader2, User as UserIcon, Mail, Phone, Briefcase } from "lucide-react"; // Renomeado User para UserIcon para evitar conflito
+import type { TablesInsert, TablesUpdate } from "@/integrations/supabase/types_generated";
 
-type Profile = Tables<'profiles'>;
 type ProfileInsert = TablesInsert<'profiles'>;
-type ProfileUpdate = Profile & { email?: string; password?: string }; // Adicionado email e password para novos usuários
+type ProfileUpdate = TablesUpdate<'profiles'>;
 
 interface UserFormProps {
   initialData?: ProfileUpdate;
-  onSave: (data: ProfileInsert | ProfileUpdate) => void; // onSave agora aceita ProfileUpdate
+  onSave: (data: ProfileInsert | ProfileUpdate) => void;
   onCancel: () => void;
   isPending: boolean;
 }
@@ -26,10 +24,6 @@ export const UserForm: React.FC<UserFormProps> = ({ initialData, onSave, onCance
     phone_number: "",
     avatar_url: "",
     id: "", // Will be filled by mutation or existing user
-    email: "", // Para novos usuários
-    password: "", // Para novos usuários
-    supervisor_id: null, // Novo campo
-    address: "", // Novo campo
   });
 
   useEffect(() => {
@@ -42,57 +36,13 @@ export const UserForm: React.FC<UserFormProps> = ({ initialData, onSave, onCance
     setFormData(prev => ({ ...prev, [field]: value }));
   };
 
-  const handleSupervisorSelect = (supervisorProfile: Profile | null) => {
-    handleInputChange("supervisor_id", supervisorProfile?.id || null);
-  };
-
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     onSave(formData);
   };
 
-  const isNewUser = !initialData?.id; // Determina se é um novo usuário
-  const isTechnician = formData.role === 'standard'; // Determina se o usuário é um técnico
-
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
-      {isNewUser && (
-        <>
-          <div className="space-y-2">
-            <Label htmlFor="email">Email *</Label>
-            <div className="relative">
-              <Mail className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-              <Input
-                id="email"
-                type="email"
-                placeholder="email@exemplo.com"
-                className="pl-10"
-                value={formData.email || ''}
-                onChange={(e) => handleInputChange("email", e.target.value)}
-                required
-                disabled={isPending}
-              />
-            </div>
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="password">Senha *</Label>
-            <div className="relative">
-              <Briefcase className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-              <Input
-                id="password"
-                type="password"
-                placeholder="••••••••"
-                className="pl-10"
-                value={formData.password || ''}
-                onChange={(e) => handleInputChange("password", e.target.value)}
-                required
-                disabled={isPending}
-              />
-            </div>
-          </div>
-        </>
-      )}
-
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div className="space-y-2">
           <Label htmlFor="first_name">Primeiro Nome *</Label>
@@ -154,39 +104,15 @@ export const UserForm: React.FC<UserFormProps> = ({ initialData, onSave, onCance
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="standard">Padrão</SelectItem>
-              <SelectItem value="supervisor">Supervisor</SelectItem>
               <SelectItem value="admin">Administrador</SelectItem>
             </SelectContent>
           </Select>
         </div>
       </div>
 
-      <div className="space-y-2">
-        <Label htmlFor="address">Endereço</Label>
-        <div className="relative">
-          <MapPin className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-          <Input
-            id="address"
-            placeholder="Endereço completo do técnico"
-            className="pl-10"
-            value={formData.address || ''}
-            onChange={(e) => handleInputChange("address", e.target.value)}
-            disabled={isPending}
-          />
-        </div>
-      </div>
-
-      {isTechnician && (
-        <div className="space-y-2">
-          <Label htmlFor="supervisor">Supervisor</Label>
-          <SupervisorCombobox
-            value={formData.supervisor_id || null}
-            onValueChange={(id) => handleInputChange("supervisor_id", id)}
-            onSupervisorSelect={handleSupervisorSelect}
-            disabled={isPending}
-          />
-        </div>
-      )}
+      {/* Email e Senha não são gerenciados diretamente aqui, pois são do Supabase Auth */}
+      {/* Para adicionar um novo usuário, a Edge Function 'create-user' é usada */}
+      {/* Para editar, apenas os campos do perfil são atualizados */}
 
       <div className="flex gap-2 justify-end pt-4">
         <Button type="button" variant="outline" onClick={onCancel} disabled={isPending}>

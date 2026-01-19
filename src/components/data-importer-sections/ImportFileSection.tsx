@@ -3,11 +3,11 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { FileUp, Upload, Loader2, FileText, FileSpreadsheet, Package, Users } from 'lucide-react'; // Importar Users icon
+import { FileUp, Upload, Loader2, FileText, FileSpreadsheet, Package } from 'lucide-react';
 
 interface ImportFileSectionProps {
-  activeTab: 'collections' | 'products' | 'clients' | 'technicians'; // Adicionado 'technicians'
-  setActiveTab: (tab: 'collections' | 'products' | 'clients' | 'technicians') => void; // Adicionado 'technicians'
+  activeTab: 'collections' | 'products' | 'clients';
+  setActiveTab: (tab: 'collections' | 'products' | 'clients') => void;
   selectedFile: File | null;
   handleFileChange: (event: React.ChangeEvent<HTMLInputElement>) => void;
   handleParseFile: () => void;
@@ -47,12 +47,11 @@ export const ImportFileSection: React.FC<ImportFileSectionProps> = ({
         </CardTitle>
       </CardHeader>
       <CardContent className="p-6 space-y-4">
-        <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as 'collections' | 'products' | 'clients' | 'technicians')} className="w-full">
-          <TabsList className="grid w-full grid-cols-4"> {/* Ajustado para 4 colunas */}
+        <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as 'collections' | 'products' | 'clients')} className="w-full">
+          <TabsList className="grid w-full grid-cols-3">
             <TabsTrigger value="collections">Coletas/Entregas</TabsTrigger>
             <TabsTrigger value="products">Produtos</TabsTrigger>
             <TabsTrigger value="clients">Clientes</TabsTrigger>
-            <TabsTrigger value="technicians">Técnicos</TabsTrigger> {/* Nova aba */}
           </TabsList>
           <TabsContent value="collections" className="mt-4">
             <p className="text-sm text-muted-foreground mb-4">
@@ -69,11 +68,6 @@ export const ImportFileSection: React.FC<ImportFileSectionProps> = ({
               Envie arquivos (XLSX, CSV, JSON) para extrair e importar dados de clientes automaticamente. Duplicatas serão ignoradas.
             </p>
           </TabsContent>
-          <TabsContent value="technicians" className="mt-4"> {/* Novo conteúdo da aba */}
-            <p className="text-sm text-muted-foreground mb-4">
-              Envie arquivos (XLSX, CSV, JSON) para extrair e importar dados de técnicos automaticamente. Duplicatas serão ignoradas.
-            </p>
-          </TabsContent>
         </Tabs>
 
         <div className="flex items-center gap-4">
@@ -83,8 +77,7 @@ export const ImportFileSection: React.FC<ImportFileSectionProps> = ({
             accept={
               activeTab === 'collections' ? ".xlsx,.csv,.pdf" :
               activeTab === 'products' ? ".xlsx,.csv,.json" :
-              activeTab === 'clients' ? ".xlsx,.csv,.json" :
-              ".xlsx,.csv,.json" // Para 'technicians'
+              ".xlsx,.csv,.json"
             }
             onChange={handleFileChange}
             className="flex-1"

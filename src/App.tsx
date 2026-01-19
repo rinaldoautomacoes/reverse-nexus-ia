@@ -41,8 +41,7 @@ import { AutomaticCollectionSchedulerPage } from "./pages/AutomaticCollectionSch
 import { DataImportPage } from "./pages/DataImportPage";
 import { PestControlService } from "@/pages/PestControlService";
 import { PestControlDashboardPage } from "./pages/PestControlDashboardPage";
-import { TechnicianManagement } from "./pages/TechnicianManagement";
-import { SupervisorManagement } from "./pages/SupervisorManagement"; // New import
+import { TechnicianManagement } from "./pages/TechnicianManagement"; // New import
 
 const queryClient = new QueryClient();
 
@@ -82,7 +81,7 @@ const AppLayout = () => {
           <Route path="/debug" element={<Debug />} />
           
           {/* Rotas protegidas para usuários padrão e administradores */}
-          <Route element={<ProtectedRoute allowedRoles={['standard', 'admin', 'supervisor']} />}>
+          <Route element={<ProtectedRoute allowedRoles={['standard', 'admin']} />}>
             <Route path="/" element={<LandingPage />} />
             <Route path="/coletas-dashboard" element={<Index selectedYear={selectedYear} />} />
             <Route path="/dashboard-entregas" element={<EntregasDashboardPage selectedYear={selectedYear} />} />
@@ -111,8 +110,7 @@ const AppLayout = () => {
             <Route path="/product-management" element={<ProductManagement />} />
             <Route path="/driver-management" element={<DriverManagement />} />
             <Route path="/transportadora-management" element={<TransportadoraManagement />} />
-            <Route path="/technician-management" element={<TechnicianManagement />} />
-            <Route path="/supervisor-management" element={<SupervisorManagement />} /> {/* New route */}
+            <Route path="/technician-management" element={<TechnicianManagement />} /> {/* New route */}
           </Route>
           
           <Route path="*" element={<NotFound />} />
