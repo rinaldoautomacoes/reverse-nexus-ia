@@ -1,3 +1,5 @@
+"use client";
+
 import { useState } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -62,7 +64,8 @@ export const CreateTechnicianDialog: React.FC = () => {
       return data;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['technicians', currentUser?.id] });
+      // Invalida a query de 'allProfiles' para que a lista de técnicos seja atualizada
+      queryClient.invalidateQueries({ queryKey: ['allProfiles', currentUser?.id] });
       queryClient.invalidateQueries({ queryKey: ['allProfilesForSupervisor', currentUser?.id] }); // Invalidate supervisor list
       toast({ title: "Técnico adicionado!", description: "Novo técnico criado com sucesso." });
       setOpen(false);

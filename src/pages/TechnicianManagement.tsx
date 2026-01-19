@@ -41,6 +41,9 @@ export const TechnicianManagement = () => {
 
   // Filter for technicians (standard role) from all profiles
   const technicians = allProfiles?.filter(profile => profile.role === 'standard') || [];
+  console.log("[TechnicianManagement] All profiles fetched:", allProfiles);
+  console.log("[TechnicianManagement] Filtered technicians:", technicians);
+
 
   const deleteTechnicianMutation = useMutation({
     mutationFn: async (technicianId: string) => {
@@ -80,6 +83,8 @@ export const TechnicianManagement = () => {
     technician.phone_number?.toLowerCase().includes(searchTerm.toLowerCase()) ||
     (technician.supervisor_id && allProfiles?.find(s => s.id === technician.supervisor_id)?.first_name?.toLowerCase().includes(searchTerm.toLowerCase()))
   ) || [];
+  console.log("[TechnicianManagement] Filtered technicians for display:", filteredTechnicians);
+
 
   if (isLoadingProfiles) {
     return (
