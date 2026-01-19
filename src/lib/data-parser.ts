@@ -5,6 +5,16 @@ import { parseDateSafely } from './date-utils';
 import type { ColetaImportData, ProductImportData, ClientImportData, TechnicianImportData } from './types';
 import { cleanPhoneNumber } from './document-parser'; // Import cleanPhoneNumber
 
+// Helper to find a column value by trying multiple possible headers
+const findColumnValue = (row: any, possibleHeaders: string[]) => {
+  for (const header of possibleHeaders) {
+    if (row[header] !== undefined && row[header] !== null) {
+      return row[header];
+    }
+  }
+  return null;
+};
+
 // Função para ler dados de arquivos XLSX
 export const parseXLSX = (file: File): Promise<ColetaImportData[]> => {
   return new Promise((resolve, reject) => {
@@ -167,10 +177,10 @@ export const parseProductsXLSX = (file: File): Promise<ProductImportData[]> => {
         const json: any[] = XLSX.utils.sheet_to_json(worksheet);
 
         const parsedData: ProductImportData[] = json.map((row: any) => ({
-          code: String(row['Código'] || row['code'] || generateUniqueNumber('PROD')),
-          description: row['Descrição'] || row['description'] || row['Nome'] || row['name'] || null,
-          model: row['Modelo'] || row['model'] || row['Categoria'] || null,
-          serial_number: row['Número de Série'] ? String(row['Número de Série']) : null,
+          code: String(findColumnValue(row, ['Código', 'code', 'Code']) || generateUniqueNumber('PROD')),
+          description: findColumnValue(row, ['Descrição', 'description', 'Description', 'Nome', 'name', 'Name']) || null,
+          model: findColumnValue(row, ['Modelo', 'model', 'Model', 'Categoria', 'category', 'Category']) || null,
+          serial_number: findColumnValue(row, ['Número de Série', 'serial_number', 'Serial Number']) ? String(findColumnValue(row, ['Número de Série', 'serial_number', 'Serial Number'])) : null,
         })).filter(p => p.code);
         resolve(parsedData);
       } catch (error) {
@@ -195,10 +205,10 @@ export const parseProductsCSV = (file: File): Promise<ProductImportData[]> => {
         const json: any[] = XLSX.utils.sheet_to_json(worksheet);
 
         const parsedData: ProductImportData[] = json.map((row: any) => ({
-          code: String(row['Código'] || row['code'] || generateUniqueNumber('PROD')),
-          description: row['Descrição'] || row['description'] || row['Nome'] || row['name'] || null,
-          model: row['Modelo'] || row['model'] || row['Categoria'] || null,
-          serial_number: row['Número de Série'] ? String(row['Número de Série']) : null,
+          code: String(findColumnValue(row, ['Código', 'code', 'Code']) || generateUniqueNumber('PROD')),
+          description: findColumnValue(row, ['Descrição', 'description', 'Description', 'Nome', 'name', 'Name']) || null,
+          model: findColumnValue(row, ['Modelo', 'model', 'Model', 'Categoria', 'category', 'Category']) || null,
+          serial_number: findColumnValue(row, ['Número de Série', 'serial_number', 'Serial Number']) ? String(findColumnValue(row, ['Número de Série', 'serial_number', 'Serial Number'])) : null,
         })).filter(p => p.code);
         resolve(parsedData);
       } catch (error) {
@@ -220,10 +230,10 @@ export const parseProductsJSON = (file: File): Promise<ProductImportData[]> => {
         const json: any[] = JSON.parse(jsonString);
 
         const parsedData: ProductImportData[] = json.map((row: any) => ({
-          code: String(row['code'] || row['Código'] || generateUniqueNumber('PROD')),
-          description: row['description'] || row['Descrição'] || row['name'] || row['Nome'] || null,
-          model: row['model'] || row['Modelo'] || row['category'] || row['Categoria'] || null,
-          serial_number: row['serial_number'] ? String(row['serial_number']) : row['Número de Série'] ? String(row['Número de Série']) : null,
+          code: String(findColumnValue(row, ['code', 'Código', 'Code']) || generateUniqueNumber('PROD')),
+          description: findColumnValue(row, ['description', 'Descrição', 'Description', 'name', 'Nome', 'Name']) || null,
+          model: findColumnValue(row, ['model', 'Modelo', 'Model', 'category', 'Categoria', 'Category']) || null,
+          serial_number: findColumnValue(row, ['serial_number', 'Número de Série', 'Serial Number']) ? String(findColumnValue(row, ['serial_number', 'Número de Série', 'Serial Number'])) : null,
         })).filter(p => p.code);
         resolve(parsedData);
       } catch (error) {
@@ -248,14 +258,14 @@ export const parseClientsXLSX = (file: File): Promise<ClientImportData[]> => {
         const json: any[] = XLSX.utils.sheet_to_json(worksheet);
 
         const parsedData: ClientImportData[] = json.map((row: any) => ({
-          name: String(row['Nome'] || row['Nome do Cliente'] || row['name'] || '').trim(),
-          phone: cleanPhoneNumber(row['Telefone']), // Aplicado cleanPhoneNumber
-          email: row['Email'] || null,
-          address: row['Endereço'] || null,
-          address_number: row['Número do Endereço'] ? String(row['Número do Endereço']) : null, // Novo campo
-          cep: row['CEP'] ? String(row['CEP']) : null, // Novo campo
-          cnpj: row['CNPJ'] ? String(row['CNPJ']) : null,
-          contact_person: row['Pessoa de Contato'] || null,
+          name: String(findColumnValue(row, ['Nome', 'Nome do Cliente', 'name', 'Client Name']) || '').trim(),
+          phone: cleanPhoneNumber(findColumnValue(row, ['Telefone', 'phone', 'Phone Number'])), // Aplicado cleanPhoneNumber
+          email: findColumnValue(row, ['Email', 'email', 'E-mail']) || null,
+          address: findColumnValue(row, ['Endereço', 'address', 'Address']) || null,
+          address_number: findColumnValue(row, ['Número do Endereço', 'address_number', 'Address Number']) ? String(findColumnValue(row, ['Número do Endereço', 'address_number', 'Address Number'])) : null, // Novo campo
+          cep: findColumnValue(row, ['CEP', 'cep', 'ZIP Code']) ? String(findColumnValue(row, ['CEP', 'cep', 'ZIP Code'])) : null, // Novo campo
+          cnpj: findColumnValue(row, ['CNPJ', 'cnpj']) ? String(findColumnValue(row, ['CNPJ', 'cnpj'])) : null,
+          contact_person: findColumnValue(row, ['Pessoa de Contato', 'contact_person', 'Contact Person']) || null,
         })); 
         resolve(parsedData);
       } catch (error) {
@@ -280,14 +290,14 @@ export const parseClientsCSV = (file: File): Promise<ClientImportData[]> => {
         const json: any[] = XLSX.utils.sheet_to_json(worksheet);
 
         const parsedData: ClientImportData[] = json.map((row: any) => ({
-          name: String(row['Nome'] || row['Nome do Cliente'] || row['name'] || '').trim(),
-          phone: cleanPhoneNumber(row['Telefone']), // Aplicado cleanPhoneNumber
-          email: row['Email'] || null,
-          address: row['Endereço'] || null,
-          address_number: row['Número do Endereço'] ? String(row['Número do Endereço']) : null, // Novo campo
-          cep: row['CEP'] ? String(row['CEP']) : null, // Novo campo
-          cnpj: row['CNPJ'] ? String(row['CNPJ']) : null,
-          contact_person: row['Pessoa de Contato'] || null,
+          name: String(findColumnValue(row, ['Nome', 'Nome do Cliente', 'name', 'Client Name']) || '').trim(),
+          phone: cleanPhoneNumber(findColumnValue(row, ['Telefone', 'phone', 'Phone Number'])), // Aplicado cleanPhoneNumber
+          email: findColumnValue(row, ['Email', 'email', 'E-mail']) || null,
+          address: findColumnValue(row, ['Endereço', 'address', 'Address']) || null,
+          address_number: findColumnValue(row, ['Número do Endereço', 'address_number', 'Address Number']) ? String(findColumnValue(row, ['Número do Endereço', 'address_number', 'Address Number'])) : null, // Novo campo
+          cep: findColumnValue(row, ['CEP', 'cep', 'ZIP Code']) ? String(findColumnValue(row, ['CEP', 'cep', 'ZIP Code'])) : null, // Novo campo
+          cnpj: findColumnValue(row, ['CNPJ', 'cnpj']) ? String(findColumnValue(row, ['CNPJ', 'cnpj'])) : null,
+          contact_person: findColumnValue(row, ['Pessoa de Contato', 'contact_person', 'Contact Person']) || null,
         })); 
         resolve(parsedData);
       } catch (error) {
@@ -309,14 +319,14 @@ export const parseClientsJSON = (file: File): Promise<ClientImportData[]> => {
         const json: any[] = JSON.parse(jsonString);
 
         const parsedData: ClientImportData[] = json.map((row: any) => ({
-          name: String(row['name'] || row['Nome do Cliente'] || row['Nome'] || '').trim(),
-          phone: cleanPhoneNumber(row['phone'] || row['Telefone']), // Aplicado cleanPhoneNumber
-          email: row['email'] || null,
-          address: row['address'] || row['Endereço'] || null,
-          address_number: row['address_number'] ? String(row['address_number']) : row['Número do Endereço'] ? String(row['Número do Endereço']) : null, // Novo campo
-          cep: row['cep'] ? String(row['cep']) : row['CEP'] ? String(row['CEP']) : null, // Novo campo
-          cnpj: row['cnpj'] ? String(row['cnpj']) : row['CNPJ'] ? String(row['CNPJ']) : null,
-          contact_person: row['contact_person'] || row['Pessoa de Contato'] || null,
+          name: String(findColumnValue(row, ['name', 'Nome do Cliente', 'Nome', 'Client Name']) || '').trim(),
+          phone: cleanPhoneNumber(findColumnValue(row, ['phone', 'Telefone', 'Phone Number'])), // Aplicado cleanPhoneNumber
+          email: findColumnValue(row, ['email', 'Email', 'E-mail']) || null,
+          address: findColumnValue(row, ['address', 'Endereço', 'Address']) || null,
+          address_number: findColumnValue(row, ['address_number', 'Número do Endereço', 'Address Number']) ? String(findColumnValue(row, ['address_number', 'Número do Endereço', 'Address Number'])) : null, // Novo campo
+          cep: findColumnValue(row, ['cep', 'CEP', 'ZIP Code']) ? String(findColumnValue(row, ['cep', 'CEP', 'ZIP Code'])) : null, // Novo campo
+          cnpj: findColumnValue(row, ['cnpj', 'CNPJ']) ? String(findColumnValue(row, ['cnpj', 'CNPJ'])) : null,
+          contact_person: findColumnValue(row, ['contact_person', 'Pessoa de Contato', 'Contact Person']) || null,
         })); 
         resolve(parsedData);
       } catch (error) {
@@ -340,14 +350,29 @@ export const parseTechniciansXLSX = (file: File): Promise<TechnicianImportData[]
         const worksheet = workbook.Sheets[sheetName];
         const json: any[] = XLSX.utils.sheet_to_json(worksheet);
 
-        const parsedData: TechnicianImportData[] = json.map((row: any) => ({
-          first_name: String(row['Primeiro Nome'] || row['first_name'] || '').trim(),
-          last_name: row['Sobrenome'] || row['last_name'] || null,
-          email: String(row['Email'] || row['email'] || '').trim(),
-          phone_number: cleanPhoneNumber(row['Telefone'] || row['phone_number']),
-          role: (row['Função']?.toLowerCase() === 'admin' ? 'admin' : row['Função']?.toLowerCase() === 'supervisor' ? 'supervisor' : 'standard'), // Default to 'standard'
-          supervisor_id: row['Supervisor ID'] || row['supervisor_id'] || null, // Novo campo
-        })).filter(t => t.first_name && t.email); // Ensure first_name and email are present
+        const parsedData: TechnicianImportData[] = json.map((row: any) => {
+          const firstName = String(findColumnValue(row, ['Primeiro Nome', 'first_name', 'Nome', 'Nome do Técnico']) || '').trim();
+          const lastName = String(findColumnValue(row, ['Sobrenome', 'last_name', 'Sobrenome do Técnico']) || '').trim();
+          const email = String(findColumnValue(row, ['Email', 'email', 'E-mail']) || '').trim();
+          const phoneNumber = cleanPhoneNumber(findColumnValue(row, ['Telefone', 'phone_number', 'Phone', 'Mobile']));
+          let role: 'standard' | 'admin' | 'supervisor' = 'standard';
+          const roleValue = String(findColumnValue(row, ['Função', 'role', 'Cargo']) || '').toLowerCase();
+          if (roleValue === 'admin' || roleValue === 'administrador') {
+            role = 'admin';
+          } else if (roleValue === 'supervisor' || roleValue === 'supervisor técnico') {
+            role = 'supervisor';
+          }
+          const supervisorId = String(findColumnValue(row, ['Supervisor ID', 'supervisor_id', 'ID Supervisor', 'Supervisor']) || null);
+
+          return {
+            first_name: firstName,
+            last_name: lastName || null,
+            email: email,
+            phone_number: phoneNumber,
+            role: role,
+            supervisor_id: supervisorId === 'null' || supervisorId === '' ? null : supervisorId, // Handle empty string or 'null' as actual null
+          };
+        }).filter(t => t.first_name && t.email); // Ensure first_name and email are present
         resolve(parsedData);
       } catch (error) {
         reject(new Error('Erro ao ler arquivo XLSX para técnicos. Verifique o formato das colunas.'));
@@ -370,14 +395,29 @@ export const parseTechniciansCSV = (file: File): Promise<TechnicianImportData[]>
         const worksheet = workbook.Sheets[sheetName];
         const json: any[] = XLSX.utils.sheet_to_json(worksheet);
 
-        const parsedData: TechnicianImportData[] = json.map((row: any) => ({
-          first_name: String(row['Primeiro Nome'] || row['first_name'] || '').trim(),
-          last_name: row['Sobrenome'] || row['last_name'] || null,
-          email: String(row['Email'] || row['email'] || '').trim(),
-          phone_number: cleanPhoneNumber(row['Telefone'] || row['phone_number']),
-          role: (row['Função']?.toLowerCase() === 'admin' ? 'admin' : row['Função']?.toLowerCase() === 'supervisor' ? 'supervisor' : 'standard'), // Default to 'standard'
-          supervisor_id: row['Supervisor ID'] || row['supervisor_id'] || null, // Novo campo
-        })).filter(t => t.first_name && t.email); // Ensure first_name and email are present
+        const parsedData: TechnicianImportData[] = json.map((row: any) => {
+          const firstName = String(findColumnValue(row, ['Primeiro Nome', 'first_name', 'Nome', 'Nome do Técnico']) || '').trim();
+          const lastName = String(findColumnValue(row, ['Sobrenome', 'last_name', 'Sobrenome do Técnico']) || '').trim();
+          const email = String(findColumnValue(row, ['Email', 'email', 'E-mail']) || '').trim();
+          const phoneNumber = cleanPhoneNumber(findColumnValue(row, ['Telefone', 'phone_number', 'Phone', 'Mobile']));
+          let role: 'standard' | 'admin' | 'supervisor' = 'standard';
+          const roleValue = String(findColumnValue(row, ['Função', 'role', 'Cargo']) || '').toLowerCase();
+          if (roleValue === 'admin' || roleValue === 'administrador') {
+            role = 'admin';
+          } else if (roleValue === 'supervisor' || roleValue === 'supervisor técnico') {
+            role = 'supervisor';
+          }
+          const supervisorId = String(findColumnValue(row, ['Supervisor ID', 'supervisor_id', 'ID Supervisor', 'Supervisor']) || null);
+
+          return {
+            first_name: firstName,
+            last_name: lastName || null,
+            email: email,
+            phone_number: phoneNumber,
+            role: role,
+            supervisor_id: supervisorId === 'null' || supervisorId === '' ? null : supervisorId,
+          };
+        }).filter(t => t.first_name && t.email); // Ensure first_name and email are present
         resolve(parsedData);
       } catch (error) {
         reject(new Error('Erro ao ler arquivo CSV para técnicos. Verifique o formato das colunas.'));
@@ -397,14 +437,29 @@ export const parseTechniciansJSON = (file: File): Promise<TechnicianImportData[]
         const jsonString = e.target?.result as string;
         const json: any[] = JSON.parse(jsonString);
 
-        const parsedData: TechnicianImportData[] = json.map((row: any) => ({
-          first_name: String(row['first_name'] || row['Primeiro Nome'] || '').trim(),
-          last_name: row['last_name'] || row['Sobrenome'] || null,
-          email: String(row['email'] || row['Email'] || '').trim(),
-          phone_number: cleanPhoneNumber(row['phone_number'] || row['Telefone']),
-          role: (row['role']?.toLowerCase() === 'admin' ? 'admin' : row['role']?.toLowerCase() === 'supervisor' ? 'supervisor' : 'standard'), // Default to 'standard'
-          supervisor_id: row['supervisor_id'] || row['Supervisor ID'] || null, // Novo campo
-        })).filter(t => t.first_name && t.email); // Ensure first_name and email are present
+        const parsedData: TechnicianImportData[] = json.map((row: any) => {
+          const firstName = String(findColumnValue(row, ['first_name', 'Primeiro Nome', 'Nome', 'Nome do Técnico']) || '').trim();
+          const lastName = String(findColumnValue(row, ['last_name', 'Sobrenome', 'Sobrenome do Técnico']) || '').trim();
+          const email = String(findColumnValue(row, ['email', 'Email', 'E-mail']) || '').trim();
+          const phoneNumber = cleanPhoneNumber(findColumnValue(row, ['phone_number', 'Telefone', 'Phone', 'Mobile']));
+          let role: 'standard' | 'admin' | 'supervisor' = 'standard';
+          const roleValue = String(findColumnValue(row, ['role', 'Função', 'Cargo']) || '').toLowerCase();
+          if (roleValue === 'admin' || roleValue === 'administrador') {
+            role = 'admin';
+          } else if (roleValue === 'supervisor' || roleValue === 'supervisor técnico') {
+            role = 'supervisor';
+          }
+          const supervisorId = String(findColumnValue(row, ['supervisor_id', 'Supervisor ID', 'ID Supervisor', 'Supervisor']) || null);
+
+          return {
+            first_name: firstName,
+            last_name: lastName || null,
+            email: email,
+            phone_number: phoneNumber,
+            role: role,
+            supervisor_id: supervisorId === 'null' || supervisorId === '' ? null : supervisorId, // Novo campo
+          };
+        }).filter(t => t.first_name && t.email); // Ensure first_name and email are present
         resolve(parsedData);
       } catch (error) {
         reject(new Error('Erro ao ler arquivo JSON para técnicos. Verifique o formato.'));
