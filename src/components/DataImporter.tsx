@@ -324,6 +324,8 @@ export const DataImporter: React.FC<DataImporterProps> = ({ initialTab = 'collec
       }
 
       const validTechnicians = dataToImport.filter(tech => tech.first_name && tech.first_name.trim() !== '');
+      console.log(`[DataImporter] Number of valid technicians to process: ${validTechnicians.length}`);
+
       if (validTechnicians.length === 0) {
         console.log('[DataImporter] No valid technicians found in the input data after filtering.');
         return 0; // Return 0 if no valid technicians
@@ -345,7 +347,7 @@ export const DataImporter: React.FC<DataImporterProps> = ({ initialTab = 'collec
           continue;
         }
 
-        console.log(`[DataImporter] Processing technician: ${tech.first_name} ${tech.last_name} (Email: ${emailForApi}, Role: ${tech.role}, Supervisor ID: ${tech.supervisor_id}, Address: ${tech.address})`);
+        console.log(`[DataImporter] Attempting to process technician: ${tech.first_name} ${tech.last_name} (Email: ${emailForApi}, Role: ${tech.role}, Supervisor ID: ${tech.supervisor_id}, Address: ${tech.address})`);
 
         try {
           // Attempt to create user via Edge Function
@@ -357,7 +359,7 @@ export const DataImporter: React.FC<DataImporterProps> = ({ initialTab = 'collec
             },
             body: JSON.stringify({
               email: emailForApi,
-              password: 'password123', // Placeholder password - consider making this configurable or more secure
+              password: 'password123', // Placeholder password
               first_name: tech.first_name,
               last_name: tech.last_name,
               role: tech.role || 'standard',

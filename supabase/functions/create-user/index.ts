@@ -80,19 +80,22 @@ serve(async (req) => {
     );
     console.log('[create-user] Attempting to create user with admin client...');
 
+    const userMetadata = { 
+      first_name: first_name || null, 
+      last_name: last_name || null, 
+      role: role || 'standard', 
+      avatar_url: avatar_url || null, 
+      phone_number: phone_number || null, 
+      supervisor_id: supervisor_id || null, 
+      address: address || null 
+    };
+    console.log('[create-user] User metadata to be passed to admin.createUser:', JSON.stringify(userMetadata));
+
     const { data: newUser, error: createUserError } = await adminSupabase.auth.admin.createUser({
       email,
       password,
       email_confirm: true,
-      user_metadata: { 
-        first_name: first_name || null, 
-        last_name: last_name || null, 
-        role: role || 'standard', 
-        avatar_url: avatar_url || null, 
-        phone_number: phone_number || null, 
-        supervisor_id: supervisor_id || null, 
-        address: address || null 
-      },
+      user_metadata: userMetadata,
     });
 
     if (createUserError) {
