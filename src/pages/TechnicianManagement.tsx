@@ -24,20 +24,23 @@ export const TechnicianManagement = () => {
   const [editingTechnician, setEditingTechnician] = useState<Profile | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
 
-  const { data: technicians, isLoading: isLoadingTechnicians, error: techniciansError } = useQuery<Profile[], Error>({
-    queryKey: ['technicians', currentUser?.id],
+  // Fetch ALL profiles to correctly resolve supervisor names (who might be admins)
+  const { data: allProfiles, isLoading: isLoadingProfiles, error: profilesError } = useQuery<Profile[], Error>({
+    queryKey: ['allProfiles', currentUser?.id],
     queryFn: async () => {
       if (!currentUser?.id) return [];
       const { data, error } = await supabase
         .from('profiles')
         .select('*')
-        .eq('role', 'standard') // Filter for 'standard' role (assuming technicians are standard users)
         .order('first_name', { ascending: true });
       if (error) throw new Error(error.message);
       return data;
     },
     enabled: !!currentUser?.id,
   });
+
+  // Filter for technicians (standard role) from all profiles
+  const technicians = allProfiles?.filter(profile => profile.role === 'standard') || [];
 
   const deleteTechnicianMutation = useMutation({
     mutationFn: async (technicianId: string) => {
@@ -51,7 +54,7 @@ export const TechnicianManagement = () => {
       if (error) throw new Error(error.message);
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['technicians', currentUser?.id] });
+      queryClient.invalidateQueries({ queryKey: ['allProfiles', currentUser?.id] }); // Invalidate all profiles to refresh lists
       queryClient.invalidateQueries({ queryKey: ['allProfilesForSupervisor', currentUser?.id] }); // Invalidate supervisor list
       toast({ title: "Técnico excluído!", description: "Técnico removido com sucesso." });
     },
@@ -75,10 +78,10 @@ export const TechnicianManagement = () => {
     technician.first_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
     technician.last_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
     technician.phone_number?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    (technician.supervisor_id && technicians.find(s => s.id === technician.supervisor_id)?.first_name?.toLowerCase().includes(searchTerm.toLowerCase()))
+    (technician.supervisor_id && allProfiles?.find(s => s.id === technician.supervisor_id)?.first_name?.toLowerCase().includes(searchTerm.toLowerCase()))
   ) || [];
 
-  if (isLoadingTechnicians) {
+  if (isLoadingProfiles) {
     return (
       <div className="min-h-screen bg-background ai-pattern p-6 flex items-center justify-center">
         <div className="text-center">
@@ -89,11 +92,11 @@ export const TechnicianManagement = () => {
     );
   }
 
-  if (techniciansError) {
+  if (profilesError) {
     return (
       <div className="min-h-screen bg-background ai-pattern p-6">
         <div className="max-w-6xl mx-auto text-center text-destructive">
-          <p>Erro ao carregar técnicos: {techniciansError.message}</p>
+          <p>Erro ao carregar técnicos: {profilesError.message}</p>
         </div>
       </div>
     );
@@ -169,20 +172,12 @@ export const TechnicianManagement = () => {
                         )}
                         {technician.supervisor_id && (
                           <div className="flex items-center gap-1">
-                            <UserCog className="h-3 w-3" /> Supervisor: {technicians.find(s => s.id === technician.supervisor_id)?.first_name || 'N/A'}
+                            <UserCog className="h-3 w-3" /> Supervisor: {allProfiles?.find(s => s.id === technician.supervisor_id)?.first_name || 'N/A'}
                           </div>
                         )}
                       </div>
                     </div>
                     <div className="flex gap-2 flex-wrap justify-end">
-                      <EditTechnicianDialog
-                        technician={technician}
-                        isOpen={isEditDialogOpen && editingTechnician?.id === technician.id}
-                        onClose={() => {
-                          setIsEditDialogOpen(false);
-                          setEditingTechnician(null);
-                        }}
-                      />
                       <Button
                         variant="outline"
                         size="sm"
@@ -218,6 +213,17 @@ export const TechnicianManagement = () => {
           </Card>
         </div>
       </div>
+
+      {editingTechnician && (
+        <EditTechnicianDialog
+          technician={editingTechnician}
+          isOpen={isEditDialogOpen}
+          onClose={() => {
+            setIsEditDialogOpen(false);
+            setEditingTechnician(null);
+          }}
+        />
+      )}
     </div>
   );
 };
