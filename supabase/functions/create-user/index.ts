@@ -53,14 +53,11 @@ serve(async (req) => {
     }
     console.log('[create-user] Admin user authorized. Role:', profile.role);
 
-    console.log('[create-user] Request Content-Type:', req.headers.get('Content-Type'));
-    console.log('[create-user] Request Content-Length:', req.headers.get('Content-Length'));
-    
     let requestBody;
     try {
       requestBody = await req.json();
       console.log('[create-user] Successfully parsed request body.');
-      console.log('[create-user] Parsed request body content:', JSON.stringify(requestBody)); // Log the parsed content
+      console.log('[create-user] Parsed request body content:', JSON.stringify(requestBody));
     } catch (jsonError) {
       console.error('[create-user] Error parsing request JSON body:', jsonError instanceof Error ? jsonError.message : String(jsonError));
       return new Response(JSON.stringify({ error: 'Bad Request: Invalid or empty JSON body. Please ensure all required fields are sent correctly.' }), { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
@@ -78,37 +75,102 @@ serve(async (req) => {
       Deno.env.get('SUPABASE_URL') ?? '',
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     );
-    console.log('[create-user] Attempting to create user with admin client...');
+    console.log('[create-user] Admin Supabase client initialized.');
 
-    const userMetadata = { 
-      first_name: first_name || null, 
-      last_name: last_name || null, 
-      role: role || 'standard', 
-      avatar_url: avatar_url || null, 
-      phone_number: phone_number || null, 
-      supervisor_id: supervisor_id || null, 
-      address: address || null 
-    };
-    console.log('[create-user] User metadata to be passed to admin.createUser:', JSON.stringify(userMetadata));
+    let targetUserId: string | null = null;
+    let operationType: 'created' | 'updated' = 'created';
 
-    const { data: newUser, error: createUserError } = await adminSupabase.auth.admin.createUser({
-      email,
-      password,
-      email_confirm: true,
-      user_metadata: userMetadata,
-    });
+    // First, try to get the user by email to check if they already exist
+    const { data: existingUserAuth, error: getUserError } = await adminSupabase.auth.admin.getUserByEmail(email);
 
-    if (createUserError) {
-      console.error('[create-user] Error creating user with admin.createUser:', createUserError.message); 
-      return new Response(JSON.stringify({ error: createUserError.message }), {
-        status: 400,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      });
+    if (getUserError && getUserError.message !== 'User not found') {
+      console.error('[create-user] Error checking for existing user by email:', getUserError.message);
+      return new Response(JSON.stringify({ error: `Error checking for existing user: ${getUserError.message}` }), { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
     }
 
-    console.log('[create-user] New user created successfully:', newUser.user?.id);
-    return new Response(JSON.stringify({ message: 'User created successfully', user: newUser.user?.id }), {
-      status: 201,
+    if (existingUserAuth?.user) {
+      // User already exists in auth.users
+      targetUserId = existingUserAuth.user.id;
+      operationType = 'updated';
+      console.log(`[create-user] User ${email} already exists (ID: ${targetUserId}). Attempting to update profile.`);
+
+      // Update user_metadata in auth.users
+      const { error: updateAuthUserError } = await adminSupabase.auth.admin.updateUserById(targetUserId, {
+        email, // Ensure email is also updated if it changed (though it's the lookup key here)
+        password, // Update password if provided
+        user_metadata: { 
+          first_name: first_name || null, 
+          last_name: last_name || null, 
+          role: role || 'standard', 
+          avatar_url: avatar_url || null, 
+          phone_number: phone_number || null, 
+          supervisor_id: supervisor_id || null, 
+          address: address || null 
+        },
+      });
+
+      if (updateAuthUserError) {
+        console.error(`[create-user] Error updating auth.users for ${email} (ID: ${targetUserId}):`, updateAuthUserError.message);
+        return new Response(JSON.stringify({ error: `Failed to update existing user in authentication: ${updateAuthUserError.message}` }), { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+      }
+
+      // Also update the public.profiles table directly, as the trigger might not fire on update
+      const { error: updateProfileError } = await adminSupabase
+        .from('profiles')
+        .update({
+          first_name: first_name || null,
+          last_name: last_name || null,
+          role: role || 'standard',
+          avatar_url: avatar_url || null,
+          phone_number: phone_number || null,
+          supervisor_id: supervisor_id || null,
+          address: address || null,
+          updated_at: new Date().toISOString(),
+        })
+        .eq('id', targetUserId);
+
+      if (updateProfileError) {
+        console.error(`[create-user] Error updating public.profiles for ${email} (ID: ${targetUserId}):`, updateProfileError.message);
+        return new Response(JSON.stringify({ error: `Failed to update existing user profile: ${updateProfileError.message}` }), { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+      }
+      console.log(`[create-user] Successfully updated profile for existing user ${email} (ID: ${targetUserId}).`);
+
+    } else {
+      // User does not exist, proceed with creation
+      console.log(`[create-user] User ${email} not found. Attempting to create new user.`);
+      const { data: newUser, error: createUserError } = await adminSupabase.auth.admin.createUser({
+        email,
+        password,
+        email_confirm: true,
+        user_metadata: { 
+          first_name: first_name || null, 
+          last_name: last_name || null, 
+          role: role || 'standard', 
+          avatar_url: avatar_url || null, 
+          phone_number: phone_number || null, 
+          supervisor_id: supervisor_id || null, 
+          address: address || null 
+        },
+      });
+
+      if (createUserError) {
+        console.error('[create-user] Error creating user with admin.createUser:', createUserError.message); 
+        return new Response(JSON.stringify({ error: createUserError.message }), {
+          status: 400,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
+      targetUserId = newUser.user?.id || null;
+      console.log('[create-user] New user created successfully:', targetUserId);
+    }
+
+    if (!targetUserId) {
+      console.error('[create-user] Operation completed, but no user ID was determined.');
+      return new Response(JSON.stringify({ error: 'Internal Server Error: User ID not determined after operation.' }), { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+    }
+
+    return new Response(JSON.stringify({ message: `User ${operationType} successfully`, userId: targetUserId, operation: operationType }), {
+      status: 200, // Changed to 200 OK for both create and update success
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
 
