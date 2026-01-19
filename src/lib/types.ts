@@ -84,8 +84,9 @@ export interface ClientImportData {
 export interface TechnicianImportData {
   first_name: string;
   last_name?: string | null;
-  email: string;
+  email?: string | null; // Email pode ser null se não fornecido
   phone_number?: string | null;
   role?: 'standard' | 'admin' | 'supervisor';
-  supervisor_id?: string | null; // Novo campo
+  supervisor_id?: string | null;
+  address?: string | null; // Novo campo para endereço
 }

@@ -9,6 +9,7 @@ export type ProfileRow = {
   role: string
   updated_at: string | null
   supervisor_id: string | null
+  address: string | null // Novo campo
 }
 
 export type ProfileInsert = {
@@ -20,6 +21,7 @@ export type ProfileInsert = {
   role?: string
   updated_at?: string | null
   supervisor_id?: string | null
+  address?: string | null // Novo campo
 }
 
 export type ProfileUpdate = {
@@ -31,6 +33,7 @@ export type ProfileUpdate = {
   role?: string
   updated_at?: string | null
   supervisor_id?: string | null
+  address?: string | null // Novo campo
 }
 
 export type ProfileRelationships = []

@@ -63,7 +63,8 @@ export const DataPreviewTable: React.FC<DataPreviewTableProps> = ({ activeTab, e
                     <TableHead>Email</TableHead>
                     <TableHead>Telefone</TableHead>
                     <TableHead>Função</TableHead>
-                    <TableHead>Supervisor ID</TableHead> {/* Novo campo */}
+                    <TableHead>Supervisor ID</TableHead>
+                    <TableHead>Endereço</TableHead> {/* Nova coluna */}
                   </>
                 )}
               </TableRow>
@@ -106,11 +107,12 @@ export const DataPreviewTable: React.FC<DataPreviewTableProps> = ({ activeTab, e
                 (extractedData as TechnicianImportData[]).map((item: TechnicianImportData, index) => (
                   <TableRow key={index}>
                     <TableCell>{item.first_name}</TableCell>
-                    <TableCell>{item.last_name}</TableCell>
-                    <TableCell>{item.email}</TableCell>
-                    <TableCell>{item.phone_number}</TableCell>
-                    <TableCell>{item.role}</TableCell>
-                    <TableCell>{item.supervisor_id || 'N/A'}</TableCell> {/* Exibir supervisor_id */}
+                    <TableCell>{item.last_name || 'N/A'}</TableCell>
+                    <TableCell>{item.email || 'N/A'}</TableCell>
+                    <TableCell>{item.phone_number || 'N/A'}</TableCell>
+                    <TableCell>{item.role || 'N/A'}</TableCell>
+                    <TableCell>{item.supervisor_id || 'N/A'}</TableCell>
+                    <TableCell>{item.address || 'N/A'}</TableCell> {/* Exibir o novo campo */}
                   </TableRow>
                 ))
               )}

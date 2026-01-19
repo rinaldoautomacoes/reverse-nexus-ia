@@ -3,9 +3,9 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Loader2, User as UserIcon, Mail, Phone, Briefcase } from "lucide-react"; // Renomeado User para UserIcon para evitar conflito
+import { Loader2, User as UserIcon, Mail, Phone, Briefcase, MapPin } from "lucide-react"; // Renomeado User para UserIcon para evitar conflito, adicionado MapPin
 import type { TablesInsert, TablesUpdate, Tables } from "@/integrations/supabase/types_generated";
-import { SupervisorCombobox } from "./SupervisorCombobox"; // Importar SupervisorCombobox
+import { SupervisorCombobox } from "./SupervisorCombobox";
 
 type Profile = Tables<'profiles'>;
 type ProfileInsert = TablesInsert<'profiles'>;
@@ -29,6 +29,7 @@ export const UserForm: React.FC<UserFormProps> = ({ initialData, onSave, onCance
     email: "", // Para novos usuários
     password: "", // Para novos usuários
     supervisor_id: null, // Novo campo
+    address: "", // Novo campo
   });
 
   useEffect(() => {
@@ -157,6 +158,21 @@ export const UserForm: React.FC<UserFormProps> = ({ initialData, onSave, onCance
               <SelectItem value="admin">Administrador</SelectItem>
             </SelectContent>
           </Select>
+        </div>
+      </div>
+
+      <div className="space-y-2">
+        <Label htmlFor="address">Endereço</Label>
+        <div className="relative">
+          <MapPin className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+          <Input
+            id="address"
+            placeholder="Endereço completo do técnico"
+            className="pl-10"
+            value={formData.address || ''}
+            onChange={(e) => handleInputChange("address", e.target.value)}
+            disabled={isPending}
+          />
         </div>
       </div>
 

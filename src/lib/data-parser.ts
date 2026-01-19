@@ -351,23 +351,22 @@ export const parseTechniciansXLSX = (file: File): Promise<TechnicianImportData[]
         const json: any[] = XLSX.utils.sheet_to_json(worksheet);
 
         const parsedData: TechnicianImportData[] = json.map((row: any) => {
-          // Prioriza colunas de primeiro e último nome, se existirem
           let firstName = String(findColumnValue(row, ['Primeiro Nome', 'first_name', 'Nome']) || '').trim();
           let lastName = String(findColumnValue(row, ['Sobrenome', 'last_name']) || '').trim();
           
           // Se não encontrou primeiro/último nome, tenta a coluna 'Técnico' e divide
           if (!firstName && !lastName) {
-            const fullNameFromTechCol = String(findColumnValue(row, ['Técnico', 'Nome do Técnico']) || '').trim();
-            const nameParts = fullNameFromTechCol.split(' ');
+            const fullName = String(findColumnValue(row, ['Técnico', 'Nome do Técnico']) || '').trim();
+            const nameParts = fullName.split(' ');
             if (nameParts.length > 1) {
               firstName = nameParts[0];
               lastName = nameParts.slice(1).join(' ');
             } else {
-              firstName = fullNameFromTechCol; // Se apenas uma parte, trata como primeiro nome
+              firstName = fullName;
             }
           }
 
-          const email = findColumnValue(row, ['Email', 'email', 'E-mail']); // Não converte para string vazia, mantém null
+          const email = findColumnValue(row, ['Email', 'email', 'E-mail']);
           const phoneNumber = cleanPhoneNumber(findColumnValue(row, ['Telefone', 'phone_number', 'Phone', 'Mobile']));
           let role: 'standard' | 'admin' | 'supervisor' = 'standard';
           const roleValue = String(findColumnValue(row, ['Função', 'role', 'Cargo']) || '').toLowerCase();
@@ -377,14 +376,16 @@ export const parseTechniciansXLSX = (file: File): Promise<TechnicianImportData[]
             role = 'supervisor';
           }
           const supervisorId = findColumnValue(row, ['Supervisor ID', 'supervisor_id', 'ID Supervisor', 'Supervisor']);
+          const address = findColumnValue(row, ['Endereço', 'address', 'Address']); // Novo campo
 
           return {
             first_name: firstName || null,
             last_name: lastName || null,
-            email: email ? String(email).trim() : null, // Garante que seja null se vazio
+            email: email ? String(email).trim() : null,
             phone_number: phoneNumber,
             role: role,
-            supervisor_id: supervisorId ? String(supervisorId).trim() : null, // Garante que seja null se vazio
+            supervisor_id: supervisorId ? String(supervisorId).trim() : null,
+            address: address ? String(address).trim() : null, // Novo campo
           };
         }).filter(t => t.first_name); // Apenas filtra por first_name, email pode ser null aqui
         resolve(parsedData);
@@ -410,23 +411,22 @@ export const parseTechniciansCSV = (file: File): Promise<TechnicianImportData[]>
         const json: any[] = XLSX.utils.sheet_to_json(worksheet);
 
         const parsedData: TechnicianImportData[] = json.map((row: any) => {
-          // Prioriza colunas de primeiro e último nome, se existirem
           let firstName = String(findColumnValue(row, ['Primeiro Nome', 'first_name', 'Nome']) || '').trim();
           let lastName = String(findColumnValue(row, ['Sobrenome', 'last_name']) || '').trim();
           
           // Se não encontrou primeiro/último nome, tenta a coluna 'Técnico' e divide
           if (!firstName && !lastName) {
-            const fullNameFromTechCol = String(findColumnValue(row, ['Técnico', 'Nome do Técnico']) || '').trim();
-            const nameParts = fullNameFromTechCol.split(' ');
+            const fullName = String(findColumnValue(row, ['Técnico', 'Nome do Técnico']) || '').trim();
+            const nameParts = fullName.split(' ');
             if (nameParts.length > 1) {
               firstName = nameParts[0];
               lastName = nameParts.slice(1).join(' ');
             } else {
-              firstName = fullNameFromTechCol;
+              firstName = fullName;
             }
           }
 
-          const email = findColumnValue(row, ['Email', 'email', 'E-mail']); // Não converte para string vazia, mantém null
+          const email = findColumnValue(row, ['Email', 'email', 'E-mail']);
           const phoneNumber = cleanPhoneNumber(findColumnValue(row, ['Telefone', 'phone_number', 'Phone', 'Mobile']));
           let role: 'standard' | 'admin' | 'supervisor' = 'standard';
           const roleValue = String(findColumnValue(row, ['Função', 'role', 'Cargo']) || '').toLowerCase();
@@ -436,14 +436,16 @@ export const parseTechniciansCSV = (file: File): Promise<TechnicianImportData[]>
             role = 'supervisor';
           }
           const supervisorId = findColumnValue(row, ['Supervisor ID', 'supervisor_id', 'ID Supervisor', 'Supervisor']);
+          const address = findColumnValue(row, ['Endereço', 'address', 'Address']); // Novo campo
 
           return {
             first_name: firstName || null,
             last_name: lastName || null,
-            email: email ? String(email).trim() : null, // Garante que seja null se vazio
+            email: email ? String(email).trim() : null,
             phone_number: phoneNumber,
             role: role,
-            supervisor_id: supervisorId ? String(supervisorId).trim() : null, // Garante que seja null se vazio
+            supervisor_id: supervisorId ? String(supervisorId).trim() : null,
+            address: address ? String(address).trim() : null, // Novo campo
           };
         }).filter(t => t.first_name); // Apenas filtra por first_name, email pode ser null aqui
         resolve(parsedData);
@@ -466,23 +468,22 @@ export const parseTechniciansJSON = (file: File): Promise<TechnicianImportData[]
         const json: any[] = JSON.parse(jsonString);
 
         const parsedData: TechnicianImportData[] = json.map((row: any) => {
-          // Prioriza colunas de primeiro e último nome, se existirem
           let firstName = String(findColumnValue(row, ['first_name', 'Primeiro Nome', 'Nome']) || '').trim();
           let lastName = String(findColumnValue(row, ['last_name', 'Sobrenome']) || '').trim();
           
           // Se não encontrou primeiro/último nome, tenta a coluna 'Técnico' e divide
           if (!firstName && !lastName) {
-            const fullNameFromTechCol = String(findColumnValue(row, ['Técnico', 'Nome do Técnico']) || '').trim();
-            const nameParts = fullNameFromTechCol.split(' ');
+            const fullName = String(findColumnValue(row, ['Técnico', 'Nome do Técnico']) || '').trim();
+            const nameParts = fullName.split(' ');
             if (nameParts.length > 1) {
               firstName = nameParts[0];
               lastName = nameParts.slice(1).join(' ');
             } else {
-              firstName = fullNameFromTechCol;
+              firstName = fullName;
             }
           }
 
-          const email = findColumnValue(row, ['email', 'Email', 'E-mail']); // Não converte para string vazia, mantém null
+          const email = findColumnValue(row, ['email', 'Email', 'E-mail']);
           const phoneNumber = cleanPhoneNumber(findColumnValue(row, ['phone_number', 'Telefone', 'Phone', 'Mobile']));
           let role: 'standard' | 'admin' | 'supervisor' = 'standard';
           const roleValue = String(findColumnValue(row, ['role', 'Função', 'Cargo']) || '').toLowerCase();
@@ -492,14 +493,16 @@ export const parseTechniciansJSON = (file: File): Promise<TechnicianImportData[]
             role = 'supervisor';
           }
           const supervisorId = findColumnValue(row, ['supervisor_id', 'Supervisor ID', 'ID Supervisor', 'Supervisor']);
+          const address = findColumnValue(row, ['address', 'Endereço', 'Address']); // Novo campo
 
           return {
             first_name: firstName || null,
             last_name: lastName || null,
-            email: email ? String(email).trim() : null, // Garante que seja null se vazio
+            email: email ? String(email).trim() : null,
             phone_number: phoneNumber,
             role: role,
-            supervisor_id: supervisorId ? String(supervisorId).trim() : null, // Garante que seja null se vazio
+            supervisor_id: supervisorId ? String(supervisorId).trim() : null,
+            address: address ? String(address).trim() : null, // Novo campo
           };
         }).filter(t => t.first_name); // Apenas filtra por first_name, email pode ser null aqui
         resolve(parsedData);
