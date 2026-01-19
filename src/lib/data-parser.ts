@@ -341,14 +341,14 @@ export const parseTechniciansXLSX = (file: File): Promise<TechnicianImportData[]
         const json: any[] = XLSX.utils.sheet_to_json(worksheet);
 
         const parsedData: TechnicianImportData[] = json.map((row: any) => ({
-          first_name: String(row['Primeiro Nome'] || row['first_name'] || '').trim(),
-          last_name: String(row['Sobrenome'] || row['last_name'] || '').trim(),
-          email: String(row['Email'] || row['email'] || '').trim(),
+          first_name: String(row['Primeiro Nome'] || row['first_name'] || row['Nome'] || 'N/A').trim(),
+          last_name: String(row['Sobrenome'] || row['last_name'] || 'N/A').trim(),
+          email: String(row['Email'] || row['e-mail'] || row['email'] || '').trim(),
           password: String(row['Senha'] || row['password'] || 'LogiReverseIA@2025'), // Default password if not provided
           phone_number: cleanPhoneNumber(row['Telefone'] || row['phone_number']),
           role: (row['Função']?.toLowerCase() === 'admin' ? 'admin' : 'standard'),
           supervisor_id: row['ID Supervisor'] || row['supervisor_id'] || null,
-        })).filter(t => t.email && t.first_name && t.last_name); // Ensure essential fields are present
+        })).filter(t => t.email && t.first_name && t.last_name && t.email.includes('@')); // Ensure essential fields are present and email is valid
         resolve(parsedData);
       } catch (error) {
         reject(new Error('Erro ao ler arquivo XLSX para técnicos. Verifique o formato das colunas.'));
@@ -372,14 +372,14 @@ export const parseTechniciansCSV = (file: File): Promise<TechnicianImportData[]>
         const json: any[] = XLSX.utils.sheet_to_json(worksheet);
 
         const parsedData: TechnicianImportData[] = json.map((row: any) => ({
-          first_name: String(row['Primeiro Nome'] || row['first_name'] || '').trim(),
-          last_name: String(row['Sobrenome'] || row['last_name'] || '').trim(),
-          email: String(row['Email'] || row['email'] || '').trim(),
+          first_name: String(row['Primeiro Nome'] || row['first_name'] || row['Nome'] || 'N/A').trim(),
+          last_name: String(row['Sobrenome'] || row['last_name'] || 'N/A').trim(),
+          email: String(row['Email'] || row['e-mail'] || row['email'] || '').trim(),
           password: String(row['Senha'] || row['password'] || 'LogiReverseIA@2025'), // Default password if not provided
           phone_number: cleanPhoneNumber(row['Telefone'] || row['phone_number']),
           role: (row['Função']?.toLowerCase() === 'admin' ? 'admin' : 'standard'),
           supervisor_id: row['ID Supervisor'] || row['supervisor_id'] || null,
-        })).filter(t => t.email && t.first_name && t.last_name); // Ensure essential fields are present
+        })).filter(t => t.email && t.first_name && t.last_name && t.email.includes('@')); // Ensure essential fields are present and email is valid
         resolve(parsedData);
       } catch (error) {
         reject(new Error('Erro ao ler arquivo CSV para técnicos. Verifique o formato das colunas.'));
@@ -400,14 +400,14 @@ export const parseTechniciansJSON = (file: File): Promise<TechnicianImportData[]
         const json: any[] = JSON.parse(jsonString);
 
         const parsedData: TechnicianImportData[] = json.map((row: any) => ({
-          first_name: String(row['first_name'] || row['Primeiro Nome'] || '').trim(),
-          last_name: String(row['last_name'] || row['Sobrenome'] || '').trim(),
-          email: String(row['email'] || row['Email'] || '').trim(),
+          first_name: String(row['first_name'] || row['Primeiro Nome'] || row['Nome'] || 'N/A').trim(),
+          last_name: String(row['last_name'] || row['Sobrenome'] || 'N/A').trim(),
+          email: String(row['email'] || row['Email'] || row['e-mail'] || '').trim(),
           password: String(row['password'] || row['Senha'] || 'LogiReverseIA@2025'), // Default password if not provided
           phone_number: cleanPhoneNumber(row['phone_number'] || row['Telefone']),
           role: (row['role']?.toLowerCase() === 'admin' ? 'admin' : 'standard'),
           supervisor_id: row['supervisor_id'] || row['ID Supervisor'] || null,
-        })).filter(t => t.email && t.first_name && t.last_name); // Ensure essential fields are present
+        })).filter(t => t.email && t.first_name && t.last_name && t.email.includes('@')); // Ensure essential fields are present and email is valid
         resolve(parsedData);
       } catch (error) {
         reject(new Error('Erro ao ler arquivo JSON para técnicos. Verifique o formato.'));
