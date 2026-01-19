@@ -68,9 +68,9 @@ serve(async (req) => {
     const { email, password, first_name, last_name, role, avatar_url, phone_number, supervisor_id, address } = requestBody;
     console.log('[create-user] Destructured data for new user:', { email, password: password ? '********' : 'N/A', first_name, last_name, role, avatar_url: avatar_url ? 'Present' : 'N/A', phone_number: phone_number ? 'Present' : 'N/A', supervisor_id: supervisor_id ? 'Present' : 'N/A', address: address ? 'Present' : 'N/A' });
 
-    if (!email || !password || !first_name || !role) {
-      console.error('[create-user] Bad Request: Missing required fields in request body. Received:', { email, password: password ? '********' : 'N/A', first_name, last_name, role });
-      return new Response(JSON.stringify({ error: 'Bad Request: Missing required fields (email, password, first_name, role)' }), { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+    if (!email || !first_name || !role) { // Password is not strictly required for updates, only for new creation
+      console.error('[create-user] Bad Request: Missing required fields in request body. Received:', { email, first_name, role });
+      return new Response(JSON.stringify({ error: 'Bad Request: Missing required fields (email, first_name, role)' }), { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
     }
 
     // Admin client for performing auth.admin operations (using service role key)
@@ -99,10 +99,8 @@ serve(async (req) => {
       console.log(`[create-user] User ${email} already exists (ID: ${targetUserId}). Attempting to update profile.`);
 
       try {
-        // Update user_metadata in auth.users
-        const { error: updateAuthUserError } = await adminSupabase.auth.admin.updateUserById(targetUserId, {
+        const updateAuthUserOptions: { email: string; password?: string; user_metadata: object } = {
           email,
-          password, // Password update is optional, but included if provided
           user_metadata: { 
             first_name: first_name || null, 
             last_name: last_name || null, 
@@ -112,7 +110,15 @@ serve(async (req) => {
             supervisor_id: supervisor_id || null, 
             address: address || null 
           },
-        });
+        };
+
+        // Only include password if it's provided and not empty
+        if (password && password.trim() !== '') {
+          updateAuthUserOptions.password = password;
+        }
+        console.log(`[create-user] Updating auth.users for ${email} (ID: ${targetUserId}) with options:`, JSON.stringify(updateAuthUserOptions));
+
+        const { error: updateAuthUserError } = await adminSupabase.auth.admin.updateUserById(targetUserId, updateAuthUserOptions);
 
         if (updateAuthUserError) {
           console.error(`[create-user] Error updating auth.users for ${email} (ID: ${targetUserId}):`, updateAuthUserError.message);
@@ -127,25 +133,28 @@ serve(async (req) => {
 
       // Use upsert for public.profiles to handle cases where auth.users exists but public.profiles doesn't
       try {
+        const profileDataToUpsert = {
+          id: targetUserId, // Use the existing user's ID
+          first_name: first_name || null,
+          last_name: last_name || null,
+          role: role || 'standard',
+          avatar_url: avatar_url || null,
+          phone_number: phone_number || null,
+          supervisor_id: supervisor_id || null,
+          address: address || null,
+          updated_at: new Date().toISOString(),
+        };
+        console.log(`[create-user] Upserting public.profiles for ${email} (ID: ${targetUserId}) with data:`, JSON.stringify(profileDataToUpsert));
+
         const { error: upsertProfileError } = await adminSupabase
           .from('profiles')
-          .upsert({
-            id: targetUserId, // Use the existing user's ID
-            first_name: first_name || null,
-            last_name: last_name || null,
-            role: role || 'standard',
-            avatar_url: avatar_url || null,
-            phone_number: phone_number || null,
-            supervisor_id: supervisor_id || null,
-            address: address || null,
-            updated_at: new Date().toISOString(),
-          }, { onConflict: 'id' }); // Conflict on 'id' will update existing row
+          .upsert(profileDataToUpsert, { onConflict: 'id' }); // Conflict on 'id' will update existing row
 
         if (upsertProfileError) {
           console.error(`[create-user] Error upserting public.profiles for ${email} (ID: ${targetUserId}):`, upsertProfileError.message);
           throw new Error(`Falha ao upsert perfil de usuário existente: ${upsertProfileError.message}`);
         }
-        console.log(`[create-user] public.profiles upserted successfully for existing user ${email} (ID: ${targetUserId}).`);
+        console.log(`[create-user] public.profiles upserted com sucesso para o usuário existente ${email} (ID: ${targetUserId}).`);
 
       } catch (e) {
         console.error('[create-user] Error caught during upsert of public.profiles:', e instanceof Error ? e.message : String(e));
@@ -155,8 +164,12 @@ serve(async (req) => {
     } else {
       // User does not exist, proceed with creation
       console.log(`[create-user] User ${email} not found. Attempting to create new user.`);
+      if (!password || password.trim() === '') {
+        console.error('[create-user] Bad Request: Password is required for new user creation.');
+        return new Response(JSON.stringify({ error: 'Bad Request: Password is required for new user creation.' }), { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+      }
       try {
-        const { data: newUser, error: createUserError } = await adminSupabase.auth.admin.createUser({
+        const createUserOptions = {
           email,
           password,
           email_confirm: true,
@@ -169,7 +182,10 @@ serve(async (req) => {
             supervisor_id: supervisor_id || null, 
             address: address || null 
           },
-        });
+        };
+        console.log('[create-user] Creating new user with options:', JSON.stringify(createUserOptions));
+
+        const { data: newUser, error: createUserError } = await adminSupabase.auth.admin.createUser(createUserOptions);
 
         if (createUserError) {
           console.error('[create-user] Error creating user with admin.createUser:', createUserError.message); 
@@ -180,26 +196,29 @@ serve(async (req) => {
 
         // Explicitly upsert into public.profiles after creating the auth.users entry
         if (targetUserId) {
+          const profileDataToUpsert = {
+            id: targetUserId,
+            first_name: first_name || null,
+            last_name: last_name || null,
+            role: role || 'standard',
+            avatar_url: avatar_url || null,
+            phone_number: phone_number || null,
+            supervisor_id: supervisor_id || null,
+            address: address || null,
+            created_at: new Date().toISOString(), // Set created_at for new profiles
+            updated_at: new Date().toISOString(),
+          };
+          console.log(`[create-user] Upserting public.profiles for new user (ID: ${targetUserId}) with data:`, JSON.stringify(profileDataToUpsert));
+
           const { error: upsertProfileError } = await adminSupabase
             .from('profiles')
-            .upsert({
-              id: targetUserId,
-              first_name: first_name || null,
-              last_name: last_name || null,
-              role: role || 'standard',
-              avatar_url: avatar_url || null,
-              phone_number: phone_number || null,
-              supervisor_id: supervisor_id || null,
-              address: address || null,
-              created_at: new Date().toISOString(), // Set created_at for new profiles
-              updated_at: new Date().toISOString(),
-            }, { onConflict: 'id' }); // Use onConflict 'id' to handle potential race conditions or trigger issues
+            .upsert(profileDataToUpsert, { onConflict: 'id' }); // Use onConflict 'id' to handle potential race conditions or trigger issues
 
           if (upsertProfileError) {
             console.error(`[create-user] Error upserting public.profiles for new user (ID: ${targetUserId}):`, upsertProfileError.message);
             throw new Error(`Falha ao upsert perfil para novo usuário: ${upsertProfileError.message}`);
           }
-          console.log(`[create-user] public.profiles upserted successfully for the new user (ID: ${targetUserId}).`);
+          console.log(`[create-user] public.profiles upserted com sucesso para o novo usuário (ID: ${targetUserId}).`);
         }
 
 
@@ -210,12 +229,12 @@ serve(async (req) => {
     }
 
     if (!targetUserId) {
-      console.error('[create-user] Operation completed, but no user ID was determined.');
+      console.error('[create-user] Operação concluída, mas nenhum ID de usuário foi determinado.');
       return new Response(JSON.stringify({ error: 'Erro Interno do Servidor: ID de usuário não determinado após a operação.' }), { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
     }
 
     return new Response(JSON.stringify({ message: `Usuário ${operationType} com sucesso`, userId: targetUserId, operation: operationType }), {
-      status: 200, // Changed to 200 OK for successful creation and update
+      status: 200, // Alterado para 200 OK para sucesso de criação e atualização
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
 
