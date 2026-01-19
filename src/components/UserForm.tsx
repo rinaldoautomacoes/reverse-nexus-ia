@@ -4,20 +4,22 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Loader2, User as UserIcon, Mail, Phone, Briefcase } from "lucide-react"; // Renomeado User para UserIcon para evitar conflito
-import type { TablesInsert, TablesUpdate } from "@/integrations/supabase/types_generated";
+import type { TablesInsert, TablesUpdate, Tables } from "@/integrations/supabase/types_generated";
+import { SupervisorCombobox } from "./SupervisorCombobox"; // Importar SupervisorCombobox
 
+type Profile = Tables<'profiles'>;
 type ProfileInsert = TablesInsert<'profiles'>;
-type ProfileUpdate = TablesUpdate<'profiles'>;
+type ProfileUpdate = Profile & { email?: string; password?: string }; // Adicionado email e password para novos usuários
 
 interface UserFormProps {
   initialData?: ProfileUpdate;
-  onSave: (data: ProfileInsert | ProfileUpdate & { email?: string; password?: string }) => void; // Adicionado email e password para novos usuários
+  onSave: (data: ProfileInsert | ProfileUpdate) => void; // onSave agora aceita ProfileUpdate
   onCancel: () => void;
   isPending: boolean;
 }
 
 export const UserForm: React.FC<UserFormProps> = ({ initialData, onSave, onCancel, isPending }) => {
-  const [formData, setFormData] = useState<ProfileInsert | ProfileUpdate & { email?: string; password?: string }>(initialData || {
+  const [formData, setFormData] = useState<ProfileInsert | ProfileUpdate>(initialData || {
     first_name: "",
     last_name: "",
     role: "standard", // Default role
@@ -26,6 +28,7 @@ export const UserForm: React.FC<UserFormProps> = ({ initialData, onSave, onCance
     id: "", // Will be filled by mutation or existing user
     email: "", // Para novos usuários
     password: "", // Para novos usuários
+    supervisor_id: null, // Novo campo
   });
 
   useEffect(() => {
@@ -34,8 +37,12 @@ export const UserForm: React.FC<UserFormProps> = ({ initialData, onSave, onCance
     }
   }, [initialData]);
 
-  const handleInputChange = (field: keyof (ProfileInsert | ProfileUpdate | { email?: string; password?: string }), value: string | null) => {
+  const handleInputChange = (field: keyof (ProfileInsert | ProfileUpdate), value: string | null) => {
     setFormData(prev => ({ ...prev, [field]: value }));
+  };
+
+  const handleSupervisorSelect = (supervisorProfile: Profile | null) => {
+    handleInputChange("supervisor_id", supervisorProfile?.id || null);
   };
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -44,6 +51,7 @@ export const UserForm: React.FC<UserFormProps> = ({ initialData, onSave, onCance
   };
 
   const isNewUser = !initialData?.id; // Determina se é um novo usuário
+  const isTechnician = formData.role === 'standard'; // Determina se o usuário é um técnico
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
@@ -145,12 +153,24 @@ export const UserForm: React.FC<UserFormProps> = ({ initialData, onSave, onCance
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="standard">Padrão</SelectItem>
-              <SelectItem value="supervisor">Supervisor</SelectItem> {/* Novo item */}
+              <SelectItem value="supervisor">Supervisor</SelectItem>
               <SelectItem value="admin">Administrador</SelectItem>
             </SelectContent>
           </Select>
         </div>
       </div>
+
+      {isTechnician && (
+        <div className="space-y-2">
+          <Label htmlFor="supervisor">Supervisor</Label>
+          <SupervisorCombobox
+            value={formData.supervisor_id || null}
+            onValueChange={(id) => handleInputChange("supervisor_id", id)}
+            onSupervisorSelect={handleSupervisorSelect}
+            disabled={isPending}
+          />
+        </div>
+      )}
 
       <div className="flex gap-2 justify-end pt-4">
         <Button type="button" variant="outline" onClick={onCancel} disabled={isPending}>

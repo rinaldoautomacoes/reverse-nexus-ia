@@ -349,6 +349,7 @@ export const DataImporter: React.FC<DataImporterProps> = ({ initialTab = 'collec
               last_name: tech.last_name,
               role: tech.role || 'standard',
               phone_number: tech.phone_number,
+              supervisor_id: tech.supervisor_id, // Pass supervisor_id
             }),
           });
 
@@ -369,6 +370,7 @@ export const DataImporter: React.FC<DataImporterProps> = ({ initialTab = 'collec
                   last_name: tech.last_name,
                   phone_number: tech.phone_number,
                   role: tech.role || 'standard',
+                  supervisor_id: tech.supervisor_id, // Update supervisor_id
                 })
                 .eq('id', existingUser.user.id);
               if (updateProfileError) {
@@ -389,6 +391,9 @@ export const DataImporter: React.FC<DataImporterProps> = ({ initialTab = 'collec
     onSuccess: (count) => {
       queryClient.invalidateQueries({ queryKey: ['technicians', user?.id] });
       queryClient.invalidateQueries({ queryKey: ['users', user?.id] }); // Invalidate general users too
+      queryClient.invalidateQueries({ queryKey: ['supervisors', user?.id] }); // Invalidate supervisors list
+      queryClient.invalidateQueries({ queryKey: ['supervisorsList', user?.id] }); // Invalidate supervisor combobox list
+      queryClient.invalidateQueries({ queryKey: ['allTechnicians', user?.id] }); // Invalidate all technicians list
       toast({ title: 'Importação de Técnicos concluída!', description: `${count} técnicos foram salvos/atualizados com sucesso.` });
       setSelectedFile(null);
       setExtractedData(null);

@@ -86,5 +86,6 @@ export interface TechnicianImportData {
   last_name?: string | null;
   email: string;
   phone_number?: string | null;
-  role?: 'standard' | 'admin' | 'supervisor'; // Adicionado 'supervisor'
+  role?: 'standard' | 'admin' | 'supervisor';
+  supervisor_id?: string | null; // Novo campo
 }

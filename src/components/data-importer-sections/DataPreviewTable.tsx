@@ -63,6 +63,7 @@ export const DataPreviewTable: React.FC<DataPreviewTableProps> = ({ activeTab, e
                     <TableHead>Email</TableHead>
                     <TableHead>Telefone</TableHead>
                     <TableHead>Função</TableHead>
+                    <TableHead>Supervisor ID</TableHead> {/* Novo campo */}
                   </>
                 )}
               </TableRow>
@@ -109,6 +110,7 @@ export const DataPreviewTable: React.FC<DataPreviewTableProps> = ({ activeTab, e
                     <TableCell>{item.email}</TableCell>
                     <TableCell>{item.phone_number}</TableCell>
                     <TableCell>{item.role}</TableCell>
+                    <TableCell>{item.supervisor_id || 'N/A'}</TableCell> {/* Exibir supervisor_id */}
                   </TableRow>
                 ))
               )}

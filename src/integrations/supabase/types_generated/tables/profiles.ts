@@ -8,6 +8,7 @@ export type ProfileRow = {
   phone_number: string | null
   role: string
   updated_at: string | null
+  supervisor_id: string | null
 }
 
 export type ProfileInsert = {
@@ -18,6 +19,7 @@ export type ProfileInsert = {
   phone_number?: string | null
   role?: string
   updated_at?: string | null
+  supervisor_id?: string | null
 }
 
 export type ProfileUpdate = {
@@ -28,6 +30,7 @@ export type ProfileUpdate = {
   phone_number?: string | null
   role?: string
   updated_at?: string | null
+  supervisor_id?: string | null
 }
 
 export type ProfileRelationships = []

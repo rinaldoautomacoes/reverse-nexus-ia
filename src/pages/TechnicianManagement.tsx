@@ -12,7 +12,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/use-auth";
 import { UserForm } from "@/components/UserForm"; // Reusing the UserForm component
 
-type Profile = Tables<'profiles'>;
+type Profile = Tables<'profiles'> & { supervisor?: { first_name: string | null, last_name: string | null } | null }; // Adicionado supervisor relation
 type ProfileInsert = TablesInsert<'profiles'>;
 type ProfileUpdate = TablesUpdate<'profiles'>;
 
@@ -33,11 +33,14 @@ export const TechnicianManagement = () => {
       if (!currentUser?.id) return [];
       const { data, error } = await supabase
         .from('profiles')
-        .select('*')
+        .select(`
+          *,
+          supervisor:profiles(first_name, last_name)
+        `) // Fetch supervisor's name
         .eq('role', 'standard') // Filter for 'standard' role (assuming technicians are standard users)
         .order('first_name', { ascending: true });
       if (error) throw new Error(error.message);
-      return data;
+      return data as Profile[];
     },
     enabled: !!currentUser?.id,
   });
@@ -57,7 +60,7 @@ export const TechnicianManagement = () => {
         throw new Error("Sessão de autenticação ausente. Faça login novamente.");
       }
 
-      const { email, password, first_name, last_name, phone_number, avatar_url } = newTechnician;
+      const { email, password, first_name, last_name, phone_number, avatar_url, supervisor_id } = newTechnician;
 
       const response = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/create-user`, {
         method: 'POST',
@@ -73,6 +76,7 @@ export const TechnicianManagement = () => {
           role: 'standard', // Always 'standard' for technicians
           phone_number,
           avatar_url,
+          supervisor_id, // Pass supervisor_id
         }),
       });
 
@@ -93,6 +97,7 @@ export const TechnicianManagement = () => {
               last_name: last_name,
               phone_number: phone_number,
               role: 'standard',
+              supervisor_id: supervisor_id, // Update supervisor_id
             })
             .eq('id', existingUser.user.id);
           if (updateProfileError) {
@@ -110,6 +115,7 @@ export const TechnicianManagement = () => {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['technicians', currentUser?.id] });
+      queryClient.invalidateQueries({ queryKey: ['supervisorsList', currentUser?.id] }); // Invalidate supervisor list as well
       toast({ title: "Técnico adicionado!", description: "Novo técnico criado com sucesso." });
       setIsAddDialogOpen(false);
     },
@@ -131,6 +137,7 @@ export const TechnicianManagement = () => {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['technicians', currentUser?.id] });
+      queryClient.invalidateQueries({ queryKey: ['supervisorsList', currentUser?.id] }); // Invalidate supervisor list as well
       toast({ title: "Técnico atualizado!", description: "Técnico salvo com sucesso." });
       setIsEditDialogOpen(false);
       setEditingTechnician(null);
@@ -150,6 +157,7 @@ export const TechnicianManagement = () => {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['technicians', currentUser?.id] });
+      queryClient.invalidateQueries({ queryKey: ['supervisorsList', currentUser?.id] }); // Invalidate supervisor list as well
       toast({ title: "Técnico excluído!", description: "Técnico removido com sucesso." });
     },
     onError: (err) => {
@@ -177,7 +185,9 @@ export const TechnicianManagement = () => {
   const filteredTechnicians = technicians?.filter(technician =>
     technician.first_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
     technician.last_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    technician.phone_number?.toLowerCase().includes(searchTerm.toLowerCase())
+    technician.phone_number?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    technician.supervisor?.first_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    technician.supervisor?.last_name?.toLowerCase().includes(searchTerm.toLowerCase())
   ) || [];
 
   if (isLoadingTechnicians) {
@@ -229,7 +239,7 @@ export const TechnicianManagement = () => {
                 <div className="flex-1 relative">
                   <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
                   <Input
-                    placeholder="Buscar por nome, sobrenome ou telefone..."
+                    placeholder="Buscar por nome, sobrenome, telefone ou supervisor..."
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
                     className="pl-10"
@@ -288,6 +298,11 @@ export const TechnicianManagement = () => {
                         {technician.phone_number && (
                           <div className="flex items-center gap-1">
                             <Phone className="h-3 w-3" /> {technician.phone_number}
+                          </div>
+                        )}
+                        {technician.supervisor && (
+                          <div className="flex items-center gap-1 col-span-full">
+                            <UserIcon className="h-3 w-3" /> Supervisor: {technician.supervisor.first_name} {technician.supervisor.last_name}
                           </div>
                         )}
                       </div>
