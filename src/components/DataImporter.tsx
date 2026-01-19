@@ -291,6 +291,8 @@ export const DataImporter: React.FC<DataImporterProps> = ({ initialTab = 'collec
         phone: item.phone,
         email: item.email,
         address: item.address,
+        address_number: item.address_number,
+        cep: item.cep,
         cnpj: item.cnpj,
         contact_person: item.contact_person,
       }));
@@ -323,7 +325,8 @@ export const DataImporter: React.FC<DataImporterProps> = ({ initialTab = 'collec
 
       const validTechnicians = dataToImport.filter(tech => tech.first_name && tech.first_name.trim() !== '');
       if (validTechnicians.length === 0) {
-        throw new Error('Nenhum técnico válido encontrado para importação. Certifique-se de que a coluna "Primeiro Nome" ou "Técnico" não está vazia.');
+        console.log('[DataImporter] No valid technicians found in the input data after filtering.');
+        return 0; // Return 0 if no valid technicians
       }
 
       const token = (await supabase.auth.getSession()).data.session?.access_token;
@@ -337,9 +340,11 @@ export const DataImporter: React.FC<DataImporterProps> = ({ initialTab = 'collec
         const emailForApi = tech.email || (tech.first_name ? `${tech.first_name.toLowerCase().replace(/\s/g, '.')}${tech.last_name ? `.${tech.last_name.toLowerCase().replace(/\s/g, '.')}` : ''}@logireverseia.com` : null);
 
         if (!emailForApi) {
-          console.warn(`Skipping technician ${tech.first_name} due to missing email and inability to generate one.`);
+          console.warn(`[DataImporter] Skipping technician ${tech.first_name} due to missing email and inability to generate one.`);
           continue;
         }
+
+        console.log(`[DataImporter] Processing technician: ${tech.first_name} ${tech.last_name} (${emailForApi})`);
 
         try {
           // Attempt to create user via Edge Function
@@ -350,24 +355,27 @@ export const DataImporter: React.FC<DataImporterProps> = ({ initialTab = 'collec
               'Content-Type': 'application/json',
             },
             body: JSON.stringify({
-              email: emailForApi, // Use generated email for API
-              password: 'password123', // Placeholder password, consider a more secure flow for real apps
+              email: emailForApi,
+              password: 'password123', // Placeholder password
               first_name: tech.first_name,
               last_name: tech.last_name,
               role: tech.role || 'standard',
               phone_number: tech.phone_number,
-              supervisor_id: tech.supervisor_id, // Pass supervisor_id
+              supervisor_id: tech.supervisor_id,
+              address: tech.address,
             }),
           });
 
           if (!response.ok) {
             const errorData = await response.json();
-            console.warn(`Failed to create user ${emailForApi}: ${errorData.error}`);
+            console.warn(`[DataImporter] Edge Function 'create-user' failed for ${emailForApi}:`, errorData.error);
+            
             // If user already exists, try to update profile directly
             if (errorData.error?.includes('User already registered')) {
+              console.log(`[DataImporter] User ${emailForApi} already exists. Attempting to update profile.`);
               const { data: existingUser, error: fetchUserError } = await supabase.auth.admin.getUserByEmail(emailForApi);
               if (fetchUserError || !existingUser?.user) {
-                console.error(`Could not fetch existing user ${emailForApi}: ${fetchUserError?.message}`);
+                console.error(`[DataImporter] Could not fetch existing user ${emailForApi} for update:`, fetchUserError?.message);
                 continue;
               }
               const { error: updateProfileError } = await supabase
@@ -377,22 +385,30 @@ export const DataImporter: React.FC<DataImporterProps> = ({ initialTab = 'collec
                   last_name: tech.last_name,
                   phone_number: tech.phone_number,
                   role: tech.role || 'standard',
-                  supervisor_id: tech.supervisor_id, // Update supervisor_id
+                  supervisor_id: tech.supervisor_id,
+                  address: tech.address,
                 })
                 .eq('id', existingUser.user.id);
               if (updateProfileError) {
-                console.error(`Failed to update profile for ${emailForApi}: ${updateProfileError.message}`);
+                console.error(`[DataImporter] Failed to update profile for existing user ${emailForApi}:`, updateProfileError.message);
               } else {
-                importedCount++;
+                console.log(`[DataImporter] Successfully updated profile for existing user ${emailForApi}.`);
+                importedCount++; // Increment count if profile updated
               }
+            } else {
+              console.error(`[DataImporter] Unhandled error from Edge Function for ${emailForApi}:`, errorData.error);
             }
-            continue;
+            continue; // Continue to next technician even if one fails
           }
-          importedCount++;
+
+          console.log(`[DataImporter] Successfully created new user ${emailForApi} via Edge Function.`);
+          importedCount++; // Increment count if user created successfully
+
         } catch (error: any) {
-          console.error(`Error processing technician ${tech.first_name} (${emailForApi}): ${error.message}`);
+          console.error(`[DataImporter] Unexpected error during processing technician ${tech.first_name} (${emailForApi}):`, error.message);
         }
       }
+      console.log(`[DataImporter] Final imported count: ${importedCount}`);
       return importedCount;
     },
     onSuccess: (count) => {
