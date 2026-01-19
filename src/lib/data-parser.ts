@@ -15,6 +15,13 @@ const findColumnValue = (row: any, possibleHeaders: string[]) => {
   return null;
 };
 
+// Helper to clean phone numbers, keeping only digits
+export const cleanPhoneNumber = (phone: string | null | undefined): string | null => {
+  if (!phone) return null;
+  const cleaned = phone.replace(/\D/g, ''); // Remove all non-digit characters
+  return cleaned.length > 0 ? cleaned : null;
+};
+
 // --- Base File Reading Functions ---
 
 const readWorkbookToJson = (file: File, type: 'array' | 'string'): Promise<any[]> => {
@@ -108,14 +115,15 @@ const mapTechnicianRow = (row: any): TechnicianImportData => {
   let firstName = String(findColumnValue(row, ['Primeiro Nome', 'first_name', 'Nome']) || '').trim();
   let lastName = String(findColumnValue(row, ['Sobrenome', 'last_name']) || '').trim();
   
+  // If first_name and last_name are not found directly, try to parse from a combined name field
   if (!firstName && !lastName) {
-    const fullName = String(findColumnValue(row, ['Técnico', 'Nome do Técnico']) || '').trim();
-    const nameParts = fullName.split(' ');
+    const fullName = String(findColumnValue(row, ['Técnico', 'Nome do Técnico', 'name', 'Name']) || '').trim();
+    const nameParts = fullName.split(' ').filter(Boolean); // Filter out empty strings
     if (nameParts.length > 1) {
       firstName = nameParts[0];
       lastName = nameParts.slice(1).join(' ');
-    } else {
-      firstName = fullName;
+    } else if (nameParts.length === 1) {
+      firstName = nameParts[0];
     }
   }
 
@@ -131,10 +139,20 @@ const mapTechnicianRow = (row: any): TechnicianImportData => {
   const supervisorId = findColumnValue(row, ['Supervisor ID', 'supervisor_id', 'ID Supervisor', 'Supervisor']);
   const address = findColumnValue(row, ['Endereço', 'address', 'Address']);
 
+  // Ensure first_name is not empty, as it's crucial for user creation and profile
+  if (!firstName) {
+    console.warn("[DataImporter] Skipping technician row due to missing first_name:", row);
+    return { first_name: '', email: null, role: 'standard', supervisor_id: null, address: null }; // Return minimal data to be filtered out
+  }
+
+  // Generate a default email if not provided, as email is mandatory for Supabase auth.admin.createUser
+  const finalEmail = email ? String(email).trim() : 
+    (firstName ? `${firstName.toLowerCase().replace(/\s/g, '.')}${lastName ? `.${lastName.toLowerCase().replace(/\s/g, '.')}` : ''}@logireverseia.com` : null);
+
   return {
-    first_name: firstName || null,
+    first_name: firstName,
     last_name: lastName || null,
-    email: email ? String(email).trim() : null,
+    email: finalEmail, // Use the generated/provided email
     phone_number: phoneNumber,
     role: role,
     supervisor_id: supervisorId ? String(supervisorId).trim() : null,

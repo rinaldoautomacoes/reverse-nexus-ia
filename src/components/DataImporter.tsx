@@ -341,10 +341,11 @@ export const DataImporter: React.FC<DataImporterProps> = ({ initialTab = 'collec
 
         if (!emailForApi) {
           console.warn(`[DataImporter] Skipping technician ${tech.first_name} due to missing email and inability to generate one.`);
+          toast({ title: "Erro de Dados", description: `Técnico "${tech.first_name}" sem email válido e não foi possível gerar um.`, variant: "warning" });
           continue;
         }
 
-        console.log(`[DataImporter] Processing technician: ${tech.first_name} ${tech.last_name} (${emailForApi})`);
+        console.log(`[DataImporter] Processing technician: ${tech.first_name} ${tech.last_name} (Email: ${emailForApi}, Role: ${tech.role}, Supervisor ID: ${tech.supervisor_id}, Address: ${tech.address})`);
 
         try {
           // Attempt to create user via Edge Function
@@ -356,7 +357,7 @@ export const DataImporter: React.FC<DataImporterProps> = ({ initialTab = 'collec
             },
             body: JSON.stringify({
               email: emailForApi,
-              password: 'password123', // Placeholder password
+              password: 'password123', // Placeholder password - consider making this configurable or more secure
               first_name: tech.first_name,
               last_name: tech.last_name,
               role: tech.role || 'standard',
@@ -376,6 +377,7 @@ export const DataImporter: React.FC<DataImporterProps> = ({ initialTab = 'collec
               const { data: existingUser, error: fetchUserError } = await supabase.auth.admin.getUserByEmail(emailForApi);
               if (fetchUserError || !existingUser?.user) {
                 console.error(`[DataImporter] Could not fetch existing user ${emailForApi} for update:`, fetchUserError?.message);
+                toast({ title: "Erro de Atualização", description: `Usuário ${emailForApi} já existe, mas não foi possível buscar para atualizar o perfil.`, variant: "destructive" });
                 continue;
               }
               const { error: updateProfileError } = await supabase
@@ -391,12 +393,14 @@ export const DataImporter: React.FC<DataImporterProps> = ({ initialTab = 'collec
                 .eq('id', existingUser.user.id);
               if (updateProfileError) {
                 console.error(`[DataImporter] Failed to update profile for existing user ${emailForApi}:`, updateProfileError.message);
+                toast({ title: "Erro de Atualização", description: `Falha ao atualizar perfil para o usuário existente ${emailForApi}: ${updateProfileError.message}`, variant: "destructive" });
               } else {
                 console.log(`[DataImporter] Successfully updated profile for existing user ${emailForApi}.`);
                 importedCount++; // Increment count if profile updated
               }
             } else {
               console.error(`[DataImporter] Unhandled error from Edge Function for ${emailForApi}:`, errorData.error);
+              toast({ title: "Erro na Criação", description: `Falha ao criar usuário ${emailForApi}: ${errorData.error}`, variant: "destructive" });
             }
             continue; // Continue to next technician even if one fails
           }
@@ -406,6 +410,7 @@ export const DataImporter: React.FC<DataImporterProps> = ({ initialTab = 'collec
 
         } catch (error: any) {
           console.error(`[DataImporter] Unexpected error during processing technician ${tech.first_name} (${emailForApi}):`, error.message);
+          toast({ title: "Erro Inesperado", description: `Erro ao processar técnico ${tech.first_name}: ${error.message}`, variant: "destructive" });
         }
       }
       console.log(`[DataImporter] Final imported count: ${importedCount}`);

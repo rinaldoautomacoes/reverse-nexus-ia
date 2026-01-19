@@ -66,11 +66,11 @@ serve(async (req) => {
       return new Response(JSON.stringify({ error: 'Bad Request: Invalid or empty JSON body. Please ensure all required fields are sent correctly.' }), { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
     }
 
-    const { email, password, first_name, last_name, role, avatar_url, phone_number, supervisor_id, address } = requestBody; // Adicionado 'address'
-    console.log('[create-user] Received data for new user:', { email, first_name, last_name, role, avatar_url: avatar_url ? 'Present' : 'N/A', phone_number: phone_number ? 'Present' : 'N/A', supervisor_id: supervisor_id ? 'Present' : 'N/A', address: address ? 'Present' : 'N/A' });
+    const { email, password, first_name, last_name, role, avatar_url, phone_number, supervisor_id, address } = requestBody;
+    console.log('[create-user] Destructured data for new user:', { email, password: password ? '********' : 'N/A', first_name, last_name, role, avatar_url: avatar_url ? 'Present' : 'N/A', phone_number: phone_number ? 'Present' : 'N/A', supervisor_id: supervisor_id ? 'Present' : 'N/A', address: address ? 'Present' : 'N/A' });
 
     if (!email || !password || !first_name || !last_name || !role) {
-      console.error('[create-user] Bad Request: Missing required fields in request body.');
+      console.error('[create-user] Bad Request: Missing required fields in request body. Received:', { email, password: password ? '********' : 'N/A', first_name, last_name, role });
       return new Response(JSON.stringify({ error: 'Bad Request: Missing required fields (email, password, first_name, last_name, role)' }), { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
     }
 
@@ -84,11 +84,19 @@ serve(async (req) => {
       email,
       password,
       email_confirm: true,
-      user_metadata: { first_name, last_name, role, avatar_url, phone_number, supervisor_id, address }, // Adicionado 'address'
+      user_metadata: { 
+        first_name: first_name || null, 
+        last_name: last_name || null, 
+        role: role || 'standard', 
+        avatar_url: avatar_url || null, 
+        phone_number: phone_number || null, 
+        supervisor_id: supervisor_id || null, 
+        address: address || null 
+      },
     });
 
     if (createUserError) {
-      console.error('[create-user] Error creating user with admin.createUser:', createUserError); 
+      console.error('[create-user] Error creating user with admin.createUser:', createUserError.message); 
       return new Response(JSON.stringify({ error: createUserError.message }), {
         status: 400,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
