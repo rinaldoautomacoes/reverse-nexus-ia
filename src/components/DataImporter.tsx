@@ -378,7 +378,8 @@ export const DataImporter: React.FC<DataImporterProps> = ({ initialTab = 'collec
       return successfulImports;
     },
     onSuccess: (count) => {
-      queryClient.invalidateQueries({ queryKey: ['technicians', user?.id] });
+      // Invalida a query principal da página TechnicianManagement
+      queryClient.invalidateQueries({ queryKey: ['allProfiles', user?.id] }); 
       queryClient.invalidateQueries({ queryKey: ['allProfilesForSupervisor', user?.id] });
       toast({ title: 'Importação de Técnicos concluída!', description: `${count} técnicos foram salvos com sucesso no banco de dados.` });
       setSelectedFile(null);
