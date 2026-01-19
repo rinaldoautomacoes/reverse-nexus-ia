@@ -60,7 +60,9 @@ serve(async (req) => {
     try {
       requestBody = await req.json();
       console.log('[create-user] Successfully parsed request body.');
-      console.log('[create-user] Parsed request body content:', JSON.stringify(requestBody)); // Log the parsed content
+      // Log the parsed content, masking sensitive info like password
+      const loggableBody = { ...requestBody, password: requestBody.password ? '********' : 'N/A' };
+      console.log('[create-user] Parsed request body content:', JSON.stringify(loggableBody)); 
     } catch (jsonError) {
       console.error('[create-user] Error parsing request JSON body:', jsonError instanceof Error ? jsonError.message : String(jsonError));
       return new Response(JSON.stringify({ error: 'Bad Request: Invalid or empty JSON body. Please ensure all required fields are sent correctly.' }), { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
@@ -79,7 +81,7 @@ serve(async (req) => {
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     );
     console.log('[create-user] Attempting to create user with admin client...');
-    console.log('[create-user] User metadata being sent to auth.admin.createUser:', { first_name, last_name, role, avatar_url, phone_number, supervisor_id }); // Adicionado este log
+    console.log('[create-user] User metadata being sent to auth.admin.createUser:', { first_name, last_name, role, avatar_url, phone_number, supervisor_id });
 
     const { data: newUser, error: createUserError } = await adminSupabase.auth.admin.createUser({
       email,

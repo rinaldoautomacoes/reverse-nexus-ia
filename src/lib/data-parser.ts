@@ -66,6 +66,13 @@ const readJSON = (file: File): Promise<any[]> => {
 
 // --- 2. Funções de Mapeamento de Linha para Tipos de Dados ---
 
+// Helper function to sanitize parts of an email (local part or domain part)
+const sanitizeEmailPart = (part: string): string => {
+  // Remove characters not typically allowed in email parts, convert to lowercase
+  // Keep alphanumeric, dot, and hyphen.
+  return part.toLowerCase().replace(/[^a-z0-9.-]/g, ''); 
+};
+
 const mapRowToColeta = (row: any): ColetaImportData => ({
   unique_number: row['Número da Coleta'] || generateUniqueNumber('IMP'),
   client_control: row['Controle do Cliente'] || null,
@@ -118,7 +125,7 @@ const mapRowToTechnician = (row: any): TechnicianImportData => {
   let role = (row['Função']?.toLowerCase() === 'admin' ? 'admin' : 'standard');
   let supervisorId = row['ID Supervisor'] || row['supervisor_id'] || null;
 
-  // Se a coluna 'Técnico' existe e os nomes não foram definidos
+  // If the 'Técnico' column exists and names were not defined
   if (row['Técnico'] && (!firstName || !lastName)) {
     const tecnicoFullName = String(row['Técnico']).trim();
     const nameParts = tecnicoFullName.split(' ').filter(Boolean);
@@ -128,21 +135,29 @@ const mapRowToTechnician = (row: any): TechnicianImportData => {
     }
   }
 
-  // Garante que first_name e last_name não sejam vazios
-  if (!firstName) firstName = 'Técnico';
+  // Ensure first_name and last_name are not empty and are sanitized for email generation
+  if (!firstName) firstName = 'Tecnico'; 
   if (!lastName) lastName = 'Desconhecido';
 
-  // Gerar email se não fornecido ou inválido
-  if (!email || !email.includes('@')) {
-    const baseEmail = `${firstName.toLowerCase().replace(/\s/g, '')}.${lastName.toLowerCase().replace(/\s/g, '')}`;
-    email = `${baseEmail}@logireverseia.com`; // Domínio padrão
+  // Generate email if not provided or invalid, ensuring it's valid
+  if (!email || !email.includes('@') || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+    const sanitizedFirstName = sanitizeEmailPart(firstName);
+    const sanitizedLastName = sanitizeEmailPart(lastName);
+    const baseEmail = `${sanitizedFirstName}.${sanitizedLastName}`;
+    email = `${baseEmail}@logireverseia.com`; // Default domain
+  } else {
+    // If email is provided, ensure it's valid by re-sanitizing if necessary
+    const [localPart, domainPart] = email.split('@');
+    const sanitizedLocalPart = sanitizeEmailPart(localPart);
+    const sanitizedDomainPart = sanitizeEmailPart(domainPart); 
+    email = `${sanitizedLocalPart}@${sanitizedDomainPart}`;
   }
 
   return {
     first_name: firstName,
     last_name: lastName,
     email: email,
-    password: String(row['Senha'] || row['password'] || 'LogiReverseIA@2025'), // Senha padrão se não fornecida
+    password: String(row['Senha'] || row['password'] || 'LogiReverseIA@2025'), // Default password if not provided
     phone_number: phoneNumber,
     role: role,
     supervisor_id: supervisorId,
