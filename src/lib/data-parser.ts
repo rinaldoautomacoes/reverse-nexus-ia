@@ -139,9 +139,24 @@ const mapTechnicianRow = (row: any): TechnicianImportData => {
     return { first_name: '', email: null, role: 'standard', supervisor_id: null, address: null, last_name: '' }; // Ensure last_name is an empty string
   }
 
-  // Generate a default email if not provided, as email is mandatory for Supabase auth.admin.createUser
-  const finalEmail = email ? String(email).trim() : 
-    (firstName ? `${firstName.toLowerCase().replace(/\s/g, '.')}${lastName ? `.${lastName.toLowerCase().replace(/\s/g, '.')}` : ''}@logireverseia.com` : null);
+  // --- Refined email generation logic ---
+  let finalEmail = null;
+  if (email) {
+    finalEmail = String(email).trim();
+  } else if (firstName) {
+    // Sanitize first name and last name to remove special characters and replace spaces with dots
+    const sanitizeNamePart = (namePart: string) => 
+      namePart.toLowerCase().replace(/\s/g, '.').replace(/[^a-z0-9.]/g, '');
+
+    const sanitizedFirstName = sanitizeNamePart(firstName);
+    const sanitizedLastName = lastName ? `.${sanitizeNamePart(lastName)}` : '';
+    
+    finalEmail = `${sanitizedFirstName}${sanitizedLastName}@logireverseia.com`;
+    
+    // Remove leading/trailing dots if any, and replace multiple dots with a single dot
+    finalEmail = finalEmail.replace(/^\.+|\.+$/g, '').replace(/\.{2,}/g, '.');
+  }
+  // --- End refined email generation logic ---
 
   return {
     first_name: firstName,
