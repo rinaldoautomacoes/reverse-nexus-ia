@@ -3,7 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { ArrowLeft, PlusCircle, Edit, Trash2, Users, Search, User as UserIcon, Mail, Phone, Briefcase, Loader2 } from "lucide-react";
+import { ArrowLeft, PlusCircle, Edit, Trash2, Users, Search, User as UserIcon, Mail, Phone, Briefcase, Loader2, MapPin } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -60,7 +60,7 @@ export const TechnicianManagement = () => {
         throw new Error("Sessão de autenticação ausente. Faça login novamente.");
       }
 
-      const { email, password, first_name, last_name, phone_number, avatar_url, supervisor_id } = newTechnician;
+      const { email, password, first_name, last_name, phone_number, avatar_url, supervisor_id, address } = newTechnician;
 
       const response = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/create-user`, {
         method: 'POST',
@@ -77,6 +77,7 @@ export const TechnicianManagement = () => {
           phone_number,
           avatar_url,
           supervisor_id, // Pass supervisor_id
+          address, // Pass address
         }),
       });
 
@@ -98,6 +99,7 @@ export const TechnicianManagement = () => {
               phone_number: phone_number,
               role: 'standard',
               supervisor_id: supervisor_id, // Update supervisor_id
+              address: address, // Update address
             })
             .eq('id', existingUser.user.id);
           if (updateProfileError) {
@@ -187,7 +189,8 @@ export const TechnicianManagement = () => {
     technician.last_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
     technician.phone_number?.toLowerCase().includes(searchTerm.toLowerCase()) ||
     technician.supervisor?.first_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    technician.supervisor?.last_name?.toLowerCase().includes(searchTerm.toLowerCase())
+    technician.supervisor?.last_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    technician.address?.toLowerCase().includes(searchTerm.toLowerCase()) // Incluído o novo campo na busca
   ) || [];
 
   if (isLoadingTechnicians) {
@@ -239,7 +242,7 @@ export const TechnicianManagement = () => {
                 <div className="flex-1 relative">
                   <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
                   <Input
-                    placeholder="Buscar por nome, sobrenome, telefone ou supervisor..."
+                    placeholder="Buscar por nome, sobrenome, telefone, supervisor ou endereço..."
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
                     className="pl-10"
@@ -298,6 +301,11 @@ export const TechnicianManagement = () => {
                         {technician.phone_number && (
                           <div className="flex items-center gap-1">
                             <Phone className="h-3 w-3" /> {technician.phone_number}
+                          </div>
+                        )}
+                        {technician.address && ( // Novo campo de endereço
+                          <div className="flex items-center gap-1 col-span-full">
+                            <MapPin className="h-3 w-3" /> {technician.address}
                           </div>
                         )}
                         {technician.supervisor && (
