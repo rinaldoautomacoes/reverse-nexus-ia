@@ -68,9 +68,21 @@ const readJSON = (file: File): Promise<any[]> => {
 
 // Helper function to sanitize parts of an email (local part or domain part)
 const sanitizeEmailPart = (part: string): string => {
-  // Remove characters not typically allowed in email parts, convert to lowercase
-  // Keep alphanumeric, dot, and hyphen.
-  return part.toLowerCase().replace(/[^a-z0-9.-]/g, ''); 
+  // Convert to lowercase, replace common non-ASCII characters with ASCII equivalents
+  // Then remove any remaining characters that are not alphanumeric, dot, or hyphen.
+  let sanitized = part
+    .toLowerCase()
+    .replace(/[àáâãäå]/g, 'a')
+    .replace(/[èéêë]/g, 'e')
+    .replace(/[ìíîï]/g, 'i')
+    .replace(/[òóôõö]/g, 'o')
+    .replace(/[ùúûü]/g, 'u')
+    .replace(/[ç]/g, 'c')
+    .replace(/[^a-z0-9.-]/g, ''); // Remove any other non-allowed characters
+
+  // Remove leading/trailing dots and hyphens, and replace multiple dots/hyphens with a single one
+  sanitized = sanitized.replace(/^[.-]+|[.-]+$/g, '').replace(/[.]{2,}/g, '.').replace(/[-]{2,}/g, '-');
+  return sanitized;
 };
 
 const mapRowToColeta = (row: any): ColetaImportData => ({
