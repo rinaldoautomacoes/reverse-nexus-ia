@@ -80,3 +80,13 @@ export interface ClientImportData {
   cnpj?: string | null;
   contact_person?: string | null;
 }
+
+export interface TechnicianImportData { // Nova interface para técnicos
+  first_name: string;
+  last_name: string;
+  email: string;
+  password?: string; // Senha pode ser opcional se o sistema gerar uma
+  phone_number?: string | null;
+  role?: 'standard' | 'admin'; // Padrão para 'standard'
+  supervisor_id?: string | null;
+}
