@@ -357,17 +357,17 @@ export const parseTechniciansXLSX = (file: File): Promise<TechnicianImportData[]
           
           // Se não encontrou primeiro/último nome, tenta a coluna 'Técnico' e divide
           if (!firstName && !lastName) {
-            const fullName = String(findColumnValue(row, ['Técnico', 'Nome do Técnico']) || '').trim();
-            const nameParts = fullName.split(' ');
+            const fullNameFromTechCol = String(findColumnValue(row, ['Técnico', 'Nome do Técnico']) || '').trim();
+            const nameParts = fullNameFromTechCol.split(' ');
             if (nameParts.length > 1) {
               firstName = nameParts[0];
               lastName = nameParts.slice(1).join(' ');
             } else {
-              firstName = fullName;
+              firstName = fullNameFromTechCol; // Se apenas uma parte, trata como primeiro nome
             }
           }
 
-          const email = String(findColumnValue(row, ['Email', 'email', 'E-mail']) || '').trim();
+          const email = findColumnValue(row, ['Email', 'email', 'E-mail']); // Não converte para string vazia, mantém null
           const phoneNumber = cleanPhoneNumber(findColumnValue(row, ['Telefone', 'phone_number', 'Phone', 'Mobile']));
           let role: 'standard' | 'admin' | 'supervisor' = 'standard';
           const roleValue = String(findColumnValue(row, ['Função', 'role', 'Cargo']) || '').toLowerCase();
@@ -376,17 +376,17 @@ export const parseTechniciansXLSX = (file: File): Promise<TechnicianImportData[]
           } else if (roleValue === 'supervisor' || roleValue === 'supervisor técnico') {
             role = 'supervisor';
           }
-          const supervisorId = String(findColumnValue(row, ['Supervisor ID', 'supervisor_id', 'ID Supervisor', 'Supervisor']) || '').trim();
+          const supervisorId = findColumnValue(row, ['Supervisor ID', 'supervisor_id', 'ID Supervisor', 'Supervisor']);
 
           return {
-            first_name: firstName || null, // Garante que seja null se vazio
-            last_name: lastName || null,   // Garante que seja null se vazio
-            email: email || null,          // Garante que seja null se vazio
+            first_name: firstName || null,
+            last_name: lastName || null,
+            email: email ? String(email).trim() : null, // Garante que seja null se vazio
             phone_number: phoneNumber,
             role: role,
-            supervisor_id: supervisorId === 'null' || supervisorId === '' ? null : supervisorId, // Handle empty string or 'null' as actual null
+            supervisor_id: supervisorId ? String(supervisorId).trim() : null, // Garante que seja null se vazio
           };
-        }).filter(t => t.first_name && t.email); // Ensure first_name and email are present for a valid technician
+        }).filter(t => t.first_name); // Apenas filtra por first_name, email pode ser null aqui
         resolve(parsedData);
       } catch (error) {
         reject(new Error('Erro ao ler arquivo XLSX para técnicos. Verifique o formato das colunas.'));
@@ -416,17 +416,17 @@ export const parseTechniciansCSV = (file: File): Promise<TechnicianImportData[]>
           
           // Se não encontrou primeiro/último nome, tenta a coluna 'Técnico' e divide
           if (!firstName && !lastName) {
-            const fullName = String(findColumnValue(row, ['Técnico', 'Nome do Técnico']) || '').trim();
-            const nameParts = fullName.split(' ');
+            const fullNameFromTechCol = String(findColumnValue(row, ['Técnico', 'Nome do Técnico']) || '').trim();
+            const nameParts = fullNameFromTechCol.split(' ');
             if (nameParts.length > 1) {
               firstName = nameParts[0];
               lastName = nameParts.slice(1).join(' ');
             } else {
-              firstName = fullName;
+              firstName = fullNameFromTechCol;
             }
           }
 
-          const email = String(findColumnValue(row, ['Email', 'email', 'E-mail']) || '').trim();
+          const email = findColumnValue(row, ['Email', 'email', 'E-mail']); // Não converte para string vazia, mantém null
           const phoneNumber = cleanPhoneNumber(findColumnValue(row, ['Telefone', 'phone_number', 'Phone', 'Mobile']));
           let role: 'standard' | 'admin' | 'supervisor' = 'standard';
           const roleValue = String(findColumnValue(row, ['Função', 'role', 'Cargo']) || '').toLowerCase();
@@ -435,17 +435,17 @@ export const parseTechniciansCSV = (file: File): Promise<TechnicianImportData[]>
           } else if (roleValue === 'supervisor' || roleValue === 'supervisor técnico') {
             role = 'supervisor';
           }
-          const supervisorId = String(findColumnValue(row, ['Supervisor ID', 'supervisor_id', 'ID Supervisor', 'Supervisor']) || '').trim();
+          const supervisorId = findColumnValue(row, ['Supervisor ID', 'supervisor_id', 'ID Supervisor', 'Supervisor']);
 
           return {
-            first_name: firstName || null, // Garante que seja null se vazio
-            last_name: lastName || null,   // Garante que seja null se vazio
-            email: email || null,          // Garante que seja null se vazio
+            first_name: firstName || null,
+            last_name: lastName || null,
+            email: email ? String(email).trim() : null, // Garante que seja null se vazio
             phone_number: phoneNumber,
             role: role,
-            supervisor_id: supervisorId === 'null' || supervisorId === '' ? null : supervisorId,
+            supervisor_id: supervisorId ? String(supervisorId).trim() : null, // Garante que seja null se vazio
           };
-        }).filter(t => t.first_name && t.email); // Ensure first_name and email are present for a valid technician
+        }).filter(t => t.first_name); // Apenas filtra por first_name, email pode ser null aqui
         resolve(parsedData);
       } catch (error) {
         reject(new Error('Erro ao ler arquivo CSV para técnicos. Verifique o formato das colunas.'));
@@ -472,17 +472,17 @@ export const parseTechniciansJSON = (file: File): Promise<TechnicianImportData[]
           
           // Se não encontrou primeiro/último nome, tenta a coluna 'Técnico' e divide
           if (!firstName && !lastName) {
-            const fullName = String(findColumnValue(row, ['Técnico', 'Nome do Técnico']) || '').trim();
-            const nameParts = fullName.split(' ');
+            const fullNameFromTechCol = String(findColumnValue(row, ['Técnico', 'Nome do Técnico']) || '').trim();
+            const nameParts = fullNameFromTechCol.split(' ');
             if (nameParts.length > 1) {
               firstName = nameParts[0];
               lastName = nameParts.slice(1).join(' ');
             } else {
-              firstName = fullName;
+              firstName = fullNameFromTechCol;
             }
           }
 
-          const email = String(findColumnValue(row, ['email', 'Email', 'E-mail']) || '').trim();
+          const email = findColumnValue(row, ['email', 'Email', 'E-mail']); // Não converte para string vazia, mantém null
           const phoneNumber = cleanPhoneNumber(findColumnValue(row, ['phone_number', 'Telefone', 'Phone', 'Mobile']));
           let role: 'standard' | 'admin' | 'supervisor' = 'standard';
           const roleValue = String(findColumnValue(row, ['role', 'Função', 'Cargo']) || '').toLowerCase();
@@ -491,17 +491,17 @@ export const parseTechniciansJSON = (file: File): Promise<TechnicianImportData[]
           } else if (roleValue === 'supervisor' || roleValue === 'supervisor técnico') {
             role = 'supervisor';
           }
-          const supervisorId = String(findColumnValue(row, ['supervisor_id', 'Supervisor ID', 'ID Supervisor', 'Supervisor']) || '').trim();
+          const supervisorId = findColumnValue(row, ['supervisor_id', 'Supervisor ID', 'ID Supervisor', 'Supervisor']);
 
           return {
-            first_name: firstName || null, // Garante que seja null se vazio
-            last_name: lastName || null,   // Garante que seja null se vazio
-            email: email || null,          // Garante que seja null se vazio
+            first_name: firstName || null,
+            last_name: lastName || null,
+            email: email ? String(email).trim() : null, // Garante que seja null se vazio
             phone_number: phoneNumber,
             role: role,
-            supervisor_id: supervisorId === 'null' || supervisorId === '' ? null : supervisorId, // Novo campo
+            supervisor_id: supervisorId ? String(supervisorId).trim() : null, // Garante que seja null se vazio
           };
-        }).filter(t => t.first_name && t.email); // Ensure first_name and email are present for a valid technician
+        }).filter(t => t.first_name); // Apenas filtra por first_name, email pode ser null aqui
         resolve(parsedData);
       } catch (error) {
         reject(new Error('Erro ao ler arquivo JSON para técnicos. Verifique o formato.'));

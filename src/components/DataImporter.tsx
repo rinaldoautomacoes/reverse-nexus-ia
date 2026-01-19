@@ -130,9 +130,8 @@ export const DataImporter: React.FC<DataImporterProps> = ({ initialTab = 'collec
                  (item as ColetaImportData).endereco_origem && (item as ColetaImportData).endereco_origem.trim() !== '' &&
                  (item as ColetaImportData).previsao_coleta && (item as ColetaImportData).previsao_coleta.trim() !== '';
         }
-        if (activeTab === 'technicians') { // New filter for technicians
-          return (item as TechnicianImportData).first_name && (item as TechnicianImportData).first_name.trim() !== '' &&
-                 (item as TechnicianImportData).email && (item as TechnicianImportData).email.trim() !== '';
+        if (activeTab === 'technicians') { // Adjusted filter for technicians: only require first_name
+          return (item as TechnicianImportData).first_name && (item as TechnicianImportData).first_name.trim() !== '';
         }
         return true;
       });
@@ -322,9 +321,9 @@ export const DataImporter: React.FC<DataImporterProps> = ({ initialTab = 'collec
         throw new Error('Usuário não autenticado. Faça login para importar técnicos.');
       }
 
-      const validTechnicians = dataToImport.filter(tech => tech.first_name && tech.email && tech.email.trim() !== '');
+      const validTechnicians = dataToImport.filter(tech => tech.first_name && tech.first_name.trim() !== '');
       if (validTechnicians.length === 0) {
-        throw new Error('Nenhum técnico válido encontrado para importação. Certifique-se de que as colunas "Primeiro Nome" e "Email" não estão vazias.');
+        throw new Error('Nenhum técnico válido encontrado para importação. Certifique-se de que a coluna "Primeiro Nome" ou "Técnico" não está vazia.');
       }
 
       const token = (await supabase.auth.getSession()).data.session?.access_token;
@@ -334,6 +333,14 @@ export const DataImporter: React.FC<DataImporterProps> = ({ initialTab = 'collec
 
       let importedCount = 0;
       for (const tech of validTechnicians) {
+        // Generate email for API call if missing, but don't store it in the parsed data
+        const emailForApi = tech.email || (tech.first_name ? `${tech.first_name.toLowerCase().replace(/\s/g, '.')}${tech.last_name ? `.${tech.last_name.toLowerCase().replace(/\s/g, '.')}` : ''}@logireverseia.com` : null);
+
+        if (!emailForApi) {
+          console.warn(`Skipping technician ${tech.first_name} due to missing email and inability to generate one.`);
+          continue;
+        }
+
         try {
           // Attempt to create user via Edge Function
           const response = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/create-user`, {
@@ -343,7 +350,7 @@ export const DataImporter: React.FC<DataImporterProps> = ({ initialTab = 'collec
               'Content-Type': 'application/json',
             },
             body: JSON.stringify({
-              email: tech.email,
+              email: emailForApi, // Use generated email for API
               password: 'password123', // Placeholder password, consider a more secure flow for real apps
               first_name: tech.first_name,
               last_name: tech.last_name,
@@ -355,12 +362,12 @@ export const DataImporter: React.FC<DataImporterProps> = ({ initialTab = 'collec
 
           if (!response.ok) {
             const errorData = await response.json();
-            console.warn(`Failed to create user ${tech.email}: ${errorData.error}`);
+            console.warn(`Failed to create user ${emailForApi}: ${errorData.error}`);
             // If user already exists, try to update profile directly
             if (errorData.error?.includes('User already registered')) {
-              const { data: existingUser, error: fetchUserError } = await supabase.auth.admin.getUserByEmail(tech.email);
+              const { data: existingUser, error: fetchUserError } = await supabase.auth.admin.getUserByEmail(emailForApi);
               if (fetchUserError || !existingUser?.user) {
-                console.error(`Could not fetch existing user ${tech.email}: ${fetchUserError?.message}`);
+                console.error(`Could not fetch existing user ${emailForApi}: ${fetchUserError?.message}`);
                 continue;
               }
               const { error: updateProfileError } = await supabase
@@ -374,7 +381,7 @@ export const DataImporter: React.FC<DataImporterProps> = ({ initialTab = 'collec
                 })
                 .eq('id', existingUser.user.id);
               if (updateProfileError) {
-                console.error(`Failed to update profile for ${tech.email}: ${updateProfileError.message}`);
+                console.error(`Failed to update profile for ${emailForApi}: ${updateProfileError.message}`);
               } else {
                 importedCount++;
               }
@@ -383,7 +390,7 @@ export const DataImporter: React.FC<DataImporterProps> = ({ initialTab = 'collec
           }
           importedCount++;
         } catch (error: any) {
-          console.error(`Error processing technician ${tech.email}: ${error.message}`);
+          console.error(`Error processing technician ${tech.first_name} (${emailForApi}): ${error.message}`);
         }
       }
       return importedCount;
