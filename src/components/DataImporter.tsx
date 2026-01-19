@@ -359,7 +359,7 @@ export const DataImporter: React.FC<DataImporterProps> = ({ initialTab = 'collec
             },
             body: JSON.stringify({
               email: emailForApi,
-              password: 'password123', // Placeholder password - consider making this configurable or more secure
+              password: 'password123', // Default placeholder password
               first_name: tech.first_name,
               last_name: tech.last_name,
               role: tech.role || 'standard',

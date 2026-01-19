@@ -15,13 +15,6 @@ const findColumnValue = (row: any, possibleHeaders: string[]) => {
   return null;
 };
 
-// Helper to clean phone numbers, keeping only digits
-export const cleanPhoneNumber = (phone: string | null | undefined): string | null => {
-  if (!phone) return null;
-  const cleaned = phone.replace(/\D/g, ''); // Remove all non-digit characters
-  return cleaned.length > 0 ? cleaned : null;
-};
-
 // --- Base File Reading Functions ---
 
 const readWorkbookToJson = (file: File, type: 'array' | 'string'): Promise<any[]> => {
@@ -142,7 +135,8 @@ const mapTechnicianRow = (row: any): TechnicianImportData => {
   // Ensure first_name is not empty, as it's crucial for user creation and profile
   if (!firstName) {
     console.warn("[DataImporter] Skipping technician row due to missing first_name:", row);
-    return { first_name: '', email: null, role: 'standard', supervisor_id: null, address: null }; // Return minimal data to be filtered out
+    // Return a minimal valid structure that will be filtered out by DataImporter.tsx
+    return { first_name: '', email: null, role: 'standard', supervisor_id: null, address: null, last_name: '' }; // Ensure last_name is an empty string
   }
 
   // Generate a default email if not provided, as email is mandatory for Supabase auth.admin.createUser
@@ -151,8 +145,8 @@ const mapTechnicianRow = (row: any): TechnicianImportData => {
 
   return {
     first_name: firstName,
-    last_name: lastName || null,
-    email: finalEmail, // Use the generated/provided email
+    last_name: lastName || '', // Ensure last_name is an empty string if null/undefined
+    email: finalEmail,
     phone_number: phoneNumber,
     role: role,
     supervisor_id: supervisorId ? String(supervisorId).trim() : null,
