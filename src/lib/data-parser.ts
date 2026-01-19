@@ -120,6 +120,13 @@ const mapTechnicianRow = (row: any): TechnicianImportData => {
     }
   }
 
+  // NEW: Sanitize first_name and last_name to remove problematic characters
+  const sanitizeNameForDisplay = (name: string) => 
+    name.replace(/[^a-zA-Z0-9\s]/g, '').trim(); // Keep only alphanumeric and spaces
+
+  firstName = sanitizeNameForDisplay(firstName);
+  lastName = sanitizeNameForDisplay(lastName);
+
   const email = findColumnValue(row, ['Email', 'email', 'E-mail']);
   const phoneNumber = cleanPhoneNumber(findColumnValue(row, ['Telefone', 'phone_number', 'Phone', 'Mobile']));
   let role: 'standard' | 'admin' | 'supervisor' = 'standard';
@@ -144,14 +151,13 @@ const mapTechnicianRow = (row: any): TechnicianImportData => {
   if (email) {
     finalEmail = String(email).trim();
   } else if (firstName) {
-    // Sanitize first name and last name to remove special characters and replace spaces with dots
-    const sanitizeNamePart = (namePart: string) => 
+    const sanitizeNamePartForEmail = (namePart: string) => 
       namePart.toLowerCase().replace(/\s/g, '.').replace(/[^a-z0-9.]/g, '');
 
-    const sanitizedFirstName = sanitizeNamePart(firstName);
-    const sanitizedLastName = lastName ? `.${sanitizeNamePart(lastName)}` : '';
+    const sanitizedFirstNameForEmail = sanitizeNamePartForEmail(firstName);
+    const sanitizedLastNameForEmail = lastName ? `.${sanitizeNamePartForEmail(lastName)}` : '';
     
-    finalEmail = `${sanitizedFirstName}${sanitizedLastName}@logireverseia.com`;
+    finalEmail = `${sanitizedFirstNameForEmail}${sanitizedLastNameForEmail}@logireverseia.com`;
     
     // Remove leading/trailing dots if any, and replace multiple dots with a single dot
     finalEmail = finalEmail.replace(/^\.+|\.+$/g, '').replace(/\.{2,}/g, '.');
