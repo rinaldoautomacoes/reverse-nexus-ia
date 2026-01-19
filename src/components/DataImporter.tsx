@@ -372,8 +372,8 @@ export const DataImporter: React.FC<DataImporterProps> = ({ initialTab = 'collec
           if (!response.ok) {
             const errorData = await response.json();
             console.error(`[DataImporter] Edge Function 'create-user' failed for ${emailForApi}:`, errorData.error);
-            toast({ title: "Erro na Operação", description: `Falha ao criar/atualizar usuário ${emailForApi}: ${errorData.error}`, variant: "destructive" });
-            continue; // Continue to next technician even if one fails
+            // Throwing an error here will correctly trigger the onError callback of the mutation
+            throw new Error(errorData.error || `Falha ao criar/atualizar usuário ${emailForApi}.`);
           }
 
           const responseData = await response.json();
@@ -382,7 +382,8 @@ export const DataImporter: React.FC<DataImporterProps> = ({ initialTab = 'collec
 
         } catch (error: any) {
           console.error(`[DataImporter] Unexpected error during processing technician ${tech.first_name} (${emailForApi}):`, error.message);
-          toast({ title: "Erro Inesperado", description: `Erro ao processar técnico ${tech.first_name}: ${error.message}`, variant: "destructive" });
+          // Re-throw to ensure onError is triggered for unexpected errors
+          throw new Error(error.message || `Erro inesperado ao processar técnico ${tech.first_name}.`);
         }
       }
       console.log(`[DataImporter] Final imported count: ${importedCount}`);
@@ -401,7 +402,11 @@ export const DataImporter: React.FC<DataImporterProps> = ({ initialTab = 'collec
       onClose();
     },
     onError: (error) => {
+      // This onError is now correctly triggered by the throw new Error in mutationFn
       toast({ title: 'Erro na importação de Técnicos', description: error.message, variant: 'destructive' });
+      // Do not clear file/data here, allow user to fix and retry
+      // setSelectedFile(null);
+      // setExtractedData(null);
     },
   });
 

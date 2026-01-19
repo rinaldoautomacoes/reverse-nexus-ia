@@ -66,9 +66,10 @@ serve(async (req) => {
     const { email, password, first_name, last_name, role, avatar_url, phone_number, supervisor_id, address } = requestBody;
     console.log('[create-user] Destructured data for new user:', { email, password: password ? '********' : 'N/A', first_name, last_name, role, avatar_url: avatar_url ? 'Present' : 'N/A', phone_number: phone_number ? 'Present' : 'N/A', supervisor_id: supervisor_id ? 'Present' : 'N/A', address: address ? 'Present' : 'N/A' });
 
-    if (!email || !password || !first_name || !last_name || !role) {
+    // Adjusted validation: last_name is optional
+    if (!email || !password || !first_name || !role) {
       console.error('[create-user] Bad Request: Missing required fields in request body. Received:', { email, password: password ? '********' : 'N/A', first_name, last_name, role });
-      return new Response(JSON.stringify({ error: 'Bad Request: Missing required fields (email, password, first_name, last_name, role)' }), { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+      return new Response(JSON.stringify({ error: 'Bad Request: Missing required fields (email, password, first_name, role)' }), { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
     }
 
     const adminSupabase = createClient(
