@@ -81,10 +81,6 @@ serve(async (req) => {
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     );
     console.log('[create-user] Admin Supabase client initialized.');
-    console.log('[create-user] adminSupabase.auth:', adminSupabase.auth);
-    console.log('[create-user] adminSupabase.auth.admin:', adminSupabase.auth.admin);
-    console.log('[create-user] Type of adminSupabase.auth.admin.getUserByEmail:', typeof adminSupabase.auth.admin?.getUserByEmail);
-
 
     let targetUserId: string | null = null;
     let operationType: 'created' | 'updated' = 'created';
@@ -92,20 +88,26 @@ serve(async (req) => {
     // First, try to get the user by email to check if they already exist
     let existingUserAuthData;
     try {
-      const { data, error: getUserError } = await adminSupabase.auth.admin.getUserByEmail(email);
-      if (getUserError && getUserError.message !== 'User not found') {
+      // Use direct query to auth.users table
+      const { data, error: getUserError } = await adminSupabase
+        .from('auth.users')
+        .select('id')
+        .eq('email', email)
+        .single();
+
+      if (getUserError && getUserError.code !== 'PGRST116') { // PGRST116 means "no rows found"
         console.error('[create-user] Error checking for existing user by email:', getUserError.message);
         throw new Error(`Error checking for existing user: ${getUserError.message}`);
       }
       existingUserAuthData = data;
     } catch (e) {
-      console.error('[create-user] Caught error during getUserByEmail:', e instanceof Error ? e.message : String(e));
+      console.error('[create-user] Caught error during user lookup:', e instanceof Error ? e.message : String(e));
       return new Response(JSON.stringify({ error: `Internal Server Error during user lookup: ${e instanceof Error ? e.message : String(e)}` }), { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
     }
 
-    if (existingUserAuthData?.user) {
+    if (existingUserAuthData?.id) {
       // User already exists in auth.users
-      targetUserId = existingUserAuthData.user.id;
+      targetUserId = existingUserAuthData.id;
       operationType = 'updated';
       console.log(`[create-user] User ${email} already exists (ID: ${targetUserId}). Attempting to update profile.`);
 
