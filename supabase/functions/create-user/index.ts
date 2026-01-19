@@ -82,87 +82,109 @@ serve(async (req) => {
     let operationType: 'created' | 'updated' = 'created';
 
     // First, try to get the user by email to check if they already exist
-    const { data: existingUserAuth, error: getUserError } = await adminSupabase.auth.admin.getUserByEmail(email);
-
-    if (getUserError && getUserError.message !== 'User not found') {
-      console.error('[create-user] Error checking for existing user by email:', getUserError.message);
-      return new Response(JSON.stringify({ error: `Error checking for existing user: ${getUserError.message}` }), { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+    let existingUserAuthData;
+    try {
+      const { data, error: getUserError } = await adminSupabase.auth.admin.getUserByEmail(email);
+      if (getUserError && getUserError.message !== 'User not found') {
+        console.error('[create-user] Error checking for existing user by email:', getUserError.message);
+        throw new Error(`Error checking for existing user: ${getUserError.message}`);
+      }
+      existingUserAuthData = data;
+    } catch (e) {
+      console.error('[create-user] Caught error during getUserByEmail:', e instanceof Error ? e.message : String(e));
+      return new Response(JSON.stringify({ error: `Internal Server Error during user lookup: ${e instanceof Error ? e.message : String(e)}` }), { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
     }
 
-    if (existingUserAuth?.user) {
+    if (existingUserAuthData?.user) {
       // User already exists in auth.users
-      targetUserId = existingUserAuth.user.id;
+      targetUserId = existingUserAuthData.user.id;
       operationType = 'updated';
       console.log(`[create-user] User ${email} already exists (ID: ${targetUserId}). Attempting to update profile.`);
 
-      // Update user_metadata in auth.users
-      const { error: updateAuthUserError } = await adminSupabase.auth.admin.updateUserById(targetUserId, {
-        email, // Ensure email is also updated if it changed (though it's the lookup key here)
-        password, // Update password if provided
-        user_metadata: { 
-          first_name: first_name || null, 
-          last_name: last_name || null, 
-          role: role || 'standard', 
-          avatar_url: avatar_url || null, 
-          phone_number: phone_number || null, 
-          supervisor_id: supervisor_id || null, 
-          address: address || null 
-        },
-      });
+      try {
+        // Update user_metadata in auth.users
+        const { error: updateAuthUserError } = await adminSupabase.auth.admin.updateUserById(targetUserId, {
+          email,
+          password,
+          user_metadata: { 
+            first_name: first_name || null, 
+            last_name: last_name || null, 
+            role: role || 'standard', 
+            avatar_url: avatar_url || null, 
+            phone_number: phone_number || null, 
+            supervisor_id: supervisor_id || null, 
+            address: address || null 
+          },
+        });
 
-      if (updateAuthUserError) {
-        console.error(`[create-user] Error updating auth.users for ${email} (ID: ${targetUserId}):`, updateAuthUserError.message);
-        return new Response(JSON.stringify({ error: `Failed to update existing user in authentication: ${updateAuthUserError.message}` }), { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+        if (updateAuthUserError) {
+          console.error(`[create-user] Error updating auth.users for ${email} (ID: ${targetUserId}):`, updateAuthUserError.message);
+          throw new Error(`Failed to update existing user in authentication: ${updateAuthUserError.message}`);
+        }
+        console.log(`[create-user] Successfully updated auth.users metadata for ${email} (ID: ${targetUserId}).`);
+
+      } catch (e) {
+        console.error('[create-user] Caught error during updateAuthUserById:', e instanceof Error ? e.message : String(e));
+        return new Response(JSON.stringify({ error: `Internal Server Error during auth user update: ${e instanceof Error ? e.message : String(e)}` }), { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
       }
 
-      // Also update the public.profiles table directly, as the trigger might not fire on update
-      const { error: updateProfileError } = await adminSupabase
-        .from('profiles')
-        .update({
-          first_name: first_name || null,
-          last_name: last_name || null,
-          role: role || 'standard',
-          avatar_url: avatar_url || null,
-          phone_number: phone_number || null,
-          supervisor_id: supervisor_id || null,
-          address: address || null,
-          updated_at: new Date().toISOString(),
-        })
-        .eq('id', targetUserId);
+      try {
+        // Also update the public.profiles table directly, as the trigger might not fire on update
+        const { error: updateProfileError } = await adminSupabase
+          .from('profiles')
+          .update({
+            first_name: first_name || null,
+            last_name: last_name || null,
+            role: role || 'standard',
+            avatar_url: avatar_url || null,
+            phone_number: phone_number || null,
+            supervisor_id: supervisor_id || null,
+            address: address || null,
+            updated_at: new Date().toISOString(),
+          })
+          .eq('id', targetUserId);
 
-      if (updateProfileError) {
-        console.error(`[create-user] Error updating public.profiles for ${email} (ID: ${targetUserId}):`, updateProfileError.message);
-        return new Response(JSON.stringify({ error: `Failed to update existing user profile: ${updateProfileError.message}` }), { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+        if (updateProfileError) {
+          console.error(`[create-user] Error updating public.profiles for ${email} (ID: ${targetUserId}):`, updateProfileError.message);
+          throw new Error(`Failed to update existing user profile: ${updateProfileError.message}`);
+        }
+        console.log(`[create-user] Successfully updated public.profiles for existing user ${email} (ID: ${targetUserId}).`);
+
+      } catch (e) {
+        console.error('[create-user] Caught error during update public.profiles:', e instanceof Error ? e.message : String(e));
+        return new Response(JSON.stringify({ error: `Internal Server Error during profile update: ${e instanceof Error ? e.message : String(e)}` }), { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
       }
-      console.log(`[create-user] Successfully updated profile for existing user ${email} (ID: ${targetUserId}).`);
 
     } else {
       // User does not exist, proceed with creation
       console.log(`[create-user] User ${email} not found. Attempting to create new user.`);
-      const { data: newUser, error: createUserError } = await adminSupabase.auth.admin.createUser({
-        email,
-        password,
-        email_confirm: true,
-        user_metadata: { 
-          first_name: first_name || null, 
-          last_name: last_name || null, 
-          role: role || 'standard', 
-          avatar_url: avatar_url || null, 
-          phone_number: phone_number || null, 
-          supervisor_id: supervisor_id || null, 
-          address: address || null 
-        },
-      });
-
-      if (createUserError) {
-        console.error('[create-user] Error creating user with admin.createUser:', createUserError.message); 
-        return new Response(JSON.stringify({ error: createUserError.message }), {
-          status: 400,
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      try {
+        const { data: newUser, error: createUserError } = await adminSupabase.auth.admin.createUser({
+          email,
+          password,
+          email_confirm: true,
+          user_metadata: { 
+            first_name: first_name || null, 
+            last_name: last_name || null, 
+            role: role || 'standard', 
+            avatar_url: avatar_url || null, 
+            phone_number: phone_number || null, 
+            supervisor_id: supervisor_id || null, 
+            address: address || null 
+          },
         });
+
+        if (createUserError) {
+          console.error('[create-user] Error creating user with admin.createUser:', createUserError.message); 
+          throw new Error(createUserError.message);
+        }
+        targetUserId = newUser.user?.id || null;
+        console.log('[create-user] New user created successfully:', targetUserId);
+
+      } catch (e) {
+        console.error('[create-user] Caught error during createUser:', e instanceof Error ? e.message : String(e));
+        return new Response(JSON.stringify({ error: `Internal Server Error during user creation: ${e instanceof Error ? e.message : String(e)}` }), { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
       }
-      targetUserId = newUser.user?.id || null;
-      console.log('[create-user] New user created successfully:', targetUserId);
     }
 
     if (!targetUserId) {
