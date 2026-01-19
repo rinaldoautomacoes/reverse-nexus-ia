@@ -1,2 +1,2 @@
 export type { Database, Tables, TablesInsert, TablesUpdate, Enums, CompositeTypes } from './database';
-export type { PestControlServiceRow, PestControlServiceInsert, PestControlServiceUpdate, PestControlServiceRelationships } from './tables/pest_control_services'; // New export
+export type { PestControlServiceRow, PestControlServiceInsert, PestControlServiceUpdate, PestControlServiceRelationships } from './tables/pest_control_services';

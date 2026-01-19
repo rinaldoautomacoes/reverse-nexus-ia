@@ -345,7 +345,7 @@ export const parseTechniciansXLSX = (file: File): Promise<TechnicianImportData[]
           last_name: row['Sobrenome'] || row['last_name'] || null,
           email: String(row['Email'] || row['email'] || '').trim(),
           phone_number: cleanPhoneNumber(row['Telefone'] || row['phone_number']),
-          role: (row['Função']?.toLowerCase() === 'admin' ? 'admin' : 'standard'), // Default to 'standard'
+          role: (row['Função']?.toLowerCase() === 'admin' ? 'admin' : row['Função']?.toLowerCase() === 'supervisor' ? 'supervisor' : 'standard'), // Default to 'standard'
         })).filter(t => t.first_name && t.email); // Ensure first_name and email are present
         resolve(parsedData);
       } catch (error) {
@@ -374,7 +374,7 @@ export const parseTechniciansCSV = (file: File): Promise<TechnicianImportData[]>
           last_name: row['Sobrenome'] || row['last_name'] || null,
           email: String(row['Email'] || row['email'] || '').trim(),
           phone_number: cleanPhoneNumber(row['Telefone'] || row['phone_number']),
-          role: (row['Função']?.toLowerCase() === 'admin' ? 'admin' : 'standard'), // Default to 'standard'
+          role: (row['Função']?.toLowerCase() === 'admin' ? 'admin' : row['Função']?.toLowerCase() === 'supervisor' ? 'supervisor' : 'standard'), // Default to 'standard'
         })).filter(t => t.first_name && t.email); // Ensure first_name and email are present
         resolve(parsedData);
       } catch (error) {
@@ -400,7 +400,7 @@ export const parseTechniciansJSON = (file: File): Promise<TechnicianImportData[]
           last_name: row['last_name'] || row['Sobrenome'] || null,
           email: String(row['email'] || row['Email'] || '').trim(),
           phone_number: cleanPhoneNumber(row['phone_number'] || row['Telefone']),
-          role: (row['role']?.toLowerCase() === 'admin' ? 'admin' : 'standard'), // Default to 'standard'
+          role: (row['role']?.toLowerCase() === 'admin' ? 'admin' : row['role']?.toLowerCase() === 'supervisor' ? 'supervisor' : 'standard'), // Default to 'standard'
         })).filter(t => t.first_name && t.email); // Ensure first_name and email are present
         resolve(parsedData);
       } catch (error) {

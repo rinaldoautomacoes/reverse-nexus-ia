@@ -16,7 +16,7 @@ type Profile = Tables<'profiles'>;
 type ProfileInsert = TablesInsert<'profiles'>;
 type ProfileUpdate = TablesUpdate<'profiles'>;
 
-export const TechnicianManagement = () => {
+export const SupervisorManagement = () => {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const { toast } = useToast();
@@ -24,17 +24,17 @@ export const TechnicianManagement = () => {
 
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
-  const [editingTechnician, setEditingTechnician] = useState<Profile | null>(null);
+  const [editingSupervisor, setEditingSupervisor] = useState<Profile | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
 
-  const { data: technicians, isLoading: isLoadingTechnicians, error: techniciansError } = useQuery<Profile[], Error>({
-    queryKey: ['technicians', currentUser?.id],
+  const { data: supervisors, isLoading: isLoadingSupervisors, error: supervisorsError } = useQuery<Profile[], Error>({
+    queryKey: ['supervisors', currentUser?.id],
     queryFn: async () => {
       if (!currentUser?.id) return [];
       const { data, error } = await supabase
         .from('profiles')
         .select('*')
-        .eq('role', 'standard') // Filter for 'standard' role (assuming technicians are standard users)
+        .eq('role', 'supervisor') // Filter for 'supervisor' role
         .order('first_name', { ascending: true });
       if (error) throw new Error(error.message);
       return data;
@@ -42,14 +42,14 @@ export const TechnicianManagement = () => {
     enabled: !!currentUser?.id,
   });
 
-  const addTechnicianMutation = useMutation({
-    mutationFn: async (newTechnician: ProfileInsert & { email?: string; password?: string }) => {
+  const addSupervisorMutation = useMutation({
+    mutationFn: async (newSupervisor: ProfileInsert & { email?: string; password?: string }) => {
       if (!currentUser?.id) {
-        throw new Error("Usuário não autenticado. Faça login para adicionar técnicos.");
+        throw new Error("Usuário não autenticado. Faça login para adicionar supervisores.");
       }
 
-      if (!newTechnician.email || !newTechnician.password) {
-        throw new Error("Email e senha são obrigatórios para criar um novo técnico.");
+      if (!newSupervisor.email || !newSupervisor.password) {
+        throw new Error("Email e senha são obrigatórios para criar um novo supervisor.");
       }
 
       const token = (await supabase.auth.getSession()).data.session?.access_token;
@@ -57,7 +57,7 @@ export const TechnicianManagement = () => {
         throw new Error("Sessão de autenticação ausente. Faça login novamente.");
       }
 
-      const { email, password, first_name, last_name, phone_number, avatar_url } = newTechnician;
+      const { email, password, first_name, last_name, phone_number, avatar_url } = newSupervisor;
 
       const response = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/create-user`, {
         method: 'POST',
@@ -70,7 +70,7 @@ export const TechnicianManagement = () => {
           password,
           first_name,
           last_name,
-          role: 'standard', // Always 'standard' for technicians
+          role: 'supervisor', // Always 'supervisor' for this page
           phone_number,
           avatar_url,
         }),
@@ -79,7 +79,6 @@ export const TechnicianManagement = () => {
       if (!response.ok) {
         const errorData = await response.json();
         console.warn(`Failed to create user ${email}: ${errorData.error}`);
-        // If user already exists, try to update profile directly
         if (errorData.error?.includes('User already registered')) {
           const { data: existingUser, error: fetchUserError } = await supabase.auth.admin.getUserByEmail(email);
           if (fetchUserError || !existingUser?.user) {
@@ -92,7 +91,7 @@ export const TechnicianManagement = () => {
               first_name: first_name,
               last_name: last_name,
               phone_number: phone_number,
-              role: 'standard',
+              role: 'supervisor',
             })
             .eq('id', existingUser.user.id);
           if (updateProfileError) {
@@ -102,100 +101,97 @@ export const TechnicianManagement = () => {
             return { message: 'User profile updated successfully', user: existingUser.user.id };
           }
         }
-        throw new Error(errorData.error || "Falha ao criar usuário técnico.");
+        throw new Error(errorData.error || "Falha ao criar usuário supervisor.");
       }
 
       const data = await response.json();
       return data;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['technicians', currentUser?.id] });
-      toast({ title: "Técnico adicionado!", description: "Novo técnico criado com sucesso." });
+      queryClient.invalidateQueries({ queryKey: ['supervisors', currentUser?.id] });
+      toast({ title: "Supervisor adicionado!", description: "Novo supervisor criado com sucesso." });
       setIsAddDialogOpen(false);
     },
     onError: (err) => {
-      toast({ title: "Erro ao adicionar técnico", description: err.message, variant: "destructive" });
+      toast({ title: "Erro ao adicionar supervisor", description: err.message, variant: "destructive" });
     },
   });
 
-  const updateTechnicianMutation = useMutation({
-    mutationFn: async (updatedTechnician: ProfileUpdate) => {
+  const updateSupervisorMutation = useMutation({
+    mutationFn: async (updatedSupervisor: ProfileUpdate) => {
       const { data, error } = await supabase
         .from('profiles')
-        .update(updatedTechnician)
-        .eq('id', updatedTechnician.id as string)
+        .update(updatedSupervisor)
+        .eq('id', updatedSupervisor.id as string)
         .select()
         .single();
       if (error) throw new Error(error.message);
       return data;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['technicians', currentUser?.id] });
-      toast({ title: "Técnico atualizado!", description: "Técnico salvo com sucesso." });
+      queryClient.invalidateQueries({ queryKey: ['supervisors', currentUser?.id] });
+      toast({ title: "Supervisor atualizado!", description: "Supervisor salvo com sucesso." });
       setIsEditDialogOpen(false);
-      setEditingTechnician(null);
+      setEditingSupervisor(null);
     },
     onError: (err) => {
-      toast({ title: "Erro ao atualizar técnico", description: err.message, variant: "destructive" });
+      toast({ title: "Erro ao atualizar supervisor", description: err.message, variant: "destructive" });
     },
   });
 
-  const deleteTechnicianMutation = useMutation({
-    mutationFn: async (technicianId: string) => {
+  const deleteSupervisorMutation = useMutation({
+    mutationFn: async (supervisorId: string) => {
       const { error } = await supabase
         .from('profiles')
         .delete()
-        .eq('id', technicianId);
+        .eq('id', supervisorId);
       if (error) throw new Error(error.message);
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['technicians', currentUser?.id] });
-      toast({ title: "Técnico excluído!", description: "Técnico removido com sucesso." });
+      queryClient.invalidateQueries({ queryKey: ['supervisors', currentUser?.id] });
+      toast({ title: "Supervisor excluído!", description: "Supervisor removido com sucesso." });
     },
     onError: (err) => {
-      toast({ title: "Erro ao excluir técnico", description: err.message, variant: "destructive" });
+      toast({ title: "Erro ao excluir supervisor", description: err.message, variant: "destructive" });
     },
   });
 
-  const handleAddTechnician = (data: ProfileInsert & { email?: string; password?: string }) => {
-    addTechnicianMutation.mutate({
-      ...data,
-      role: 'standard', // Ensure role is 'standard' for technicians
-    });
+  const handleAddSupervisor = (data: ProfileInsert & { email?: string; password?: string }) => {
+    addSupervisorMutation.mutate(data);
   };
 
-  const handleUpdateTechnician = (data: ProfileUpdate) => {
-    updateTechnicianMutation.mutate(data);
+  const handleUpdateSupervisor = (data: ProfileUpdate) => {
+    updateSupervisorMutation.mutate(data);
   };
 
-  const handleDeleteTechnician = (id: string) => {
-    if (window.confirm("Tem certeza que deseja excluir este técnico? Esta ação não pode ser desfeita.")) {
-      deleteTechnicianMutation.mutate(id);
+  const handleDeleteSupervisor = (id: string) => {
+    if (window.confirm("Tem certeza que deseja excluir este supervisor? Esta ação não pode ser desfeita.")) {
+      deleteSupervisorMutation.mutate(id);
     }
   };
 
-  const filteredTechnicians = technicians?.filter(technician =>
-    technician.first_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    technician.last_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    technician.phone_number?.toLowerCase().includes(searchTerm.toLowerCase())
+  const filteredSupervisors = supervisors?.filter(supervisor =>
+    supervisor.first_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    supervisor.last_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    supervisor.phone_number?.toLowerCase().includes(searchTerm.toLowerCase())
   ) || [];
 
-  if (isLoadingTechnicians) {
+  if (isLoadingSupervisors) {
     return (
       <div className="min-h-screen bg-background ai-pattern p-6 flex items-center justify-center">
         <div className="text-center">
           <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin mx-auto mb-2" />
-          <p className="text-sm text-muted-foreground">Carregando técnicos...</p>
+          <p className="text-sm text-muted-foreground">Carregando supervisores...</p>
         </div>
       </div>
     );
   }
 
-  if (techniciansError) {
+  if (supervisorsError) {
     return (
       <div className="min-h-screen bg-background ai-pattern p-6">
         <div className="max-w-6xl mx-auto text-center text-destructive">
-          <p>Erro ao carregar técnicos: {techniciansError.message}</p>
+          <p>Erro ao carregar supervisores: {supervisorsError.message}</p>
         </div>
       </div>
     );
@@ -216,10 +212,10 @@ export const TechnicianManagement = () => {
         <div className="space-y-6">
           <div className="text-center">
             <h1 className="text-4xl font-bold font-orbitron gradient-text mb-4">
-              Gerenciar Técnicos
+              Gerenciar Supervisores Técnicos
             </h1>
             <p className="text-muted-foreground">
-              Adicione, edite e remova os técnicos da sua equipe.
+              Adicione, edite e remova os supervisores técnicos da sua equipe.
             </p>
           </div>
 
@@ -243,64 +239,64 @@ export const TechnicianManagement = () => {
             <CardHeader className="flex flex-row items-center justify-between">
               <CardTitle className="flex items-center gap-2">
                 <Users className="h-5 w-5 text-primary" />
-                Meus Técnicos
+                Meus Supervisores
               </CardTitle>
               <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
                 <DialogTrigger asChild>
                   <Button size="sm" className="bg-gradient-primary hover:bg-gradient-primary/80">
                     <PlusCircle className="mr-2 h-4 w-4" />
-                    Novo Técnico
+                    Novo Supervisor
                   </Button>
                 </DialogTrigger>
                 <DialogContent className="sm:max-w-[600px] bg-card border-primary/20">
                   <DialogHeader>
                     <DialogTitle className="flex items-center gap-2 gradient-text">
                       <Users className="h-5 w-5" />
-                      Adicionar Novo Técnico
+                      Adicionar Novo Supervisor
                     </DialogTitle>
                   </DialogHeader>
                   <UserForm
-                    onSave={handleAddTechnician}
+                    onSave={handleAddSupervisor}
                     onCancel={() => setIsAddDialogOpen(false)}
-                    isPending={addTechnicianMutation.isPending}
-                    initialData={{ role: 'standard' }} // Pre-fill role for technicians
+                    isPending={addSupervisorMutation.isPending}
+                    initialData={{ role: 'supervisor' }} // Pre-fill role for supervisors
                   />
                 </DialogContent>
               </Dialog>
             </CardHeader>
             <CardContent className="space-y-4">
-              {filteredTechnicians && filteredTechnicians.length > 0 ? (
-                filteredTechnicians.map((technician, index) => (
+              {filteredSupervisors && filteredSupervisors.length > 0 ? (
+                filteredSupervisors.map((supervisor, index) => (
                   <div
-                    key={technician.id}
+                    key={supervisor.id}
                     className="flex flex-col lg:flex-row items-start lg:items-center justify-between p-4 rounded-lg border border-primary/10 bg-slate-darker/10 animate-slide-up"
                     style={{ animationDelay: `${index * 100}ms` }}
                   >
                     <div className="flex-1 min-w-0 mb-3 lg:mb-0">
                       <h3 className="font-semibold text-lg flex items-center gap-2">
                         <UserIcon className="h-5 w-5 text-primary" />
-                        {technician.first_name} {technician.last_name}
+                        {supervisor.first_name} {supervisor.last_name}
                       </h3>
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-sm text-muted-foreground mt-1">
                         <div className="flex items-center gap-1">
-                          <Briefcase className="h-3 w-3" /> Função: {technician.role === 'standard' ? 'Técnico' : technician.role}
+                          <Briefcase className="h-3 w-3" /> Função: {supervisor.role === 'supervisor' ? 'Supervisor Técnico' : supervisor.role}
                         </div>
-                        {technician.phone_number && (
+                        {supervisor.phone_number && (
                           <div className="flex items-center gap-1">
-                            <Phone className="h-3 w-3" /> {technician.phone_number}
+                            <Phone className="h-3 w-3" /> {supervisor.phone_number}
                           </div>
                         )}
                       </div>
                     </div>
                     <div className="flex gap-2 flex-wrap justify-end">
-                      <Dialog open={isEditDialogOpen && editingTechnician?.id === technician.id} onOpenChange={setIsEditDialogOpen}>
+                      <Dialog open={isEditDialogOpen && editingSupervisor?.id === supervisor.id} onOpenChange={setIsEditDialogOpen}>
                         <DialogTrigger asChild>
                           <Button
                             variant="outline"
                             size="sm"
                             className="border-accent text-accent hover:bg-accent/10"
                             onClick={() => {
-                              setEditingTechnician(technician);
+                              setEditingSupervisor(supervisor);
                               setIsEditDialogOpen(true);
                             }}
                           >
@@ -312,18 +308,18 @@ export const TechnicianManagement = () => {
                           <DialogHeader>
                             <DialogTitle className="flex items-center gap-2 gradient-text">
                               <Users className="h-5 w-5" />
-                              Editar Técnico
+                              Editar Supervisor
                             </DialogTitle>
                           </DialogHeader>
-                          {editingTechnician && editingTechnician.id === technician.id && (
+                          {editingSupervisor && editingSupervisor.id === supervisor.id && (
                             <UserForm
-                              initialData={editingTechnician}
-                              onSave={handleUpdateTechnician}
+                              initialData={editingSupervisor}
+                              onSave={handleUpdateSupervisor}
                               onCancel={() => {
                                 setIsEditDialogOpen(false);
-                                setEditingTechnician(null);
+                                setEditingSupervisor(null);
                               }}
-                              isPending={updateTechnicianMutation.isPending}
+                              isPending={updateSupervisorMutation.isPending}
                             />
                           )}
                         </DialogContent>
@@ -332,8 +328,8 @@ export const TechnicianManagement = () => {
                         variant="outline"
                         size="sm"
                         className="border-destructive text-destructive hover:bg-destructive/10"
-                        onClick={() => handleDeleteTechnician(technician.id)}
-                        disabled={deleteTechnicianMutation.isPending}
+                        onClick={() => handleDeleteSupervisor(supervisor.id)}
+                        disabled={deleteSupervisorMutation.isPending}
                       >
                         <Trash2 className="mr-1 h-3 w-3" />
                         Excluir
@@ -344,7 +340,7 @@ export const TechnicianManagement = () => {
               ) : (
                 <div className="p-12 text-center text-muted-foreground">
                   <Users className="h-12 w-12 mx-auto mb-4" />
-                  <p>Nenhum técnico cadastrado. Clique em "Novo Técnico" para adicionar.</p>
+                  <p>Nenhum supervisor técnico cadastrado. Clique em "Novo Supervisor" para adicionar.</p>
                 </div>
               )}
             </CardContent>

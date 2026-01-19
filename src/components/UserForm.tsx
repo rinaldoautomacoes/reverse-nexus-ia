@@ -11,19 +11,21 @@ type ProfileUpdate = TablesUpdate<'profiles'>;
 
 interface UserFormProps {
   initialData?: ProfileUpdate;
-  onSave: (data: ProfileInsert | ProfileUpdate) => void;
+  onSave: (data: ProfileInsert | ProfileUpdate & { email?: string; password?: string }) => void; // Adicionado email e password para novos usuários
   onCancel: () => void;
   isPending: boolean;
 }
 
 export const UserForm: React.FC<UserFormProps> = ({ initialData, onSave, onCancel, isPending }) => {
-  const [formData, setFormData] = useState<ProfileInsert | ProfileUpdate>(initialData || {
+  const [formData, setFormData] = useState<ProfileInsert | ProfileUpdate & { email?: string; password?: string }>(initialData || {
     first_name: "",
     last_name: "",
     role: "standard", // Default role
     phone_number: "",
     avatar_url: "",
     id: "", // Will be filled by mutation or existing user
+    email: "", // Para novos usuários
+    password: "", // Para novos usuários
   });
 
   useEffect(() => {
@@ -32,7 +34,7 @@ export const UserForm: React.FC<UserFormProps> = ({ initialData, onSave, onCance
     }
   }, [initialData]);
 
-  const handleInputChange = (field: keyof (ProfileInsert | ProfileUpdate), value: string | null) => {
+  const handleInputChange = (field: keyof (ProfileInsert | ProfileUpdate | { email?: string; password?: string }), value: string | null) => {
     setFormData(prev => ({ ...prev, [field]: value }));
   };
 
@@ -41,8 +43,47 @@ export const UserForm: React.FC<UserFormProps> = ({ initialData, onSave, onCance
     onSave(formData);
   };
 
+  const isNewUser = !initialData?.id; // Determina se é um novo usuário
+
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
+      {isNewUser && (
+        <>
+          <div className="space-y-2">
+            <Label htmlFor="email">Email *</Label>
+            <div className="relative">
+              <Mail className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+              <Input
+                id="email"
+                type="email"
+                placeholder="email@exemplo.com"
+                className="pl-10"
+                value={formData.email || ''}
+                onChange={(e) => handleInputChange("email", e.target.value)}
+                required
+                disabled={isPending}
+              />
+            </div>
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="password">Senha *</Label>
+            <div className="relative">
+              <Briefcase className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+              <Input
+                id="password"
+                type="password"
+                placeholder="••••••••"
+                className="pl-10"
+                value={formData.password || ''}
+                onChange={(e) => handleInputChange("password", e.target.value)}
+                required
+                disabled={isPending}
+              />
+            </div>
+          </div>
+        </>
+      )}
+
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div className="space-y-2">
           <Label htmlFor="first_name">Primeiro Nome *</Label>
@@ -104,15 +145,12 @@ export const UserForm: React.FC<UserFormProps> = ({ initialData, onSave, onCance
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="standard">Padrão</SelectItem>
+              <SelectItem value="supervisor">Supervisor</SelectItem> {/* Novo item */}
               <SelectItem value="admin">Administrador</SelectItem>
             </SelectContent>
           </Select>
         </div>
       </div>
-
-      {/* Email e Senha não são gerenciados diretamente aqui, pois são do Supabase Auth */}
-      {/* Para adicionar um novo usuário, a Edge Function 'create-user' é usada */}
-      {/* Para editar, apenas os campos do perfil são atualizados */}
 
       <div className="flex gap-2 justify-end pt-4">
         <Button type="button" variant="outline" onClick={onCancel} disabled={isPending}>

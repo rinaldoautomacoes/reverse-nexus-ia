@@ -81,10 +81,10 @@ export interface ClientImportData {
   contact_person?: string | null;
 }
 
-export interface TechnicianImportData { // Nova interface
+export interface TechnicianImportData {
   first_name: string;
   last_name?: string | null;
   email: string;
   phone_number?: string | null;
-  role?: 'standard' | 'admin'; // Default to 'standard' if not provided
+  role?: 'standard' | 'admin' | 'supervisor'; // Adicionado 'supervisor'
 }

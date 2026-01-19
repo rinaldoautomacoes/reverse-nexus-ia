@@ -140,8 +140,9 @@ export const Constants = {
       app_role: {
         admin: "admin",
         standard: "standard",
+        supervisor: "supervisor",
       },
-      pest_service_status: { // New enum
+      pest_service_status: {
         agendado: "agendado",
         em_andamento: "em_andamento",
         concluido: "concluido",

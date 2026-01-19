@@ -14,7 +14,7 @@ import type { RouteRow, RouteInsert, RouteUpdate, RouteRelationships } from './t
 import type { TransportadoraRow, TransportadoraInsert, TransportadoraUpdate, TransportadoraRelationships } from './tables/transportadoras';
 import type { OutstandingCollectionItemRow, OutstandingCollectionItemInsert, OutstandingCollectionItemUpdate, OutstandingCollectionItemRelationships } from './tables/outstanding_collection_items';
 import type { DebtRecordRow, DebtRecordInsert, DebtRecordUpdate, DebtRecordRelationships } from './tables/debt_records';
-import type { PestControlServiceRow, PestControlServiceInsert, PestControlServiceUpdate, PestControlServiceRelationships } from './tables/pest_control_services'; // New import
+import type { PestControlServiceRow, PestControlServiceInsert, PestControlServiceUpdate, PestControlServiceRelationships } from './tables/pest_control_services';
 
 export type PublicSchema = {
   Tables: {
@@ -96,7 +96,7 @@ export type PublicSchema = {
       Update: DebtRecordUpdate;
       Relationships: DebtRecordRelationships;
     };
-    pest_control_services: { // New table definition
+    pest_control_services: {
       Row: PestControlServiceRow;
       Insert: PestControlServiceInsert;
       Update: PestControlServiceUpdate;
@@ -121,8 +121,8 @@ export type PublicSchema = {
     }
   }
   Enums: {
-    app_role: "admin" | "standard";
-    pest_service_status: "agendado" | "em_andamento" | "concluido" | "cancelado"; // New enum
+    app_role: "admin" | "standard" | "supervisor";
+    pest_service_status: "agendado" | "em_andamento" | "concluido" | "cancelado";
   }
   CompositeTypes: {
     [_ in never]: never

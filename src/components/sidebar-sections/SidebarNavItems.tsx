@@ -40,6 +40,7 @@ import {
   Bug,
   LayoutDashboard,
   UserCog, // New icon for Technician Management
+  UserCheck, // New icon for Supervisor Management
 } from 'lucide-react';
 
 interface NavItem {
@@ -55,7 +56,7 @@ const navItems: NavItem[] = [
     label: 'Página Inicial',
     icon: Home,
     path: '/',
-    roles: ['standard', 'admin'],
+    roles: ['standard', 'admin', 'supervisor'],
     group: 'main',
   },
   {
@@ -69,21 +70,21 @@ const navItems: NavItem[] = [
     label: 'Roteirização',
     icon: Route,
     path: '/roteirizacao',
-    roles: ['standard', 'admin'],
+    roles: ['standard', 'admin', 'supervisor'],
     group: 'main',
   },
   {
     label: 'Dashboard Controle de Pragas',
     icon: LayoutDashboard,
     path: '/pest-control-dashboard',
-    roles: ['standard', 'admin'],
+    roles: ['standard', 'admin', 'supervisor'],
     group: 'main',
   },
   {
     label: 'Controle de Pragas',
     icon: Bug,
     path: '/pest-control',
-    roles: ['standard', 'admin'],
+    roles: ['standard', 'admin', 'supervisor'],
     group: 'main',
   },
   {
@@ -136,10 +137,17 @@ const navItems: NavItem[] = [
     group: 'management',
   },
   {
-    label: 'Técnicos', // New item
-    icon: UserCog, // New icon
-    path: '/technician-management', // New path
-    roles: ['admin'], // Only admins can manage technicians
+    label: 'Técnicos',
+    icon: UserCog,
+    path: '/technician-management',
+    roles: ['admin'],
+    group: 'management',
+  },
+  {
+    label: 'Supervisor Técnico', // Novo item
+    icon: UserCheck, // Novo ícone
+    path: '/supervisor-management', // Nova rota
+    roles: ['admin'], // Apenas administradores podem gerenciar supervisores
     group: 'management',
   },
   {
@@ -153,70 +161,70 @@ const navItems: NavItem[] = [
     label: 'Dashboard Coletas',
     icon: Brain,
     path: '/coletas-dashboard',
-    roles: ['standard', 'admin'],
+    roles: ['standard', 'admin', 'supervisor'],
     group: 'coleta-services',
   },
   {
     label: 'Agendar Coleta',
     icon: Package,
     path: '/agendar-coleta',
-    roles: ['standard', 'admin'],
+    roles: ['standard', 'admin', 'supervisor'],
     group: 'coleta-services',
   },
   {
     label: 'Coletas Ativas',
     icon: ListChecks,
     path: '/coletas-ativas',
-    roles: ['standard', 'admin'],
+    roles: ['standard', 'admin', 'supervisor'],
     group: 'coleta-services',
   },
   {
     label: 'Coletas Concluídas',
     icon: CheckCircle,
     path: '/coletas-concluidas',
-    roles: ['standard', 'admin'],
+    roles: ['standard', 'admin', 'supervisor'],
     group: 'coleta-services',
   },
   {
     label: 'Relatório de Coletas',
     icon: FileText,
     path: '/relatorios',
-    roles: ['standard', 'admin'],
+    roles: ['standard', 'admin', 'supervisor'],
     group: 'coleta-services',
   },
   {
     label: 'Dashboard Entregas',
     icon: Truck,
     path: '/dashboard-entregas',
-    roles: ['standard', 'admin'],
+    roles: ['standard', 'admin', 'supervisor'],
     group: 'entrega-services',
   },
   {
     label: 'Agendar Entrega',
     icon: CalendarPlus,
     path: '/agendar-entrega',
-    roles: ['standard', 'admin'],
+    roles: ['standard', 'admin', 'supervisor'],
     group: 'entrega-services',
   },
   {
     label: 'Entregas Ativas',
     icon: Truck,
     path: '/entregas-ativas',
-    roles: ['standard', 'admin'],
+    roles: ['standard', 'admin', 'supervisor'],
     group: 'entrega-services',
   },
   {
     label: 'Entregas Concluídas',
     icon: ClipboardCheck,
     path: '/entregas-concluidas',
-    roles: ['standard', 'admin'],
+    roles: ['standard', 'admin', 'supervisor'],
     group: 'entrega-services',
   },
   {
     label: 'Relatório de Entregas',
     icon: FileText,
     path: '/relatorios-entregas',
-    roles: ['standard', 'admin'],
+    roles: ['standard', 'admin', 'supervisor'],
     group: 'entrega-services',
   },
 ];
