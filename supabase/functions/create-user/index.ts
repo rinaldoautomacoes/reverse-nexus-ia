@@ -75,12 +75,20 @@ serve(async (req) => {
       return new Response(JSON.stringify({ error: 'Bad Request: Missing required fields (email, password, first_name, role)' }), { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
     }
 
-    // Admin client for performing admin operations (using service role key)
+    // Admin client for performing auth.admin operations (using service role key)
     const adminSupabase = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     );
     console.log('[create-user] Admin Supabase client initialized.');
+
+    // Client specifically for querying the 'auth' schema tables
+    const authDbSupabase = createClient(
+      Deno.env.get('SUPABASE_URL') ?? '',
+      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '',
+      { db: { schema: 'auth' } } // Explicitly set schema to 'auth'
+    );
+    console.log('[create-user] Auth DB Supabase client initialized for auth schema queries.');
 
     let targetUserId: string | null = null;
     let operationType: 'created' | 'updated' = 'created';
@@ -88,9 +96,9 @@ serve(async (req) => {
     // First, try to get the user by email to check if they already exist
     let existingUserAuthData;
     try {
-      // Use direct query to auth.users table
-      const { data, error: getUserError } = await adminSupabase
-        .from('auth.users')
+      // Use the authDbSupabase client to query the 'users' table within the 'auth' schema
+      const { data, error: getUserError } = await authDbSupabase
+        .from('users') // Now it's just 'users' because schema is 'auth'
         .select('id')
         .eq('email', email)
         .single();
