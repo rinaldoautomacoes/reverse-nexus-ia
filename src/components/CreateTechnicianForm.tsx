@@ -43,10 +43,7 @@ export const CreateTechnicianForm: React.FC<CreateTechnicianFormProps> = ({ onSa
       toast({ title: "Campo Obrigatório", description: "O Primeiro Nome é obrigatório.", variant: "destructive" });
       return;
     }
-    if (!formData.last_name || formData.last_name.trim() === '') {
-      toast({ title: "Campo Obrigatório", description: "O Sobrenome é obrigatório.", variant: "destructive" });
-      return;
-    }
+    // Removido a validação de obrigatoriedade para last_name
     onSave(formData);
   };
 
@@ -69,7 +66,7 @@ export const CreateTechnicianForm: React.FC<CreateTechnicianFormProps> = ({ onSa
           </div>
         </div>
         <div className="space-y-2">
-          <Label htmlFor="last_name">Sobrenome *</Label>
+          <Label htmlFor="last_name">Sobrenome</Label> {/* Removido o '*' de obrigatoriedade */}
           <div className="relative">
             <UserIcon className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
             <Input
@@ -78,7 +75,6 @@ export const CreateTechnicianForm: React.FC<CreateTechnicianFormProps> = ({ onSa
               className="pl-10"
               value={formData.last_name || ''}
               onChange={(e) => handleInputChange("last_name", e.target.value)}
-              required
               disabled={isPending}
             />
           </div>
@@ -150,5 +146,3 @@ export const CreateTechnicianForm: React.FC<CreateTechnicianFormProps> = ({ onSa
         </Button>
       </div>
     </form>
-  );
-};

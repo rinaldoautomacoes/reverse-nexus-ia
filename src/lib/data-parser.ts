@@ -138,7 +138,8 @@ const mapRowToTechnician = (row: any): TechnicianImportData => {
   }
 
   if (!firstName) firstName = 'Tecnico';
-  if (!lastName) lastName = 'Desconhecido';
+  // Se lastName for vazio, defina como null
+  if (!lastName) lastName = null;
   console.log('[data-parser] Processed names:', { firstName, lastName });
 
   // Validate supervisor_id
@@ -261,15 +262,15 @@ export const parseClientsJSON = async (file: File): Promise<ClientImportData[]> 
 
 export const parseTechniciansXLSX = async (file: File): Promise<TechnicianImportData[]> => {
   const json = await readXLSX(file);
-  return json.map(mapRowToTechnician).filter(t => t.first_name && t.last_name);
+  return json.map(mapRowToTechnician).filter(t => t.first_name);
 };
 
 export const parseTechniciansCSV = async (file: File): Promise<TechnicianImportData[]> => {
   const json = await readCSV(file);
-  return json.map(mapRowToTechnician).filter(t => t.first_name && t.last_name);
+  return json.map(mapRowToTechnician).filter(t => t.first_name);
 };
 
 export const parseTechniciansJSON = async (file: File): Promise<TechnicianImportData[]> => {
   const json = await readJSON(file);
-  return json.map(mapRowToTechnician).filter(t => t.first_name && t.last_name);
+  return json.map(mapRowToTechnician).filter(t => t.first_name);
 };

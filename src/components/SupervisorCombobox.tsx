@@ -90,9 +90,22 @@ export const SupervisorCombobox: React.FC<SupervisorComboboxProps> = ({
     setOpen(false);
   };
 
+  const handleInputChange = (currentSearch: string) => {
+    setInputValue(currentSearch);
+    // Se o usuário está digitando e o texto não corresponde a um supervisor existente,
+    // o valor do supervisor_id deve ser null.
+    const matchedProfile = availableSupervisors.find(profile => 
+      `${profile.first_name || ''} ${profile.last_name || ''}`.toLowerCase() === currentSearch.toLowerCase()
+    );
+    if (!matchedProfile) {
+      onValueChange(null);
+      onSupervisorSelect?.(null);
+    }
+  };
+
   const displayValue = value && availableSupervisors ? 
-    availableSupervisors.find(p => p.id === value)?.first_name || "Selecionar supervisor..." : 
-    "Selecionar supervisor...";
+    availableSupervisors.find(p => p.id === value)?.first_name || inputValue || "Selecionar supervisor..." : 
+    inputValue || "Selecionar supervisor..."; // Exibe inputValue se não houver valor selecionado
 
   return (
     <Popover open={open} onOpenChange={setOpen}>
@@ -116,7 +129,7 @@ export const SupervisorCombobox: React.FC<SupervisorComboboxProps> = ({
               {`${availableSupervisors.find(p => p.id === value)?.first_name || ''} ${availableSupervisors.find(p => p.id === value)?.last_name || ''}`.trim()}
             </div>
           ) : (
-            "Selecionar supervisor..."
+            displayValue
           )}
           <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
         </Button>
@@ -126,7 +139,7 @@ export const SupervisorCombobox: React.FC<SupervisorComboboxProps> = ({
           <CommandInput
             placeholder="Buscar supervisor..."
             value={inputValue}
-            onValueChange={setInputValue}
+            onValueChange={handleInputChange}
           />
           <CommandList>
             {isLoading && <CommandEmpty>Carregando supervisores...</CommandEmpty>}

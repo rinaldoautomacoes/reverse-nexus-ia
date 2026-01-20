@@ -126,7 +126,7 @@ export const UserForm: React.FC<UserFormProps> = ({ initialData, onSave, onCance
           </div>
         </div>
         <div className="space-y-2">
-          <Label htmlFor="last_name">Sobrenome *</Label>
+          <Label htmlFor="last_name">Sobrenome</Label> {/* Removido o '*' de obrigatoriedade */}
           <div className="relative">
             <UserIcon className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
             <Input
@@ -135,7 +135,6 @@ export const UserForm: React.FC<UserFormProps> = ({ initialData, onSave, onCance
               className="pl-10"
               value={formData.last_name || ''}
               onChange={(e) => handleInputChange("last_name", e.target.value)}
-              required
               disabled={isPending}
             />
           </div>
@@ -227,5 +226,3 @@ export const UserForm: React.FC<UserFormProps> = ({ initialData, onSave, onCance
         </Button>
       </div>
     </form>
-  );
-};
