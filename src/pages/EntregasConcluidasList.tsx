@@ -39,7 +39,7 @@ interface EntregasConcluidasListProps {
   selectedYear: string;
 }
 
-const EntregasConcluidasList: React.FC<EntregasConcluidasListProps> = ({ selectedYear }) => {
+export const EntregasConcluidasList: React.FC<EntregasConcluidasListProps> = ({ selectedYear }) => {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const { toast } = useToast();
