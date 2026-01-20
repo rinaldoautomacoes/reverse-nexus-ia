@@ -125,7 +125,7 @@ const mapRowToTechnician = (row: any): TechnicianImportData => {
   let supervisorIdRaw = row['ID Supervisor'] || row['supervisor_id'] || null;
   let supervisor_id: string | null = null;
   let teamShift: 'day' | 'night' = (row['Equipe']?.toLowerCase() === 'night' ? 'night' : 'day');
-  let address: string | null = row['Endereço'] || null; // Adicionado: Mapeamento do campo 'Endereço'
+  let address: string | null = row['Endereço'] || null;
 
   if (row['Técnico'] && (!firstName || !lastName)) {
     const tecnicoFullName = String(row['Técnico']).trim();
@@ -148,12 +148,12 @@ const mapRowToTechnician = (row: any): TechnicianImportData => {
   const technicianData = {
     first_name: firstName,
     last_name: lastName,
-    email: row['Email'] || null, // Email pode ser útil para o perfil, mesmo que não para auth
+    email: row['Email'] || null,
     phone_number: phoneNumber,
     role: role,
     supervisor_id: supervisor_id,
     team_shift: teamShift,
-    address: address, // Adicionado: Incluindo o campo address
+    address: address,
   };
   return technicianData;
 };
@@ -162,9 +162,9 @@ const mapRowToSupervisor = (row: any): SupervisorImportData => {
   let firstName = String(row['Primeiro Nome'] || row['first_name'] || row['Nome'] || '').trim();
   let lastName = String(row['Sobrenome'] || row['last_name'] || '').trim();
   let phoneNumber = cleanPhoneNumber(row['Telefone'] || row['phone_number']);
-  let role = (row['Função']?.toLowerCase() === 'admin' ? 'admin' : 'standard'); // Supervisores podem ser admin ou standard
+  let role = (row['Função']?.toLowerCase() === 'admin' ? 'admin' : 'standard');
   let teamShift: 'day' | 'night' = (row['Equipe']?.toLowerCase() === 'night' ? 'night' : 'day');
-  let address: string | null = row['Endereço'] || null; // Adicionado: Mapeamento do campo 'Endereço'
+  let address: string | null = row['Endereço'] || null;
 
   if (row['Supervisor'] && (!firstName || !lastName)) {
     const supervisorFullName = String(row['Supervisor']).trim();
@@ -185,8 +185,7 @@ const mapRowToSupervisor = (row: any): SupervisorImportData => {
     phone_number: phoneNumber,
     role: role,
     team_shift: teamShift,
-    address: address, // Adicionado: Incluindo o campo address
-    // supervisor_id é implicitamente null para supervisores
+    address: address,
   };
   return supervisorData;
 };

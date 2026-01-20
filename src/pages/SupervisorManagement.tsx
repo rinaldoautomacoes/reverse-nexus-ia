@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { ArrowLeft, Edit, Trash2, Users, Search, User as UserIcon, Phone, Briefcase, Loader2, UserCheck, Sun, Moon, Square, CheckSquare, MapPin } from "lucide-react"; // Adicionado MapPin
+import { ArrowLeft, Edit, Trash2, Users, Search, User as UserIcon, Phone, Briefcase, Loader2, UserCheck, Sun, Moon, Square, CheckSquare, MapPin } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -26,7 +26,6 @@ export const SupervisorManagement = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedSupervisorIds, setSelectedSupervisorIds] = useState<Set<string>>(new Set());
 
-  // Fetch ALL profiles to correctly resolve supervisor names (who might be admins or other standard users)
   const { data: allProfiles, isLoading: isLoadingProfiles, error: profilesError } = useQuery<Profile[], Error>({
     queryKey: ['allProfiles', currentUser?.id],
     queryFn: async () => {
@@ -41,7 +40,6 @@ export const SupervisorManagement = () => {
     enabled: !!currentUser?.id,
   });
 
-  // Filter for supervisors: standard role AND no supervisor_id
   const supervisors = allProfiles?.filter(profile => profile.role === 'standard' && profile.supervisor_id === null) || [];
 
   const deleteSupervisorMutation = useMutation({
@@ -128,7 +126,7 @@ export const SupervisorManagement = () => {
     supervisor.last_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
     supervisor.phone_number?.toLowerCase().includes(searchTerm.toLowerCase()) ||
     supervisor.team_shift?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    supervisor.address?.toLowerCase().includes(searchTerm.toLowerCase()) // Incluído address na busca
+    supervisor.address?.toLowerCase().includes(searchTerm.toLowerCase())
   ) || [];
 
   const isAnySupervisorSelected = selectedSupervisorIds.size > 0;
@@ -272,7 +270,7 @@ export const SupervisorManagement = () => {
                               Equipe: {supervisor.team_shift === 'day' ? 'Dia' : 'Noite'}
                             </div>
                           )}
-                          {supervisor.address && ( // Exibindo o novo campo de endereço
+                          {supervisor.address && (
                             <div className="flex items-center gap-1 col-span-full">
                               <MapPin className="h-3 w-3" /> Endereço: {supervisor.address}
                             </div>

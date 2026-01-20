@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Loader2, User as UserIcon, Mail, Lock, Phone, Briefcase, UserCog, Sun, Moon, MapPin } from "lucide-react"; // Adicionado MapPin
+import { Loader2, User as UserIcon, Mail, Lock, Phone, Briefcase, UserCog, Sun, Moon, MapPin } from "lucide-react";
 import type { TablesInsert, TablesUpdate } from "@/integrations/supabase/types_generated";
 import { SupervisorCombobox } from "./SupervisorCombobox";
 
@@ -18,7 +18,7 @@ interface UserFormProps {
   showAuthFields?: boolean;
   onAuthFieldsChange?: (email: string, password: string) => void;
   defaultRole?: 'standard' | 'admin';
-  profileType?: 'technician' | 'supervisor' | 'user'; // Novo prop
+  profileType?: 'technician' | 'supervisor' | 'user';
 }
 
 export const UserForm: React.FC<UserFormProps> = ({ initialData, onSave, onCancel, isPending, showAuthFields = false, onAuthFieldsChange, defaultRole = 'standard', profileType = 'user' }) => {
@@ -30,7 +30,7 @@ export const UserForm: React.FC<UserFormProps> = ({ initialData, onSave, onCance
     avatar_url: "",
     supervisor_id: null,
     team_shift: "day",
-    address: "", // Adicionado o campo address
+    address: "",
     id: "",
   });
   const [email, setEmail] = useState("");
@@ -48,7 +48,7 @@ export const UserForm: React.FC<UserFormProps> = ({ initialData, onSave, onCance
         avatar_url: "",
         supervisor_id: null,
         team_shift: "day",
-        address: "", // Resetar address
+        address: "",
         id: "",
       });
       setEmail("");
@@ -201,7 +201,6 @@ export const UserForm: React.FC<UserFormProps> = ({ initialData, onSave, onCance
             </SelectContent>
           </Select>
         </div>
-        {/* Conditionally render SupervisorCombobox */}
         {!isSupervisorProfile && (
           <div className="space-y-2">
             <Label htmlFor="supervisor_id">Supervisor</Label>
@@ -215,7 +214,6 @@ export const UserForm: React.FC<UserFormProps> = ({ initialData, onSave, onCance
         )}
       </div>
 
-      {/* Novo campo de Endereço */}
       <div className="space-y-2">
         <Label htmlFor="address">Endereço</Label>
         <div className="relative">

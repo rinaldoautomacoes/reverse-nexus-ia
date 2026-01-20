@@ -2,16 +2,16 @@ import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { ArrowLeft, Edit, Trash2, Users, Search, User as UserIcon, Phone, Briefcase, Loader2, UserCog, Sun, Moon, Square, CheckSquare, MapPin } from "lucide-react"; // Adicionado MapPin
+import { ArrowLeft, Edit, Trash2, Users, Search, User as UserIcon, Phone, Briefcase, Loader2, UserCog, Sun, Moon, Square, CheckSquare, MapPin } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import type { Tables } from "@/integrations/supabase/types_generated";
-import { useToast } from "@/hooks/use-toast"; // Corrigido aqui
+import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/use-auth";
-import { CreateProfileDialog } from "@/components/CreateProfileDialog"; // Usando o novo diálogo genérico
-import { EditProfileDialog } from "@/components/EditProfileDialog"; // Usando o novo diálogo genérico
-import { Checkbox } from "@/components/ui/checkbox"; // Importar Checkbox
+import { CreateProfileDialog } from "@/components/CreateProfileDialog";
+import { EditProfileDialog } from "@/components/EditProfileDialog";
+import { Checkbox } from "@/components/ui/checkbox";
 
 type Profile = Tables<'profiles'>;
 
@@ -24,9 +24,8 @@ export const TechnicianManagement = () => {
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [editingTechnician, setEditingTechnician] = useState<Profile | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
-  const [selectedTechnicianIds, setSelectedTechnicianIds] = useState<Set<string>>(new Set()); // Estado para IDs selecionados
+  const [selectedTechnicianIds, setSelectedTechnicianIds] = useState<Set<string>>(new Set());
 
-  // Fetch ALL profiles to correctly resolve supervisor names (who might be admins)
   const { data: allProfiles, isLoading: isLoadingProfiles, error: profilesError } = useQuery<Profile[], Error>({
     queryKey: ['allProfiles', currentUser?.id],
     queryFn: async () => {
@@ -41,7 +40,6 @@ export const TechnicianManagement = () => {
     enabled: !!currentUser?.id,
   });
 
-  // Filter for technicians (standard role AND has a supervisor assigned)
   const technicians = allProfiles?.filter(profile => profile.role === 'standard' && profile.supervisor_id !== null) || [];
 
   const deleteTechnicianMutation = useMutation({
@@ -53,8 +51,8 @@ export const TechnicianManagement = () => {
       if (error) throw new Error(error.message);
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['allProfiles', currentUser?.id] }); // Invalidate all profiles to refresh lists
-      queryClient.invalidateQueries({ queryKey: ['allProfilesForSupervisor', currentUser?.id] }); // Invalidate supervisor list
+      queryClient.invalidateQueries({ queryKey: ['allProfiles', currentUser?.id] });
+      queryClient.invalidateQueries({ queryKey: ['allProfilesForSupervisor', currentUser?.id] });
       toast({ title: "Técnico excluído!", description: "Técnico removido com sucesso." });
     },
     onError: (err) => {
@@ -73,7 +71,7 @@ export const TechnicianManagement = () => {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['allProfiles', currentUser?.id] });
       queryClient.invalidateQueries({ queryKey: ['allProfilesForSupervisor', currentUser?.id] });
-      setSelectedTechnicianIds(new Set()); // Limpa a seleção após a exclusão
+      setSelectedTechnicianIds(new Set());
       toast({ title: "Técnicos excluídos!", description: `${selectedTechnicianIds.size} técnicos removidos com sucesso.` });
     },
     onError: (err) => {
@@ -116,10 +114,10 @@ export const TechnicianManagement = () => {
 
   const handleSelectAllTechnicians = () => {
     if (selectedTechnicianIds.size === filteredTechnicians.length) {
-      setSelectedTechnicianIds(new Set()); // Desselecionar todos
+      setSelectedTechnicianIds(new Set());
     } else {
       const allTechnicianIds = new Set(filteredTechnicians.map(t => t.id));
-      setSelectedTechnicianIds(allTechnicianIds); // Selecionar todos
+      setSelectedTechnicianIds(allTechnicianIds);
     }
   };
 
@@ -127,8 +125,8 @@ export const TechnicianManagement = () => {
     technician.first_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
     technician.last_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
     technician.phone_number?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    technician.team_shift?.toLowerCase().includes(searchTerm.toLowerCase()) || // Incluído team_shift na busca
-    technician.address?.toLowerCase().includes(searchTerm.toLowerCase()) || // Incluído address na busca
+    technician.team_shift?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    technician.address?.toLowerCase().includes(searchTerm.toLowerCase()) ||
     (technician.supervisor_id && allProfiles?.find(s => s.id === technician.supervisor_id)?.first_name?.toLowerCase().includes(searchTerm.toLowerCase()))
   ) || [];
 
@@ -231,7 +229,7 @@ export const TechnicianManagement = () => {
                   )}
                   {isAllTechniciansSelected ? "Desselecionar Todos" : "Selecionar Todos"}
                 </Button>
-                <CreateProfileDialog profileType="technician" /> {/* Usando o novo diálogo com tipo 'technician' */}
+                <CreateProfileDialog profileType="technician" />
               </div>
             </CardHeader>
             <CardContent className="space-y-4">
@@ -278,7 +276,7 @@ export const TechnicianManagement = () => {
                               <UserCog className="h-3 w-3" /> Supervisor: {allProfiles?.find(s => s.id === technician.supervisor_id)?.first_name || 'N/A'}
                             </div>
                           )}
-                          {technician.address && ( // Exibindo o novo campo de endereço
+                          {technician.address && (
                             <div className="flex items-center gap-1 col-span-full">
                               <MapPin className="h-3 w-3" /> Endereço: {technician.address}
                             </div>
