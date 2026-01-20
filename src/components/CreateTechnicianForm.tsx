@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Loader2, User as UserIcon, Phone, Briefcase, UserCog } from "lucide-react";
+import { Loader2, User as UserIcon, Phone, Briefcase, UserCog, Sun, Moon } from "lucide-react"; // Adicionado Sun e Moon
 import type { TablesInsert } from "@/integrations/supabase/types_generated";
 import { SupervisorCombobox } from "./SupervisorCombobox";
 import { useToast } from "@/hooks/use-toast"; // Import useToast
@@ -25,6 +25,7 @@ export const CreateTechnicianForm: React.FC<CreateTechnicianFormProps> = ({ onSa
     phone_number: "",
     avatar_url: "",
     supervisor_id: null,
+    team_shift: "day", // Novo campo com valor padrão
     id: crypto.randomUUID(), // Generate ID here for new profiles
   });
 
@@ -99,13 +100,36 @@ export const CreateTechnicianForm: React.FC<CreateTechnicianFormProps> = ({ onSa
         </div>
       </div>
 
-      <div className="space-y-2">
-        <Label htmlFor="supervisor_id">Supervisor</Label>
-        <SupervisorCombobox
-          value={formData.supervisor_id || null}
-          onValueChange={handleSupervisorSelect}
-          disabled={isPending}
-        />
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4"> {/* Novo grid para team_shift e supervisor */}
+        <div className="space-y-2">
+          <Label htmlFor="team_shift">Equipe</Label>
+          <Select
+            value={formData.team_shift || 'day'}
+            onValueChange={(value) => handleInputChange("team_shift", value)}
+            disabled={isPending}
+          >
+            <SelectTrigger className="pl-10">
+              {(formData.team_shift === 'day' || !formData.team_shift) ? (
+                <Sun className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+              ) : (
+                <Moon className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+              )}
+              <SelectValue placeholder="Selecionar equipe" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="day">Dia</SelectItem>
+              <SelectItem value="night">Noite</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+        <div className="space-y-2">
+          <Label htmlFor="supervisor_id">Supervisor</Label>
+          <SupervisorCombobox
+            value={formData.supervisor_id || null}
+            onValueChange={handleSupervisorSelect}
+            disabled={isPending}
+          />
+        </div>
       </div>
 
       <div className="flex gap-2 justify-end pt-4">

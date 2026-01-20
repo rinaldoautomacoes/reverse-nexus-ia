@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Loader2, User as UserIcon, Mail, Lock, Phone, Briefcase, UserCog } from "lucide-react"; // Adicionado UserCog
+import { Loader2, User as UserIcon, Mail, Lock, Phone, Briefcase, UserCog, Sun, Moon } from "lucide-react"; // Adicionado Sun e Moon
 import type { TablesInsert, TablesUpdate } from "@/integrations/supabase/types_generated";
 import { SupervisorCombobox } from "./SupervisorCombobox"; // Importar SupervisorCombobox
 
@@ -28,6 +28,7 @@ export const UserForm: React.FC<UserFormProps> = ({ initialData, onSave, onCance
     phone_number: "",
     avatar_url: "",
     supervisor_id: null, // Novo campo
+    team_shift: "day", // Novo campo com valor padrão
     id: "", // Will be filled by mutation or existing user
   });
   const [email, setEmail] = useState("");
@@ -45,6 +46,7 @@ export const UserForm: React.FC<UserFormProps> = ({ initialData, onSave, onCance
         phone_number: "",
         avatar_url: "",
         supervisor_id: null,
+        team_shift: "day", // Reset para valor padrão
         id: "",
       });
       setEmail("");
@@ -174,14 +176,37 @@ export const UserForm: React.FC<UserFormProps> = ({ initialData, onSave, onCance
         </div>
       </div>
 
-      <div className="space-y-2">
-        <Label htmlFor="supervisor_id">Supervisor</Label>
-        <SupervisorCombobox
-          value={formData.supervisor_id || null}
-          onValueChange={handleSupervisorSelect}
-          disabled={isPending}
-          excludeUserId={initialData?.id} // Exclude the user being edited from being their own supervisor
-        />
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4"> {/* Novo grid para team_shift e supervisor */}
+        <div className="space-y-2">
+          <Label htmlFor="team_shift">Equipe</Label>
+          <Select
+            value={formData.team_shift || 'day'}
+            onValueChange={(value) => handleInputChange("team_shift", value)}
+            disabled={isPending}
+          >
+            <SelectTrigger className="pl-10">
+              {(formData.team_shift === 'day' || !formData.team_shift) ? (
+                <Sun className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+              ) : (
+                <Moon className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+              )}
+              <SelectValue placeholder="Selecionar equipe" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="day">Dia</SelectItem>
+              <SelectItem value="night">Noite</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+        <div className="space-y-2">
+          <Label htmlFor="supervisor_id">Supervisor</Label>
+          <SupervisorCombobox
+            value={formData.supervisor_id || null}
+            onValueChange={handleSupervisorSelect}
+            disabled={isPending}
+            excludeUserId={initialData?.id} // Exclude the user being edited from being their own supervisor
+          />
+        </div>
       </div>
 
       <div className="flex gap-2 justify-end pt-4">

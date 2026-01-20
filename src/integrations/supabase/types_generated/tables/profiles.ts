@@ -10,6 +10,7 @@ export type ProfileRow = {
   updated_at: string | null
   supervisor_id: string | null
   address: string | null
+  team_shift: "day" | "night" // Novo campo
 }
 
 export type ProfileInsert = {
@@ -22,6 +23,7 @@ export type ProfileInsert = {
   updated_at?: string | null
   supervisor_id?: string | null
   address?: string | null
+  team_shift?: "day" | "night" // Novo campo
 }
 
 export type ProfileUpdate = {
@@ -34,6 +36,7 @@ export type ProfileUpdate = {
   updated_at?: string | null
   supervisor_id?: string | null
   address?: string | null
+  team_shift?: "day" | "night" // Novo campo
 }
 
 export type ProfileRelationships = []

@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { ArrowLeft, Edit, Trash2, Users, Search, User as UserIcon, Phone, Briefcase, Loader2, UserCog } from "lucide-react";
+import { ArrowLeft, Edit, Trash2, Users, Search, User as UserIcon, Phone, Briefcase, Loader2, UserCog, Sun, Moon } from "lucide-react"; // Adicionado Sun e Moon
 import { useNavigate } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -81,6 +81,7 @@ export const TechnicianManagement = () => {
     technician.first_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
     technician.last_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
     technician.phone_number?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    technician.team_shift?.toLowerCase().includes(searchTerm.toLowerCase()) || // Incluído team_shift na busca
     (technician.supervisor_id && allProfiles?.find(s => s.id === technician.supervisor_id)?.first_name?.toLowerCase().includes(searchTerm.toLowerCase()))
   ) || [];
   console.log("[TechnicianManagement] Filtered technicians for display:", filteredTechnicians);
@@ -135,7 +136,7 @@ export const TechnicianManagement = () => {
                 <div className="flex-1 relative">
                   <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
                   <Input
-                    placeholder="Buscar por nome, sobrenome, telefone ou supervisor..."
+                    placeholder="Buscar por nome, sobrenome, telefone, equipe ou supervisor..."
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
                     className="pl-10"
@@ -173,6 +174,16 @@ export const TechnicianManagement = () => {
                         {technician.phone_number && (
                           <div className="flex items-center gap-1">
                             <Phone className="h-3 w-3" /> {technician.phone_number}
+                          </div>
+                        )}
+                        {technician.team_shift && (
+                          <div className="flex items-center gap-1">
+                            {technician.team_shift === 'day' ? (
+                              <Sun className="h-3 w-3" />
+                            ) : (
+                              <Moon className="h-3 w-3" />
+                            )}
+                            Equipe: {technician.team_shift === 'day' ? 'Dia' : 'Noite'}
                           </div>
                         )}
                         {technician.supervisor_id && (
