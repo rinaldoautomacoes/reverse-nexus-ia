@@ -27,19 +27,20 @@ export const EditTechnicianDialog: React.FC<EditTechnicianDialogProps> = ({ tech
       if (!currentUser?.id) {
         throw new Error("Usuário não autenticado. Faça login para atualizar técnicos.");
       }
+      // Atualizar diretamente na tabela 'profiles'
       const { data, error } = await supabase
         .from('profiles')
         .update(updatedTechnician)
         .eq('id', updatedTechnician.id as string)
-        .eq('user_id', currentUser.id) // RLS check (assuming user_id is the profile ID)
+        // Não é mais necessário verificar user_id para RLS aqui, pois o perfil é o próprio técnico
         .select()
         .single();
       if (error) throw new Error(error.message);
       return data;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['technicians', currentUser?.id] });
-      queryClient.invalidateQueries({ queryKey: ['allProfilesForSupervisor', currentUser?.id] }); // Invalidate supervisor list
+      queryClient.invalidateQueries({ queryKey: ['allProfiles', currentUser?.id] });
+      queryClient.invalidateQueries({ queryKey: ['allProfilesForSupervisor', currentUser?.id] });
       toast({ title: "Técnico atualizado!", description: "Técnico salvo com sucesso." });
       onClose();
     },
@@ -68,6 +69,7 @@ export const EditTechnicianDialog: React.FC<EditTechnicianDialogProps> = ({ tech
           onSave={handleSave}
           onCancel={onClose}
           isPending={updateTechnicianMutation.isPending}
+          showAuthFields={false} // Não mostra campos de autenticação
         />
       </DialogContent>
     </Dialog>

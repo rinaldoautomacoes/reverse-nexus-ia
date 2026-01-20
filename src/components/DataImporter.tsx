@@ -24,6 +24,7 @@ type ColetaInsert = TablesInsert<'coletas'>;
 type ProductInsert = TablesInsert<'products'>;
 type ClientInsert = TablesInsert<'clients'>;
 type ItemInsert = TablesInsert<'items'>;
+type ProfileInsert = TablesInsert<'profiles'>; // Import ProfileInsert
 
 interface DataImporterProps {
   initialTab?: 'collections' | 'products' | 'clients' | 'technicians';
@@ -137,8 +138,7 @@ export const DataImporter: React.FC<DataImporterProps> = ({ initialTab = 'collec
         }
         if (activeTab === 'technicians') {
           const techItem = item as TechnicianImportData;
-          return techItem.email && techItem.email.trim() !== '' &&
-                 techItem.first_name && techItem.first_name.trim() !== '' &&
+          return techItem.first_name && techItem.first_name.trim() !== '' &&
                  techItem.last_name && techItem.last_name.trim() !== '';
         }
         return true;
@@ -339,65 +339,27 @@ export const DataImporter: React.FC<DataImporterProps> = ({ initialTab = 'collec
         throw new Error('Usuário não autenticado. Faça login para importar técnicos.');
       }
 
-      const token = (await supabase.auth.getSession()).data.session?.access_token;
-      if (!token) {
-        throw new Error("Sessão de autenticação ausente. Faça login novamente.");
-      }
-
-      const results = await Promise.all(dataToImport.map(async (tech) => {
-        try {
-          console.log(`[DataImporter] Attempting to create user for email: ${tech.email}`); // Log email
-          const response = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/create-user`, {
-            method: 'POST',
-            headers: {
-              'Authorization': `Bearer ${token}`,
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-              email: tech.email,
-              password: tech.password || 'LogiReverseIA@2025', // Default password
-              first_name: tech.first_name,
-              last_name: tech.last_name,
-              role: tech.role || 'standard', // Ensure role is 'standard' for technicians
-              phone_number: tech.phone_number,
-              supervisor_id: tech.supervisor_id,
-            }),
-          });
-
-          if (!response.ok) {
-            const errorData = await response.json();
-            console.error(`[DataImporter] Failed to create user ${tech.email}:`, errorData.error || response.statusText); // Log error
-            throw new Error(errorData.error || `Falha ao criar técnico ${tech.email}.`);
-          }
-
-          const data = await response.json();
-          console.log(`[DataImporter] Successfully created user ${tech.email}. Response:`, data); // Log success
-          return { success: true, email: tech.email, userId: data.user };
-        } catch (error: any) {
-          console.error(`[DataImporter] Error importing technician ${tech.email}:`, error.message);
-          return { success: false, email: tech.email, error: error.message };
-        }
+      const inserts: ProfileInsert[] = dataToImport.map(tech => ({
+        id: crypto.randomUUID(), // Generate a new UUID for each technician profile
+        first_name: tech.first_name,
+        last_name: tech.last_name,
+        phone_number: tech.phone_number,
+        role: tech.role || 'standard', // Default to 'standard'
+        supervisor_id: tech.supervisor_id,
+        avatar_url: null, // No avatar URL from import
+        updated_at: new Date().toISOString(),
       }));
 
-      console.log('[DataImporter] All technician import results:', results); // Log all results
-
-      const successfulImports = results.filter(r => r.success).length;
-      const failedImports = results.filter(r => !r.success);
-
-      if (failedImports.length > 0) {
-        const errorMessages = failedImports.map(f => `${f.email}: ${f.error}`).join('\n');
-        toast({
-          title: `Importação de Técnicos: ${successfulImports} sucesso, ${failedImports.length} falhas`,
-          description: `Alguns técnicos não puderam ser importados:\n${errorMessages}`,
-          variant: 'destructive',
-          duration: 10000,
-        });
-      }
-
-      return successfulImports;
+      // Use upsert to handle potential duplicates based on first_name, last_name, and phone_number
+      // Note: Supabase RLS for profiles might need to be adjusted to allow admins to insert/update profiles not linked to their own auth.uid()
+      const { error } = await supabase
+        .from('profiles')
+        .upsert(inserts, { onConflict: 'first_name,last_name,phone_number', ignoreDuplicates: true });
+      
+      if (error) throw new Error(error.message);
+      return inserts.length;
     },
     onSuccess: (count) => {
-      // Invalida a query principal da página TechnicianManagement
       queryClient.invalidateQueries({ queryKey: ['allProfiles', user?.id] }); 
       queryClient.invalidateQueries({ queryKey: ['allProfilesForSupervisor', user?.id] });
       toast({ title: 'Importação de Técnicos concluída!', description: `${count} técnicos foram salvos com sucesso no banco de dados.` });

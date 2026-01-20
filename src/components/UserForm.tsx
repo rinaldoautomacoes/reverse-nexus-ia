@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Loader2, User as UserIcon, Mail, Phone, Briefcase, UserCog } from "lucide-react"; // Adicionado UserCog
+import { Loader2, User as UserIcon, Mail, Lock, Phone, Briefcase, UserCog } from "lucide-react"; // Adicionado UserCog
 import type { TablesInsert, TablesUpdate } from "@/integrations/supabase/types_generated";
 import { SupervisorCombobox } from "./SupervisorCombobox"; // Importar SupervisorCombobox
 
@@ -91,7 +91,7 @@ export const UserForm: React.FC<UserFormProps> = ({ initialData, onSave, onCance
           <div className="space-y-2">
             <Label htmlFor="password">Senha *</Label>
             <div className="relative">
-              <UserIcon className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" /> {/* Reusing UserIcon for password */}
+              <Lock className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" /> {/* Reusing Lock icon for password */}
               <Input
                 id="password"
                 type="password"

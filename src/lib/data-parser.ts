@@ -66,29 +66,6 @@ const readJSON = (file: File): Promise<any[]> => {
 
 // --- 2. Funções de Mapeamento de Linha para Tipos de Dados ---
 
-// Helper function to sanitize parts of an email (local part or domain part)
-const sanitizeForEmail = (input: string): string => {
-  return input
-    .toLowerCase()
-    .replace(/[àáâãäå]/g, 'a')
-    .replace(/[èéêë]/g, 'e')
-    .replace(/[ìíîï]/g, 'i')
-    .replace(/[òóôõö]/g, 'o')
-    .replace(/[ùúûü]/g, 'u')
-    .replace(/[ç]/g, 'c')
-    .replace(/[^a-z0-9.-]/g, '') // Allow only alphanumeric, dot, hyphen
-    .replace(/^[.-]+|[.-]+$/g, '') // Remove leading/trailing dots/hyphens
-    .replace(/[.]{2,}/g, '.') // Replace multiple dots with single
-    .replace(/[-]{2,}/g, '-'); // Replace multiple hyphens with single
-};
-
-// Helper to generate a unique string for emails
-const generateUniqueString = (prefix: string = 'gen') => {
-  const timestamp = Date.now().toString(36);
-  const random = Math.random().toString(36).substring(2, 7);
-  return `${prefix}-${timestamp}-${random}`.toUpperCase();
-};
-
 // Helper to validate if a string is a valid UUID format
 const isUUID = (uuid: string | null | undefined): boolean => {
   if (!uuid) return false;
@@ -143,7 +120,6 @@ const mapRowToClient = (row: any): ClientImportData => ({
 const mapRowToTechnician = (row: any): TechnicianImportData => {
   let firstName = String(row['Primeiro Nome'] || row['first_name'] || row['Nome'] || '').trim();
   let lastName = String(row['Sobrenome'] || row['last_name'] || '').trim();
-  let rawEmail = String(row['Email'] || row['e-mail'] || row['email'] || '').trim(); // Get raw email from various possible columns
   let phoneNumber = cleanPhoneNumber(row['Telefone'] || row['phone_number']);
   let role = (row['Função']?.toLowerCase() === 'admin' ? 'admin' : 'standard');
   let supervisorIdRaw = row['ID Supervisor'] || row['supervisor_id'] || null;
@@ -165,34 +141,6 @@ const mapRowToTechnician = (row: any): TechnicianImportData => {
   if (!lastName) lastName = 'Desconhecido';
   console.log('[data-parser] Processed names:', { firstName, lastName });
 
-  let finalEmail: string;
-  const baseDomain = 'logireverseia.com';
-  const emailRegex = /^[a-z0-9!#$%&'*+/=?^_`{|}~-]+(?:\.[a-z0-9!#$%&'*+/=?^_`{|}~-]+)*@(?:[a-z0-9](?:[a-z0-9-]*[a-z0-9])?\.)+[a-z0-9](?:[a-z0-9-]*[a-z0-9])?$/;
-
-  if (rawEmail && emailRegex.test(rawEmail.toLowerCase())) {
-    finalEmail = rawEmail.toLowerCase();
-    console.log('[data-parser] Using provided valid email:', finalEmail);
-  } else {
-    const sanitizedFirstName = sanitizeForEmail(firstName);
-    const sanitizedLastName = sanitizeForEmail(lastName);
-    const uniquePart = generateUniqueString('TECH').toLowerCase();
-    
-    let generatedBaseEmail = [sanitizedFirstName, sanitizedLastName].filter(Boolean).join('.');
-    if (!generatedBaseEmail) {
-      generatedBaseEmail = 'generated.tech';
-    }
-
-    finalEmail = `${generatedBaseEmail}.${uniquePart}@${baseDomain}`;
-    console.log(`[data-parser] Email not provided or invalid in file. Generated: ${finalEmail}`);
-
-    if (!emailRegex.test(finalEmail)) {
-      console.warn(`[data-parser] Generated email '${finalEmail}' is still invalid. Generating a fallback.`);
-      const fallbackUniquePart = generateUniqueString('FALLBACK').toLowerCase();
-      finalEmail = `fallback.tech.${fallbackUniquePart}@${baseDomain}`;
-      console.log('[data-parser] Generated fallback email:', finalEmail);
-    }
-  }
-
   // Validate supervisor_id
   if (supervisorIdRaw && isUUID(String(supervisorIdRaw))) {
     supervisor_id = String(supervisorIdRaw);
@@ -204,8 +152,8 @@ const mapRowToTechnician = (row: any): TechnicianImportData => {
   const technicianData = {
     first_name: firstName,
     last_name: lastName,
-    email: finalEmail,
-    password: String(row['Senha'] || row['password'] || 'LogiReverseIA@2025'),
+    email: null, // E-mail não é mais necessário para perfis de consulta
+    password: null, // Senha não é mais necessária
     phone_number: phoneNumber,
     role: role,
     supervisor_id: supervisor_id,
@@ -313,15 +261,15 @@ export const parseClientsJSON = async (file: File): Promise<ClientImportData[]> 
 
 export const parseTechniciansXLSX = async (file: File): Promise<TechnicianImportData[]> => {
   const json = await readXLSX(file);
-  return json.map(mapRowToTechnician).filter(t => t.email && t.first_name && t.last_name && t.email.includes('@'));
+  return json.map(mapRowToTechnician).filter(t => t.first_name && t.last_name);
 };
 
 export const parseTechniciansCSV = async (file: File): Promise<TechnicianImportData[]> => {
   const json = await readCSV(file);
-  return json.map(mapRowToTechnician).filter(t => t.email && t.first_name && t.last_name && t.email.includes('@'));
+  return json.map(mapRowToTechnician).filter(t => t.first_name && t.last_name);
 };
 
 export const parseTechniciansJSON = async (file: File): Promise<TechnicianImportData[]> => {
   const json = await readJSON(file);
-  return json.map(mapRowToTechnician).filter(t => t.email && t.first_name && t.last_name && t.email.includes('@'));
+  return json.map(mapRowToTechnician).filter(t => t.first_name && t.last_name);
 };

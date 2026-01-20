@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Loader2, User as UserIcon, Mail, Lock, Phone, Briefcase, UserCog } from "lucide-react";
+import { Loader2, User as UserIcon, Phone, Briefcase, UserCog } from "lucide-react";
 import type { TablesInsert } from "@/integrations/supabase/types_generated";
 import { SupervisorCombobox } from "./SupervisorCombobox";
 import { useToast } from "@/hooks/use-toast"; // Import useToast
@@ -11,7 +11,7 @@ import { useToast } from "@/hooks/use-toast"; // Import useToast
 type ProfileInsert = TablesInsert<'profiles'>;
 
 interface CreateTechnicianFormProps {
-  onSave: (data: ProfileInsert & { email?: string; password?: string }) => void; // Email and password are now optional
+  onSave: (data: ProfileInsert) => void; // Email and password are no longer part of data
   onCancel: () => void;
   isPending: boolean;
 }
@@ -25,10 +25,8 @@ export const CreateTechnicianForm: React.FC<CreateTechnicianFormProps> = ({ onSa
     phone_number: "",
     avatar_url: "",
     supervisor_id: null,
-    id: "", // Will be filled by the edge function
+    id: crypto.randomUUID(), // Generate ID here for new profiles
   });
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
 
   const handleInputChange = (field: keyof ProfileInsert, value: string | null) => {
     setFormData(prev => ({ ...prev, [field]: value }));
@@ -40,46 +38,19 @@ export const CreateTechnicianForm: React.FC<CreateTechnicianFormProps> = ({ onSa
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!formData.first_name || !formData.last_name) {
-      toast({ title: "Campos Obrigatórios", description: "Primeiro Nome e Sobrenome são obrigatórios.", variant: "destructive" });
+    if (!formData.first_name || formData.first_name.trim() === '') {
+      toast({ title: "Campo Obrigatório", description: "O Primeiro Nome é obrigatório.", variant: "destructive" });
       return;
     }
-    onSave({ ...formData, email, password });
+    if (!formData.last_name || formData.last_name.trim() === '') {
+      toast({ title: "Campo Obrigatório", description: "O Sobrenome é obrigatório.", variant: "destructive" });
+      return;
+    }
+    onSave(formData);
   };
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
-      <div className="space-y-2">
-        <Label htmlFor="email">Email</Label> {/* Removed * */}
-        <div className="relative">
-          <Mail className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-          <Input
-            id="email"
-            type="email"
-            placeholder="email@exemplo.com"
-            className="pl-10"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            disabled={isPending}
-          />
-        </div>
-      </div>
-      <div className="space-y-2">
-        <Label htmlFor="password">Senha</Label> {/* Removed * */}
-        <div className="relative">
-          <Lock className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-          <Input
-            id="password"
-            type="password"
-            placeholder="••••••••"
-            className="pl-10"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            disabled={isPending}
-          />
-        </div>
-      </div>
-
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div className="space-y-2">
           <Label htmlFor="first_name">Primeiro Nome *</Label>

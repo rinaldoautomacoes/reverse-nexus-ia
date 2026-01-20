@@ -9,14 +9,9 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import type { TablesInsert } from "@/integrations/supabase/types_generated";
 import { useAuth } from "@/hooks/use-auth";
-import { CreateTechnicianForm } from "./CreateTechnicianForm";
+import { UserForm } from "./UserForm"; // Reutilizando UserForm
 
 type ProfileInsert = TablesInsert<'profiles'>;
-
-interface CreateTechnicianData extends ProfileInsert {
-  email: string;
-  password: string;
-}
 
 export const CreateTechnicianDialog: React.FC = () => {
   const [open, setOpen] = useState(false);
@@ -25,48 +20,31 @@ export const CreateTechnicianDialog: React.FC = () => {
   const queryClient = useQueryClient();
 
   const addTechnicianMutation = useMutation({
-    mutationFn: async (newTechnicianData: CreateTechnicianData) => {
+    mutationFn: async (newTechnicianData: ProfileInsert) => {
       if (!currentUser?.id) {
         throw new Error("Usuário não autenticado. Faça login para adicionar técnicos.");
       }
 
-      const token = (await supabase.auth.getSession()).data.session?.access_token;
-      if (!token) {
-        throw new Error("Sessão de autenticação ausente. Faça login novamente.");
+      // Inserir diretamente na tabela 'profiles'
+      const { data, error } = await supabase
+        .from('profiles')
+        .insert({ 
+          ...newTechnicianData, 
+          id: newTechnicianData.id || crypto.randomUUID(), // Garante um ID se não for fornecido
+          role: 'standard', // Força a role para 'standard' para técnicos
+          // user_id não é mais necessário aqui, pois o perfil é o próprio técnico
+        })
+        .select()
+        .single();
+
+      if (error) {
+        throw new Error(error.message || "Falha ao criar técnico.");
       }
-
-      const { email, password, first_name, last_name, phone_number, avatar_url, role, supervisor_id } = newTechnicianData;
-
-      const response = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/create-user`, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          email,
-          password,
-          first_name,
-          last_name,
-          role: role || 'standard', // Ensure role is 'standard' for technicians
-          phone_number,
-          avatar_url,
-          supervisor_id, // Pass supervisor_id
-        }),
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || "Falha ao criar usuário técnico.");
-      }
-
-      const data = await response.json();
       return data;
     },
     onSuccess: () => {
-      // Invalida a query de 'allProfiles' para que a lista de técnicos seja atualizada
       queryClient.invalidateQueries({ queryKey: ['allProfiles', currentUser?.id] });
-      queryClient.invalidateQueries({ queryKey: ['allProfilesForSupervisor', currentUser?.id] }); // Invalidate supervisor list
+      queryClient.invalidateQueries({ queryKey: ['allProfilesForSupervisor', currentUser?.id] });
       toast({ title: "Técnico adicionado!", description: "Novo técnico criado com sucesso." });
       setOpen(false);
     },
@@ -75,7 +53,7 @@ export const CreateTechnicianDialog: React.FC = () => {
     },
   });
 
-  const handleSave = (data: CreateTechnicianData) => {
+  const handleSave = (data: ProfileInsert) => {
     addTechnicianMutation.mutate(data);
   };
 
@@ -94,10 +72,11 @@ export const CreateTechnicianDialog: React.FC = () => {
             Adicionar Novo Técnico
           </DialogTitle>
         </DialogHeader>
-        <CreateTechnicianForm
+        <UserForm
           onSave={handleSave}
           onCancel={() => setOpen(false)}
           isPending={addTechnicianMutation.isPending}
+          showAuthFields={false} // Não mostra campos de autenticação
         />
       </DialogContent>
     </Dialog>
