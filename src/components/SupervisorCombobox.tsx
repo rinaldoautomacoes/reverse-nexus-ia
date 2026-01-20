@@ -44,13 +44,21 @@ export const SupervisorCombobox: React.FC<SupervisorComboboxProps> = ({
   const { data: profiles, isLoading, error } = useQuery<Profile[], Error>({
     queryKey: ['allProfilesForSupervisor', currentUser?.id],
     queryFn: async () => {
-      if (!currentUser?.id) return [];
+      if (!currentUser?.id) {
+        console.log("SupervisorCombobox: currentUser.id is null, returning empty array.");
+        return [];
+      }
       const { data, error } = await supabase
         .from('profiles')
         .select('*')
         .eq('supervisor_id', null) // Filtra para mostrar apenas perfis que são supervisores (não têm supervisor)
         .order('first_name', { ascending: true });
-      if (error) throw new Error(error.message);
+      
+      if (error) {
+        console.error("SupervisorCombobox: Error fetching profiles:", error.message);
+        throw new Error(error.message);
+      }
+      console.log("SupervisorCombobox: Raw profiles fetched (supervisor_id = null):", data);
       return data;
     },
     enabled: !!currentUser?.id,
@@ -58,9 +66,11 @@ export const SupervisorCombobox: React.FC<SupervisorComboboxProps> = ({
 
   // Filter out the excluded user and the current user if they are not supervisors
   const availableSupervisors = React.useMemo(() => {
-    return profiles?.filter(profile => 
+    const filtered = profiles?.filter(profile => 
       profile.id !== excludeUserId && profile.id !== currentUser?.id // Exclude self and the user being edited
     ) || [];
+    console.log("SupervisorCombobox: Available supervisors after filtering:", filtered);
+    return filtered;
   }, [profiles, excludeUserId, currentUser?.id]);
 
   // Sync inputValue with the selected supervisor's name
@@ -93,12 +103,23 @@ export const SupervisorCombobox: React.FC<SupervisorComboboxProps> = ({
 
   const handleInputChange = (currentSearch: string) => {
     setInputValue(currentSearch);
-    // Se o usuário está digitando e o texto não corresponde a um supervisor existente,
-    // o valor do supervisor_id deve ser null.
+    // Apenas limpa o valor selecionado se o usuário apagar todo o texto
+    // ou se o texto digitado não corresponder a nenhum supervisor e não houver um valor selecionado.
     const matchedProfile = availableSupervisors.find(profile => 
       `${profile.first_name || ''} ${profile.last_name || ''}`.toLowerCase().includes(currentSearch.toLowerCase())
     );
-    if (!matchedProfile && currentSearch.trim() === "") { // Só limpa se o input estiver vazio e não houver correspondência
+
+    if (currentSearch.trim() === "" && value !== null) {
+      // Se o input está vazio e havia um supervisor selecionado, limpa a seleção
+      onValueChange(null);
+      onSupervisorSelect?.(null);
+    } else if (currentSearch.trim() !== "" && !matchedProfile && value !== null) {
+      // Se o usuário está digitando e não há correspondência, mas um supervisor estava selecionado,
+      // não limpa imediatamente, espera uma seleção explícita ou que o input seja esvaziado.
+      // Isso evita limpar a seleção enquanto o usuário está digitando para filtrar.
+    } else if (currentSearch.trim() !== "" && !matchedProfile && value === null) {
+      // Se o usuário está digitando e não há correspondência e nenhum supervisor estava selecionado,
+      // garante que o valor seja null.
       onValueChange(null);
       onSupervisorSelect?.(null);
     }
@@ -120,6 +141,9 @@ export const SupervisorCombobox: React.FC<SupervisorComboboxProps> = ({
     ) : (
       inputValue || "Selecionar supervisor..."
     );
+
+  console.log("SupervisorCombobox: Current value:", value);
+  console.log("SupervisorCombobox: Current inputValue:", inputValue);
 
   return (
     <Popover open={open} onOpenChange={setOpen}>
