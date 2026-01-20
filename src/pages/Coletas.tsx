@@ -1,9 +1,9 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { ArrowLeft, PlusCircle, Edit, Trash2, Package, Search, Clock, Truck, CheckCircle, User, Phone, Mail, MapPin, Hash, Calendar as CalendarIcon, Building, MessageSquare, Send, DollarSign, Tag, Home, Flag, ClipboardList, FileText, Paperclip } from "lucide-react";
+import { ArrowLeft, PlusCircle, Edit, Trash2, Package, Search, Clock, Truck, CheckCircle, User, MapPin, Hash, Calendar as CalendarIcon, Building, MessageSquare, Send, DollarSign, Tag, Home, Flag, ClipboardList, FileText, Paperclip } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -22,6 +22,11 @@ import { ColetaForm } from "@/components/ColetaForm";
 import { EditColetaDialog } from "@/components/EditColetaDialog";
 import { ItemData } from "@/components/shared-form-sections/ItemRow";
 import { CollectionAttachmentsDialog } from "@/components/CollectionAttachmentsDialog";
+
+// Importação dos novos componentes modulares
+import { ColetasHeader } from "@/components/coletas-page/ColetasHeader";
+import { ColetasFilters } from "@/components/coletas-page/ColetasFilters";
+import { ColetaCard } from "@/components/coletas-page/ColetaCard";
 
 interface FileAttachment {
   name: string;
@@ -176,6 +181,11 @@ export const Coletas: React.FC<ColetasProps> = ({ selectedYear }) => {
     },
   });
 
+  const handleFiltersChange = useCallback((newSearchTerm: string, newFilterDate: Date | undefined) => {
+    setSearchTerm(newSearchTerm);
+    setFilterDate(newFilterDate);
+  }, []);
+
   const handleDeleteColeta = (id: string) => {
     if (window.confirm("Tem certeza que deseja excluir esta coleta? Esta ação não pode ser desfeita.")) {
       deleteColetaMutation.mutate(id);
@@ -185,6 +195,16 @@ export const Coletas: React.FC<ColetasProps> = ({ selectedYear }) => {
   const handleEditColeta = (coleta: Coleta) => {
     setEditingColeta(coleta);
     setIsEditDialogOpen(true);
+  };
+
+  const handleUpdateStatus = (coletaId: string, name: string, status: string) => {
+    setSelectedCollectionForStatus({ id: coletaId, name: name, status: status });
+    setIsStatusUpdateDialogOpen(true);
+  };
+
+  const handleUpdateResponsible = (coletaId: string, name: string, responsibleUserId: string | null) => {
+    setSelectedCollectionForResponsible({ id: coletaId, name: name, responsible_user_id: responsibleUserId });
+    setIsEditResponsibleDialogOpen(true);
   };
 
   const handleWhatsAppClick = (coleta: Coleta) => {
@@ -211,32 +231,6 @@ export const Coletas: React.FC<ColetasProps> = ({ selectedYear }) => {
     setSelectedCollectionAttachments(attachments);
     setSelectedCollectionName(collectionName);
     setIsAttachmentsDialogOpen(true);
-  };
-
-  const getStatusBadgeColor = (status: string) => {
-    switch (status) {
-      case 'pendente':
-        return 'bg-destructive/20 text-destructive';
-      case 'agendada':
-        return 'bg-warning-yellow/20 text-warning-yellow';
-      case 'concluida':
-        return 'bg-success-green/20 text-success-green';
-      default:
-        return 'bg-muted/20 text-muted-foreground';
-    }
-  };
-
-  const getStatusText = (status: string) => {
-    switch (status) {
-      case 'pendente':
-        return 'Pendente';
-      case 'agendada':
-        return 'Em Trânsito';
-      case 'concluida':
-        return 'Concluída';
-      default:
-        return status;
-    }
   };
 
   if (isLoadingColetas) {
@@ -273,58 +267,16 @@ export const Coletas: React.FC<ColetasProps> = ({ selectedYear }) => {
         </Button>
 
         <div className="space-y-6">
-          <div className="text-center">
-            <h1 className="text-4xl font-bold font-orbitron gradient-text mb-4">
-              Coletas Ativas
-            </h1>
-            <p className="text-muted-foreground">
-              Gerencie todas as coletas que ainda não foram concluídas.
-            </p>
-          </div>
+          <ColetasHeader
+            title="Coletas Ativas"
+            description="Gerencie todas as coletas que ainda não foram concluídas."
+          />
 
-          <Card className="card-futuristic">
-            <CardContent className="p-6">
-              <div className="flex flex-col md:flex-row gap-4 items-center">
-                <div className="flex-1 relative">
-                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
-                  <Input
-                    placeholder="Buscar por parceiro, endereço, modelo, status, número único, controle do cliente, contrato ou CÓD. PARC..."
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                    className="pl-10"
-                  />
-                </div>
-                <Popover>
-                  <PopoverTrigger asChild>
-                    <Button
-                      variant={"outline"}
-                      className={cn(
-                        "w-full md:w-auto justify-start text-left font-normal",
-                        !filterDate && "text-muted-foreground"
-                      )}
-                    >
-                      <CalendarIcon className="mr-2 h-4 w-4" />
-                      {filterDate ? (isValid(filterDate) ? format(filterDate, "dd/MM/yyyy", { locale: ptBR }) : "Data inválida") : "Filtrar por data"}
-                    </Button>
-                  </PopoverTrigger>
-                  <PopoverContent className="w-auto p-0">
-                    <Calendar
-                      mode="single"
-                      selected={filterDate}
-                      onSelect={setFilterDate}
-                      initialFocus
-                      locale={ptBR}
-                    />
-                  </PopoverContent>
-                </Popover>
-                {filterDate && (
-                  <Button variant="ghost" onClick={() => setFilterDate(undefined)} className="w-full md:w-auto">
-                    Limpar Data
-                  </Button>
-                )}
-              </div>
-            </CardContent>
-          </Card>
+          <ColetasFilters
+            onFiltersChange={handleFiltersChange}
+            initialSearchTerm={searchTerm}
+            initialFilterDate={filterDate}
+          />
 
           <Card className="card-futuristic">
             <CardHeader className="flex flex-row items-center justify-between">
@@ -357,152 +309,19 @@ export const Coletas: React.FC<ColetasProps> = ({ selectedYear }) => {
             <CardContent className="space-y-4">
               {coletas && coletas.length > 0 ? (
                 coletas.map((coleta, index) => (
-                  <div
+                  <ColetaCard
                     key={coleta.id}
-                    className="flex flex-col lg:flex-row items-start lg:items-center justify-between p-4 rounded-lg border border-primary/10 bg-slate-darker/10 animate-slide-up"
-                    style={{ animationDelay: `${index * 100}ms` }}
-                  >
-                    <div className="flex-1 min-w-0 mb-3 lg:mb-0">
-                      <h3 className="font-semibold text-lg">{coleta.parceiro}</h3>
-                      <p className="text-sm text-muted-foreground flex items-center gap-1">
-                        <Tag className="h-3 w-3" /> {coleta.unique_number}
-                        {coleta.client_control && (
-                          <span className="ml-2 flex items-center gap-1">
-                            <ClipboardList className="h-3 w-3" /> {coleta.client_control}
-                          </span>
-                        )}
-                      </p>
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-sm text-muted-foreground mt-1">
-                        {coleta.endereco_origem && (
-                          <div className="flex items-center gap-1">
-                            <Home className="h-3 w-3" /> Origem: {coleta.endereco_origem}
-                          </div>
-                        )}
-                        {coleta.endereco_destino && (
-                          <div className="flex items-center gap-1">
-                            <Flag className="h-3 w-3" /> Destino: {coleta.endereco_destino}
-                          </div>
-                        )}
-                        <div className="flex items-center gap-1">
-                          <CalendarIcon className="h-3 w-3" /> Previsão: {coleta.previsao_coleta ? (isValid(new Date(coleta.previsao_coleta)) ? format(new Date(coleta.previsao_coleta), 'dd/MM/yyyy', { locale: ptBR }) : 'Data inválida') : 'N/A'}
-                        </div>
-                        <div className="flex items-center gap-1">
-                          <Hash className="h-3 w-3" /> Qtd Total: {getTotalQuantityOfItems(coleta.items)}
-                        </div>
-                        <div className="flex items-center gap-1 col-span-full">
-                          <Package className="h-3 w-3" /> Materiais: {formatItemsForColetaModeloAparelho(coleta.items)}
-                        </div>
-                        {coleta.contrato && (
-                          <div className="flex items-center gap-1">
-                            <FileText className="h-3 w-3" /> Nr. Contrato: {coleta.contrato}
-                          </div>
-                        )}
-                        {coleta.nf_glbl && (
-                          <div className="flex items-center gap-1">
-                            <Hash className="h-3 w-3" /> CONTRATO SANKHYA: {coleta.nf_glbl}
-                          </div>
-                        )}
-                        {coleta.partner_code && (
-                          <div className="flex items-center gap-1">
-                            <Tag className="h-3 w-3" /> CÓD. PARC: {coleta.partner_code}
-                          </div>
-                        )}
-                        <div className="flex items-center gap-1">
-                          <User className="h-3 w-3" /> Responsável: {coleta.responsavel || 'Não atribuído'}
-                        </div>
-                        <div className="flex items-center gap-1">
-                          <Truck className="h-3 w-3" /> Motorista: {coleta.driver?.name || 'Não atribuído'}
-                        </div>
-                        <div className="flex items-center gap-1">
-                          <Building className="h-3 w-3" /> Transportadora: {coleta.transportadora?.name || 'Não atribuída'}
-                        </div>
-                        <div className="flex items-center gap-1">
-                          <DollarSign className="h-3 w-3" /> Frete: {coleta.freight_value ? `R$ ${coleta.freight_value.toFixed(2)}` : 'N/A'}
-                        </div>
-                        <div className="flex items-center gap-1">
-                          <Clock className="h-3 w-3" /> Status: <Badge className={getStatusBadgeColor(coleta.status_coleta)}>{getStatusText(coleta.status_coleta)}</Badge>
-                        </div>
-                        {coleta.attachments && coleta.attachments.length > 0 && (
-                          <div className="flex items-center gap-1 col-span-full">
-                            <Paperclip className="h-3 w-3" /> Anexos: {coleta.attachments.length}
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              className="ml-2 h-6 px-2 text-xs text-primary hover:bg-primary/10"
-                              onClick={() => handleViewAttachments(coleta.attachments as FileAttachment[], coleta.parceiro || 'Coleta')}
-                            >
-                              Ver Anexos
-                            </Button>
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                    <div className="flex gap-2 flex-wrap justify-end">
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        className="border-accent text-accent hover:bg-accent/10"
-                        onClick={() => handleEditColeta(coleta)}
-                      >
-                        <Edit className="mr-1 h-3 w-3" />
-                        Editar
-                      </Button>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        className="border-success-green text-success-green hover:bg-success-green/10"
-                        onClick={() => handleWhatsAppClick(coleta)}
-                        disabled={!coleta.telefone}
-                      >
-                        <MessageSquare className="mr-1 h-3 w-3" />
-                        WhatsApp
-                      </Button>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        className="border-neural text-neural hover:bg-neural/10"
-                        onClick={() => handleEmailClick(coleta)}
-                        disabled={!coleta.email}
-                      >
-                        <Send className="mr-1 h-3 w-3" />
-                        E-mail
-                      </Button>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        className="border-accent text-accent hover:bg-accent/10"
-                        onClick={() => {
-                          setSelectedCollectionForStatus({ id: coleta.id, name: coleta.parceiro || 'Coleta', status: coleta.status_coleta });
-                          setIsStatusUpdateDialogOpen(true);
-                        }}
-                      >
-                        <Edit className="mr-1 h-3 w-3" />
-                        Status
-                      </Button>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        className="border-primary text-primary hover:bg-primary/10"
-                        onClick={() => {
-                          setSelectedCollectionForResponsible({ id: coleta.id, name: coleta.parceiro || 'Coleta', responsible_user_id: coleta.responsible_user_id });
-                          setIsEditResponsibleDialogOpen(true);
-                        }}
-                      >
-                        <User className="mr-1 h-3 w-3" />
-                        Responsável
-                      </Button>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        className="border-destructive text-destructive hover:bg-destructive/10"
-                        onClick={() => handleDeleteColeta(coleta.id)}
-                        disabled={deleteColetaMutation.isPending}
-                      >
-                        <Trash2 className="mr-1 h-3 w-3" />
-                        Excluir
-                      </Button>
-                    </div>
-                  </div>
+                    coleta={coleta}
+                    index={index}
+                    onEdit={handleEditColeta}
+                    onDelete={handleDeleteColeta}
+                    onUpdateStatus={handleUpdateStatus}
+                    onUpdateResponsible={handleUpdateResponsible}
+                    onWhatsAppClick={handleWhatsAppClick}
+                    onEmailClick={handleEmailClick}
+                    onViewAttachments={handleViewAttachments}
+                    isDeleting={deleteColetaMutation.isPending}
+                  />
                 ))
               ) : (
                 <div className="p-12 text-center text-muted-foreground">
