@@ -83,10 +83,24 @@ export interface ClientImportData {
 
 export interface TechnicianImportData { // Nova interface para técnicos
   first_name: string;
-  last_name: string;
-  email: string;
+  last_name: string | null; // Pode ser nulo
+  email: string | null; // Pode ser nulo
   password?: string; // Senha pode ser opcional se o sistema gerar uma
   phone_number?: string | null;
   role?: 'standard' | 'admin'; // Padrão para 'standard'
   supervisor_id?: string | null;
+  team_shift?: 'day' | 'night'; // Novo campo
+  address?: string | null; // Novo campo
+}
+
+export interface SupervisorImportData { // Nova interface para supervisores
+  first_name: string;
+  last_name: string | null; // Pode ser nulo
+  email: string | null; // Pode ser nulo
+  password?: string; // Senha pode ser opcional se o sistema gerar uma
+  phone_number?: string | null;
+  role?: 'standard' | 'admin'; // Padrão para 'standard'
+  team_shift?: 'day' | 'night'; // Novo campo
+  address?: string | null; // Novo campo
+  // supervisor_id é implicitamente null para supervisores
 }

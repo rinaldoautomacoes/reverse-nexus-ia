@@ -7,10 +7,11 @@ import {
   parseCollectionsXLSX, parseCollectionsCSV, parsePDF,
   parseProductsXLSX, parseProductsCSV, parseProductsJSON,
   parseClientsXLSX, parseClientsCSV, parseClientsJSON,
-  parseTechniciansXLSX, parseTechniciansCSV, parseTechniciansJSON
+  parseTechniciansXLSX, parseTechniciansCSV, parseTechniciansJSON,
+  parseSupervisorsXLSX, parseSupervisorsCSV, parseSupervisorsJSON // Novo import
 } from '@/lib/data-parser';
 import type { TablesInsert } from '@/integrations/supabase/types_generated';
-import type { ColetaImportData, ProductImportData, ClientImportData, TechnicianImportData } from '@/lib/types';
+import type { ColetaImportData, ProductImportData, ClientImportData, TechnicianImportData, SupervisorImportData } from '@/lib/types'; // Novo import
 
 // Import new modular components
 import { ImportFileSection } from './data-importer-sections/ImportFileSection';
@@ -27,8 +28,8 @@ type ItemInsert = TablesInsert<'items'>;
 type ProfileInsert = TablesInsert<'profiles'>;
 
 interface DataImporterProps {
-  initialTab?: 'collections' | 'products' | 'clients' | 'technicians';
-  onImportSuccess?: (importedType: 'collections' | 'products' | 'clients' | 'technicians') => void;
+  initialTab?: 'collections' | 'products' | 'clients' | 'technicians' | 'supervisors'; // Adicionado 'supervisors'
+  onImportSuccess?: (importedType: 'collections' | 'products' | 'clients' | 'technicians' | 'supervisors') => void; // Adicionado 'supervisors'
   onClose: () => void;
 }
 
@@ -38,9 +39,9 @@ export const DataImporter: React.FC<DataImporterProps> = ({ initialTab = 'collec
   const queryClient = useQueryClient();
 
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
-  const [extractedData, setExtractedData] = useState<ColetaImportData[] | ProductImportData[] | ClientImportData[] | TechnicianImportData[] | null>(null);
+  const [extractedData, setExtractedData] = useState<ColetaImportData[] | ProductImportData[] | ClientImportData[] | TechnicianImportData[] | SupervisorImportData[] | null>(null); // Atualizado o tipo
   const [isParsing, setIsParsing] = useState(false);
-  const [activeTab, setActiveTab] = useState<'collections' | 'products' | 'clients' | 'technicians'>(initialTab);
+  const [activeTab, setActiveTab] = useState<'collections' | 'products' | 'clients' | 'technicians' | 'supervisors'>(initialTab); // Atualizado o tipo
   const [parseError, setParseError] = useState<string | null>(null);
   const [step, setStep] = useState<'upload' | 'preview_table' | 'review_dialog'>('upload');
 
@@ -54,7 +55,7 @@ export const DataImporter: React.FC<DataImporterProps> = ({ initialTab = 'collec
     }
   };
 
-  const handleTabChange = useCallback((tab: 'collections' | 'products' | 'clients' | 'technicians') => {
+  const handleTabChange = useCallback((tab: 'collections' | 'products' | 'clients' | 'technicians' | 'supervisors') => { // Atualizado o tipo
     setActiveTab(tab);
     setSelectedFile(null);
     setExtractedData(null);
@@ -75,7 +76,7 @@ export const DataImporter: React.FC<DataImporterProps> = ({ initialTab = 'collec
     const fileExtension = selectedFile.name.split('.').pop()?.toLowerCase();
 
     try {
-      let data: ColetaImportData[] | ProductImportData[] | ClientImportData[] | TechnicianImportData[] = [];
+      let data: ColetaImportData[] | ProductImportData[] | ClientImportData[] | TechnicianImportData[] | SupervisorImportData[] = []; // Atualizado o tipo
       if (activeTab === 'collections') {
         if (fileExtension === 'xlsx') {
           data = await parseCollectionsXLSX(selectedFile);
@@ -122,6 +123,16 @@ export const DataImporter: React.FC<DataImporterProps> = ({ initialTab = 'collec
         } else {
           throw new Error('Formato de arquivo não suportado para técnicos. Use XLSX, CSV ou JSON.');
         }
+      } else if (activeTab === 'supervisors') { // Nova lógica para supervisores
+        if (fileExtension === 'xlsx') {
+          data = await parseSupervisorsXLSX(selectedFile);
+        } else if (fileExtension === 'csv') {
+          data = await parseSupervisorsCSV(selectedFile);
+        } else if (fileExtension === 'json') {
+          data = await parseSupervisorsJSON(selectedFile);
+        } else {
+          throw new Error('Formato de arquivo não suportado para supervisores. Use XLSX, CSV ou JSON.');
+        }
       }
 
       const filteredData = data.filter(item => {
@@ -140,6 +151,10 @@ export const DataImporter: React.FC<DataImporterProps> = ({ initialTab = 'collec
           const techItem = item as TechnicianImportData;
           return techItem.first_name && techItem.first_name.trim() !== '' &&
                  techItem.last_name && techItem.last_name.trim() !== '';
+        }
+        if (activeTab === 'supervisors') { // Nova lógica de filtro para supervisores
+          const supervisorItem = item as SupervisorImportData;
+          return supervisorItem.first_name && supervisorItem.first_name.trim() !== '';
         }
         return true;
       });
@@ -345,6 +360,8 @@ export const DataImporter: React.FC<DataImporterProps> = ({ initialTab = 'collec
         supervisor_id: tech.supervisor_id,
         avatar_url: null,
         updated_at: new Date().toISOString(),
+        team_shift: tech.team_shift || 'day',
+        address: tech.address || null,
       }));
 
       const { error } = await supabase
@@ -369,6 +386,47 @@ export const DataImporter: React.FC<DataImporterProps> = ({ initialTab = 'collec
     },
   });
 
+  const importSupervisorsMutation = useMutation({ // Nova mutação para supervisores
+    mutationFn: async (dataToImport: SupervisorImportData[]) => {
+      if (!user?.id) {
+        throw new Error('Usuário não autenticado. Faça login para importar supervisores.');
+      }
+
+      const inserts: ProfileInsert[] = dataToImport.map(supervisor => ({
+        id: crypto.randomUUID(),
+        first_name: supervisor.first_name,
+        last_name: supervisor.last_name,
+        phone_number: supervisor.phone_number,
+        role: supervisor.role || 'standard', // Supervisores podem ser standard ou admin
+        supervisor_id: null, // Supervisores não têm supervisor
+        avatar_url: null,
+        updated_at: new Date().toISOString(),
+        team_shift: supervisor.team_shift || 'day',
+        address: supervisor.address || null,
+      }));
+
+      const { error } = await supabase
+        .from('profiles')
+        .upsert(inserts, { onConflict: 'first_name,last_name,phone_number', ignoreDuplicates: true });
+      
+      if (error) throw new Error(error.message);
+      return inserts.length;
+    },
+    onSuccess: (count) => {
+      queryClient.invalidateQueries({ queryKey: ['allProfiles', user?.id] }); 
+      queryClient.invalidateQueries({ queryKey: ['allProfilesForSupervisor', user?.id] });
+      toast({ title: 'Importação de Supervisores concluída!', description: `${count} supervisores foram salvos com sucesso no banco de dados.` });
+      setSelectedFile(null);
+      setExtractedData(null);
+      setStep('upload');
+      onImportSuccess?.('supervisors'); // Call with the type
+    },
+    onError: (error) => {
+      toast({ title: 'Erro na importação de Supervisores', description: error.message, variant: 'destructive' });
+      setStep('preview_table');
+    },
+  });
+
   const handleConfirmImport = useCallback(() => {
     if (!extractedData || extractedData.length === 0) {
       toast({ title: 'Nenhum dado para importar', description: 'Por favor, extraia dados antes de confirmar a importação.', variant: 'destructive' });
@@ -383,10 +441,12 @@ export const DataImporter: React.FC<DataImporterProps> = ({ initialTab = 'collec
       importClientsMutation.mutate(extractedData as ClientImportData[]);
     } else if (activeTab === 'technicians') {
       importTechniciansMutation.mutate(extractedData as TechnicianImportData[]);
+    } else if (activeTab === 'supervisors') { // Nova lógica para supervisores
+      importSupervisorsMutation.mutate(extractedData as SupervisorImportData[]);
     }
-  }, [extractedData, activeTab, importCollectionsMutation, importProductsMutation, importClientsMutation, importTechniciansMutation, toast]);
+  }, [extractedData, activeTab, importCollectionsMutation, importProductsMutation, importClientsMutation, importTechniciansMutation, importSupervisorsMutation, toast]);
 
-  const isImportPending = importCollectionsMutation.isPending || importProductsMutation.isPending || importClientsMutation.isPending || importTechniciansMutation.isPending;
+  const isImportPending = importCollectionsMutation.isPending || importProductsMutation.isPending || importClientsMutation.isPending || importTechniciansMutation.isPending || importSupervisorsMutation.isPending; // Atualizado
 
   return (
     <div className="space-y-6">

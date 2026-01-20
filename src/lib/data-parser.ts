@@ -3,7 +3,7 @@ import { format } from 'date-fns';
 import { generateUniqueNumber } from './utils';
 import { parseDateSafely } from './date-utils';
 import { cleanPhoneNumber } from './document-parser';
-import type { ColetaImportData, ProductImportData, ClientImportData, TechnicianImportData } from './types';
+import type { ColetaImportData, ProductImportData, ClientImportData, TechnicianImportData, SupervisorImportData } from './types';
 
 // --- 1. Funções de Leitura de Arquivo Genéricas ---
 
@@ -124,9 +124,8 @@ const mapRowToTechnician = (row: any): TechnicianImportData => {
   let role = (row['Função']?.toLowerCase() === 'admin' ? 'admin' : 'standard');
   let supervisorIdRaw = row['ID Supervisor'] || row['supervisor_id'] || null;
   let supervisor_id: string | null = null;
-
-  console.log('[data-parser] Raw row for technician:', row);
-  console.log('[data-parser] Initial names:', { firstName, lastName });
+  let teamShift: 'day' | 'night' = (row['Equipe']?.toLowerCase() === 'night' ? 'night' : 'day');
+  let address: string | null = row['Endereço'] || null;
 
   if (row['Técnico'] && (!firstName || !lastName)) {
     const tecnicoFullName = String(row['Técnico']).trim();
@@ -138,29 +137,58 @@ const mapRowToTechnician = (row: any): TechnicianImportData => {
   }
 
   if (!firstName) firstName = 'Tecnico';
-  // Se lastName for vazio, defina como null
   if (!lastName) lastName = null;
-  console.log('[data-parser] Processed names:', { firstName, lastName });
 
-  // Validate supervisor_id
   if (supervisorIdRaw && isUUID(String(supervisorIdRaw))) {
     supervisor_id = String(supervisorIdRaw);
   } else if (supervisorIdRaw) {
     console.warn(`[data-parser] Invalid supervisor_id format '${supervisorIdRaw}'. Setting to null.`);
   }
-  console.log('[data-parser] Final supervisor_id:', supervisor_id);
 
   const technicianData = {
     first_name: firstName,
     last_name: lastName,
-    email: null, // E-mail não é mais necessário para perfis de consulta
-    password: null, // Senha não é mais necessária
+    email: row['Email'] || null, // Email pode ser útil para o perfil, mesmo que não para auth
     phone_number: phoneNumber,
     role: role,
     supervisor_id: supervisor_id,
+    team_shift: teamShift,
+    address: address,
   };
-  console.log('[data-parser] Mapped technician data:', technicianData); // Log dos dados mapeados
   return technicianData;
+};
+
+const mapRowToSupervisor = (row: any): SupervisorImportData => {
+  let firstName = String(row['Primeiro Nome'] || row['first_name'] || row['Nome'] || '').trim();
+  let lastName = String(row['Sobrenome'] || row['last_name'] || '').trim();
+  let phoneNumber = cleanPhoneNumber(row['Telefone'] || row['phone_number']);
+  let role = (row['Função']?.toLowerCase() === 'admin' ? 'admin' : 'standard'); // Supervisores podem ser admin ou standard
+  let teamShift: 'day' | 'night' = (row['Equipe']?.toLowerCase() === 'night' ? 'night' : 'day');
+  let address: string | null = row['Endereço'] || null;
+
+  if (row['Supervisor'] && (!firstName || !lastName)) {
+    const supervisorFullName = String(row['Supervisor']).trim();
+    const nameParts = supervisorFullName.split(' ').filter(Boolean);
+    if (nameParts.length > 0) {
+      firstName = nameParts[0];
+      lastName = nameParts.slice(1).join(' ');
+    }
+  }
+
+  if (!firstName) firstName = 'Supervisor';
+  if (!lastName) lastName = null;
+
+  const supervisorData = {
+    first_name: firstName,
+    last_name: lastName,
+    email: row['Email'] || null,
+    phone_number: phoneNumber,
+    role: role,
+    team_shift: teamShift,
+    address: address,
+    // supervisor_id é implicitamente null para supervisores
+  };
+  return supervisorData;
 };
 
 // --- 3. Funções de Parsing Principais (agora exportadas) ---
@@ -273,4 +301,19 @@ export const parseTechniciansCSV = async (file: File): Promise<TechnicianImportD
 export const parseTechniciansJSON = async (file: File): Promise<TechnicianImportData[]> => {
   const json = await readJSON(file);
   return json.map(mapRowToTechnician).filter(t => t.first_name);
+};
+
+export const parseSupervisorsXLSX = async (file: File): Promise<SupervisorImportData[]> => {
+  const json = await readXLSX(file);
+  return json.map(mapRowToSupervisor).filter(s => s.first_name);
+};
+
+export const parseSupervisorsCSV = async (file: File): Promise<SupervisorImportData[]> => {
+  const json = await readCSV(file);
+  return json.map(mapRowToSupervisor).filter(s => s.first_name);
+};
+
+export const parseSupervisorsJSON = async (file: File): Promise<SupervisorImportData[]> => {
+  const json = await readJSON(file);
+  return json.map(mapRowToSupervisor).filter(s => s.first_name);
 };

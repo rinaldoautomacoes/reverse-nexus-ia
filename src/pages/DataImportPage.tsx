@@ -15,6 +15,8 @@ export const DataImportPage: React.FC = () => {
       navigate('/client-management');
     } else if (importedType === 'products') {
       navigate('/product-management');
+    } else if (importedType === 'supervisors') { // Nova condição para supervisores
+      navigate('/supervisor-management');
     } else {
       navigate('/'); // Default to home or general dashboard
     }
