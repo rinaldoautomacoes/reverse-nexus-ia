@@ -17,18 +17,20 @@ interface UserFormProps {
   isPending: boolean;
   showAuthFields?: boolean;
   onAuthFieldsChange?: (email: string, password: string) => void;
-  defaultRole?: 'standard' | 'admin'; // Novo prop
+  defaultRole?: 'standard' | 'admin';
+  profileType?: 'technician' | 'supervisor' | 'user'; // Novo prop
 }
 
-export const UserForm: React.FC<UserFormProps> = ({ initialData, onSave, onCancel, isPending, showAuthFields = false, onAuthFieldsChange, defaultRole = 'standard' }) => {
+export const UserForm: React.FC<UserFormProps> = ({ initialData, onSave, onCancel, isPending, showAuthFields = false, onAuthFieldsChange, defaultRole = 'standard', profileType = 'user' }) => {
   const [formData, setFormData] = useState<ProfileInsert | ProfileUpdate>(initialData || {
     first_name: "",
     last_name: "",
-    role: defaultRole, // Usar defaultRole aqui
+    role: defaultRole,
     phone_number: "",
     avatar_url: "",
     supervisor_id: null,
     team_shift: "day",
+    address: "", // Adicionado o campo address
     id: "",
   });
   const [email, setEmail] = useState("");
@@ -41,17 +43,18 @@ export const UserForm: React.FC<UserFormProps> = ({ initialData, onSave, onCance
       setFormData({
         first_name: "",
         last_name: "",
-        role: defaultRole, // Usar defaultRole aqui
+        role: defaultRole,
         phone_number: "",
         avatar_url: "",
         supervisor_id: null,
         team_shift: "day",
+        address: "", // Resetar address
         id: "",
       });
       setEmail("");
       setPassword("");
     }
-  }, [initialData, defaultRole]); // Adicionar defaultRole como dependência
+  }, [initialData, defaultRole]);
 
   const handleInputChange = (field: keyof (ProfileInsert | ProfileUpdate), value: string | null) => {
     setFormData(prev => ({ ...prev, [field]: value }));
@@ -68,6 +71,8 @@ export const UserForm: React.FC<UserFormProps> = ({ initialData, onSave, onCance
     }
     onSave(formData);
   };
+
+  const isSupervisorProfile = profileType === 'supervisor';
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
@@ -160,7 +165,7 @@ export const UserForm: React.FC<UserFormProps> = ({ initialData, onSave, onCance
           <Select
             value={formData.role || 'standard'}
             onValueChange={(value) => handleInputChange("role", value)}
-            disabled={isPending || initialData?.role === 'admin' || defaultRole === 'standard'} // Desabilita se defaultRole for 'standard'
+            disabled={isPending || initialData?.role === 'admin' || defaultRole === 'standard'}
           >
             <SelectTrigger className="pl-10">
               <Briefcase className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
@@ -196,15 +201,18 @@ export const UserForm: React.FC<UserFormProps> = ({ initialData, onSave, onCance
             </SelectContent>
           </Select>
         </div>
-        <div className="space-y-2">
-          <Label htmlFor="supervisor_id">Supervisor</Label>
-          <SupervisorCombobox
-            value={formData.supervisor_id || null}
-            onValueChange={handleSupervisorSelect}
-            disabled={isPending}
-            excludeUserId={initialData?.id}
-          />
-        </div>
+        {/* Conditionally render SupervisorCombobox */}
+        {!isSupervisorProfile && (
+          <div className="space-y-2">
+            <Label htmlFor="supervisor_id">Supervisor</Label>
+            <SupervisorCombobox
+              value={formData.supervisor_id || null}
+              onValueChange={handleSupervisorSelect}
+              disabled={isPending}
+              excludeUserId={initialData?.id}
+            />
+          </div>
+        )}
       </div>
 
       <div className="flex gap-2 justify-end pt-4">

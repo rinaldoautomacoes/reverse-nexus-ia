@@ -82,7 +82,8 @@ export const CreateProfileDialog: React.FC<CreateProfileDialogProps> = ({ profil
           onCancel={() => setOpen(false)}
           isPending={addProfileMutation.isPending}
           showAuthFields={false}
-          defaultRole={profileType === 'supervisor' ? 'standard' : 'standard'} // Supervisores também são 'standard'
+          defaultRole={profileType === 'supervisor' ? 'standard' : 'standard'}
+          profileType={profileType} // Passando o novo prop
         />
       </DialogContent>
     </Dialog>

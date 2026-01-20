@@ -12,7 +12,7 @@ type Profile = Tables<'profiles'>;
 type ProfileUpdate = TablesUpdate<'profiles'>;
 
 interface EditProfileDialogProps {
-  profile: Profile | null; // Renomeado de 'technician' para 'profile'
+  profile: Profile | null;
   isOpen: boolean;
   onClose: () => void;
   profileType?: 'technician' | 'supervisor'; // Novo prop para definir o tipo de perfil
@@ -71,6 +71,7 @@ export const EditProfileDialog: React.FC<EditProfileDialogProps> = ({ profile, i
           onCancel={onClose}
           isPending={updateProfileMutation.isPending}
           showAuthFields={false}
+          profileType={profileType} // Passando o novo prop
         />
       </DialogContent>
     </Dialog>
