@@ -2,15 +2,16 @@ import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { ArrowLeft, Edit, Trash2, Users, Search, User as UserIcon, Phone, Briefcase, Loader2, UserCheck, Sun, Moon } from "lucide-react";
+import { ArrowLeft, Edit, Trash2, Users, Search, User as UserIcon, Phone, Briefcase, Loader2, UserCheck, Sun, Moon, Square, CheckSquare } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import type { Tables } from "@/integrations/supabase/types_generated";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/use-auth";
-import { CreateTechnicianDialog } from "@/components/CreateTechnicianDialog"; // Reusing for supervisors
-import { EditTechnicianDialog } from "@/components/EditTechnicianDialog"; // Reusing for supervisors
+import { CreateTechnicianDialog } from "@/components/CreateTechnicianDialog";
+import { EditTechnicianDialog } from "@/components/EditTechnicianDialog";
+import { Checkbox } from "@/components/ui/checkbox"; // Importar Checkbox
 
 type Profile = Tables<'profiles'>;
 
@@ -23,6 +24,7 @@ export const SupervisorManagement = () => {
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [editingSupervisor, setEditingSupervisor] = useState<Profile | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
+  const [selectedSupervisorIds, setSelectedSupervisorIds] = useState<Set<string>>(new Set()); // Estado para IDs selecionados
 
   // Fetch ALL profiles to correctly resolve supervisor names (who might be admins or other standard users)
   const { data: allProfiles, isLoading: isLoadingProfiles, error: profilesError } = useQuery<Profile[], Error>({
@@ -60,6 +62,25 @@ export const SupervisorManagement = () => {
     },
   });
 
+  const bulkDeleteSupervisorsMutation = useMutation({
+    mutationFn: async (supervisorIds: string[]) => {
+      const { error } = await supabase
+        .from('profiles')
+        .delete()
+        .in('id', supervisorIds);
+      if (error) throw new Error(error.message);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['allProfiles', currentUser?.id] });
+      queryClient.invalidateQueries({ queryKey: ['allProfilesForSupervisor', currentUser?.id] });
+      setSelectedSupervisorIds(new Set()); // Limpa a seleção após a exclusão
+      toast({ title: "Supervisores excluídos!", description: `${selectedSupervisorIds.size} supervisores removidos com sucesso.` });
+    },
+    onError: (err) => {
+      toast({ title: "Erro ao excluir supervisores", description: err.message, variant: "destructive" });
+    },
+  });
+
   const handleEditSupervisor = (supervisor: Profile) => {
     setEditingSupervisor(supervisor);
     setIsEditDialogOpen(true);
@@ -71,12 +92,46 @@ export const SupervisorManagement = () => {
     }
   };
 
+  const handleBulkDeleteSupervisors = () => {
+    if (selectedSupervisorIds.size === 0) {
+      toast({ title: "Nenhum supervisor selecionado", description: "Selecione os supervisores que deseja excluir.", variant: "warning" });
+      return;
+    }
+    if (window.confirm(`Tem certeza que deseja excluir ${selectedSupervisorIds.size} supervisores selecionados? Esta ação não pode ser desfeita.`)) {
+      bulkDeleteSupervisorsMutation.mutate(Array.from(selectedSupervisorIds));
+    }
+  };
+
+  const handleToggleSelectSupervisor = (supervisorId: string) => {
+    setSelectedSupervisorIds(prev => {
+      const newSelection = new Set(prev);
+      if (newSelection.has(supervisorId)) {
+        newSelection.delete(supervisorId);
+      } else {
+        newSelection.add(supervisorId);
+      }
+      return newSelection;
+    });
+  };
+
+  const handleSelectAllSupervisors = () => {
+    if (selectedSupervisorIds.size === filteredSupervisors.length) {
+      setSelectedSupervisorIds(new Set()); // Desselecionar todos
+    } else {
+      const allSupervisorIds = new Set(filteredSupervisors.map(s => s.id));
+      setSelectedSupervisorIds(allSupervisorIds); // Selecionar todos
+    }
+  };
+
   const filteredSupervisors = supervisors?.filter(supervisor =>
     supervisor.first_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
     supervisor.last_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
     supervisor.phone_number?.toLowerCase().includes(searchTerm.toLowerCase()) ||
     supervisor.team_shift?.toLowerCase().includes(searchTerm.toLowerCase())
   ) || [];
+
+  const isAnySupervisorSelected = selectedSupervisorIds.size > 0;
+  const isAllSupervisorsSelected = filteredSupervisors.length > 0 && selectedSupervisorIds.size === filteredSupervisors.length;
 
   if (isLoadingProfiles) {
     return (
@@ -143,7 +198,39 @@ export const SupervisorManagement = () => {
                 <UserCheck className="h-5 w-5 text-primary" />
                 Meus Supervisores
               </CardTitle>
-              <CreateTechnicianDialog /> {/* Reusing the dialog for creating technicians/supervisors */}
+              <div className="flex gap-2">
+                {isAnySupervisorSelected && (
+                  <Button
+                    size="sm"
+                    variant="destructive"
+                    onClick={handleBulkDeleteSupervisors}
+                    disabled={bulkDeleteSupervisorsMutation.isPending}
+                    className="bg-destructive hover:bg-destructive/80"
+                  >
+                    {bulkDeleteSupervisorsMutation.isPending ? (
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    ) : (
+                      <Trash2 className="mr-2 h-4 w-4" />
+                    )}
+                    Excluir Selecionados ({selectedSupervisorIds.size})
+                  </Button>
+                )}
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={handleSelectAllSupervisors}
+                  disabled={filteredSupervisors.length === 0}
+                  className="border-primary text-primary hover:bg-primary/10"
+                >
+                  {isAllSupervisorsSelected ? (
+                    <Square className="mr-2 h-4 w-4" />
+                  ) : (
+                    <CheckSquare className="mr-2 h-4 w-4" />
+                  )}
+                  {isAllSupervisorsSelected ? "Desselecionar Todos" : "Selecionar Todos"}
+                </Button>
+                <CreateTechnicianDialog /> {/* Reusing the dialog for creating technicians/supervisors */}
+              </div>
             </CardHeader>
             <CardContent className="space-y-4">
               {filteredSupervisors && filteredSupervisors.length > 0 ? (
@@ -153,30 +240,38 @@ export const SupervisorManagement = () => {
                     className="flex flex-col lg:flex-row items-start lg:items-center justify-between p-4 rounded-lg border border-primary/10 bg-slate-darker/10 animate-slide-up"
                     style={{ animationDelay: `${index * 100}ms` }}
                   >
-                    <div className="flex-1 min-w-0 mb-3 lg:mb-0">
-                      <h3 className="font-semibold text-lg flex items-center gap-2">
-                        <UserIcon className="h-5 w-5 text-primary" />
-                        {supervisor.first_name} {supervisor.last_name}
-                      </h3>
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-sm text-muted-foreground mt-1">
-                        <div className="flex items-center gap-1">
-                          <Briefcase className="h-3 w-3" /> Função: {supervisor.role === 'standard' ? 'Supervisor' : supervisor.role}
+                    <div className="flex items-center gap-3 flex-1 min-w-0 mb-3 lg:mb-0">
+                      <Checkbox
+                        checked={selectedSupervisorIds.has(supervisor.id)}
+                        onCheckedChange={() => handleToggleSelectSupervisor(supervisor.id)}
+                        id={`select-supervisor-${supervisor.id}`}
+                        className="h-5 w-5"
+                      />
+                      <div>
+                        <h3 className="font-semibold text-lg flex items-center gap-2">
+                          <UserIcon className="h-5 w-5 text-primary" />
+                          {supervisor.first_name} {supervisor.last_name}
+                        </h3>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-sm text-muted-foreground mt-1">
+                          <div className="flex items-center gap-1">
+                            <Briefcase className="h-3 w-3" /> Função: {supervisor.role === 'standard' ? 'Supervisor' : supervisor.role}
+                          </div>
+                          {supervisor.phone_number && (
+                            <div className="flex items-center gap-1">
+                              <Phone className="h-3 w-3" /> {supervisor.phone_number}
+                            </div>
+                          )}
+                          {supervisor.team_shift && (
+                            <div className="flex items-center gap-1">
+                              {supervisor.team_shift === 'day' ? (
+                                <Sun className="h-3 w-3" />
+                              ) : (
+                                <Moon className="h-3 w-3" />
+                              )}
+                              Equipe: {supervisor.team_shift === 'day' ? 'Dia' : 'Noite'}
+                            </div>
+                          )}
                         </div>
-                        {supervisor.phone_number && (
-                          <div className="flex items-center gap-1">
-                            <Phone className="h-3 w-3" /> {supervisor.phone_number}
-                          </div>
-                        )}
-                        {supervisor.team_shift && (
-                          <div className="flex items-center gap-1">
-                            {supervisor.team_shift === 'day' ? (
-                              <Sun className="h-3 w-3" />
-                            ) : (
-                              <Moon className="h-3 w-3" />
-                            )}
-                            Equipe: {supervisor.team_shift === 'day' ? 'Dia' : 'Noite'}
-                          </div>
-                        )}
                       </div>
                     </div>
                     <div className="flex gap-2 flex-wrap justify-end">
