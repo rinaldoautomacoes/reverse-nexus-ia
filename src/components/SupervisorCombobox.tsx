@@ -55,7 +55,7 @@ export const SupervisorCombobox: React.FC<SupervisorComboboxProps> = ({
         .order('first_name', { ascending: true });
       
       if (error) {
-        console.error("[SupervisorCombobox] Error fetching profiles:", error.message, error); // Log do objeto de erro completo
+        console.error("[SupervisorCombobox] Error fetching profiles:", error.message, error);
         throw new Error(error.message);
       }
       console.log("[SupervisorCombobox] Raw profiles fetched (supervisor_id = null):", data);
@@ -64,16 +64,14 @@ export const SupervisorCombobox: React.FC<SupervisorComboboxProps> = ({
     enabled: !!currentUser?.id,
   });
 
-  // Filter out the excluded user and the current user if they are not supervisors
   const availableSupervisors = React.useMemo(() => {
     const filtered = profiles?.filter(profile => 
-      profile.id !== excludeUserId && profile.id !== currentUser?.id // Exclude self and the user being edited
+      profile.id !== excludeUserId && profile.id !== currentUser?.id
     ) || [];
     console.log("[SupervisorCombobox] Available supervisors after filtering:", filtered);
     return filtered;
   }, [profiles, excludeUserId, currentUser?.id]);
 
-  // Sync inputValue with the selected supervisor's name
   React.useEffect(() => {
     if (value && availableSupervisors) {
       const selectedProfile = availableSupervisors.find(profile => profile.id === value);
@@ -103,37 +101,29 @@ export const SupervisorCombobox: React.FC<SupervisorComboboxProps> = ({
 
   const handleInputChange = (currentSearch: string) => {
     setInputValue(currentSearch);
-    // Apenas limpa o valor selecionado se o usuário apagar todo o texto
-    // ou se o texto digitado não corresponder a nenhum supervisor e não houver um valor selecionado.
     const matchedProfile = availableSupervisors.find(profile => 
       `${profile.first_name || ''} ${profile.last_name || ''}`.toLowerCase().includes(currentSearch.toLowerCase())
     );
 
     if (currentSearch.trim() === "" && value !== null) {
-      // Se o input está vazio e havia um supervisor selecionado, limpa a seleção
       onValueChange(null);
       onSupervisorSelect?.(null);
     } else if (currentSearch.trim() !== "" && !matchedProfile && value !== null) {
-      // Se o usuário está digitando e não há correspondência, mas um supervisor estava selecionado,
-      // não limpa imediatamente, espera uma seleção explícita ou que o input seja esvaziado.
-      // Isso evita limpar a seleção enquanto o usuário está digitando para filtrar.
+      // Keep current value if typing and no match, to allow filtering
     } else if (currentSearch.trim() !== "" && !matchedProfile && value === null) {
-      // Se o usuário está digitando e não há correspondência e nenhum supervisor estava selecionado,
-      // garante que o valor seja null.
       onValueChange(null);
       onSupervisorSelect?.(null);
     }
   };
 
-  // Refined display logic for the button trigger
   const selectedSupervisor = availableSupervisors.find(p => p.id === value);
   const buttonDisplayContent = selectedSupervisor 
     ? (
       <div className="flex items-center gap-2">
         <Avatar className="h-6 w-6">
           <AvatarImage src={selectedSupervisor.avatar_url || undefined} />
-          <AvatarFallback className="bg-primary text-primary-foreground"> {/* Adicionado estilo explícito */}
-            {selectedSupervisor.first_name?.charAt(0) || 'U'} {/* Fallback para 'U' se first_name estiver vazio */}
+          <AvatarFallback className="bg-primary text-primary-foreground">
+            {selectedSupervisor.first_name?.charAt(0) || 'U'}
           </AvatarFallback>
         </Avatar>
         {`${selectedSupervisor.first_name || ''} ${selectedSupervisor.last_name || ''}`.trim()}
@@ -141,9 +131,6 @@ export const SupervisorCombobox: React.FC<SupervisorComboboxProps> = ({
     ) : (
       inputValue || "Selecionar supervisor..."
     );
-
-  console.log("[SupervisorCombobox] Current value:", value);
-  console.log("[SupervisorCombobox] Current inputValue:", inputValue);
 
   return (
     <Popover open={open} onOpenChange={setOpen}>
@@ -156,7 +143,7 @@ export const SupervisorCombobox: React.FC<SupervisorComboboxProps> = ({
           disabled={disabled || isLoading}
         >
           <User className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-          {buttonDisplayContent} {/* Usa o conteúdo refinado */}
+          {buttonDisplayContent}
           <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
         </Button>
       </PopoverTrigger>
@@ -169,7 +156,7 @@ export const SupervisorCombobox: React.FC<SupervisorComboboxProps> = ({
           />
           <CommandList>
             {isLoading && <CommandEmpty>Carregando supervisores...</CommandEmpty>}
-            {error && <CommandEmpty>Erro ao carregar supervisores.</CommandEmpty>}
+            {error && <CommandEmpty>Erro ao carregar supervisores: {error.message}</CommandEmpty>} {/* Exibe a mensagem de erro aqui */}
             {!isLoading && !error && availableSupervisors.length === 0 && (
               <CommandEmpty>Nenhum supervisor encontrado.</CommandEmpty>
             )}
@@ -190,7 +177,7 @@ export const SupervisorCombobox: React.FC<SupervisorComboboxProps> = ({
                   />
                   <Avatar className="h-6 w-6 mr-2">
                     <AvatarImage src={profile.avatar_url || undefined} />
-                    <AvatarFallback className="bg-primary text-primary-foreground"> {/* Adicionado estilo explícito */}
+                    <AvatarFallback className="bg-primary text-primary-foreground">
                       {profile.first_name?.charAt(0) || 'U'}
                     </AvatarFallback>
                   </Avatar>
