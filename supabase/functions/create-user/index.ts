@@ -6,6 +6,22 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
+// Helper function to sanitize parts of an email (local part or domain part)
+const sanitizeForEmail = (input: string): string => {
+  return input
+    .toLowerCase()
+    .replace(/[àáâãäå]/g, 'a')
+    .replace(/[èéêë]/g, 'e')
+    .replace(/[ìíîï]/g, 'i')
+    .replace(/[òóôõö]/g, 'o')
+    .replace(/[ùúûü]/g, 'u')
+    .replace(/[ç]/g, 'c')
+    .replace(/[^a-z0-9.-]/g, '') // Allow only alphanumeric, dot, hyphen
+    .replace(/^[.-]+|[.-]+$/g, '') // Remove leading/trailing dots/hyphens
+    .replace(/[.]{2,}/g, '.') // Replace multiple dots with single
+    .replace(/[-]{2,}/g, '-'); // Replace multiple hyphens with single
+};
+
 // Helper to generate a unique string for emails
 const generateUniqueString = (prefix: string = 'gen') => {
   const timestamp = Date.now().toString(36);
@@ -90,10 +106,16 @@ serve(async (req) => {
 
     // Generate email if not provided or invalid
     if (!email || !emailRegex.test(email.toLowerCase())) {
-      const sanitizedFirstName = first_name.toLowerCase().replace(/[^a-z0-9]/g, '');
-      const sanitizedLastName = last_name.toLowerCase().replace(/[^a-z0-9]/g, '');
+      const sanitizedFirstName = sanitizeForEmail(first_name);
+      const sanitizedLastName = sanitizeForEmail(last_name);
       const uniquePart = generateUniqueString('TECH').toLowerCase();
-      email = `${sanitizedFirstName}.${sanitizedLastName}.${uniquePart}@${baseDomain}`;
+      
+      let generatedBaseEmail = [sanitizedFirstName, sanitizedLastName].filter(Boolean).join('.');
+      if (!generatedBaseEmail) {
+        generatedBaseEmail = 'generated.tech';
+      }
+
+      email = `${generatedBaseEmail}.${uniquePart}@${baseDomain}`;
       console.log(`[create-user] Email not provided or invalid, generated: ${email}`);
 
       // Final validation for the generated email

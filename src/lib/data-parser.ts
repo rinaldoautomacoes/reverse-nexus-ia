@@ -66,6 +66,22 @@ const readJSON = (file: File): Promise<any[]> => {
 
 // --- 2. Funções de Mapeamento de Linha para Tipos de Dados ---
 
+// Helper function to sanitize parts of an email (local part or domain part)
+const sanitizeForEmail = (input: string): string => {
+  return input
+    .toLowerCase()
+    .replace(/[àáâãäå]/g, 'a')
+    .replace(/[èéêë]/g, 'e')
+    .replace(/[ìíîï]/g, 'i')
+    .replace(/[òóôõö]/g, 'o')
+    .replace(/[ùúûü]/g, 'u')
+    .replace(/[ç]/g, 'c')
+    .replace(/[^a-z0-9.-]/g, '') // Allow only alphanumeric, dot, hyphen
+    .replace(/^[.-]+|[.-]+$/g, '') // Remove leading/trailing dots/hyphens
+    .replace(/[.]{2,}/g, '.') // Replace multiple dots with single
+    .replace(/[-]{2,}/g, '-'); // Replace multiple hyphens with single
+};
+
 // Helper to generate a unique string for emails
 const generateUniqueString = (prefix: string = 'gen') => {
   const timestamp = Date.now().toString(36);
@@ -156,16 +172,23 @@ const mapRowToTechnician = (row: any): TechnicianImportData => {
     finalEmail = rawEmail.toLowerCase();
   } else {
     // Se nenhum e-mail válido for fornecido, gere um
-    const sanitizedFirstName = firstName.toLowerCase().replace(/[^a-z0-9]/g, '');
-    const sanitizedLastName = lastName.toLowerCase().replace(/[^a-z0-9]/g, '');
+    const sanitizedFirstName = sanitizeForEmail(firstName);
+    const sanitizedLastName = sanitizeForEmail(lastName);
     const uniquePart = generateUniqueString('TECH').toLowerCase();
-    finalEmail = `${sanitizedFirstName}.${sanitizedLastName}.${uniquePart}@${baseDomain}`;
+    
+    // Combine sanitized names, ensuring no empty parts or multiple dots/hyphens
+    let generatedBaseEmail = [sanitizedFirstName, sanitizedLastName].filter(Boolean).join('.');
+    if (!generatedBaseEmail) { // Fallback if both names are empty after sanitization
+      generatedBaseEmail = 'generated.tech';
+    }
+
+    finalEmail = `${generatedBaseEmail}.${uniquePart}@${baseDomain}`;
 
     // Validação final para o e-mail gerado
     if (!emailRegex.test(finalEmail)) {
       console.warn(`[data-parser] E-mail gerado '${finalEmail}' ainda é inválido. Gerando um fallback.`);
       const fallbackUniquePart = generateUniqueString('FALLBACK').toLowerCase();
-      finalEmail = `${sanitizedFirstName}.${sanitizedLastName}.${fallbackUniquePart}@${baseDomain}`;
+      finalEmail = `fallback.tech.${fallbackUniquePart}@${baseDomain}`;
     }
   }
 
