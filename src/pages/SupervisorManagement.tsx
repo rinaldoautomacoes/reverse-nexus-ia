@@ -24,7 +24,7 @@ export const SupervisorManagement = () => {
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [editingSupervisor, setEditingSupervisor] = useState<Profile | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
-  const [selectedSupervisorIds, setSelectedSupervisorIds] = useState<Set<string>>(new Set());
+  const [selectedSupervisorIds, setSelectedSupervisorIds] = new Set<string>();
 
   const { data: allProfiles, isLoading: isLoadingProfiles, error: profilesError } = useQuery<Profile[], Error>({
     queryKey: ['allProfiles', currentUser?.id],
@@ -175,6 +175,24 @@ export const SupervisorManagement = () => {
             </p>
           </div>
 
+          {/* Card para o quantitativo geral de supervisores */}
+          <Card className="card-futuristic">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium text-muted-foreground">
+                Total de Supervisores Cadastrados
+              </CardTitle>
+              <div className="p-2 rounded-lg bg-primary/10 text-primary">
+                <UserCheck className="h-4 w-4" />
+              </div>
+            </CardHeader>
+            <CardContent>
+              <div className="text-3xl font-bold font-orbitron gradient-text">
+                {supervisors.length}
+              </div>
+              <p className="text-xs text-muted-foreground">Supervisores ativos na plataforma</p>
+            </CardContent>
+          </Card>
+
           <Card className="card-futuristic">
             <CardContent className="p-6">
               <div className="flex flex-col md:flex-row gap-4">
@@ -276,7 +294,7 @@ export const SupervisorManagement = () => {
                             </div>
                           )}
                         </div>
-                      </div>
+                    </div>
                     </div>
                     <div className="flex gap-2 flex-wrap justify-end">
                       <Button

@@ -24,7 +24,7 @@ export const TechnicianManagement = () => {
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [editingTechnician, setEditingTechnician] = useState<Profile | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
-  const [selectedTechnicianIds, setSelectedTechnicianIds] = useState<Set<string>>(new Set());
+  const [selectedTechnicianIds, setSelectedTechnicianIds] = new Set<string>();
 
   const { data: allProfiles, isLoading: isLoadingProfiles, error: profilesError } = useQuery<Profile[], Error>({
     queryKey: ['allProfiles', currentUser?.id],
@@ -175,6 +175,24 @@ export const TechnicianManagement = () => {
               Adicione, edite e remova os técnicos da sua equipe que possuem um supervisor.
             </p>
           </div>
+
+          {/* Card para o quantitativo geral de técnicos */}
+          <Card className="card-futuristic">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium text-muted-foreground">
+                Total de Técnicos Cadastrados
+              </CardTitle>
+              <div className="p-2 rounded-lg bg-primary/10 text-primary">
+                <UserCog className="h-4 w-4" />
+              </div>
+            </CardHeader>
+            <CardContent>
+              <div className="text-3xl font-bold font-orbitron gradient-text">
+                {technicians.length}
+              </div>
+              <p className="text-xs text-muted-foreground">Técnicos ativos na plataforma</p>
+            </CardContent>
+          </Card>
 
           <Card className="card-futuristic">
             <CardContent className="p-6">
