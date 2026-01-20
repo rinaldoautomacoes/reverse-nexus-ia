@@ -158,6 +158,8 @@ serve(async (req) => {
 
     if (createUserError) {
       console.error('[create-user] Error creating user with admin.createUser:', createUserError); 
+      // Log the full error object for more details
+      console.error('[create-user] Supabase createUserError details:', JSON.stringify(createUserError));
       return new Response(JSON.stringify({ error: createUserError.message }), {
         status: 400,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },

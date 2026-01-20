@@ -149,6 +149,9 @@ const mapRowToTechnician = (row: any): TechnicianImportData => {
   let supervisorIdRaw = row['ID Supervisor'] || row['supervisor_id'] || null;
   let supervisor_id: string | null = null;
 
+  console.log('[data-parser] Raw row for technician:', row);
+  console.log('[data-parser] Initial names:', { firstName, lastName });
+
   if (row['Técnico'] && (!firstName || !lastName)) {
     const tecnicoFullName = String(row['Técnico']).trim();
     const nameParts = tecnicoFullName.split(' ').filter(Boolean);
@@ -160,35 +163,33 @@ const mapRowToTechnician = (row: any): TechnicianImportData => {
 
   if (!firstName) firstName = 'Tecnico';
   if (!lastName) lastName = 'Desconhecido';
+  console.log('[data-parser] Processed names:', { firstName, lastName });
 
   let finalEmail: string;
-  const baseDomain = 'logireverseia.com'; // Centralize domain
-
-  // Regex para validação de e-mail (mais robusta)
+  const baseDomain = 'logireverseia.com';
   const emailRegex = /^[a-z0-9!#$%&'*+/=?^_`{|}~-]+(?:\.[a-z0-9!#$%&'*+/=?^_`{|}~-]+)*@(?:[a-z0-9](?:[a-z0-9-]*[a-z0-9])?\.)+[a-z0-9](?:[a-z0-9-]*[a-z0-9])?$/;
 
   if (rawEmail && emailRegex.test(rawEmail.toLowerCase())) {
-    // Se um e-mail válido for fornecido, use-o
     finalEmail = rawEmail.toLowerCase();
+    console.log('[data-parser] Using provided valid email:', finalEmail);
   } else {
-    // Se nenhum e-mail válido for fornecido, gere um
     const sanitizedFirstName = sanitizeForEmail(firstName);
     const sanitizedLastName = sanitizeForEmail(lastName);
     const uniquePart = generateUniqueString('TECH').toLowerCase();
     
-    // Combine sanitized names, ensuring no empty parts or multiple dots/hyphens
     let generatedBaseEmail = [sanitizedFirstName, sanitizedLastName].filter(Boolean).join('.');
-    if (!generatedBaseEmail) { // Fallback if both names are empty after sanitization
+    if (!generatedBaseEmail) {
       generatedBaseEmail = 'generated.tech';
     }
 
     finalEmail = `${generatedBaseEmail}.${uniquePart}@${baseDomain}`;
+    console.log('[data-parser] Generated initial email:', finalEmail);
 
-    // Validação final para o e-mail gerado
     if (!emailRegex.test(finalEmail)) {
-      console.warn(`[data-parser] E-mail gerado '${finalEmail}' ainda é inválido. Gerando um fallback.`);
+      console.warn(`[data-parser] Generated email '${finalEmail}' is still invalid. Generating a fallback.`);
       const fallbackUniquePart = generateUniqueString('FALLBACK').toLowerCase();
       finalEmail = `fallback.tech.${fallbackUniquePart}@${baseDomain}`;
+      console.log('[data-parser] Generated fallback email:', finalEmail);
     }
   }
 
@@ -198,15 +199,16 @@ const mapRowToTechnician = (row: any): TechnicianImportData => {
   } else if (supervisorIdRaw) {
     console.warn(`[data-parser] Invalid supervisor_id format '${supervisorIdRaw}'. Setting to null.`);
   }
+  console.log('[data-parser] Final supervisor_id:', supervisor_id);
 
   const technicianData = {
     first_name: firstName,
     last_name: lastName,
-    email: finalEmail, // Use o e-mail final sanitizado/gerado
-    password: String(row['Senha'] || row['password'] || 'LogiReverseIA@2025'), // Senha padrão se não fornecida
+    email: finalEmail,
+    password: String(row['Senha'] || row['password'] || 'LogiReverseIA@2025'),
     phone_number: phoneNumber,
     role: role,
-    supervisor_id: supervisor_id, // Use o supervisor_id validado
+    supervisor_id: supervisor_id,
   };
   console.log('[data-parser] Mapped technician data:', technicianData); // Log dos dados mapeados
   return technicianData;
