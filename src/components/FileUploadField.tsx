@@ -1,3 +1,5 @@
+"use client";
+
 import React, { useState, useCallback, useEffect, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -17,7 +19,7 @@ interface FileAttachment {
 
 interface FileUploadFieldProps {
   label?: string;
-  initialFiles?: FileAttachment[];
+  initialFiles?: FileAttachment[] | null; // Permitir null para segurança
   onFilesChange: (files: FileAttachment[]) => void;
   disabled?: boolean;
 }
@@ -40,12 +42,16 @@ export const FileUploadField: React.FC<FileUploadFieldProps> = ({
 }) => {
   const { toast } = useToast();
   const { user } = useAuth();
-  const [files, setFiles] = useState<FileAttachment[]>(initialFiles);
+  // Filtra quaisquer anexos nulos ou indefinidos ao inicializar o estado
+  const [files, setFiles] = useState<FileAttachment[]>(
+    initialFiles?.filter(file => file && typeof file.size === 'number' && file.name && file.url && file.type) || []
+  );
   const [uploading, setUploading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
-    setFiles(initialFiles);
+    // Também filtra quando a prop initialFiles muda
+    setFiles(initialFiles?.filter(file => file && typeof file.size === 'number' && file.name && file.url && file.type) || []);
   }, [initialFiles]);
 
   const handleFileSelect = useCallback(async (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -95,11 +101,12 @@ export const FileUploadField: React.FC<FileUploadFieldProps> = ({
       }
     }
 
-    setFiles(prev => [...prev, ...uploadedFileUrls]);
-    onFilesChange([...files, ...uploadedFileUrls]); // Notify parent immediately
+    const newFilesList = [...files, ...uploadedFileUrls];
+    setFiles(newFilesList);
+    onFilesChange(newFilesList); // Notifica o componente pai imediatamente
     setUploading(false);
 
-    // Clear the file input value to allow selecting the same file again
+    // Limpa o valor do input de arquivo para permitir selecionar o mesmo arquivo novamente
     if (fileInputRef.current) {
       fileInputRef.current.value = '';
     }
@@ -108,10 +115,10 @@ export const FileUploadField: React.FC<FileUploadFieldProps> = ({
   const handleRemoveFile = useCallback((urlToRemove: string) => {
     setFiles(prev => {
       const newFiles = prev.filter(file => file.url !== urlToRemove);
-      onFilesChange(newFiles); // Notify parent
+      onFilesChange(newFiles); // Notifica o componente pai
       return newFiles;
     });
-    // TODO: Optionally, delete file from Supabase Storage
+    // TODO: Opcionalmente, excluir o arquivo do Supabase Storage
   }, [onFilesChange]);
 
   return (
@@ -147,10 +154,10 @@ export const FileUploadField: React.FC<FileUploadFieldProps> = ({
             <div key={index} className="flex items-center justify-between p-2 border rounded-md bg-muted/20">
               <div className="flex items-center gap-2">
                 {getFileIcon(file.type)}
-                <a 
-                  href={file.url} 
-                  target="_blank" 
-                  rel="noopener noreferrer" 
+                <a
+                  href={file.url}
+                  target="_blank"
+                  rel="noopener noreferrer"
                   className="text-sm text-primary hover:underline truncate max-w-[200px] md:max-w-none"
                   title={file.name}
                 >

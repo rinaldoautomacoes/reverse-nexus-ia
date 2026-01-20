@@ -16,7 +16,7 @@ interface FileAttachment {
 
 interface CollectionAttachmentsDialogProps {
   collectionName: string;
-  attachments: FileAttachment[];
+  attachments: FileAttachment[] | null; // Permitir null para segurança
   isOpen: boolean;
   onClose: () => void;
 }
@@ -37,6 +37,11 @@ export const CollectionAttachmentsDialog: React.FC<CollectionAttachmentsDialogPr
   isOpen,
   onClose,
 }) => {
+  // Filtra quaisquer anexos nulos ou indefinidos antes de mapear
+  const validAttachments = attachments?.filter(file => 
+    file && typeof file.size === 'number' && file.name && file.url && file.type
+  ) || [];
+
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="sm:max-w-[500px] bg-card border-primary/20 max-h-[90vh] flex flex-col">
@@ -50,10 +55,10 @@ export const CollectionAttachmentsDialog: React.FC<CollectionAttachmentsDialogPr
           </DialogDescription>
         </DialogHeader>
         
-        {attachments && attachments.length > 0 ? (
-          <ScrollArea className="flex-1 pr-4 -mr-4"> {/* Adicionado flex-1 para ocupar espaço disponível */}
+        {validAttachments.length > 0 ? (
+          <ScrollArea className="flex-1 pr-4 -mr-4">
             <div className="space-y-3 py-2">
-              {attachments.map((file, index) => (
+              {validAttachments.map((file, index) => (
                 <div key={index} className="flex items-center justify-between p-3 border rounded-md bg-muted/20">
                   <div className="flex items-center gap-2 min-w-0">
                     {getFileIcon(file.type)}
