@@ -29,12 +29,28 @@ export const CreateProfileDialog: React.FC<CreateProfileDialogProps> = ({ profil
         throw new Error("Usuário não autenticado. Faça login para adicionar perfis.");
       }
 
+      let finalProfileData: ProfileInsert = { ...newProfileData };
+
+      // Se estiver criando um técnico e nenhum supervisor_id for fornecido, atribua o usuário atual como supervisor
+      if (profileType === 'technician' && !finalProfileData.supervisor_id) {
+        finalProfileData.supervisor_id = currentUser.id;
+        toast({
+          title: "Supervisor Padrão Atribuído",
+          description: "Nenhum supervisor foi selecionado para o técnico. O usuário atual foi atribuído como supervisor.",
+          variant: "warning",
+        });
+      }
+      // Se estiver criando um supervisor, garanta que supervisor_id seja nulo
+      if (profileType === 'supervisor') {
+        finalProfileData.supervisor_id = null;
+      }
+
       const { data, error } = await supabase
         .from('profiles')
         .insert({ 
-          ...newProfileData, 
-          id: newProfileData.id || crypto.randomUUID(),
-          role: newProfileData.role || 'standard', // Permite que a role seja definida pelo formulário, mas padrão é 'standard'
+          ...finalProfileData, 
+          id: finalProfileData.id || crypto.randomUUID(),
+          role: finalProfileData.role || 'standard', // Permite que a role seja definida pelo formulário, mas padrão é 'standard'
         })
         .select()
         .single();

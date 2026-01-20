@@ -191,7 +191,8 @@ export const useImportMutations = ({ userId, onImportSuccess, onImportError }: U
         last_name: tech.last_name,
         phone_number: tech.phone_number,
         role: tech.role || 'standard',
-        supervisor_id: tech.supervisor_id,
+        // Se o supervisor_id for nulo para um técnico, atribua o usuário atual como seu supervisor
+        supervisor_id: tech.supervisor_id || userId, 
         avatar_url: null,
         updated_at: new Date().toISOString(),
         team_shift: tech.team_shift || 'day',
