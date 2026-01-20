@@ -110,7 +110,20 @@ export const EntregaForm: React.FC<EntregaFormProps> = ({ initialData, onSave, o
   });
 
   const [deliveryItems, setDeliveryItems] = useState<ItemData[]>(initialData?.items || []);
-  const [attachments, setAttachments] = useState<FileAttachment[]>(initialData?.attachments || []); // Estado para os anexos
+  
+  const [attachments, setAttachments] = useState<FileAttachment[]>(() => {
+    const initial = initialData?.attachments;
+    if (Array.isArray(initial)) {
+      return initial.filter((file): file is FileAttachment => 
+        file !== null && typeof file === 'object' && 
+        typeof (file as FileAttachment).size === 'number' && 
+        typeof (file as FileAttachment).name === 'string' && 
+        typeof (file as FileAttachment).url === 'string' && 
+        typeof (file as FileAttachment).type === 'string'
+      );
+    }
+    return [];
+  });
 
   const [isFetchingOriginAddress, setIsFetchingOriginAddress] = useState(false);
   const [isFetchingDestinationAddress, setIsFetchingDestinationAddress] = useState(false);
@@ -120,7 +133,17 @@ export const EntregaForm: React.FC<EntregaFormProps> = ({ initialData, onSave, o
       const { items, attachments: initialAttachments, ...restOfEntregaData } = initialData;
       setFormData(restOfEntregaData);
       setDeliveryItems(items || []);
-      setAttachments(initialAttachments || []);
+      if (Array.isArray(initialAttachments)) {
+        setAttachments(initialAttachments.filter((file): file is FileAttachment => 
+          file !== null && typeof file === 'object' && 
+          typeof (file as FileAttachment).size === 'number' && 
+          typeof (file as FileAttachment).name === 'string' && 
+          typeof (file as FileAttachment).url === 'string' && 
+          typeof (file as FileAttachment).type === 'string'
+        ));
+      } else {
+        setAttachments([]);
+      }
     } else {
       setFormData({
         parceiro: "",

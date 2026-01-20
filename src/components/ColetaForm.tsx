@@ -33,18 +33,18 @@ type Profile = Tables<'profiles'>;
 type Driver = Tables<'drivers'>;
 type Transportadora = Tables<'transportadoras'>;
 
-interface ColetaFormProps {
-  initialData?: ColetaUpdate & { items?: ItemData[] }; // Adicionado items ao initialData
-  onSave: (data: ColetaInsert | ColetaUpdate, items: ItemData[], attachments: FileAttachment[]) => void; // onSave agora recebe os itens e anexos
-  onCancel: () => void;
-  isPending: boolean;
-}
-
 interface FileAttachment {
   name: string;
   url: string;
   type: string;
   size: number;
+}
+
+interface ColetaFormProps {
+  initialData?: ColetaUpdate & { items?: ItemData[] }; // Adicionado items ao initialData
+  onSave: (data: ColetaInsert | ColetaUpdate, items: ItemData[], attachments: FileAttachment[]) => void; // onSave agora recebe os itens e anexos
+  onCancel: () => void;
+  isPending: boolean;
 }
 
 export const ColetaForm: React.FC<ColetaFormProps> = ({ initialData, onSave, onCancel, isPending }) => {
@@ -97,7 +97,20 @@ export const ColetaForm: React.FC<ColetaFormProps> = ({ initialData, onSave, onC
   });
 
   const [collectionItems, setCollectionItems] = useState<ItemData[]>(initialData?.items || []);
-  const [attachments, setAttachments] = useState<FileAttachment[]>(initialData?.attachments || []); // Estado para os anexos
+  
+  const [attachments, setAttachments] = useState<FileAttachment[]>(() => {
+    const initial = initialData?.attachments;
+    if (Array.isArray(initial)) {
+      return initial.filter((file): file is FileAttachment => 
+        file !== null && typeof file === 'object' && 
+        typeof (file as FileAttachment).size === 'number' && 
+        typeof (file as FileAttachment).name === 'string' && 
+        typeof (file as FileAttachment).url === 'string' && 
+        typeof (file as FileAttachment).type === 'string'
+      );
+    }
+    return [];
+  });
 
   // State for fetching status from address lookup hooks
   const [isFetchingOriginAddress, setIsFetchingOriginAddress] = useState(false);
@@ -108,7 +121,17 @@ export const ColetaForm: React.FC<ColetaFormProps> = ({ initialData, onSave, onC
       const { items, attachments: initialAttachments, ...restOfColetaData } = initialData;
       setFormData(restOfColetaData);
       setCollectionItems(items || []);
-      setAttachments(initialAttachments || []);
+      if (Array.isArray(initialAttachments)) {
+        setAttachments(initialAttachments.filter((file): file is FileAttachment => 
+          file !== null && typeof file === 'object' && 
+          typeof (file as FileAttachment).size === 'number' && 
+          typeof (file as FileAttachment).name === 'string' && 
+          typeof (file as FileAttachment).url === 'string' && 
+          typeof (file as FileAttachment).type === 'string'
+        ));
+      } else {
+        setAttachments([]);
+      }
     } else {
       setFormData({
         parceiro: "",
