@@ -3,9 +3,9 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Loader2, User as UserIcon, Mail, Lock, Phone, Briefcase, UserCog, Sun, Moon } from "lucide-react"; // Adicionado Sun e Moon
+import { Loader2, User as UserIcon, Mail, Lock, Phone, Briefcase, UserCog, Sun, Moon } from "lucide-react";
 import type { TablesInsert, TablesUpdate } from "@/integrations/supabase/types_generated";
-import { SupervisorCombobox } from "./SupervisorCombobox"; // Importar SupervisorCombobox
+import { SupervisorCombobox } from "./SupervisorCombobox";
 
 type ProfileInsert = TablesInsert<'profiles'>;
 type ProfileUpdate = TablesUpdate<'profiles'>;
@@ -15,7 +15,6 @@ interface UserFormProps {
   onSave: (data: ProfileInsert | ProfileUpdate) => void;
   onCancel: () => void;
   isPending: boolean;
-  // New props for email/password when creating a new user (only for CreateTechnicianForm)
   showAuthFields?: boolean;
   onAuthFieldsChange?: (email: string, password: string) => void;
 }
@@ -24,12 +23,12 @@ export const UserForm: React.FC<UserFormProps> = ({ initialData, onSave, onCance
   const [formData, setFormData] = useState<ProfileInsert | ProfileUpdate>(initialData || {
     first_name: "",
     last_name: "",
-    role: "standard", // Default role
+    role: "standard",
     phone_number: "",
     avatar_url: "",
-    supervisor_id: null, // Novo campo
-    team_shift: "day", // Novo campo com valor padrão
-    id: "", // Will be filled by mutation or existing user
+    supervisor_id: null,
+    team_shift: "day",
+    id: "",
   });
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -38,7 +37,6 @@ export const UserForm: React.FC<UserFormProps> = ({ initialData, onSave, onCance
     if (initialData) {
       setFormData(initialData);
     } else {
-      // Reset form for new user creation
       setFormData({
         first_name: "",
         last_name: "",
@@ -46,7 +44,7 @@ export const UserForm: React.FC<UserFormProps> = ({ initialData, onSave, onCance
         phone_number: "",
         avatar_url: "",
         supervisor_id: null,
-        team_shift: "day", // Reset para valor padrão
+        team_shift: "day",
         id: "",
       });
       setEmail("");
@@ -65,7 +63,7 @@ export const UserForm: React.FC<UserFormProps> = ({ initialData, onSave, onCance
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (showAuthFields && onAuthFieldsChange) {
-      onAuthFieldsChange(email, password); // Pass auth fields to parent
+      onAuthFieldsChange(email, password);
     }
     onSave(formData);
   };
@@ -93,7 +91,7 @@ export const UserForm: React.FC<UserFormProps> = ({ initialData, onSave, onCance
           <div className="space-y-2">
             <Label htmlFor="password">Senha *</Label>
             <div className="relative">
-              <Lock className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" /> {/* Reusing Lock icon for password */}
+              <Lock className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
               <Input
                 id="password"
                 type="password"
@@ -126,7 +124,7 @@ export const UserForm: React.FC<UserFormProps> = ({ initialData, onSave, onCance
           </div>
         </div>
         <div className="space-y-2">
-          <Label htmlFor="last_name">Sobrenome</Label> {/* Removido o '*' de obrigatoriedade */}
+          <Label htmlFor="last_name">Sobrenome</Label>
           <div className="relative">
             <UserIcon className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
             <Input
@@ -161,7 +159,7 @@ export const UserForm: React.FC<UserFormProps> = ({ initialData, onSave, onCance
           <Select
             value={formData.role || 'standard'}
             onValueChange={(value) => handleInputChange("role", value)}
-            disabled={isPending || initialData?.role === 'admin'} // Prevent changing admin role via this form
+            disabled={isPending || initialData?.role === 'admin'}
           >
             <SelectTrigger className="pl-10">
               <Briefcase className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
@@ -175,7 +173,7 @@ export const UserForm: React.FC<UserFormProps> = ({ initialData, onSave, onCance
         </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4"> {/* Novo grid para team_shift e supervisor */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div className="space-y-2">
           <Label htmlFor="team_shift">Equipe</Label>
           <Select
@@ -203,7 +201,7 @@ export const UserForm: React.FC<UserFormProps> = ({ initialData, onSave, onCance
             value={formData.supervisor_id || null}
             onValueChange={handleSupervisorSelect}
             disabled={isPending}
-            excludeUserId={initialData?.id} // Exclude the user being edited from being their own supervisor
+            excludeUserId={initialData?.id}
           />
         </div>
       </div>
@@ -226,3 +224,5 @@ export const UserForm: React.FC<UserFormProps> = ({ initialData, onSave, onCance
         </Button>
       </div>
     </form>
+  );
+};
