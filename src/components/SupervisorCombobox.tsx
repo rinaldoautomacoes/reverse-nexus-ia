@@ -51,14 +51,14 @@ export const SupervisorCombobox: React.FC<SupervisorComboboxProps> = ({
       const { data, error } = await supabase
         .from('profiles')
         .select('*')
-        .eq('supervisor_id', null) // Filtra para mostrar apenas perfis que são supervisores (não têm supervisor)
+        .is('supervisor_id', null) // Corrected: Use .is() to check for NULL values
         .order('first_name', { ascending: true });
       
       if (error) {
         console.error("[SupervisorCombobox] Error fetching profiles:", error.message, error);
         throw new Error(error.message);
       }
-      console.log("[SupervisorCombobox] Raw profiles fetched (supervisor_id = null):", data);
+      console.log("[SupervisorCombobox] Raw profiles fetched (supervisor_id IS NULL):", data);
       return data;
     },
     enabled: !!currentUser?.id,
@@ -156,7 +156,7 @@ export const SupervisorCombobox: React.FC<SupervisorComboboxProps> = ({
           />
           <CommandList>
             {isLoading && <CommandEmpty>Carregando supervisores...</CommandEmpty>}
-            {error && <CommandEmpty>Erro ao carregar supervisores: {error.message}</CommandEmpty>} {/* Exibe a mensagem de erro aqui */}
+            {error && <CommandEmpty>Erro ao carregar supervisores: {error.message}</CommandEmpty>}
             {!isLoading && !error && availableSupervisors.length === 0 && (
               <CommandEmpty>Nenhum supervisor encontrado.</CommandEmpty>
             )}
