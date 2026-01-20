@@ -6,22 +6,6 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
-// Helper function to sanitize parts of an email (local part or domain part)
-const sanitizeEmailPart = (part: string): string => {
-  let sanitized = part
-    .toLowerCase()
-    .replace(/[àáâãäå]/g, 'a')
-    .replace(/[èéêë]/g, 'e')
-    .replace(/[ìíîï]/g, 'i')
-    .replace(/[òóôõö]/g, 'o')
-    .replace(/[ùúûü]/g, 'u')
-    .replace(/[ç]/g, 'c')
-    .replace(/[^a-z0-9.-]/g, '');
-
-  sanitized = sanitized.replace(/^[.-]+|[.-]+$/g, '').replace(/[.]{2,}/g, '.').replace(/[-]{2,}/g, '-');
-  return sanitized;
-};
-
 // Helper to generate a unique string for emails
 const generateUniqueString = (prefix: string = 'gen') => {
   const timestamp = Date.now().toString(36);
@@ -101,13 +85,22 @@ serve(async (req) => {
       return new Response(JSON.stringify({ error: 'Bad Request: Missing required profile fields (first_name, last_name, role)' }), { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
     }
 
+    const baseDomain = 'logireverseia.com';
+    const emailRegex = /^[a-z0-9!#$%&'*+/=?^_`{|}~-]+(?:\.[a-z0-9!#$%&'*+/=?^_`{|}~-]+)*@(?:[a-z0-9](?:[a-z0-9-]*[a-z0-9])?\.)+[a-z0-9](?:[a-z0-9-]*[a-z0-9])?$/;
+
     // Generate email if not provided or invalid
-    if (!email || !email.includes('@') || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-      const sanitizedFirstName = sanitizeEmailPart(first_name);
-      const sanitizedLastName = sanitizeEmailPart(last_name);
-      const baseEmail = `${sanitizedFirstName}.${sanitizedLastName}`;
-      email = `${baseEmail}.${generateUniqueString('TECH')}@logireverseia.com`; // Add unique string to avoid conflicts
+    if (!email || !emailRegex.test(email.toLowerCase())) {
+      const sanitizedFirstName = first_name.toLowerCase().replace(/[^a-z0-9]/g, '');
+      const sanitizedLastName = last_name.toLowerCase().replace(/[^a-z0-9]/g, '');
+      const uniquePart = generateUniqueString('TECH').toLowerCase();
+      email = `${sanitizedFirstName}.${sanitizedLastName}.${uniquePart}@${baseDomain}`;
       console.log(`[create-user] Email not provided or invalid, generated: ${email}`);
+
+      // Final validation for the generated email
+      if (!emailRegex.test(email)) {
+        console.error(`[create-user] Generated email '${email}' is still invalid. Aborting user creation.`);
+        return new Response(JSON.stringify({ error: `Invalid generated email format: ${email}` }), { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+      }
     }
 
     // Use default password if not provided
