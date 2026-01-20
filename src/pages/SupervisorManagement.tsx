@@ -7,11 +7,11 @@ import { useNavigate } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import type { Tables } from "@/integrations/supabase/types_generated";
-import { useToast } from "@/hooks/use-toast"; // Corrigido aqui
+import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/use-auth";
-import { CreateProfileDialog } from "@/components/CreateProfileDialog"; // Usando o novo diálogo genérico
-import { EditProfileDialog } from "@/components/EditProfileDialog"; // Usando o novo diálogo genérico
-import { Checkbox } from "@/components/ui/checkbox"; // Importar Checkbox
+import { CreateProfileDialog } from "@/components/CreateProfileDialog";
+import { EditProfileDialog } from "@/components/EditProfileDialog";
+import { Checkbox } from "@/components/ui/checkbox";
 
 type Profile = Tables<'profiles'>;
 
@@ -24,7 +24,7 @@ export const SupervisorManagement = () => {
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [editingSupervisor, setEditingSupervisor] = useState<Profile | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
-  const [selectedSupervisorIds, setSelectedSupervisorIds] = useState<Set<string>>(new Set()); // Estado para IDs selecionados
+  const [selectedSupervisorIds, setSelectedSupervisorIds] = useState<Set<string>>(new Set());
 
   // Fetch ALL profiles to correctly resolve supervisor names (who might be admins or other standard users)
   const { data: allProfiles, isLoading: isLoadingProfiles, error: profilesError } = useQuery<Profile[], Error>({
@@ -41,8 +41,8 @@ export const SupervisorManagement = () => {
     enabled: !!currentUser?.id,
   });
 
-  // Filter for supervisors (standard role, as per discussion)
-  const supervisors = allProfiles?.filter(profile => profile.role === 'standard') || [];
+  // Filter for supervisors: standard role AND no supervisor_id
+  const supervisors = allProfiles?.filter(profile => profile.role === 'standard' && profile.supervisor_id === null) || [];
 
   const deleteSupervisorMutation = useMutation({
     mutationFn: async (supervisorId: string) => {
@@ -73,7 +73,7 @@ export const SupervisorManagement = () => {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['allProfiles', currentUser?.id] });
       queryClient.invalidateQueries({ queryKey: ['allProfilesForSupervisor', currentUser?.id] });
-      setSelectedSupervisorIds(new Set()); // Limpa a seleção após a exclusão
+      setSelectedSupervisorIds(new Set());
       toast({ title: "Supervisores excluídos!", description: `${selectedSupervisorIds.size} supervisores removidos com sucesso.` });
     },
     onError: (err) => {
@@ -116,10 +116,10 @@ export const SupervisorManagement = () => {
 
   const handleSelectAllSupervisors = () => {
     if (selectedSupervisorIds.size === filteredSupervisors.length) {
-      setSelectedSupervisorIds(new Set()); // Desselecionar todos
+      setSelectedSupervisorIds(new Set());
     } else {
       const allSupervisorIds = new Set(filteredSupervisors.map(s => s.id));
-      setSelectedSupervisorIds(allSupervisorIds); // Selecionar todos
+      setSelectedSupervisorIds(allSupervisorIds);
     }
   };
 
@@ -229,7 +229,7 @@ export const SupervisorManagement = () => {
                   )}
                   {isAllSupervisorsSelected ? "Desselecionar Todos" : "Selecionar Todos"}
                 </Button>
-                <CreateProfileDialog profileType="supervisor" /> {/* Usando o novo diálogo com tipo 'supervisor' */}
+                <CreateProfileDialog profileType="supervisor" />
               </div>
             </CardHeader>
             <CardContent className="space-y-4">

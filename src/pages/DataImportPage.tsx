@@ -3,9 +3,22 @@ import { Button } from '@/components/ui/button';
 import { ArrowLeft, DatabaseZap } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { DataImporter } from '@/components/DataImporter';
+import type { DataImporterProps } from '@/components/DataImporter'; // Import the props type
 
 export const DataImportPage: React.FC = () => {
   const navigate = useNavigate();
+
+  const handleImportSuccess: DataImporterProps['onImportSuccess'] = (importedType) => {
+    if (importedType === 'technicians') {
+      navigate('/technician-management');
+    } else if (importedType === 'clients') {
+      navigate('/client-management');
+    } else if (importedType === 'products') {
+      navigate('/product-management');
+    } else {
+      navigate('/'); // Default to home or general dashboard
+    }
+  };
 
   return (
     <div className="min-h-screen bg-background ai-pattern p-6">
@@ -29,7 +42,10 @@ export const DataImportPage: React.FC = () => {
             </p>
           </div>
 
-          <DataImporter onClose={() => navigate('/data-import')} />
+          <DataImporter 
+            onClose={() => navigate('/data-import')} 
+            onImportSuccess={handleImportSuccess} 
+          />
         </div>
       </div>
     </div>
