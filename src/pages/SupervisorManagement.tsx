@@ -24,7 +24,7 @@ export const SupervisorManagement = () => {
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [editingSupervisor, setEditingSupervisor] = useState<Profile | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
-  const [selectedSupervisorIds, setSelectedSupervisorIds] = new Set<string>();
+  const [selectedSupervisorIds, setSelectedSupervisorIds] = useState<Set<string>>(new Set()); // Correção aqui
 
   const { data: allProfiles, isLoading: isLoadingProfiles, error: profilesError } = useQuery<Profile[], Error>({
     queryKey: ['allProfiles', currentUser?.id],
