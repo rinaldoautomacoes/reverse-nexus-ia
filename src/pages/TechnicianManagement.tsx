@@ -24,7 +24,7 @@ export const TechnicianManagement = () => {
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [editingTechnician, setEditingTechnician] = useState<Profile | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
-  const [selectedTechnicianIds, setSelectedTechnicianIds] = new Set<string>();
+  const [selectedTechnicianIds, setSelectedTechnicianIds] = useState<Set<string>>(new Set()); // Correção aplicada aqui
 
   const { data: allProfiles, isLoading: isLoadingProfiles, error: profilesError } = useQuery<Profile[], Error>({
     queryKey: ['allProfiles', currentUser?.id],
