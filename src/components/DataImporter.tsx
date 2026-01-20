@@ -4,7 +4,7 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/use-auth';
 import { 
-  parseCollectionsXLSX, parseCollectionsCSV, parsePDF, // Corrigido: Usando os nomes corretos para collections
+  parseCollectionsXLSX, parseCollectionsCSV, parsePDF,
   parseProductsXLSX, parseProductsCSV, parseProductsJSON,
   parseClientsXLSX, parseClientsCSV, parseClientsJSON,
   parseTechniciansXLSX, parseTechniciansCSV, parseTechniciansJSON
@@ -16,6 +16,9 @@ import type { ColetaImportData, ProductImportData, ClientImportData, TechnicianI
 import { ImportFileSection } from './data-importer-sections/ImportFileSection';
 import { DataPreviewTable } from './data-importer-sections/DataPreviewTable';
 import { ImportActionButtons } from './data-importer-sections/ImportActionButtons';
+import { ReviewImportDialog } from './data-importer-sections/ReviewImportDialog'; // New import
+import { Button } from '@/components/ui/button'; // Import Button
+import { CheckCircle, ArrowLeft } from 'lucide-react'; // Import icons
 
 type ColetaInsert = TablesInsert<'coletas'>;
 type ProductInsert = TablesInsert<'products'>;
@@ -38,6 +41,7 @@ export const DataImporter: React.FC<DataImporterProps> = ({ initialTab = 'collec
   const [isParsing, setIsParsing] = useState(false);
   const [activeTab, setActiveTab] = useState<'collections' | 'products' | 'clients' | 'technicians'>(initialTab);
   const [parseError, setParseError] = useState<string | null>(null);
+  const [step, setStep] = useState<'upload' | 'preview_table' | 'review_dialog'>('upload'); // New state for steps
 
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -45,6 +49,7 @@ export const DataImporter: React.FC<DataImporterProps> = ({ initialTab = 'collec
       setSelectedFile(file);
       setExtractedData(null);
       setParseError(null);
+      setStep('upload'); // Reset step when a new file is selected
     }
   };
 
@@ -53,6 +58,7 @@ export const DataImporter: React.FC<DataImporterProps> = ({ initialTab = 'collec
     setSelectedFile(null);
     setExtractedData(null);
     setParseError(null);
+    setStep('upload'); // Reset step on tab change
   }, []);
 
   const handleParseFile = useCallback(async () => {
@@ -143,6 +149,7 @@ export const DataImporter: React.FC<DataImporterProps> = ({ initialTab = 'collec
       }
 
       setExtractedData(filteredData);
+      setStep('preview_table'); // Transition to preview step
       toast({ title: 'Dados extraídos com sucesso!', description: `Foram encontrados ${filteredData.length} registros para importação.` });
 
     } catch (error: any) {
@@ -150,6 +157,7 @@ export const DataImporter: React.FC<DataImporterProps> = ({ initialTab = 'collec
       setParseError(error.message || 'Arquivo inválido ou dados não reconhecidos.');
       toast({ title: 'Erro ao processar arquivo', description: error.message || 'Arquivo inválido ou dados não reconhecidos.', variant: 'destructive' });
       setExtractedData(null);
+      setStep('upload'); // Go back to upload step on error
     } finally {
       setIsParsing(false);
     }
@@ -234,11 +242,13 @@ export const DataImporter: React.FC<DataImporterProps> = ({ initialTab = 'collec
       toast({ title: 'Importação de Coletas/Entregas concluída!', description: `${count} registros foram salvos com sucesso no banco de dados.` });
       setSelectedFile(null);
       setExtractedData(null);
+      setStep('upload'); // Go back to upload step
       onImportSuccess?.();
-      onClose();
+      onClose(); // Call parent onClose
     },
     onError: (error) => {
       toast({ title: 'Erro na importação de Coletas/Entregas', description: error.message, variant: 'destructive' });
+      setStep('preview_table'); // Stay on preview table to allow user to re-review or cancel
     },
   });
 
@@ -268,11 +278,13 @@ export const DataImporter: React.FC<DataImporterProps> = ({ initialTab = 'collec
       toast({ title: 'Importação de Produtos concluída!', description: `${count} produtos foram salvos com sucesso no banco de dados, duplicatas foram ignoradas.` });
       setSelectedFile(null);
       setExtractedData(null);
+      setStep('upload'); // Go back to upload step
       onImportSuccess?.();
-      onClose();
+      onClose(); // Call parent onClose
     },
     onError: (error) => {
       toast({ title: 'Erro na importação de Produtos', description: error.message, variant: 'destructive' });
+      setStep('preview_table'); // Stay on preview table
     },
   });
 
@@ -311,11 +323,13 @@ export const DataImporter: React.FC<DataImporterProps> = ({ initialTab = 'collec
       toast({ title: 'Importação de Clientes concluída!', description: `${count} clientes foram salvos com sucesso no banco de dados, duplicatas foram ignoradas.` });
       setSelectedFile(null);
       setExtractedData(null);
+      setStep('upload'); // Go back to upload step
       onImportSuccess?.();
-      onClose();
+      onClose(); // Call parent onClose
     },
     onError: (error) => {
       toast({ title: 'Erro na importação de Clientes', description: error.message, variant: 'destructive' });
+      setStep('preview_table'); // Stay on preview table
     },
   });
 
@@ -389,11 +403,13 @@ export const DataImporter: React.FC<DataImporterProps> = ({ initialTab = 'collec
       toast({ title: 'Importação de Técnicos concluída!', description: `${count} técnicos foram salvos com sucesso no banco de dados.` });
       setSelectedFile(null);
       setExtractedData(null);
+      setStep('upload'); // Go back to upload step
       onImportSuccess?.();
-      onClose();
+      onClose(); // Call parent onClose
     },
     onError: (error) => {
       toast({ title: 'Erro na importação de Técnicos', description: error.message, variant: 'destructive' });
+      setStep('preview_table'); // Stay on preview table
     },
   });
 
@@ -429,19 +445,43 @@ export const DataImporter: React.FC<DataImporterProps> = ({ initialTab = 'collec
         error={parseError}
       />
 
-      {extractedData && extractedData.length > 0 && (
+      {step === 'preview_table' && extractedData && extractedData.length > 0 && (
         <>
           <DataPreviewTable activeTab={activeTab} extractedData={extractedData} />
-          <ImportActionButtons
-            onCancel={() => {
-              setSelectedFile(null);
-              setExtractedData(null);
-              setParseError(null);
-            }}
-            onConfirmImport={handleConfirmImport}
-            isImportPending={isImportPending}
-          />
+          <div className="flex justify-end gap-2">
+            <Button
+              variant="outline"
+              onClick={() => {
+                setSelectedFile(null);
+                setExtractedData(null);
+                setParseError(null);
+                setStep('upload'); // Go back to upload step
+              }}
+              disabled={isImportPending}
+            >
+              <ArrowLeft className="mr-2 h-4 w-4" /> {/* Changed to ArrowLeft */}
+              Voltar ao Upload
+            </Button>
+            <Button
+              onClick={() => setStep('review_dialog')} // New button to open review dialog
+              disabled={isImportPending}
+              className="bg-gradient-secondary hover:bg-gradient-secondary/80 glow-effect"
+            >
+              <CheckCircle className="mr-2 h-4 w-4" />
+              Revisar e Importar
+            </Button>
+          </div>
         </>
+      )}
+
+      {step === 'review_dialog' && extractedData && (
+        <ReviewImportDialog
+          activeTab={activeTab}
+          extractedData={extractedData}
+          onConfirm={handleConfirmImport}
+          onCancel={() => setStep('preview_table')} // Go back to preview table
+          isPending={isImportPending}
+        />
       )}
     </div>
   );
