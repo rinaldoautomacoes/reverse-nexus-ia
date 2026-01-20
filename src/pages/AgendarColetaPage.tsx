@@ -1,33 +1,28 @@
 import { useState, useCallback, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, Package, PlusCircle, Loader2, Tag, ClipboardList, Calendar as CalendarIcon, FileText, Hash } from "lucide-react";
+import { ArrowLeft, Package, Loader2 } from "lucide-react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import type { TablesInsert, Tables, TablesUpdate } from "@/integrations/supabase/types_generated";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/use-auth";
-import { generateUniqueNumber, formatItemsForColetaModeloAparelho, getTotalQuantityOfItems, cn } from "@/lib/utils";
-import { format, isValid } from "date-fns"; // Importar isValid
-import { Label } from "@/components/ui/label";
-import { Input } from "@/components/ui/input";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { Calendar } from "@/components/ui/calendar";
-import { ptBR } from "date-fns/locale";
-
+import { generateUniqueNumber, formatItemsForColetaModeloAparelho, getTotalQuantityOfItems } from "@/lib/utils";
 
 // Import modular components
-import { ColetaClientDetails } from "@/components/coleta-form-sections/ColetaClientDetails"; // Corrigido: Usar o componente da pasta coleta-form-sections
-import { ColetaOriginAddress } from "@/components/coleta-form-sections/ColetaOriginAddress"; // Usar o componente atualizado
-import { ColetaDestinationAddress } from "@/components/coleta-form-sections/ColetaDestinationAddress"; // Usar o componente atualizado
-import { ColetaItemsSection } from "@/components/coleta-form-sections/ColetaItemsSection"; // Novo componente
-import { ItemData } from "@/components/coleta-form-sections/ColetaItemRow"; // Importa a interface ItemData
-import { ColetaLogisticsDetails } from "@/components/coleta-form-sections/ColetaLogisticsDetails";
-import { ColetaResponsibleUser } from "@/components/coleta-form-sections/ColetaResponsibleUser";
-import { ColetaObservation } from "@/components/coleta-form-sections/ColetaObservation";
-import { ManualSchedulerActionButtons } from "@/components/manual-scheduler-sections/ManualSchedulerActionButtons";
-import { FileUploadField } from "@/components/FileUploadField"; // Import the new component
+import { CollectionDetailsSection } from "@/components/collection-form-sections/CollectionDetailsSection";
+import { ClientDetailsSection } from "@/components/shared-form-sections/ClientDetailsSection";
+import { OriginAddressSection } from "@/components/shared-form-sections/OriginAddressSection";
+import { DestinationAddressSection } from "@/components/shared-form-sections/DestinationAddressSection";
+import { ItemsSection } from "@/components/shared-form-sections/ItemsSection";
+import { ItemData } from "@/components/shared-form-sections/ItemRow";
+import { LogisticsDetailsSection } from "@/components/shared-form-sections/LogisticsDetailsSection";
+import { ResponsibleUserSection } from "@/components/shared-form-sections/ResponsibleUserSection";
+import { ObservationSection } from "@/components/shared-form-sections/ObservationSection";
+import { FormActionButtons } from "@/components/shared-form-sections/FormActionButtons";
+import { FileUploadField } from "@/components/FileUploadField";
+import { DateSelectionSection } from "@/components/shared-form-sections/DateSelectionSection";
 
 type ColetaInsert = TablesInsert<'coletas'>;
 type ColetaUpdate = TablesUpdate<'coletas'>;
@@ -54,9 +49,9 @@ export const AgendarColetaPage: React.FC = () => {
   const [formData, setFormData] = useState<ColetaInsert>({
     parceiro: "",
     endereco: "",
-    previsao_coleta: format(new Date(), 'yyyy-MM-dd'),
-    modelo_aparelho: null, // Será preenchido do resumo dos itens
-    qtd_aparelhos_solicitado: null, // Será preenchido da quantidade total dos itens
+    previsao_coleta: null,
+    modelo_aparelho: null,
+    qtd_aparelhos_solicitado: null,
     status_coleta: "pendente",
     observacao: "",
     telefone: "",
@@ -73,9 +68,9 @@ export const AgendarColetaPage: React.FC = () => {
     uf: "",
     localidade: "",
     cnpj: "",
-    contrato: null, // Novo campo
-    nf_glbl: null, // Novo campo
-    partner_code: null, // Novo campo
+    contrato: null,
+    nf_glbl: null,
+    partner_code: null,
     nf_metodo: "",
     cep_origem: "",
     cep_destino: "",
@@ -89,15 +84,15 @@ export const AgendarColetaPage: React.FC = () => {
     origin_lng: null,
     destination_lat: null,
     destination_lng: null,
-    client_control: null, // Alterado para null
-    attachments: [], // Novo campo para anexos
-    created_at: format(new Date(), "yyyy-MM-dd'T'HH:mm:ss.SSSXXX"), // Initialize created_at
-    origin_address_number: "", // Novo campo
-    destination_address_number: "", // Novo campo
+    client_control: null,
+    attachments: [],
+    created_at: new Date().toISOString(),
+    origin_address_number: "",
+    destination_address_number: "",
   });
 
   const [collectionItems, setCollectionItems] = useState<ItemData[]>([]);
-  const [attachments, setAttachments] = useState<FileAttachment[]>([]); // Estado para os anexos
+  const [attachments, setAttachments] = useState<FileAttachment[]>([]);
 
   const [isGeocoding, setIsGeocoding] = useState(false);
 
@@ -160,9 +155,9 @@ export const AgendarColetaPage: React.FC = () => {
         ...data.coleta,
         user_id: user.id,
         type: 'coleta',
-        modelo_aparelho: formatItemsForColetaModeloAparelho(data.items), // Resumo dos itens
-        qtd_aparelhos_solicitado: getTotalQuantityOfItems(data.items), // Quantidade total
-        attachments: data.attachments, // Salvar os anexos
+        modelo_aparelho: formatItemsForColetaModeloAparelho(data.items),
+        qtd_aparelhos_solicitado: getTotalQuantityOfItems(data.items),
+        attachments: data.attachments,
       };
 
       const { data: insertedColeta, error: coletaError } = await supabase
@@ -243,7 +238,7 @@ export const AgendarColetaPage: React.FC = () => {
         cep: data.cep_origem,
       },
       items: items,
-      attachments: attachments, // Passar os anexos para a mutação
+      attachments: attachments,
     });
   };
 
@@ -269,91 +264,21 @@ export const AgendarColetaPage: React.FC = () => {
                 Detalhes da Coleta
               </CardTitle>
             </CardHeader>
-            <CardContent className="p-6 space-y-6">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="unique_number">Código da Coleta</Label>
-                  <div className="relative">
-                    <Tag className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                    <Input
-                      id="unique_number"
-                      value={formData.unique_number || ''}
-                      readOnly
-                      className="pl-10 bg-muted/50"
-                      disabled={isFormDisabled}
-                    />
-                  </div>
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="client_control">Controle do Cliente</Label>
-                  <div className="relative">
-                    <ClipboardList className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                    <Input
-                      id="client_control"
-                      placeholder="Ex: OS-12345, Pedido-987"
-                      className="pl-10"
-                      value={formData.client_control || ''}
-                      onChange={(e) => handleInputChange("client_control", e.target.value)}
-                      disabled={isFormDisabled}
-                    />
-                  </div>
-                </div>
-              </div>
+            <div className="p-6 space-y-6">
+              <CollectionDetailsSection
+                formData={formData}
+                handleInputChange={handleInputChange}
+                isPending={isFormDisabled}
+              />
 
-              {/* Novos campos adicionados aqui */}
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="contrato">Nr. Contrato</Label>
-                  <div className="relative">
-                    <FileText className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                    <Input
-                      id="contrato"
-                      placeholder="Ex: VMC10703/22"
-                      className="pl-10"
-                      value={formData.contrato || ''}
-                      onChange={(e) => handleInputChange("contrato", e.target.value)}
-                      disabled={isFormDisabled}
-                    />
-                  </div>
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="nf_glbl">CONTRATO SANKHYA</Label>
-                  <div className="relative">
-                    <Hash className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                    <Input
-                      id="nf_glbl"
-                      placeholder="Ex: 26192"
-                      className="pl-10"
-                      value={formData.nf_glbl || ''}
-                      onChange={(e) => handleInputChange("nf_glbl", e.target.value)}
-                      disabled={isFormDisabled}
-                    />
-                  </div>
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="partner_code">CÓD. PARC</Label>
-                  <div className="relative">
-                    <Tag className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                    <Input
-                      id="partner_code"
-                      placeholder="Ex: 53039"
-                      className="pl-10"
-                      value={formData.partner_code || ''}
-                      onChange={(e) => handleInputChange("partner_code", e.target.value)}
-                      disabled={isFormDisabled}
-                    />
-                  </div>
-                </div>
-              </div>
-
-              <ColetaClientDetails
+              <ClientDetailsSection
                 formData={formData}
                 handleInputChange={handleInputChange}
                 handleClientComboboxSelect={handleClientComboboxSelect}
                 isPending={isFormDisabled}
               />
 
-              <ColetaOriginAddress
+              <OriginAddressSection
                 formData={formData}
                 handleInputChange={handleInputChange}
                 isFormDisabled={isFormDisabled}
@@ -363,7 +288,7 @@ export const AgendarColetaPage: React.FC = () => {
                 addressLabel="Endereço de Origem"
               />
 
-              <ColetaDestinationAddress
+              <DestinationAddressSection
                 formData={formData}
                 handleInputChange={handleInputChange}
                 isFormDisabled={isFormDisabled}
@@ -373,70 +298,20 @@ export const AgendarColetaPage: React.FC = () => {
                 addressLabel="Endereço de Destino"
               />
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="data_solicitacao">Data da Solicitação</Label>
-                  <Popover>
-                    <PopoverTrigger asChild>
-                      <Button
-                        variant={"outline"}
-                        className={cn(
-                          "w-full justify-start text-left font-normal pl-10",
-                          !formData.created_at && "text-muted-foreground"
-                        )}
-                        disabled={isFormDisabled}
-                      >
-                        <CalendarIcon className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                        {formData.created_at ? (isValid(new Date(formData.created_at)) ? format(new Date(formData.created_at), "dd/MM/yyyy", { locale: ptBR }) : "Data inválida") : "Selecionar data"}
-                      </Button>
-                    </PopoverTrigger>
-                    <PopoverContent className="w-auto p-0">
-                      <Calendar
-                        mode="single"
-                        selected={formData.created_at ? new Date(formData.created_at) : undefined}
-                        onSelect={(date) => handleInputChange("created_at", date ? format(date, "yyyy-MM-dd'T'HH:mm:ss.SSSXXX") : null)}
-                        initialFocus
-                        locale={ptBR}
-                      />
-                    </PopoverContent>
-                  </Popover>
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="previsao_coleta">Previsão de Coleta *</Label>
-                  <Popover>
-                    <PopoverTrigger asChild>
-                      <Button
-                        variant={"outline"}
-                        className={cn(
-                          "w-full justify-start text-left font-normal pl-10",
-                          !formData.previsao_coleta && "text-muted-foreground"
-                        )}
-                        disabled={isFormDisabled}
-                      >
-                        <CalendarIcon className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                        {formData.previsao_coleta ? (isValid(new Date(formData.previsao_coleta)) ? format(new Date(formData.previsao_coleta), "dd/MM/yyyy", { locale: ptBR }) : "Data inválida") : "Selecionar data"}
-                      </Button>
-                    </PopoverTrigger>
-                    <PopoverContent className="w-auto p-0">
-                      <Calendar
-                        mode="single"
-                        selected={formData.previsao_coleta ? new Date(formData.previsao_coleta) : undefined}
-                        onSelect={(date) => handleInputChange("previsao_coleta", date ? format(date, 'yyyy-MM-dd') : null)}
-                        initialFocus
-                        locale={ptBR}
-                      />
-                    </PopoverContent>
-                  </Popover>
-                </div>
-              </div>
+              <DateSelectionSection
+                formData={formData}
+                handleInputChange={handleInputChange}
+                isPending={isFormDisabled}
+                type="coleta"
+              />
 
-              <ColetaItemsSection
+              <ItemsSection
                 onItemsUpdate={setCollectionItems}
                 isPending={isFormDisabled}
                 initialItems={collectionItems}
               />
 
-              <ColetaLogisticsDetails
+              <LogisticsDetailsSection
                 formData={formData}
                 handleInputChange={handleInputChange}
                 handleDriverSelect={handleDriverSelect}
@@ -444,14 +319,14 @@ export const AgendarColetaPage: React.FC = () => {
                 isPending={isFormDisabled}
               />
 
-              <ColetaResponsibleUser
+              <ResponsibleUserSection
                 formData={formData}
                 handleInputChange={handleInputChange}
                 handleResponsibleUserSelect={handleResponsibleUserSelect}
                 isPending={isFormDisabled}
               />
 
-              <ColetaObservation
+              <ObservationSection
                 formData={formData}
                 handleInputChange={handleInputChange}
                 isPending={isFormDisabled}
@@ -464,7 +339,7 @@ export const AgendarColetaPage: React.FC = () => {
                 disabled={isFormDisabled}
               />
 
-              <ManualSchedulerActionButtons
+              <FormActionButtons
                 onCancel={() => navigate('/coletas-dashboard')}
                 onSave={() => handleSave(formData, collectionItems, attachments)}
                 isPending={isFormDisabled}
@@ -473,7 +348,7 @@ export const AgendarColetaPage: React.FC = () => {
                 saveButtonText="Agendar Coleta"
                 navigate={navigate}
               />
-            </CardContent>
+            </div>
           </Card>
         </div>
       </div>

@@ -10,7 +10,7 @@ import type { Tables, TablesInsert } from "@/integrations/supabase/types_generat
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/use-auth";
 import { Badge } from "@/components/ui/badge";
-import { format, isValid } from "date-fns"; // Importar isValid
+import { format, isValid } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
@@ -18,7 +18,8 @@ import { cn, formatItemsForColetaModeloAparelho, getTotalQuantityOfItems } from 
 import { EditColetaDialog } from "@/components/EditColetaDialog";
 import { CollectionStatusUpdateDialog } from "@/components/CollectionStatusUpdateDialog";
 import { EditResponsibleDialog } from "@/components/EditResponsibleDialog";
-import { CollectionAttachmentsDialog } from "@/components/CollectionAttachmentsDialog"; // Importar o novo diálogo
+import { CollectionAttachmentsDialog } from "@/components/CollectionAttachmentsDialog";
+import { ItemData } from "@/components/shared-form-sections/ItemRow"; // Import ItemData
 
 interface FileAttachment {
   name: string;
@@ -30,8 +31,8 @@ interface FileAttachment {
 type Coleta = Tables<'coletas'> & {
   driver?: { name: string } | null;
   transportadora?: { name: string } | null;
-  items?: Array<Tables<'items'>> | null; // Adicionado items relation
-  attachments?: FileAttachment[] | null; // Adicionado attachments
+  items?: Array<Tables<'items'>> | null;
+  attachments?: FileAttachment[] | null;
 };
 
 interface ColetasConcluidasProps {
@@ -53,9 +54,9 @@ const ColetasConcluidas: React.FC<ColetasConcluidasProps> = ({ selectedYear }) =
   const [isEditResponsibleDialogOpen, setIsEditResponsibleDialogOpen] = useState(false);
   const [selectedCollectionForResponsible, setSelectedCollectionForResponsible] = useState<{ id: string; name: string; responsible_user_id: string | null } | null>(null);
 
-  const [isAttachmentsDialogOpen, setIsAttachmentsDialogOpen] = useState(false); // Novo estado
-  const [selectedCollectionAttachments, setSelectedCollectionAttachments] = useState<FileAttachment[]>([]); // Novo estado
-  const [selectedCollectionName, setSelectedCollectionName] = useState<string>(''); // Novo estado
+  const [isAttachmentsDialogOpen, setIsAttachmentsDialogOpen] = useState(false);
+  const [selectedCollectionAttachments, setSelectedCollectionAttachments] = useState<FileAttachment[]>([]);
+  const [selectedCollectionName, setSelectedCollectionName] = useState<string>('');
 
   const { data: coletas, isLoading: isLoadingColetas, error: coletasError } = useQuery<Coleta[], Error>({
     queryKey: ['coletasConcluidas', user?.id, searchTerm, filterDate?.toISOString().split('T')[0], selectedYear],
@@ -69,12 +70,12 @@ const ColetasConcluidas: React.FC<ColetasConcluidasProps> = ({ selectedYear }) =
           driver:drivers(name),
           transportadora:transportadoras(name),
           items(*)
-        `) // Adicionado items(*)
+        `)
         .eq('user_id', user.id)
         .eq('type', 'coleta')
         .eq('status_coleta', 'concluida')
-        .gte('previsao_coleta', `${selectedYear}-01-01`) // Alterado para previsao_coleta
-        .lt('previsao_coleta', `${parseInt(selectedYear) + 1}-01-01`) // Alterado para previsao_coleta
+        .gte('previsao_coleta', `${selectedYear}-01-01`)
+        .lt('previsao_coleta', `${parseInt(selectedYear) + 1}-01-01`)
         .order('previsao_coleta', { ascending: false });
 
       if (searchTerm) {

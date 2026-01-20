@@ -13,15 +13,15 @@ import { useAuth } from "@/hooks/use-auth";
 import { Badge } from "@/components/ui/badge";
 import { CollectionStatusUpdateDialog } from "@/components/CollectionStatusUpdateDialog";
 import { EditResponsibleDialog } from "@/components/EditResponsibleDialog";
-import { format, isValid } from "date-fns"; // Importar isValid
+import { format, isValid } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
 import { cn, formatItemsForColetaModeloAparelho, getTotalQuantityOfItems } from "@/lib/utils";
 import { ColetaForm } from "@/components/ColetaForm";
 import { EditColetaDialog } from "@/components/EditColetaDialog";
-import { ItemData } from "@/components/coleta-form-sections/ColetaItemRow"; // Importa a interface ItemData
-import { CollectionAttachmentsDialog } from "@/components/CollectionAttachmentsDialog"; // Importar o novo diálogo
+import { ItemData } from "@/components/shared-form-sections/ItemRow";
+import { CollectionAttachmentsDialog } from "@/components/CollectionAttachmentsDialog";
 
 interface FileAttachment {
   name: string;
@@ -33,8 +33,8 @@ interface FileAttachment {
 type Coleta = Tables<'coletas'> & {
   driver?: { name: string } | null;
   transportadora?: { name: string } | null;
-  items?: Array<Tables<'items'>> | null; // Adicionado items relation
-  attachments?: FileAttachment[] | null; // Adicionado attachments
+  items?: Array<Tables<'items'>> | null;
+  attachments?: FileAttachment[] | null;
 };
 type ColetaInsert = TablesInsert<'coletas'>;
 
@@ -58,9 +58,9 @@ export const Coletas: React.FC<ColetasProps> = ({ selectedYear }) => {
   const [searchTerm, setSearchTerm] = useState("");
   const [filterDate, setFilterDate] = useState<Date | undefined>(undefined);
 
-  const [isAttachmentsDialogOpen, setIsAttachmentsDialogOpen] = useState(false); // Novo estado
-  const [selectedCollectionAttachments, setSelectedCollectionAttachments] = useState<FileAttachment[]>([]); // Novo estado
-  const [selectedCollectionName, setSelectedCollectionName] = useState<string>(''); // Novo estado
+  const [isAttachmentsDialogOpen, setIsAttachmentsDialogOpen] = useState(false);
+  const [selectedCollectionAttachments, setSelectedCollectionAttachments] = useState<FileAttachment[]>([]);
+  const [selectedCollectionName, setSelectedCollectionName] = useState<string>('');
 
   const { data: coletas, isLoading: isLoadingColetas, error: coletasError } = useQuery<Coleta[], Error>({
     queryKey: ['coletasAtivas', user?.id, searchTerm, filterDate?.toISOString().split('T')[0]],
@@ -108,9 +108,9 @@ export const Coletas: React.FC<ColetasProps> = ({ selectedYear }) => {
         ...data.coleta,
         user_id: user.id,
         type: 'coleta',
-        modelo_aparelho: formatItemsForColetaModeloAparelho(data.items), // Resumo dos itens
-        qtd_aparelhos_solicitado: getTotalQuantityOfItems(data.items), // Quantidade total
-        attachments: data.attachments, // Salvar os anexos
+        modelo_aparelho: formatItemsForColetaModeloAparelho(data.items),
+        qtd_aparelhos_solicitado: getTotalQuantityOfItems(data.items),
+        attachments: data.attachments,
       };
 
       const { data: insertedColeta, error: coletaError } = await supabase
@@ -346,7 +346,6 @@ export const Coletas: React.FC<ColetasProps> = ({ selectedYear }) => {
                       Agendar Nova Coleta
                     </DialogTitle>
                   </DialogHeader>
-                  {/* ColetaForm now handles attachments internally */}
                   <ColetaForm
                     onSave={({ coleta, items, attachments }) => addColetaMutation.mutate({ coleta, items, attachments })}
                     onCancel={() => setIsAddDialogOpen(false)}

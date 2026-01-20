@@ -1,12 +1,12 @@
 import React from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card'; // Removido CardHeader e CardTitle
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Combobox } from '@/components/Combobox';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import type { Tables } from '@/integrations/supabase/types_generated';
-import { Box, Hash, AlignLeft, Trash2 } from 'lucide-react'; // Adicionado Trash2 para o botão de excluir
+import { Box, Hash, AlignLeft, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
 type Product = Tables<'products'>;
@@ -18,7 +18,7 @@ export interface ItemData {
   descricaoMaterial: string; // Descrição do material (local, não persistente)
 }
 
-interface ColetaItemRowProps {
+interface ItemRowProps {
   item: ItemData;
   index: number;
   onItemChange: (index: number, field: keyof ItemData, value: string | number | null) => void;
@@ -26,7 +26,7 @@ interface ColetaItemRowProps {
   isPending: boolean;
 }
 
-export const ColetaItemRow: React.FC<ColetaItemRowProps> = ({
+export const ItemRow: React.FC<ItemRowProps> = ({
   item,
   index,
   onItemChange,

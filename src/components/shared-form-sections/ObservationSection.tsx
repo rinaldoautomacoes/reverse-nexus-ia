@@ -5,13 +5,13 @@ import type { TablesInsert, TablesUpdate } from "@/integrations/supabase/types_g
 
 type ColetaFormData = TablesInsert<'coletas'> | TablesUpdate<'coletas'>;
 
-interface ColetaObservationProps {
+interface ObservationSectionProps {
   formData: ColetaFormData;
   handleInputChange: (field: keyof ColetaFormData, value: string | number | null) => void;
   isPending: boolean;
 }
 
-export const ColetaObservation: React.FC<ColetaObservationProps> = ({
+export const ObservationSection: React.FC<ObservationSectionProps> = ({
   formData,
   handleInputChange,
   isPending,

@@ -1,27 +1,22 @@
 import { useState, useCallback, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, Package, PlusCircle, Loader2, Tag, ClipboardList, Calendar as CalendarIcon, FileText, Hash } from "lucide-react";
+import { ArrowLeft, Package, Loader2 } from "lucide-react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import type { TablesInsert, Tables, TablesUpdate } from "@/integrations/supabase/types_generated";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/use-auth";
-import { generateUniqueNumber, formatItemsForColetaModeloAparelho, getTotalQuantityOfItems, cn } from "@/lib/utils";
-import { format, isValid } from "date-fns";
-import { Label } from "@/components/ui/label";
-import { Input } from "@/components/ui/input";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { Calendar } from "@/components/ui/calendar";
-import { ptBR } from "date-fns/locale";
-import { parseReturnDocumentText, processSelectedSpreadsheetCellsForItems, parseSelectedSpreadsheetCells } from '@/lib/document-parser';
-import type { ParsedCollectionData, ParsedItem } from '@/lib/types'; // Updated import path
+import { generateUniqueNumber, formatItemsForColetaModeloAparelho, getTotalQuantityOfItems } from "@/lib/utils";
+import { format } from "date-fns";
+import { parseReturnDocumentText } from '@/lib/document-parser';
+import type { ParsedCollectionData, ParsedItem } from '@/lib/types';
 
 // Import new modular components from the shared directory
 import { DocumentInputCard } from '@/components/shared-scheduler-sections/DocumentInputCard';
 import { AutomaticSchedulerActionButtons } from '@/components/shared-scheduler-sections/AutomaticSchedulerActionButtons/AutomaticSchedulerActionButtons';
-import { AutomaticCollectionForm } from '@/components/automatic-scheduler-sections/AutomaticCollectionForm'; // Import the new form component
+import { AutomaticCollectionForm } from '@/components/automatic-scheduler-sections/AutomaticCollectionForm';
 
 type ColetaInsert = TablesInsert<'coletas'>;
 type ColetaUpdate = TablesUpdate<'coletas'>;
@@ -53,16 +48,16 @@ export const AutomaticCollectionSchedulerPage: React.FC = () => {
     items: [],
     status_coleta: "pendente",
     type: "coleta",
-    unique_number: generateUniqueNumber('COL'), // Always generate a new unique number on initial state
+    unique_number: generateUniqueNumber('COL'),
     client_control: null,
     contrato: null,
     nf_glbl: null,
     partner_code: null,
-    origin_address_number: "", // Novo campo
-    destination_address_number: "", // Novo campo
+    origin_address_number: "",
+    destination_address_number: "",
   });
 
-  const [attachments, setAttachments] = useState<FileAttachment[]>([]); // Estado para os anexos
+  const [attachments, setAttachments] = useState<FileAttachment[]>([]);
 
   const [isProcessingDocument, setIsProcessingDocument] = useState(false);
   const [isGeocoding, setIsGeocoding] = useState(false);
@@ -128,7 +123,7 @@ export const AutomaticCollectionSchedulerPage: React.FC = () => {
       setFormData(prev => ({
         ...prev,
         ...parsed,
-        unique_number: generateUniqueNumber('COL'), // Always override with a new unique number
+        unique_number: generateUniqueNumber('COL'),
         origin_lat: originLat,
         origin_lng: originLng,
         destination_lat: destinationLat,
@@ -144,20 +139,17 @@ export const AutomaticCollectionSchedulerPage: React.FC = () => {
 
   useEffect(() => {
     if (location.state?.parsedCollectionData) {
-      // Handle structured data coming from ExcelExtractorPage
       setFormData(prev => ({
         ...prev,
         ...location.state.parsedCollectionData,
-        unique_number: generateUniqueNumber('COL'), // Always override with a new unique number
+        unique_number: generateUniqueNumber('COL'),
       }));
-      setDocumentText(""); // Clear documentText if data came from spreadsheet
+      setDocumentText("");
       navigate(location.pathname, { replace: true, state: {} });
       toast({ title: "Dados do Excel carregados", description: `Dados extraídos da planilha e preenchidos no formulário.` });
     } else if (location.state?.extractedText) {
-      // Handle data coming from manual text paste or old ExcelExtractorPage flow
       setDocumentText(location.state.extractedText);
       handleParseDocument(location.state.extractedText);
-      // Clear location state
       navigate(location.pathname, { replace: true, state: {} });
     }
   }, [location.state, navigate, toast, handleParseDocument]);
@@ -203,11 +195,11 @@ export const AutomaticCollectionSchedulerPage: React.FC = () => {
         endereco_destino: coletaData.endereco_destino,
         destination_lat: coletaData.destination_lat,
         destination_lng: coletaData.destination_lng,
-        modelo_aparelho: formatItemsForColetaModeloAparelho(items), // Resumo dos itens
-        qtd_aparelhos_solicitado: getTotalQuantityOfItems(items), // Quantidade total
-        attachments: currentAttachments, // Salvar os anexos
-        origin_address_number: coletaData.origin_address_number, // Novo campo
-        destination_address_number: coletaData.destination_address_number, // Novo campo
+        modelo_aparelho: formatItemsForColetaModeloAparelho(items),
+        qtd_aparelhos_solicitado: getTotalQuantityOfItems(items),
+        attachments: currentAttachments,
+        origin_address_number: coletaData.origin_address_number,
+        destination_address_number: coletaData.destination_address_number,
       };
 
       const { data: insertedColeta, error: coletaError } = await supabase
@@ -294,12 +286,12 @@ export const AutomaticCollectionSchedulerPage: React.FC = () => {
       endereco_destino: formData.endereco_destino,
       destination_lat: formData.destination_lat,
       destination_lng: formData.destination_lng,
-      modelo_aparelho: formatItemsForColetaModeloAparelho(formData.items), // Resumo dos itens
-      qtd_aparelhos_solicitado: getTotalQuantityOfItems(formData.items), // Quantidade total
+      modelo_aparelho: formatItemsForColetaModeloAparelho(formData.items),
+      qtd_aparelhos_solicitado: getTotalQuantityOfItems(formData.items),
       items: formData.items,
-      attachments: attachments, // Passar os anexos
-      origin_address_number: formData.origin_address_number, // Novo campo
-      destination_address_number: formData.destination_address_number, // Novo campo
+      attachments: attachments,
+      origin_address_number: formData.origin_address_number,
+      destination_address_number: formData.destination_address_number,
     };
 
     addColetaMutation.mutate(coletaToInsert);
@@ -314,15 +306,15 @@ export const AutomaticCollectionSchedulerPage: React.FC = () => {
       items: [],
       status_coleta: "pendente",
       type: "coleta",
-      unique_number: generateUniqueNumber('COL'), // Reset to a new unique number
+      unique_number: generateUniqueNumber('COL'),
       client_control: null,
       contrato: null,
       nf_glbl: null,
       partner_code: null,
-      origin_address_number: "", // Resetar
-      destination_address_number: "", // Resetar
+      origin_address_number: "",
+      destination_address_number: "",
     });
-    setAttachments([]); // Clear attachments
+    setAttachments([]);
     toast({ title: "Pré-visualização Limpa", description: "Todos os dados do formulário foram resetados." });
   };
 

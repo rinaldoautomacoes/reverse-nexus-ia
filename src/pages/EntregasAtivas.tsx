@@ -3,7 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { ArrowLeft, PlusCircle, Edit, Trash2, Truck, Search, Clock, Package, CheckCircle, User, Phone, Mail, MapPin, Hash, Calendar as CalendarIcon, Building, MessageSquare, Send, DollarSign, Tag, Home, Flag, ClipboardList, FileText, Paperclip } from "lucide-react";
+import { ArrowLeft, PlusCircle, Edit, Trash2, Truck, Search, Clock, Package, CheckCircle, User, MapPin, Hash, Calendar as CalendarIcon, Building, MessageSquare, Send, DollarSign, Tag, Home, Flag, ClipboardList, FileText, Paperclip } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -13,15 +13,15 @@ import { useAuth } from "@/hooks/use-auth";
 import { Badge } from "@/components/ui/badge";
 import { CollectionStatusUpdateDialog } from "@/components/CollectionStatusUpdateDialog";
 import { EditResponsibleDialog } from "@/components/EditResponsibleDialog";
-import { format, isValid } from "date-fns"; // Importar isValid
+import { format, isValid } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
 import { cn, formatItemsForColetaModeloAparelho, getTotalQuantityOfItems } from "@/lib/utils";
 import { EntregaForm } from "@/components/EntregaForm";
 import { EditEntregaDialog } from "@/components/EditEntregaDialog";
-import { ItemData } from "@/components/coleta-form-sections/ColetaItemRow"; // Importa a interface ItemData
-import { CollectionAttachmentsDialog } from "@/components/CollectionAttachmentsDialog"; // Importar o novo diálogo
+import { ItemData } from "@/components/shared-form-sections/ItemRow";
+import { CollectionAttachmentsDialog } from "@/components/CollectionAttachmentsDialog";
 
 interface FileAttachment {
   name: string;
@@ -33,8 +33,8 @@ interface FileAttachment {
 type Entrega = Tables<'coletas'> & {
   driver?: { name: string } | null;
   transportadora?: { name: string } | null;
-  items?: Array<Tables<'items'>> | null; // Adicionado items relation
-  attachments?: FileAttachment[] | null; // Adicionado attachments
+  items?: Array<Tables<'items'>> | null;
+  attachments?: FileAttachment[] | null;
 };
 type EntregaInsert = TablesInsert<'coletas'>;
 
@@ -58,9 +58,9 @@ export const EntregasAtivas: React.FC<EntregasAtivasProps> = ({ selectedYear }) 
   const [searchTerm, setSearchTerm] = useState("");
   const [filterDate, setFilterDate] = useState<Date | undefined>(undefined);
 
-  const [isAttachmentsDialogOpen, setIsAttachmentsDialogOpen] = useState(false); // Novo estado
-  const [selectedCollectionAttachments, setSelectedCollectionAttachments] = useState<FileAttachment[]>([]); // Novo estado
-  const [selectedCollectionName, setSelectedCollectionName] = useState<string>(''); // Novo estado
+  const [isAttachmentsDialogOpen, setIsAttachmentsDialogOpen] = useState(false);
+  const [selectedCollectionAttachments, setSelectedCollectionAttachments] = useState<FileAttachment[]>([]);
+  const [selectedCollectionName, setSelectedCollectionName] = useState<string>('');
 
   const { data: entregas, isLoading: isLoadingEntregas, error: entregasError } = useQuery<Entrega[], Error>({
     queryKey: ['entregasAtivas', user?.id, searchTerm, filterDate?.toISOString().split('T')[0]],
@@ -74,7 +74,7 @@ export const EntregasAtivas: React.FC<EntregasAtivasProps> = ({ selectedYear }) 
           driver:drivers(name),
           transportadora:transportadoras(name),
           items(*)
-        `) // Adicionado items(*)
+        `)
         .eq('user_id', user.id)
         .eq('type', 'entrega')
         .neq('status_coleta', 'concluida')
@@ -108,9 +108,9 @@ export const EntregasAtivas: React.FC<EntregasAtivasProps> = ({ selectedYear }) 
         ...data.entrega,
         user_id: user.id,
         type: 'entrega',
-        modelo_aparelho: formatItemsForColetaModeloAparelho(data.items), // Resumo dos itens
-        qtd_aparelhos_solicitado: getTotalQuantityOfItems(data.items), // Quantidade total
-        attachments: data.attachments, // Salvar os anexos
+        modelo_aparelho: formatItemsForColetaModeloAparelho(data.items),
+        qtd_aparelhos_solicitado: getTotalQuantityOfItems(data.items),
+        attachments: data.attachments,
       };
 
       const { data: insertedEntrega, error: entregaError } = await supabase
@@ -346,7 +346,6 @@ export const EntregasAtivas: React.FC<EntregasAtivasProps> = ({ selectedYear }) 
                       Agendar Nova Entrega
                     </DialogTitle>
                   </DialogHeader>
-                  {/* EntregaForm now handles attachments internally */}
                   <EntregaForm
                     onSave={({ entrega, items, attachments }) => addEntregaMutation.mutate({ entrega, items, attachments })}
                     onCancel={() => setIsAddDialogOpen(false)}

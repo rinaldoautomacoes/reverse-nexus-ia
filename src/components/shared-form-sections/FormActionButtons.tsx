@@ -2,7 +2,7 @@ import React from 'react';
 import { Button } from '@/components/ui/button';
 import { ArrowLeft, XCircle, Send, Loader2 } from 'lucide-react';
 
-interface ManualSchedulerActionButtonsProps {
+interface FormActionButtonsProps {
   onCancel: () => void;
   onSave: () => void;
   isPending: boolean;
@@ -12,7 +12,7 @@ interface ManualSchedulerActionButtonsProps {
   navigate: (path: string) => void;
 }
 
-export const ManualSchedulerActionButtons: React.FC<ManualSchedulerActionButtonsProps> = ({
+export const FormActionButtons: React.FC<FormActionButtonsProps> = ({
   onCancel,
   onSave,
   isPending,

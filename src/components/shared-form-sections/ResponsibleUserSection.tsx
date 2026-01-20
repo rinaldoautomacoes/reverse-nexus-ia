@@ -6,14 +6,14 @@ import type { Tables, TablesInsert, TablesUpdate } from "@/integrations/supabase
 type ColetaFormData = TablesInsert<'coletas'> | TablesUpdate<'coletas'>;
 type Profile = Tables<'profiles'>;
 
-interface ColetaResponsibleUserProps {
+interface ResponsibleUserSectionProps {
   formData: ColetaFormData;
   handleInputChange: (field: keyof ColetaFormData, value: string | number | null) => void;
   handleResponsibleUserSelect: (userProfile: Profile | null) => void;
   isPending: boolean;
 }
 
-export const ColetaResponsibleUser: React.FC<ColetaResponsibleUserProps> = ({
+export const ResponsibleUserSection: React.FC<ResponsibleUserSectionProps> = ({
   formData,
   handleInputChange,
   handleResponsibleUserSelect,

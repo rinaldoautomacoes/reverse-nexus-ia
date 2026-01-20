@@ -1,29 +1,28 @@
 import React from 'react';
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { User, Phone, Mail } from "lucide-react";
+import { User, Phone, Mail, Building } from "lucide-react"; // Adicionado Building
 import { ClientCombobox } from "@/components/ClientCombobox";
 import type { Tables, TablesInsert, TablesUpdate } from "@/integrations/supabase/types_generated";
 
 type ColetaFormData = TablesInsert<'coletas'> | TablesUpdate<'coletas'>;
 type Client = Tables<'clients'>;
 
-interface ColetaClientDetailsProps {
+interface ClientDetailsSectionProps {
   formData: ColetaFormData;
   handleInputChange: (field: keyof ColetaFormData, value: string | number | null) => void;
   handleClientComboboxSelect: (client: Client | null) => void;
   isPending: boolean;
 }
 
-export const ColetaClientDetails: React.FC<ColetaClientDetailsProps> = ({
+export const ClientDetailsSection: React.FC<ClientDetailsSectionProps> = ({
   formData,
   handleInputChange,
   handleClientComboboxSelect,
   isPending,
 }) => {
-  // Adição da verificação defensiva
   if (!formData) {
-    console.error("ColetaClientDetails (coleta-form-sections): formData é undefined ou null.");
+    console.error("ClientDetailsSection: formData é undefined ou null.");
     return null; 
   }
 
@@ -77,6 +76,20 @@ export const ColetaClientDetails: React.FC<ColetaClientDetailsProps> = ({
             className="pl-10"
             value={formData.email || ''}
             onChange={(e) => handleInputChange("email", e.target.value)}
+            disabled={isPending}
+          />
+        </div>
+      </div>
+      <div className="space-y-2">
+        <Label htmlFor="cnpj">CNPJ</Label>
+        <div className="relative">
+          <Building className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+          <Input
+            id="cnpj"
+            placeholder="XX.XXX.XXX/XXXX-XX"
+            className="pl-10"
+            value={formData.cnpj || ''}
+            onChange={(e) => handleInputChange("cnpj", e.target.value)}
             disabled={isPending}
           />
         </div>

@@ -2,15 +2,15 @@ import React, { useState, useCallback, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Box, PlusCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { ColetaItemRow, ItemData } from './ColetaItemRow'; // Importa o componente renomeado
+import { ItemRow, ItemData } from './ItemRow'; // Importa o componente renomeado
 
-interface ColetaItemsSectionProps {
+interface ItemsSectionProps {
   onItemsUpdate: (items: ItemData[]) => void;
   isPending: boolean;
   initialItems?: ItemData[]; // Para pré-preencher se necessário (ex: edição)
 }
 
-export const ColetaItemsSection: React.FC<ColetaItemsSectionProps> = ({
+export const ItemsSection: React.FC<ItemsSectionProps> = ({
   onItemsUpdate,
   isPending,
   initialItems = [],
@@ -57,7 +57,7 @@ export const ColetaItemsSection: React.FC<ColetaItemsSectionProps> = ({
       </CardHeader>
       <CardContent className="p-6 space-y-4">
         {items.map((item, index) => (
-          <ColetaItemRow
+          <ItemRow
             key={item.id}
             item={item}
             index={index}

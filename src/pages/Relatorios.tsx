@@ -15,7 +15,7 @@ import { Badge } from "@/components/ui/badge";
 import { format, isValid } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { generateReport } from "@/lib/report-utils";
-import { Checkbox } from "@/components/ui/checkbox"; // Importar Checkbox
+import { Checkbox } from "@/components/ui/checkbox";
 
 type Report = Tables<'reports'>;
 
@@ -29,7 +29,7 @@ export const Relatorios = () => {
   const [generatingReportId, setGeneratingReportId] = useState<string | null>(null);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [editingReport, setEditingReport] = useState<Report | null>(null);
-  const [selectedReportIds, setSelectedReportIds] = useState<Set<string>>(new Set()); // Estado para IDs selecionados
+  const [selectedReportIds, setSelectedReportIds] = useState<Set<string>>(new Set());
 
   const { data: reports, isLoading: isLoadingReports, error: reportsError } = useQuery<Report[], Error>({
     queryKey: ['reports', user?.id],
@@ -71,12 +71,12 @@ export const Relatorios = () => {
         .from('reports')
         .delete()
         .in('id', reportIds)
-        .eq('user_id', user?.id); // RLS check
+        .eq('user_id', user?.id);
       if (error) throw new Error(error.message);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['reports', user?.id] });
-      setSelectedReportIds(new Set()); // Limpa a seleção após a exclusão
+      setSelectedReportIds(new Set());
       toast({ title: "Relatórios Excluídos!", description: `${selectedReportIds.size} relatórios removidos com sucesso.` });
     },
     onError: (err) => {
@@ -136,10 +136,10 @@ export const Relatorios = () => {
 
   const handleSelectAllReports = () => {
     if (selectedReportIds.size === filteredReports.length) {
-      setSelectedReportIds(new Set()); // Desselecionar todos
+      setSelectedReportIds(new Set());
     } else {
       const allReportIds = new Set(filteredReports.map(r => r.id));
-      setSelectedReportIds(allReportIds); // Selecionar todos
+      setSelectedReportIds(allReportIds);
     }
   };
 

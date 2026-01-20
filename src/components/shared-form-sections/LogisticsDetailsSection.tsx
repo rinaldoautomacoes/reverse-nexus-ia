@@ -10,7 +10,7 @@ type ColetaFormData = TablesInsert<'coletas'> | TablesUpdate<'coletas'>;
 type Driver = Tables<'drivers'>;
 type Transportadora = Tables<'transportadoras'>;
 
-interface ColetaLogisticsDetailsProps {
+interface LogisticsDetailsSectionProps {
   formData: ColetaFormData;
   handleInputChange: (field: keyof ColetaFormData, value: string | number | null) => void;
   handleDriverSelect: (driver: Driver | null) => void;
@@ -18,7 +18,7 @@ interface ColetaLogisticsDetailsProps {
   isPending: boolean;
 }
 
-export const ColetaLogisticsDetails: React.FC<ColetaLogisticsDetailsProps> = ({
+export const LogisticsDetailsSection: React.FC<LogisticsDetailsSectionProps> = ({
   formData,
   handleInputChange,
   handleDriverSelect,
