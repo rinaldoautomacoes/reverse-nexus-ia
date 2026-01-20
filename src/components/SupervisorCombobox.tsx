@@ -45,7 +45,7 @@ export const SupervisorCombobox: React.FC<SupervisorComboboxProps> = ({
     queryKey: ['allProfilesForSupervisor', currentUser?.id],
     queryFn: async () => {
       if (!currentUser?.id) {
-        console.log("SupervisorCombobox: currentUser.id is null, returning empty array.");
+        console.log("[SupervisorCombobox] currentUser.id is null, returning empty array.");
         return [];
       }
       const { data, error } = await supabase
@@ -55,10 +55,10 @@ export const SupervisorCombobox: React.FC<SupervisorComboboxProps> = ({
         .order('first_name', { ascending: true });
       
       if (error) {
-        console.error("SupervisorCombobox: Error fetching profiles:", error.message);
+        console.error("[SupervisorCombobox] Error fetching profiles:", error.message, error); // Log do objeto de erro completo
         throw new Error(error.message);
       }
-      console.log("SupervisorCombobox: Raw profiles fetched (supervisor_id = null):", data);
+      console.log("[SupervisorCombobox] Raw profiles fetched (supervisor_id = null):", data);
       return data;
     },
     enabled: !!currentUser?.id,
@@ -69,7 +69,7 @@ export const SupervisorCombobox: React.FC<SupervisorComboboxProps> = ({
     const filtered = profiles?.filter(profile => 
       profile.id !== excludeUserId && profile.id !== currentUser?.id // Exclude self and the user being edited
     ) || [];
-    console.log("SupervisorCombobox: Available supervisors after filtering:", filtered);
+    console.log("[SupervisorCombobox] Available supervisors after filtering:", filtered);
     return filtered;
   }, [profiles, excludeUserId, currentUser?.id]);
 
@@ -142,8 +142,8 @@ export const SupervisorCombobox: React.FC<SupervisorComboboxProps> = ({
       inputValue || "Selecionar supervisor..."
     );
 
-  console.log("SupervisorCombobox: Current value:", value);
-  console.log("SupervisorCombobox: Current inputValue:", inputValue);
+  console.log("[SupervisorCombobox] Current value:", value);
+  console.log("[SupervisorCombobox] Current inputValue:", inputValue);
 
   return (
     <Popover open={open} onOpenChange={setOpen}>
