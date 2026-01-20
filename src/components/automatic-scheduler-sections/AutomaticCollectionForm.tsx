@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Button } from "@/components/ui/button"; // Adicionado: Importação do componente Button
+import { Button } from "@/components/ui/button";
 import { Loader2, Package, Tag, ClipboardList, Calendar as CalendarIcon, FileText, Hash } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/use-auth";
@@ -12,14 +12,16 @@ import { Calendar } from "@/components/ui/calendar";
 import { ptBR } from "date-fns/locale";
 
 // Import modular components
-import { ColetaClientDetails } from "@/components/shared-scheduler-sections/ColetaClientDetails";
-import { ColetaOriginAddress } from "@/components/coleta-form-sections/ColetaOriginAddress"; // Usar o componente atualizado
-import { ColetaDestinationAddress } from "@/components/coleta-form-sections/ColetaDestinationAddress"; // Usar o componente atualizado
-import { ItemsTableSection } from "@/components/shared-scheduler-sections/ItemsTableSection";
-import { ColetaLogisticsDetails } from "@/components/coleta-form-sections/ColetaLogisticsDetails";
-import { ColetaResponsibleUser } from "@/components/coleta-form-sections/ColetaResponsibleUser";
-import { ColetaObservation } from "@/components/coleta-form-sections/ColetaObservation";
+import { ClientDetailsSection } from "@/components/shared-form-sections/ClientDetailsSection"; // Caminho corrigido
+import { OriginAddressSection } from "@/components/shared-form-sections/OriginAddressSection"; // Caminho corrigido
+import { DestinationAddressSection } from "@/components/shared-form-sections/DestinationAddressSection"; // Caminho corrigido
+import { ItemsSection } from "@/components/shared-form-sections/ItemsSection"; // Caminho corrigido
+import { ItemData } from "@/components/shared-form-sections/ItemRow"; // Caminho corrigido
+import { LogisticsDetailsSection } from "@/components/shared-form-sections/LogisticsDetailsSection"; // Caminho corrigido
+import { ResponsibleUserSection } from "@/components/shared-form-sections/ResponsibleUserSection"; // Caminho corrigido
+import { ObservationSection } from "@/components/shared-form-sections/ObservationSection"; // Caminho corrigido
 import { FileUploadField } from "@/components/FileUploadField";
+import { DateSelectionSection } from "@/components/shared-form-sections/DateSelectionSection"; // Caminho corrigido
 
 // Import types
 import type { TablesInsert, Tables, TablesUpdate } from "@/integrations/supabase/types_generated";
@@ -87,7 +89,7 @@ export const AutomaticCollectionForm: React.FC<AutomaticCollectionFormProps> = (
     });
   }, [setFormData]);
 
-  // Handler para quando um cliente é selecionado no ClientCombobox dentro de ColetaClientDetails
+  // Handler para quando um cliente é selecionado no ClientCombobox dentro de ClientDetailsSection
   const handleClientSelectedInDetails = useCallback((client: Client | null) => {
     if (client) {
       setFormData(prev => ({
@@ -206,14 +208,14 @@ export const AutomaticCollectionForm: React.FC<AutomaticCollectionFormProps> = (
         </div>
       </div>
 
-      <ColetaClientDetails
-        parsedData={formData}
-        handleParsedDataChange={handleParsedDataChange} // Passa o handler genérico
-        onClientSelected={handleClientSelectedInDetails} // Passa o handler específico para seleção de cliente
-        isFormDisabled={isFormDisabled}
+      <ClientDetailsSection
+        formData={formData}
+        handleInputChange={handleParsedDataChange}
+        onClientSelect={handleClientSelectedInDetails}
+        isPending={isFormDisabled}
       />
 
-      <ColetaOriginAddress
+      <OriginAddressSection
         formData={formData}
         handleInputChange={handleParsedDataChange}
         isFormDisabled={isFormDisabled}
@@ -223,7 +225,7 @@ export const AutomaticCollectionForm: React.FC<AutomaticCollectionFormProps> = (
         addressLabel="Endereço de Origem"
       />
 
-      <ColetaDestinationAddress
+      <DestinationAddressSection
         formData={formData}
         handleInputChange={handleParsedDataChange}
         isFormDisabled={isFormDisabled}
@@ -233,62 +235,12 @@ export const AutomaticCollectionForm: React.FC<AutomaticCollectionFormProps> = (
         addressLabel="Endereço de Destino"
       />
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <div className="space-y-2">
-          <Label htmlFor="data_solicitacao">Data da Solicitação</Label>
-          <Popover>
-            <PopoverTrigger asChild>
-              <Button
-                variant={"outline"}
-                className={cn(
-                  "w-full justify-start text-left font-normal pl-10",
-                  !formData.created_at && "text-muted-foreground"
-                )}
-                disabled={isFormDisabled}
-              >
-                <CalendarIcon className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                {formData.created_at ? (isValid(new Date(formData.created_at)) ? format(new Date(formData.created_at), "dd/MM/yyyy", { locale: ptBR }) : "Data inválida") : "Selecionar data"}
-              </Button>
-            </PopoverTrigger>
-            <PopoverContent className="w-auto p-0">
-              <Calendar
-                mode="single"
-                selected={formData.created_at ? new Date(formData.created_at) : undefined}
-                onSelect={(date) => handleParsedDataChange("created_at", date ? format(date, 'yyyy-MM-ddTHH:mm:ss.SSSZ') : null)}
-                initialFocus
-                locale={ptBR}
-              />
-            </PopoverContent>
-          </Popover>
-        </div>
-        <div className="space-y-2">
-          <Label htmlFor="previsao_coleta">Previsão de Coleta *</Label>
-          <Popover>
-            <PopoverTrigger asChild>
-              <Button
-                variant={"outline"}
-                className={cn(
-                  "w-full justify-start text-left font-normal pl-10",
-                  !formData.previsao_coleta && "text-muted-foreground"
-                )}
-                disabled={isFormDisabled}
-              >
-                <CalendarIcon className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                {formData.previsao_coleta ? (isValid(new Date(formData.previsao_coleta)) ? format(new Date(formData.previsao_coleta), "dd/MM/yyyy", { locale: ptBR }) : "Data inválida") : "Selecionar data"}
-              </Button>
-            </PopoverTrigger>
-            <PopoverContent className="w-auto p-0">
-              <Calendar
-                mode="single"
-                selected={formData.previsao_coleta ? new Date(formData.previsao_coleta) : undefined}
-                onSelect={(date) => handleParsedDataChange("previsao_coleta", date ? format(date, 'yyyy-MM-dd') : null)}
-                initialFocus
-                locale={ptBR}
-              />
-            </PopoverContent>
-          </Popover>
-        </div>
-      </div>
+      <DateSelectionSection
+        formData={formData}
+        handleInputChange={handleParsedDataChange}
+        isPending={isFormDisabled}
+        type="coleta"
+      />
 
       <ItemsTableSection
         parsedData={formData}
@@ -298,7 +250,7 @@ export const AutomaticCollectionForm: React.FC<AutomaticCollectionFormProps> = (
         isFormDisabled={isFormDisabled}
       />
 
-      <ColetaLogisticsDetails
+      <LogisticsDetailsSection
         formData={formData}
         handleInputChange={handleParsedDataChange}
         handleDriverSelect={handleDriverSelect}
@@ -306,14 +258,14 @@ export const AutomaticCollectionForm: React.FC<AutomaticCollectionFormProps> = (
         isPending={isFormDisabled}
       />
 
-      <ColetaResponsibleUser
+      <ResponsibleUserSection
         formData={formData}
         handleInputChange={handleParsedDataChange}
         handleResponsibleUserSelect={handleResponsibleUserSelect}
         isPending={isFormDisabled}
       />
 
-      <ColetaObservation
+      <ObservationSection
         formData={formData}
         handleInputChange={handleParsedDataChange}
         isPending={isFormDisabled}
