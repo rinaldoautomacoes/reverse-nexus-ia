@@ -96,17 +96,30 @@ export const SupervisorCombobox: React.FC<SupervisorComboboxProps> = ({
     // Se o usuário está digitando e o texto não corresponde a um supervisor existente,
     // o valor do supervisor_id deve ser null.
     const matchedProfile = availableSupervisors.find(profile => 
-      `${profile.first_name || ''} ${profile.last_name || ''}`.toLowerCase() === currentSearch.toLowerCase()
+      `${profile.first_name || ''} ${profile.last_name || ''}`.toLowerCase().includes(currentSearch.toLowerCase())
     );
-    if (!matchedProfile) {
+    if (!matchedProfile && currentSearch.trim() === "") { // Só limpa se o input estiver vazio e não houver correspondência
       onValueChange(null);
       onSupervisorSelect?.(null);
     }
   };
 
-  const displayValue = value && availableSupervisors ? 
-    availableSupervisors.find(p => p.id === value)?.first_name || inputValue || "Selecionar supervisor..." : 
-    inputValue || "Selecionar supervisor..."; // Exibe inputValue se não houver valor selecionado
+  // Refined display logic for the button trigger
+  const selectedSupervisor = availableSupervisors.find(p => p.id === value);
+  const buttonDisplayContent = selectedSupervisor 
+    ? (
+      <div className="flex items-center gap-2">
+        <Avatar className="h-6 w-6">
+          <AvatarImage src={selectedSupervisor.avatar_url || undefined} />
+          <AvatarFallback className="bg-primary text-primary-foreground"> {/* Adicionado estilo explícito */}
+            {selectedSupervisor.first_name?.charAt(0) || 'U'} {/* Fallback para 'U' se first_name estiver vazio */}
+          </AvatarFallback>
+        </Avatar>
+        {`${selectedSupervisor.first_name || ''} ${selectedSupervisor.last_name || ''}`.trim()}
+      </div>
+    ) : (
+      inputValue || "Selecionar supervisor..."
+    );
 
   return (
     <Popover open={open} onOpenChange={setOpen}>
@@ -119,19 +132,7 @@ export const SupervisorCombobox: React.FC<SupervisorComboboxProps> = ({
           disabled={disabled || isLoading}
         >
           <User className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-          {value && availableSupervisors ? (
-            <div className="flex items-center gap-2">
-              <Avatar className="h-6 w-6">
-                <AvatarImage src={availableSupervisors.find(p => p.id === value)?.avatar_url || undefined} />
-                <AvatarFallback>
-                  {availableSupervisors.find(p => p.id === value)?.first_name?.charAt(0)}
-                </AvatarFallback>
-              </Avatar>
-              {`${availableSupervisors.find(p => p.id === value)?.first_name || ''} ${availableSupervisors.find(p => p.id === value)?.last_name || ''}`.trim()}
-            </div>
-          ) : (
-            displayValue
-          )}
+          {buttonDisplayContent} {/* Usa o conteúdo refinado */}
           <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
         </Button>
       </PopoverTrigger>
@@ -165,7 +166,9 @@ export const SupervisorCombobox: React.FC<SupervisorComboboxProps> = ({
                   />
                   <Avatar className="h-6 w-6 mr-2">
                     <AvatarImage src={profile.avatar_url || undefined} />
-                    <AvatarFallback>{profile.first_name?.charAt(0)}</AvatarFallback>
+                    <AvatarFallback className="bg-primary text-primary-foreground"> {/* Adicionado estilo explícito */}
+                      {profile.first_name?.charAt(0) || 'U'}
+                    </AvatarFallback>
                   </Avatar>
                   {`${profile.first_name || ''} ${profile.last_name || ''}`.trim()}
                 </CommandItem>
