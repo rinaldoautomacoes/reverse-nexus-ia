@@ -6,6 +6,29 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
+// Helper function to sanitize parts of an email (local part or domain part)
+const sanitizeEmailPart = (part: string): string => {
+  let sanitized = part
+    .toLowerCase()
+    .replace(/[àáâãäå]/g, 'a')
+    .replace(/[èéêë]/g, 'e')
+    .replace(/[ìíîï]/g, 'i')
+    .replace(/[òóôõö]/g, 'o')
+    .replace(/[ùúûü]/g, 'u')
+    .replace(/[ç]/g, 'c')
+    .replace(/[^a-z0-9.-]/g, '');
+
+  sanitized = sanitized.replace(/^[.-]+|[.-]+$/g, '').replace(/[.]{2,}/g, '.').replace(/[-]{2,}/g, '-');
+  return sanitized;
+};
+
+// Helper to generate a unique string for emails
+const generateUniqueString = (prefix: string = 'gen') => {
+  const timestamp = Date.now().toString(36);
+  const random = Math.random().toString(36).substring(2, 7);
+  return `${prefix}-${timestamp}-${random}`.toUpperCase();
+};
+
 serve(async (req) => {
   console.log('[create-user] Edge Function create-user invoked');
 
@@ -53,14 +76,9 @@ serve(async (req) => {
     }
     console.log('[create-user] Admin user authorized. Role:', profile.role);
 
-    console.log('[create-user] Request Content-Type:', req.headers.get('Content-Type'));
-    console.log('[create-user] Request Content-Length:', req.headers.get('Content-Length'));
-    
     let requestBody;
     try {
       requestBody = await req.json();
-      console.log('[create-user] Successfully parsed request body.');
-      // Log the parsed content, masking sensitive info like password
       const loggableBody = { ...requestBody, password: requestBody.password ? '********' : 'N/A' };
       console.log('[create-user] Parsed request body content:', JSON.stringify(loggableBody)); 
     } catch (jsonError) {
@@ -68,12 +86,27 @@ serve(async (req) => {
       return new Response(JSON.stringify({ error: 'Bad Request: Invalid or empty JSON body. Please ensure all required fields are sent correctly.' }), { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
     }
 
-    const { email, password, first_name, last_name, role, avatar_url, phone_number, supervisor_id } = requestBody;
+    let { email, password, first_name, last_name, role, avatar_url, phone_number, supervisor_id } = requestBody;
     console.log('[create-user] Received data for new user:', { email, first_name, last_name, role, avatar_url: avatar_url ? 'Present' : 'N/A', phone_number: phone_number ? 'Present' : 'N/A', supervisor_id: supervisor_id ? 'Present' : 'N/A' });
 
-    if (!email || !password || !first_name || !last_name || !role) {
-      console.error('[create-user] Bad Request: Missing required fields in request body.');
-      return new Response(JSON.stringify({ error: 'Bad Request: Missing required fields (email, password, first_name, last_name, role)' }), { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+    if (!first_name || !last_name || !role) {
+      console.error('[create-user] Bad Request: Missing required profile fields (first_name, last_name, role)');
+      return new Response(JSON.stringify({ error: 'Bad Request: Missing required profile fields (first_name, last_name, role)' }), { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+    }
+
+    // Generate email if not provided or invalid
+    if (!email || !email.includes('@') || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      const sanitizedFirstName = sanitizeEmailPart(first_name);
+      const sanitizedLastName = sanitizeEmailPart(last_name);
+      const baseEmail = `${sanitizedFirstName}.${sanitizedLastName}`;
+      email = `${baseEmail}.${generateUniqueString('TECH')}@logireverseia.com`; // Add unique string to avoid conflicts
+      console.log(`[create-user] Email not provided or invalid, generated: ${email}`);
+    }
+
+    // Use default password if not provided
+    if (!password) {
+      password = 'LogiReverseIA@2025';
+      console.log('[create-user] Password not provided, using default password.');
     }
 
     const adminSupabase = createClient(

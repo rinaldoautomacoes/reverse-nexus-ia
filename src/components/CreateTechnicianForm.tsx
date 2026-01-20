@@ -6,16 +6,18 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Loader2, User as UserIcon, Mail, Lock, Phone, Briefcase, UserCog } from "lucide-react";
 import type { TablesInsert } from "@/integrations/supabase/types_generated";
 import { SupervisorCombobox } from "./SupervisorCombobox";
+import { useToast } from "@/hooks/use-toast"; // Import useToast
 
 type ProfileInsert = TablesInsert<'profiles'>;
 
 interface CreateTechnicianFormProps {
-  onSave: (data: ProfileInsert & { email: string; password: string }) => void;
+  onSave: (data: ProfileInsert & { email?: string; password?: string }) => void; // Email and password are now optional
   onCancel: () => void;
   isPending: boolean;
 }
 
 export const CreateTechnicianForm: React.FC<CreateTechnicianFormProps> = ({ onSave, onCancel, isPending }) => {
+  const { toast } = useToast(); // Initialize useToast
   const [formData, setFormData] = useState<ProfileInsert>({
     first_name: "",
     last_name: "",
@@ -38,8 +40,8 @@ export const CreateTechnicianForm: React.FC<CreateTechnicianFormProps> = ({ onSa
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!email || !password || !formData.first_name || !formData.last_name) {
-      // Basic validation, more robust validation can be added with Zod/React Hook Form
+    if (!formData.first_name || !formData.last_name) {
+      toast({ title: "Campos Obrigatórios", description: "Primeiro Nome e Sobrenome são obrigatórios.", variant: "destructive" });
       return;
     }
     onSave({ ...formData, email, password });
@@ -48,7 +50,7 @@ export const CreateTechnicianForm: React.FC<CreateTechnicianFormProps> = ({ onSa
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
       <div className="space-y-2">
-        <Label htmlFor="email">Email *</Label>
+        <Label htmlFor="email">Email</Label> {/* Removed * */}
         <div className="relative">
           <Mail className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
           <Input
@@ -58,13 +60,12 @@ export const CreateTechnicianForm: React.FC<CreateTechnicianFormProps> = ({ onSa
             className="pl-10"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
-            required
             disabled={isPending}
           />
         </div>
       </div>
       <div className="space-y-2">
-        <Label htmlFor="password">Senha *</Label>
+        <Label htmlFor="password">Senha</Label> {/* Removed * */}
         <div className="relative">
           <Lock className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
           <Input
@@ -74,7 +75,6 @@ export const CreateTechnicianForm: React.FC<CreateTechnicianFormProps> = ({ onSa
             className="pl-10"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
-            required
             disabled={isPending}
           />
         </div>
