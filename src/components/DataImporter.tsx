@@ -332,6 +332,7 @@ export const DataImporter: React.FC<DataImporterProps> = ({ initialTab = 'collec
 
       const results = await Promise.all(dataToImport.map(async (tech) => {
         try {
+          console.log(`[DataImporter] Attempting to create user for email: ${tech.email}`); // Log email
           const response = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/create-user`, {
             method: 'POST',
             headers: {
@@ -351,16 +352,20 @@ export const DataImporter: React.FC<DataImporterProps> = ({ initialTab = 'collec
 
           if (!response.ok) {
             const errorData = await response.json();
+            console.error(`[DataImporter] Failed to create user ${tech.email}:`, errorData.error || response.statusText); // Log error
             throw new Error(errorData.error || `Falha ao criar técnico ${tech.email}.`);
           }
 
           const data = await response.json();
+          console.log(`[DataImporter] Successfully created user ${tech.email}. Response:`, data); // Log success
           return { success: true, email: tech.email, userId: data.user };
         } catch (error: any) {
-          console.error(`Erro ao importar técnico ${tech.email}:`, error.message);
+          console.error(`[DataImporter] Error importing technician ${tech.email}:`, error.message);
           return { success: false, email: tech.email, error: error.message };
         }
       }));
+
+      console.log('[DataImporter] All technician import results:', results); // Log all results
 
       const successfulImports = results.filter(r => r.success).length;
       const failedImports = results.filter(r => !r.success);

@@ -29,6 +29,13 @@ const generateUniqueString = (prefix: string = 'gen') => {
   return `${prefix}-${timestamp}-${random}`.toUpperCase();
 };
 
+// Helper to validate if a string is a valid UUID format
+const isUUID = (uuid: string | null | undefined): boolean => {
+  if (!uuid) return false;
+  const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+  return uuidRegex.test(uuid);
+};
+
 serve(async (req) => {
   console.log('[create-user] Edge Function create-user invoked');
 
@@ -124,6 +131,8 @@ serve(async (req) => {
       supervisor_id: supervisor_id === "" ? null : supervisor_id // Ensure empty string becomes null for UUID column
     };
     console.log('[create-user] User metadata being sent to auth.admin.createUser:', JSON.stringify(userMetadataForSupabaseAuth));
+    console.log('[create-user] Email for new user:', email);
+    console.log('[create-user] Password for new user: ********'); // Do not log actual password
 
     const { data: newUser, error: createUserError } = await adminSupabase.auth.admin.createUser({
       email,
@@ -140,7 +149,9 @@ serve(async (req) => {
       });
     }
 
-    console.log('[create-user] New user created successfully:', newUser.user?.id);
+    console.log('[create-user] New user created successfully. User ID:', newUser.user?.id);
+    console.log('[create-user] Full newUser object from admin.createUser:', JSON.stringify(newUser)); // Log full object
+
     return new Response(JSON.stringify({ message: 'User created successfully', user: newUser.user?.id }), {
       status: 201,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },

@@ -199,7 +199,7 @@ const mapRowToTechnician = (row: any): TechnicianImportData => {
     console.warn(`[data-parser] Invalid supervisor_id format '${supervisorIdRaw}'. Setting to null.`);
   }
 
-  return {
+  const technicianData = {
     first_name: firstName,
     last_name: lastName,
     email: finalEmail, // Use the final sanitized/generated email
@@ -208,6 +208,8 @@ const mapRowToTechnician = (row: any): TechnicianImportData => {
     role: role,
     supervisor_id: supervisor_id, // Use the validated supervisor_id
   };
+  console.log('[data-parser] Mapped technician data:', technicianData); // Log mapped data
+  return technicianData;
 };
 
 // --- 3. Funções de Parsing Principais (agora exportadas) ---
