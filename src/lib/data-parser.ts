@@ -143,7 +143,7 @@ const mapRowToClient = (row: any): ClientImportData => ({
 const mapRowToTechnician = (row: any): TechnicianImportData => {
   let firstName = String(row['Primeiro Nome'] || row['first_name'] || row['Nome'] || '').trim();
   let lastName = String(row['Sobrenome'] || row['last_name'] || '').trim();
-  let rawEmail = String(row['Email'] || row['e-mail'] || row['email'] || '').trim();
+  let rawEmail = String(row['Email'] || row['e-mail'] || row['email'] || '').trim(); // Get raw email from various possible columns
   let phoneNumber = cleanPhoneNumber(row['Telefone'] || row['phone_number']);
   let role = (row['Função']?.toLowerCase() === 'admin' ? 'admin' : 'standard');
   let supervisorIdRaw = row['ID Supervisor'] || row['supervisor_id'] || null;
@@ -183,7 +183,7 @@ const mapRowToTechnician = (row: any): TechnicianImportData => {
     }
 
     finalEmail = `${generatedBaseEmail}.${uniquePart}@${baseDomain}`;
-    console.log('[data-parser] Generated initial email:', finalEmail);
+    console.log(`[data-parser] Email not provided or invalid in file. Generated: ${finalEmail}`);
 
     if (!emailRegex.test(finalEmail)) {
       console.warn(`[data-parser] Generated email '${finalEmail}' is still invalid. Generating a fallback.`);
