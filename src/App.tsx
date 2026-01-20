@@ -20,7 +20,7 @@ import { ClientManagement } from "./pages/ClientManagement";
 import { ProductManagement } from "./pages/ProductManagement";
 import { EntregasAtivas } from "./pages/EntregasAtivas";
 import { EntregasConcluidasPage } from "./pages/EntregasConcluidasPage";
-import EntregasConcluidasList from "./pages/EntregasConcluidasList";
+import { EntregasConcluidasList } from "./pages/EntregasConcluidasList"; // Corrigido: Importação nomeada
 import { Debug } from "./pages/Debug";
 import Roteirizacao from "./pages/Roteirizacao";
 import { AuthProvider } from "./hooks/use-auth";
