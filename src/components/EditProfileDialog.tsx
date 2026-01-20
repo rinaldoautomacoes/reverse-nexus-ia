@@ -11,28 +11,27 @@ import { UserForm } from "./UserForm";
 type Profile = Tables<'profiles'>;
 type ProfileUpdate = TablesUpdate<'profiles'>;
 
-interface EditTechnicianDialogProps {
-  technician: Profile | null;
+interface EditProfileDialogProps {
+  profile: Profile | null; // Renomeado de 'technician' para 'profile'
   isOpen: boolean;
   onClose: () => void;
+  profileType?: 'technician' | 'supervisor'; // Novo prop para definir o tipo de perfil
 }
 
-export const EditTechnicianDialog: React.FC<EditTechnicianDialogProps> = ({ technician, isOpen, onClose }) => {
+export const EditProfileDialog: React.FC<EditProfileDialogProps> = ({ profile, isOpen, onClose, profileType = 'technician' }) => {
   const { toast } = useToast();
   const { user: currentUser } = useAuth();
   const queryClient = useQueryClient();
 
-  const updateTechnicianMutation = useMutation({
-    mutationFn: async (updatedTechnician: ProfileUpdate) => {
+  const updateProfileMutation = useMutation({
+    mutationFn: async (updatedProfile: ProfileUpdate) => {
       if (!currentUser?.id) {
-        throw new Error("Usuário não autenticado. Faça login para atualizar técnicos.");
+        throw new Error("Usuário não autenticado. Faça login para atualizar perfis.");
       }
-      // Atualizar diretamente na tabela 'profiles'
       const { data, error } = await supabase
         .from('profiles')
-        .update(updatedTechnician)
-        .eq('id', updatedTechnician.id as string)
-        // Não é mais necessário verificar user_id para RLS aqui, pois o perfil é o próprio técnico
+        .update(updatedProfile)
+        .eq('id', updatedProfile.id as string)
         .select()
         .single();
       if (error) throw new Error(error.message);
@@ -41,19 +40,21 @@ export const EditTechnicianDialog: React.FC<EditTechnicianDialogProps> = ({ tech
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['allProfiles', currentUser?.id] });
       queryClient.invalidateQueries({ queryKey: ['allProfilesForSupervisor', currentUser?.id] });
-      toast({ title: "Técnico atualizado!", description: "Técnico salvo com sucesso." });
+      toast({ title: `${profileType === 'technician' ? 'Técnico' : 'Supervisor'} atualizado!`, description: `${profileType === 'technician' ? 'Técnico' : 'Supervisor'} salvo com sucesso.` });
       onClose();
     },
     onError: (err) => {
-      toast({ title: "Erro ao atualizar técnico", description: err.message, variant: "destructive" });
+      toast({ title: `Erro ao atualizar ${profileType}`, description: err.message, variant: "destructive" });
     },
   });
 
   const handleSave = (data: ProfileUpdate) => {
-    updateTechnicianMutation.mutate(data);
+    updateProfileMutation.mutate(data);
   };
 
-  if (!technician) return null;
+  if (!profile) return null;
+
+  const dialogTitle = profileType === 'technician' ? `Editar Técnico: ${profile.first_name} ${profile.last_name}` : `Editar Supervisor: ${profile.first_name} ${profile.last_name}`;
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
@@ -61,15 +62,15 @@ export const EditTechnicianDialog: React.FC<EditTechnicianDialogProps> = ({ tech
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2 gradient-text">
             <Edit className="h-5 w-5" />
-            Editar Técnico: {technician.first_name} {technician.last_name}
+            {dialogTitle}
           </DialogTitle>
         </DialogHeader>
         <UserForm
-          initialData={technician}
+          initialData={profile}
           onSave={handleSave}
           onCancel={onClose}
-          isPending={updateTechnicianMutation.isPending}
-          showAuthFields={false} // Não mostra campos de autenticação
+          isPending={updateProfileMutation.isPending}
+          showAuthFields={false}
         />
       </DialogContent>
     </Dialog>

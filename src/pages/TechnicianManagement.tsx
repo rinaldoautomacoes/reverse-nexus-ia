@@ -9,8 +9,8 @@ import { supabase } from "@/integrations/supabase/client";
 import type { Tables } from "@/integrations/supabase/types_generated";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/use-auth";
-import { CreateTechnicianDialog } from "@/components/CreateTechnicianDialog";
-import { EditTechnicianDialog } from "@/components/EditTechnicianDialog";
+import { CreateProfileDialog } from "@/components/CreateProfileDialog"; // Usando o novo diálogo genérico
+import { EditProfileDialog } from "@/components/EditProfileDialog"; // Usando o novo diálogo genérico
 import { Checkbox } from "@/components/ui/checkbox"; // Importar Checkbox
 
 type Profile = Tables<'profiles'>;
@@ -230,7 +230,7 @@ export const TechnicianManagement = () => {
                   )}
                   {isAllTechniciansSelected ? "Desselecionar Todos" : "Selecionar Todos"}
                 </Button>
-                <CreateTechnicianDialog />
+                <CreateProfileDialog profileType="technician" /> {/* Usando o novo diálogo com tipo 'technician' */}
               </div>
             </CardHeader>
             <CardContent className="space-y-4">
@@ -318,13 +318,14 @@ export const TechnicianManagement = () => {
       </div>
 
       {editingTechnician && (
-        <EditTechnicianDialog
-          technician={editingTechnician}
+        <EditProfileDialog
+          profile={editingTechnician}
           isOpen={isEditDialogOpen}
           onClose={() => {
             setIsEditDialogOpen(false);
             setEditingTechnician(null);
           }}
+          profileType="technician"
         />
       )}
     </div>

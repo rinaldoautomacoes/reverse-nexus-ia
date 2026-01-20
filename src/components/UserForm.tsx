@@ -17,13 +17,14 @@ interface UserFormProps {
   isPending: boolean;
   showAuthFields?: boolean;
   onAuthFieldsChange?: (email: string, password: string) => void;
+  defaultRole?: 'standard' | 'admin'; // Novo prop
 }
 
-export const UserForm: React.FC<UserFormProps> = ({ initialData, onSave, onCancel, isPending, showAuthFields = false, onAuthFieldsChange }) => {
+export const UserForm: React.FC<UserFormProps> = ({ initialData, onSave, onCancel, isPending, showAuthFields = false, onAuthFieldsChange, defaultRole = 'standard' }) => {
   const [formData, setFormData] = useState<ProfileInsert | ProfileUpdate>(initialData || {
     first_name: "",
     last_name: "",
-    role: "standard",
+    role: defaultRole, // Usar defaultRole aqui
     phone_number: "",
     avatar_url: "",
     supervisor_id: null,
@@ -40,7 +41,7 @@ export const UserForm: React.FC<UserFormProps> = ({ initialData, onSave, onCance
       setFormData({
         first_name: "",
         last_name: "",
-        role: "standard",
+        role: defaultRole, // Usar defaultRole aqui
         phone_number: "",
         avatar_url: "",
         supervisor_id: null,
@@ -50,7 +51,7 @@ export const UserForm: React.FC<UserFormProps> = ({ initialData, onSave, onCance
       setEmail("");
       setPassword("");
     }
-  }, [initialData]);
+  }, [initialData, defaultRole]); // Adicionar defaultRole como dependência
 
   const handleInputChange = (field: keyof (ProfileInsert | ProfileUpdate), value: string | null) => {
     setFormData(prev => ({ ...prev, [field]: value }));
@@ -159,7 +160,7 @@ export const UserForm: React.FC<UserFormProps> = ({ initialData, onSave, onCance
           <Select
             value={formData.role || 'standard'}
             onValueChange={(value) => handleInputChange("role", value)}
-            disabled={isPending || initialData?.role === 'admin'}
+            disabled={isPending || initialData?.role === 'admin' || defaultRole === 'standard'} // Desabilita se defaultRole for 'standard'
           >
             <SelectTrigger className="pl-10">
               <Briefcase className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
@@ -224,5 +225,3 @@ export const UserForm: React.FC<UserFormProps> = ({ initialData, onSave, onCance
         </Button>
       </div>
     </form>
-  );
-};

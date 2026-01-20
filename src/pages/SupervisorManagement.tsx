@@ -7,10 +7,10 @@ import { useNavigate } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import type { Tables } from "@/integrations/supabase/types_generated";
-import { useToast } from "@/hooks/use-toast";
+import { useToast } => "@/hooks/use-toast";
 import { useAuth } from "@/hooks/use-auth";
-import { CreateTechnicianDialog } from "@/components/CreateTechnicianDialog";
-import { EditTechnicianDialog } from "@/components/EditTechnicianDialog";
+import { CreateProfileDialog } from "@/components/CreateProfileDialog"; // Usando o novo diálogo genérico
+import { EditProfileDialog } from "@/components/EditProfileDialog"; // Usando o novo diálogo genérico
 import { Checkbox } from "@/components/ui/checkbox"; // Importar Checkbox
 
 type Profile = Tables<'profiles'>;
@@ -229,7 +229,7 @@ export const SupervisorManagement = () => {
                   )}
                   {isAllSupervisorsSelected ? "Desselecionar Todos" : "Selecionar Todos"}
                 </Button>
-                <CreateTechnicianDialog /> {/* Reusing the dialog for creating technicians/supervisors */}
+                <CreateProfileDialog profileType="supervisor" /> {/* Usando o novo diálogo com tipo 'supervisor' */}
               </div>
             </CardHeader>
             <CardContent className="space-y-4">
@@ -302,7 +302,7 @@ export const SupervisorManagement = () => {
               ) : (
                 <div className="p-12 text-center text-muted-foreground">
                   <UserCheck className="h-12 w-12 mx-auto mb-4" />
-                  <p>Nenhum supervisor cadastrado. Clique em "Novo Técnico" para adicionar um.</p>
+                  <p>Nenhum supervisor cadastrado. Clique em "Novo Supervisor" para adicionar um.</p>
                 </div>
               )}
             </CardContent>
@@ -311,13 +311,14 @@ export const SupervisorManagement = () => {
       </div>
 
       {editingSupervisor && (
-        <EditTechnicianDialog
-          technician={editingSupervisor}
+        <EditProfileDialog
+          profile={editingSupervisor}
           isOpen={isEditDialogOpen}
           onClose={() => {
             setIsEditDialogOpen(false);
             setEditingSupervisor(null);
           }}
+          profileType="supervisor"
         />
       )}
     </div>
