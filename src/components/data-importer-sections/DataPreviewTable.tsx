@@ -16,6 +16,10 @@ export const DataPreviewTable: React.FC<DataPreviewTableProps> = ({ activeTab, e
     return null;
   }
 
+  const isGeneratedEmail = (email: string | null | undefined) => {
+    return email && email.includes('@logireverseia.com');
+  };
+
   return (
     <Card className="card-futuristic">
       <CardHeader>
@@ -107,7 +111,9 @@ export const DataPreviewTable: React.FC<DataPreviewTableProps> = ({ activeTab, e
                   <TableRow key={index}>
                     <TableCell>{item.first_name}</TableCell>
                     <TableCell>{item.last_name}</TableCell>
-                    <TableCell>{item.email}</TableCell>
+                    <TableCell>
+                      {isGeneratedEmail(item.email) ? 'Gerado Automaticamente' : item.email}
+                    </TableCell>
                     <TableCell>{item.phone_number}</TableCell>
                     <TableCell>{item.role}</TableCell>
                     <TableCell>{item.supervisor_id || 'N/A'}</TableCell>
