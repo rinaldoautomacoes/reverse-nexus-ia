@@ -125,7 +125,7 @@ const mapRowToTechnician = (row: any): TechnicianImportData => {
   let supervisorIdRaw = row['ID Supervisor'] || row['supervisor_id'] || null;
   let supervisor_id: string | null = null;
   let teamShift: 'day' | 'night' = (row['Equipe']?.toLowerCase() === 'night' ? 'night' : 'day');
-  let address: string | null = row['Endereço'] || null;
+  let address: string | null = row['Endereço'] || null; // Adicionado: Mapeamento do campo 'Endereço'
 
   if (row['Técnico'] && (!firstName || !lastName)) {
     const tecnicoFullName = String(row['Técnico']).trim();
@@ -153,7 +153,7 @@ const mapRowToTechnician = (row: any): TechnicianImportData => {
     role: role,
     supervisor_id: supervisor_id,
     team_shift: teamShift,
-    address: address,
+    address: address, // Adicionado: Incluindo o campo address
   };
   return technicianData;
 };
@@ -164,7 +164,7 @@ const mapRowToSupervisor = (row: any): SupervisorImportData => {
   let phoneNumber = cleanPhoneNumber(row['Telefone'] || row['phone_number']);
   let role = (row['Função']?.toLowerCase() === 'admin' ? 'admin' : 'standard'); // Supervisores podem ser admin ou standard
   let teamShift: 'day' | 'night' = (row['Equipe']?.toLowerCase() === 'night' ? 'night' : 'day');
-  let address: string | null = row['Endereço'] || null;
+  let address: string | null = row['Endereço'] || null; // Adicionado: Mapeamento do campo 'Endereço'
 
   if (row['Supervisor'] && (!firstName || !lastName)) {
     const supervisorFullName = String(row['Supervisor']).trim();
@@ -185,7 +185,7 @@ const mapRowToSupervisor = (row: any): SupervisorImportData => {
     phone_number: phoneNumber,
     role: role,
     team_shift: teamShift,
-    address: address,
+    address: address, // Adicionado: Incluindo o campo address
     // supervisor_id é implicitamente null para supervisores
   };
   return supervisorData;

@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { ArrowLeft, Edit, Trash2, Users, Search, User as UserIcon, Phone, Briefcase, Loader2, UserCheck, Sun, Moon, Square, CheckSquare } from "lucide-react";
+import { ArrowLeft, Edit, Trash2, Users, Search, User as UserIcon, Phone, Briefcase, Loader2, UserCheck, Sun, Moon, Square, CheckSquare, MapPin } from "lucide-react"; // Adicionado MapPin
 import { useNavigate } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -127,7 +127,8 @@ export const SupervisorManagement = () => {
     supervisor.first_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
     supervisor.last_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
     supervisor.phone_number?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    supervisor.team_shift?.toLowerCase().includes(searchTerm.toLowerCase())
+    supervisor.team_shift?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    supervisor.address?.toLowerCase().includes(searchTerm.toLowerCase()) // Incluído address na busca
   ) || [];
 
   const isAnySupervisorSelected = selectedSupervisorIds.size > 0;
@@ -182,7 +183,7 @@ export const SupervisorManagement = () => {
                 <div className="flex-1 relative">
                   <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
                   <Input
-                    placeholder="Buscar por nome, sobrenome, telefone ou equipe..."
+                    placeholder="Buscar por nome, sobrenome, telefone, equipe ou endereço..."
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
                     className="pl-10"
@@ -269,6 +270,11 @@ export const SupervisorManagement = () => {
                                 <Moon className="h-3 w-3" />
                               )}
                               Equipe: {supervisor.team_shift === 'day' ? 'Dia' : 'Noite'}
+                            </div>
+                          )}
+                          {supervisor.address && ( // Exibindo o novo campo de endereço
+                            <div className="flex items-center gap-1 col-span-full">
+                              <MapPin className="h-3 w-3" /> Endereço: {supervisor.address}
                             </div>
                           )}
                         </div>

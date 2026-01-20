@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Loader2, User as UserIcon, Mail, Lock, Phone, Briefcase, UserCog, Sun, Moon } from "lucide-react";
+import { Loader2, User as UserIcon, Mail, Lock, Phone, Briefcase, UserCog, Sun, Moon, MapPin } from "lucide-react"; // Adicionado MapPin
 import type { TablesInsert, TablesUpdate } from "@/integrations/supabase/types_generated";
 import { SupervisorCombobox } from "./SupervisorCombobox";
 
@@ -215,6 +215,22 @@ export const UserForm: React.FC<UserFormProps> = ({ initialData, onSave, onCance
         )}
       </div>
 
+      {/* Novo campo de Endereço */}
+      <div className="space-y-2">
+        <Label htmlFor="address">Endereço</Label>
+        <div className="relative">
+          <MapPin className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+          <Input
+            id="address"
+            placeholder="Endereço completo do usuário"
+            className="pl-10"
+            value={formData.address || ''}
+            onChange={(e) => handleInputChange("address", e.target.value)}
+            disabled={isPending}
+          />
+        </div>
+      </div>
+
       <div className="flex gap-2 justify-end pt-4">
         <Button type="button" variant="outline" onClick={onCancel} disabled={isPending}>
           Cancelar
@@ -233,5 +249,3 @@ export const UserForm: React.FC<UserFormProps> = ({ initialData, onSave, onCance
         </Button>
       </div>
     </form>
-  );
-};
