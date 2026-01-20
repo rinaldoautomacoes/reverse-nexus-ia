@@ -114,13 +114,22 @@ serve(async (req) => {
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     );
     console.log('[create-user] Attempting to create user with admin client...');
-    console.log('[create-user] User metadata being sent to auth.admin.createUser:', { first_name, last_name, role, avatar_url, phone_number, supervisor_id });
+    
+    const userMetadataForSupabaseAuth = { 
+      first_name, 
+      last_name, 
+      role, 
+      avatar_url, 
+      phone_number, 
+      supervisor_id: supervisor_id === "" ? null : supervisor_id // Ensure empty string becomes null for UUID column
+    };
+    console.log('[create-user] User metadata being sent to auth.admin.createUser:', JSON.stringify(userMetadataForSupabaseAuth));
 
     const { data: newUser, error: createUserError } = await adminSupabase.auth.admin.createUser({
       email,
       password,
       email_confirm: true,
-      user_metadata: { first_name, last_name, role, avatar_url, phone_number, supervisor_id },
+      user_metadata: userMetadataForSupabaseAuth,
     });
 
     if (createUserError) {

@@ -85,6 +85,20 @@ const sanitizeEmailPart = (part: string): string => {
   return sanitized;
 };
 
+// Helper to generate a unique string for emails
+const generateUniqueString = (prefix: string = 'gen') => {
+  const timestamp = Date.now().toString(36);
+  const random = Math.random().toString(36).substring(2, 7);
+  return `${prefix}-${timestamp}-${random}`.toUpperCase();
+};
+
+// Helper to validate if a string is a valid UUID format
+const isUUID = (uuid: string | null | undefined): boolean => {
+  if (!uuid) return false;
+  const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+  return uuidRegex.test(uuid);
+};
+
 const mapRowToColeta = (row: any): ColetaImportData => ({
   unique_number: row['Número da Coleta'] || generateUniqueNumber('IMP'),
   client_control: row['Controle do Cliente'] || null,
@@ -135,9 +149,10 @@ const mapRowToTechnician = (row: any): TechnicianImportData => {
   let rawEmail = String(row['Email'] || row['e-mail'] || row['email'] || '').trim(); // Keep raw email
   let phoneNumber = cleanPhoneNumber(row['Telefone'] || row['phone_number']);
   let role = (row['Função']?.toLowerCase() === 'admin' ? 'admin' : 'standard');
-  let supervisorId = row['ID Supervisor'] || row['supervisor_id'] || null;
+  let supervisorIdRaw = row['ID Supervisor'] || row['supervisor_id'] || null;
+  let supervisor_id: string | null = null; // Inicializa como null
 
-  // If the 'Técnico' column exists and names were not defined
+  // Se o 'Técnico' column exists and names were not defined
   if (row['Técnico'] && (!firstName || !lastName)) {
     const tecnicoFullName = String(row['Técnico']).trim();
     const nameParts = tecnicoFullName.split(' ').filter(Boolean);
@@ -164,7 +179,7 @@ const mapRowToTechnician = (row: any): TechnicianImportData => {
     const sanitizedFirstName = sanitizeEmailPart(firstName);
     const sanitizedLastName = sanitizeEmailPart(lastName);
     const baseEmail = `${sanitizedFirstName}.${sanitizedLastName}`;
-    finalEmail = `${baseEmail}@logireverseia.com`; // Default domain
+    finalEmail = `${baseEmail}.${generateUniqueString('TECH')}@logireverseia.com`; // Add unique string to avoid conflicts
   }
 
   // Final check for email validity using a more robust regex
@@ -174,7 +189,14 @@ const mapRowToTechnician = (row: any): TechnicianImportData => {
   if (!emailRegex.test(finalEmail)) {
     console.warn(`[data-parser] Generated email '${finalEmail}' is still invalid. Falling back to generic.`);
     // Fallback to a very generic, guaranteed-valid email if all else fails
-    finalEmail = `invalid.email.${generateUniqueNumber('ERR')}@logireverseia.com`;
+    finalEmail = `invalid.email.${generateUniqueString('ERR')}@logireverseia.com`;
+  }
+
+  // Validate supervisor_id
+  if (supervisorIdRaw && isUUID(String(supervisorIdRaw))) {
+    supervisor_id = String(supervisorIdRaw);
+  } else if (supervisorIdRaw) {
+    console.warn(`[data-parser] Invalid supervisor_id format '${supervisorIdRaw}'. Setting to null.`);
   }
 
   return {
@@ -184,7 +206,7 @@ const mapRowToTechnician = (row: any): TechnicianImportData => {
     password: String(row['Senha'] || row['password'] || 'LogiReverseIA@2025'), // Default password if not provided
     phone_number: phoneNumber,
     role: role,
-    supervisor_id: supervisorId,
+    supervisor_id: supervisor_id, // Use the validated supervisor_id
   };
 };
 
