@@ -48,6 +48,7 @@ export const SupervisorCombobox: React.FC<SupervisorComboboxProps> = ({
       const { data, error } = await supabase
         .from('profiles')
         .select('*')
+        .eq('supervisor_id', null) // Filtra para mostrar apenas perfis que são supervisores (não têm supervisor)
         .order('first_name', { ascending: true });
       if (error) throw new Error(error.message);
       return data;
