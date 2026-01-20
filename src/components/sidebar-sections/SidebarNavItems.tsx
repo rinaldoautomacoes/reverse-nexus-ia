@@ -40,6 +40,7 @@ import {
   Bug,
   LayoutDashboard,
   UserCog, // New icon for Technician Management
+  UserCheck, // New icon for Supervisor Management
 } from 'lucide-react';
 
 interface NavItem {
@@ -140,6 +141,13 @@ const navItems: NavItem[] = [
     icon: UserCog, // New icon
     path: '/technician-management', // New path
     roles: ['admin'], // Only admins can manage technicians
+    group: 'management',
+  },
+  {
+    label: 'Supervisores', // New item for supervisors
+    icon: UserCheck, // Icon for supervisors
+    path: '/supervisor-management', // New path for supervisors
+    roles: ['admin'], // Only admins can manage supervisors
     group: 'management',
   },
   {
