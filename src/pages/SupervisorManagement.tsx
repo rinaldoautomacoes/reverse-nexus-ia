@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { ArrowLeft, Edit, Trash2, Users, Search, User as UserIcon, Phone, Briefcase, Loader2, UserCheck, Sun, Moon, Square, CheckSquare, MapPin, MessageSquare, Send } from "lucide-react";
+import { ArrowLeft, Edit, Trash2, Users, Search, User as UserIcon, Phone, Briefcase, Loader2, UserCheck, Sun, Moon, Square, CheckSquare, MapPin, MessageSquare, Send, Mail } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -348,7 +348,7 @@ export const SupervisorManagement = () => {
                         size="sm"
                         className="border-success-green text-success-green hover:bg-success-green/10"
                         onClick={() => handleWhatsAppClick(supervisor)}
-                        disabled={!supervisor.personal_phone_number}
+                        // Removed disabled prop
                       >
                         <MessageSquare className="mr-1 h-3 w-3" />
                         WhatsApp
@@ -358,7 +358,7 @@ export const SupervisorManagement = () => {
                         size="sm"
                         className="border-neural text-neural hover:bg-neural/10"
                         onClick={() => handleEmailClick(supervisor)}
-                        disabled={!supervisor.user_email}
+                        // Removed disabled prop
                       >
                         <Send className="mr-1 h-3 w-3" />
                         E-mail
