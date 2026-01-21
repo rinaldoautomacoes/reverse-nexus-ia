@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { ArrowLeft, Edit, Trash2, Users, Search, User as UserIcon, Phone, Briefcase, Loader2, UserCog, Sun, Moon, Square, CheckSquare, MapPin } from "lucide-react";
+import { ArrowLeft, Edit, Trash2, Users, Search, User as UserIcon, Phone, Briefcase, Loader2, UserCog, Sun, Moon, Square, CheckSquare, MapPin, FileText } from "lucide-react"; // Adicionado FileText
 import { useNavigate } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -12,6 +12,7 @@ import { useAuth } from "@/hooks/use-auth";
 import { CreateProfileDialog } from "@/components/CreateProfileDialog";
 import { EditProfileDialog } from "@/components/EditProfileDialog";
 import { Checkbox } from "@/components/ui/checkbox";
+import { CreateTechnicianReportDialog } from "@/components/CreateTechnicianReportDialog"; // Importar o novo diálogo
 
 type Profile = Tables<'profiles'>;
 
@@ -248,6 +249,10 @@ export const TechnicianManagement = () => {
                   )}
                   {isAllTechniciansSelected ? "Desselecionar Todos" : "Selecionar Todos"}
                 </Button>
+                {/* Botão para gerar relatório */}
+                {allProfiles && ( // Renderiza o diálogo apenas se allProfiles estiver carregado
+                  <CreateTechnicianReportDialog technicians={technicians} allProfiles={allProfiles} />
+                )}
                 <CreateProfileDialog profileType="technician" />
               </div>
             </CardHeader>
