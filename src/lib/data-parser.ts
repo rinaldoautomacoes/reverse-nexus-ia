@@ -120,7 +120,8 @@ const mapRowToClient = (row: any): ClientImportData => ({
 const mapRowToTechnician = (row: any): TechnicianImportData => {
   let firstName = String(row['Primeiro Nome'] || row['first_name'] || row['Nome'] || '').trim();
   let lastName = String(row['Sobrenome'] || row['last_name'] || '').trim();
-  let phoneNumber = cleanPhoneNumber(row['Telefone'] || row['phone_number']);
+  let phoneNumber = cleanPhoneNumber(row['Telefone da Empresa'] || row['phone_number']); // Ajustado para 'Telefone da Empresa'
+  let personalPhoneNumber = cleanPhoneNumber(row['Telefone Pessoal'] || row['personal_phone_number']); // Novo campo
   let role = (row['Função']?.toLowerCase() === 'admin' ? 'admin' : 'standard');
   let supervisorIdRaw = row['ID Supervisor'] || row['supervisor_id'] || null;
   let supervisor_id: string | null = null;
@@ -150,6 +151,7 @@ const mapRowToTechnician = (row: any): TechnicianImportData => {
     last_name: lastName,
     email: row['Email'] || null,
     phone_number: phoneNumber,
+    personal_phone_number: personalPhoneNumber, // Incluído o novo campo
     role: role,
     supervisor_id: supervisor_id,
     team_shift: teamShift,
@@ -161,7 +163,8 @@ const mapRowToTechnician = (row: any): TechnicianImportData => {
 const mapRowToSupervisor = (row: any): SupervisorImportData => {
   let firstName = String(row['Primeiro Nome'] || row['first_name'] || row['Nome'] || '').trim();
   let lastName = String(row['Sobrenome'] || row['last_name'] || '').trim();
-  let phoneNumber = cleanPhoneNumber(row['Telefone'] || row['phone_number']);
+  let phoneNumber = cleanPhoneNumber(row['Telefone da Empresa'] || row['phone_number']); // Ajustado para 'Telefone da Empresa'
+  let personalPhoneNumber = cleanPhoneNumber(row['Telefone Pessoal'] || row['personal_phone_number']); // Novo campo
   let role = (row['Função']?.toLowerCase() === 'admin' ? 'admin' : 'standard');
   let teamShift: 'day' | 'night' = (row['Equipe']?.toLowerCase() === 'night' ? 'night' : 'day');
   let address: string | null = row['Endereço'] || null;
@@ -183,6 +186,7 @@ const mapRowToSupervisor = (row: any): SupervisorImportData => {
     last_name: lastName,
     email: row['Email'] || null,
     phone_number: phoneNumber,
+    personal_phone_number: personalPhoneNumber, // Incluído o novo campo
     role: role,
     team_shift: teamShift,
     address: address,

@@ -60,7 +60,8 @@ export const DataPreviewTable: React.FC<DataPreviewTableProps> = ({ activeTab, e
                   <>
                     <TableHead>Primeiro Nome</TableHead>
                     <TableHead>Sobrenome</TableHead>
-                    <TableHead>Telefone</TableHead>
+                    <TableHead>Telefone Empresa</TableHead> {/* Ajustado */}
+                    <TableHead>Telefone Pessoal</TableHead> {/* Novo campo */}
                     <TableHead>Função</TableHead>
                     <TableHead>ID Supervisor</TableHead>
                     <TableHead>Equipe</TableHead>
@@ -69,7 +70,8 @@ export const DataPreviewTable: React.FC<DataPreviewTableProps> = ({ activeTab, e
                   <>
                     <TableHead>Primeiro Nome</TableHead>
                     <TableHead>Sobrenome</TableHead>
-                    <TableHead>Telefone</TableHead>
+                    <TableHead>Telefone Empresa</TableHead> {/* Ajustado */}
+                    <TableHead>Telefone Pessoal</TableHead> {/* Novo campo */}
                     <TableHead>Função</TableHead>
                     <TableHead>Equipe</TableHead>
                   </>
@@ -116,6 +118,7 @@ export const DataPreviewTable: React.FC<DataPreviewTableProps> = ({ activeTab, e
                     <TableCell>{item.first_name}</TableCell>
                     <TableCell>{item.last_name}</TableCell>
                     <TableCell>{item.phone_number}</TableCell>
+                    <TableCell>{item.personal_phone_number}</TableCell> {/* Novo campo */}
                     <TableCell>{item.role}</TableCell>
                     <TableCell>{item.supervisor_id || 'N/A'}</TableCell>
                     <TableCell>{item.team_shift === 'day' ? 'Dia' : 'Noite'}</TableCell>
@@ -127,6 +130,7 @@ export const DataPreviewTable: React.FC<DataPreviewTableProps> = ({ activeTab, e
                     <TableCell>{item.first_name}</TableCell>
                     <TableCell>{item.last_name}</TableCell>
                     <TableCell>{item.phone_number}</TableCell>
+                    <TableCell>{item.personal_phone_number}</TableCell> {/* Novo campo */}
                     <TableCell>{item.role}</TableCell>
                     <TableCell>{item.team_shift === 'day' ? 'Dia' : 'Noite'}</TableCell>
                   </TableRow>
