@@ -86,7 +86,8 @@ export interface TechnicianImportData { // Nova interface para técnicos
   last_name: string | null; // Pode ser nulo
   email: string | null; // Pode ser nulo
   password?: string; // Senha pode ser opcional se o sistema gerar uma
-  phone_number?: string | null;
+  phone_number?: string | null; // Telefone da Empresa
+  personal_phone_number?: string | null; // Telefone Pessoal
   role?: 'standard' | 'admin'; // Padrão para 'standard'
   supervisor_id?: string | null;
   team_shift?: 'day' | 'night'; // Novo campo
@@ -98,7 +99,8 @@ export interface SupervisorImportData { // Nova interface para supervisores
   last_name: string | null; // Pode ser nulo
   email: string | null; // Pode ser nulo
   password?: string; // Senha pode ser opcional se o sistema gerar uma
-  phone_number?: string | null;
+  phone_number?: string | null; // Telefone da Empresa
+  personal_phone_number?: string | null; // Telefone Pessoal
   role?: 'standard' | 'admin'; // Padrão para 'standard'
   team_shift?: 'day' | 'night'; // Novo campo
   address?: string | null; // Novo campo

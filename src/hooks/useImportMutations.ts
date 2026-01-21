@@ -190,6 +190,7 @@ export const useImportMutations = ({ userId, onImportSuccess, onImportError }: U
         first_name: tech.first_name,
         last_name: tech.last_name,
         phone_number: tech.phone_number,
+        personal_phone_number: tech.personal_phone_number, // Incluído o novo campo
         role: tech.role || 'standard',
         // Se o supervisor_id for nulo para um técnico, atribua o usuário atual como seu supervisor
         supervisor_id: tech.supervisor_id || userId, 
@@ -226,6 +227,7 @@ export const useImportMutations = ({ userId, onImportSuccess, onImportError }: U
         first_name: supervisor.first_name,
         last_name: supervisor.last_name,
         phone_number: supervisor.phone_number,
+        personal_phone_number: supervisor.personal_phone_number, // Incluído o novo campo
         role: supervisor.role || 'standard',
         supervisor_id: null, // Supervisores não têm supervisor
         avatar_url: null,
