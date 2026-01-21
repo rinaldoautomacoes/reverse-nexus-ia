@@ -46,13 +46,7 @@ export const TechnicianManagement = () => {
     enabled: !!currentUser?.id,
   });
 
-  // LOG: Verificando todos os perfis carregados
-  console.log("[TechnicianManagement] All profiles fetched:", allProfiles);
-
   const technicians = allProfiles?.filter(profile => profile.role === 'standard' && profile.supervisor_id !== null) || [];
-
-  // LOG: Verificando técnicos após o filtro
-  console.log("[TechnicianManagement] Filtered technicians:", technicians);
 
   const deleteTechnicianMutation = useMutation({
     mutationFn: async (technicianId: string) => {
@@ -370,7 +364,8 @@ export const TechnicianManagement = () => {
               ) : (
                 <div className="p-12 text-center text-muted-foreground">
                   <UserCog className="h-12 w-12 mx-auto mb-4" />
-                  <p>Nenhum técnico cadastrado com supervisor. Clique em "Novo Técnico" para adicionar um.</p>
+                  <p>Nenhum técnico (com função 'Padrão' e supervisor atribuído) encontrado.</p>
+                  <p className="text-sm">Clique em "Novo Técnico" para adicionar um.</p>
                 </div>
               )}
             </CardContent>

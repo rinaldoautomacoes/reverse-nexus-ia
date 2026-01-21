@@ -46,13 +46,7 @@ export const SupervisorManagement = () => {
     enabled: !!currentUser?.id,
   });
 
-  // LOG: Verificando todos os perfis carregados
-  console.log("[SupervisorManagement] All profiles fetched:", allProfiles);
-
   const supervisors = allProfiles?.filter(profile => profile.role === 'standard' && profile.supervisor_id === null) || [];
-
-  // LOG: Verificando supervisores após o filtro
-  console.log("[SupervisorManagement] Filtered supervisors:", supervisors);
 
   const deleteSupervisorMutation = useMutation({
     mutationFn: async (supervisorId: string) => {
@@ -363,7 +357,8 @@ export const SupervisorManagement = () => {
               ) : (
                 <div className="p-12 text-center text-muted-foreground">
                   <UserCheck className="h-12 w-12 mx-auto mb-4" />
-                  <p>Nenhum supervisor cadastrado. Clique em "Novo Supervisor" para adicionar um.</p>
+                  <p>Nenhum supervisor (com função 'Padrão' e sem supervisor atribuído) encontrado.</p>
+                  <p className="text-sm">Clique em "Novo Supervisor" para adicionar um.</p>
                 </div>
               )}
             </CardContent>
