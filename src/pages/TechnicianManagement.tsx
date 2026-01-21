@@ -16,7 +16,7 @@ import { SendMessageDialog } from "@/components/SendMessageDialog"; // Importar 
 
 type Profile = Tables<'profiles'>;
 // Define a local type for the fetched profile with email
-type ProfileWithEmail = Profile & { auth_users?: { email: string | null } | null };
+type ProfileWithEmail = Tables<'profiles_with_email'>;
 
 export const TechnicianManagement = () => {
   const navigate = useNavigate();
@@ -37,11 +37,8 @@ export const TechnicianManagement = () => {
     queryFn: async () => {
       if (!currentUser?.id) return [];
       const { data, error } = await supabase
-        .from('profiles')
-        .select(`
-          *,
-          auth_users:auth.users(email)
-        `)
+        .from('profiles_with_email') // Usando a nova VIEW
+        .select(`*`) // Seleciona tudo da VIEW, que já inclui user_email
         .order('first_name', { ascending: true });
       if (error) throw new Error(error.message);
       return data;
@@ -142,7 +139,8 @@ export const TechnicianManagement = () => {
     technician.personal_phone_number?.toLowerCase().includes(searchTerm.toLowerCase()) || // Incluído o novo campo na busca
     technician.team_shift?.toLowerCase().includes(searchTerm.toLowerCase()) ||
     technician.address?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    (technician.supervisor_id && allProfiles?.find(s => s.id === technician.supervisor_id)?.first_name?.toLowerCase().includes(searchTerm.toLowerCase()))
+    (technician.supervisor_id && allProfiles?.find(s => s.id === technician.supervisor_id)?.first_name?.toLowerCase().includes(searchTerm.toLowerCase())) ||
+    technician.user_email?.toLowerCase().includes(searchTerm.toLowerCase()) // Incluído o novo campo na busca
   ) || [];
 
   const isAnyTechnicianSelected = selectedTechnicianIds.size > 0;
@@ -319,6 +317,11 @@ export const TechnicianManagement = () => {
                               <MapPin className="h-3 w-3" /> Endereço: {technician.address}
                             </div>
                           )}
+                          {technician.user_email && (
+                            <div className="flex items-center gap-1 col-span-full">
+                              <Mail className="h-3 w-3" /> Email: {technician.user_email}
+                            </div>
+                          )}
                         </div>
                       </div>
                     </div>
@@ -328,7 +331,7 @@ export const TechnicianManagement = () => {
                         size="sm"
                         className="border-success-green text-success-green hover:bg-success-green/10"
                         onClick={() => handleSendMessage(technician)}
-                        disabled={!technician.phone_number && !technician.personal_phone_number && !technician.auth_users?.email}
+                        disabled={!technician.phone_number && !technician.personal_phone_number && !technician.user_email}
                       >
                         <MessageSquare className="mr-1 h-3 w-3" />
                         Mensagem
@@ -388,7 +391,7 @@ export const TechnicianManagement = () => {
           technicianName={`${selectedTechnicianForMessage.first_name || ''} ${selectedTechnicianForMessage.last_name || ''}`.trim()}
           companyPhoneNumber={selectedTechnicianForMessage.phone_number}
           personalPhoneNumber={selectedTechnicianForMessage.personal_phone_number}
-          email={selectedTechnicianForMessage.auth_users?.email}
+          email={selectedTechnicianForMessage.user_email}
         />
       )}
     </div>

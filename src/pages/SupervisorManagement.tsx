@@ -16,7 +16,7 @@ import { SendMessageDialog } from "@/components/SendMessageDialog"; // Importar 
 
 type Profile = Tables<'profiles'>;
 // Define a local type for the fetched profile with email from auth.users
-type ProfileWithEmail = Profile & { auth_users?: { email: string | null } | null };
+type ProfileWithEmail = Tables<'profiles_with_email'>;
 
 export const SupervisorManagement = () => {
   const navigate = useNavigate();
@@ -37,11 +37,8 @@ export const SupervisorManagement = () => {
     queryFn: async () => {
       if (!currentUser?.id) return [];
       const { data, error } = await supabase
-        .from('profiles')
-        .select(`
-          *,
-          auth_users:auth.users(email)
-        `)
+        .from('profiles_with_email') // Usando a nova VIEW
+        .select(`*`) // Seleciona tudo da VIEW, que já inclui user_email
         .order('first_name', { ascending: true });
       if (error) throw new Error(error.message);
       return data;
@@ -141,7 +138,8 @@ export const SupervisorManagement = () => {
     supervisor.phone_number?.toLowerCase().includes(searchTerm.toLowerCase()) ||
     supervisor.personal_phone_number?.toLowerCase().includes(searchTerm.toLowerCase()) || // Incluído o novo campo na busca
     supervisor.team_shift?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    supervisor.address?.toLowerCase().includes(searchTerm.toLowerCase())
+    supervisor.address?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    supervisor.user_email?.toLowerCase().includes(searchTerm.toLowerCase()) // Incluído o novo campo na busca
   ) || [];
 
   const isAnySupervisorSelected = selectedSupervisorIds.size > 0;
@@ -313,6 +311,11 @@ export const SupervisorManagement = () => {
                               <MapPin className="h-3 w-3" /> Endereço: {supervisor.address}
                             </div>
                           )}
+                          {supervisor.user_email && (
+                            <div className="flex items-center gap-1 col-span-full">
+                              <Mail className="h-3 w-3" /> Email: {supervisor.user_email}
+                            </div>
+                          )}
                         </div>
                     </div>
                     </div>
@@ -322,7 +325,7 @@ export const SupervisorManagement = () => {
                         size="sm"
                         className="border-success-green text-success-green hover:bg-success-green/10"
                         onClick={() => handleSendMessage(supervisor)}
-                        disabled={!supervisor.phone_number && !supervisor.personal_phone_number && !supervisor.auth_users?.email}
+                        disabled={!supervisor.phone_number && !supervisor.personal_phone_number && !supervisor.user_email}
                       >
                         <MessageSquare className="mr-1 h-3 w-3" />
                         Mensagem
@@ -381,7 +384,7 @@ export const SupervisorManagement = () => {
           technicianName={`${selectedSupervisorForMessage.first_name || ''} ${selectedSupervisorForMessage.last_name || ''}`.trim()}
           companyPhoneNumber={selectedSupervisorForMessage.phone_number}
           personalPhoneNumber={selectedSupervisorForMessage.personal_phone_number}
-          email={selectedSupervisorForMessage.auth_users?.email}
+          email={selectedSupervisorForMessage.user_email}
         />
       )}
     </div>
