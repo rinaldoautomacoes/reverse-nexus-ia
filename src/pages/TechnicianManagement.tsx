@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { ArrowLeft, Edit, Trash2, Users, Search, User as UserIcon, Phone, Briefcase, Loader2, UserCog, Sun, Moon, Square, CheckSquare, MapPin } from "lucide-react";
+import { ArrowLeft, Edit, Trash2, Users, Search, User as UserIcon, Phone, Briefcase, Loader2, UserCog, Sun, Moon, Square, CheckSquare, MapPin, MessageSquare, Mail } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -12,8 +12,11 @@ import { useAuth } from "@/hooks/use-auth";
 import { CreateProfileDialog } from "@/components/CreateProfileDialog";
 import { EditProfileDialog } from "@/components/EditProfileDialog";
 import { Checkbox } from "@/components/ui/checkbox";
+import { SendMessageDialog } from "@/components/SendMessageDialog"; // Importar o novo diálogo
 
 type Profile = Tables<'profiles'>;
+// Define a local type for the fetched profile with email
+type ProfileWithEmail = Tables<'profiles_with_email'>;
 
 export const TechnicianManagement = () => {
   const navigate = useNavigate();
@@ -24,15 +27,18 @@ export const TechnicianManagement = () => {
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [editingTechnician, setEditingTechnician] = useState<Profile | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
-  const [selectedTechnicianIds, setSelectedTechnicianIds] = useState<Set<string>>(new Set()); // Correção aplicada aqui
+  const [selectedTechnicianIds, setSelectedTechnicianIds] = useState<Set<string>>(new Set());
 
-  const { data: allProfiles, isLoading: isLoadingProfiles, error: profilesError } = useQuery<Profile[], Error>({
+  const [isSendMessageDialogOpen, setIsSendMessageDialogOpen] = useState(false);
+  const [selectedTechnicianForMessage, setSelectedTechnicianForMessage] = useState<ProfileWithEmail | null>(null);
+
+  const { data: allProfiles, isLoading: isLoadingProfiles, error: profilesError } = useQuery<ProfileWithEmail[], Error>({
     queryKey: ['allProfiles', currentUser?.id],
     queryFn: async () => {
       if (!currentUser?.id) return [];
       const { data, error } = await supabase
-        .from('profiles')
-        .select('*')
+        .from('profiles_with_email') // Usando a nova VIEW
+        .select(`*`) // Seleciona tudo da VIEW, que já inclui user_email
         .order('first_name', { ascending: true });
       if (error) throw new Error(error.message);
       return data;
@@ -121,13 +127,20 @@ export const TechnicianManagement = () => {
     }
   };
 
+  const handleSendMessage = (technician: ProfileWithEmail) => {
+    setSelectedTechnicianForMessage(technician);
+    setIsSendMessageDialogOpen(true);
+  };
+
   const filteredTechnicians = technicians?.filter(technician =>
     technician.first_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
     technician.last_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
     technician.phone_number?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    technician.personal_phone_number?.toLowerCase().includes(searchTerm.toLowerCase()) || // Incluído o novo campo na busca
     technician.team_shift?.toLowerCase().includes(searchTerm.toLowerCase()) ||
     technician.address?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    (technician.supervisor_id && allProfiles?.find(s => s.id === technician.supervisor_id)?.first_name?.toLowerCase().includes(searchTerm.toLowerCase()))
+    (technician.supervisor_id && allProfiles?.find(s => s.id === technician.supervisor_id)?.first_name?.toLowerCase().includes(searchTerm.toLowerCase())) ||
+    technician.user_email?.toLowerCase().includes(searchTerm.toLowerCase()) // Incluído o novo campo na busca
   ) || [];
 
   const isAnyTechnicianSelected = selectedTechnicianIds.size > 0;
@@ -276,7 +289,12 @@ export const TechnicianManagement = () => {
                           </div>
                           {technician.phone_number && (
                             <div className="flex items-center gap-1">
-                              <Phone className="h-3 w-3" /> {technician.phone_number}
+                              <Phone className="h-3 w-3" /> Empresa: {technician.phone_number}
+                            </div>
+                          )}
+                          {technician.personal_phone_number && (
+                            <div className="flex items-center gap-1">
+                              <UserIcon className="h-3 w-3" /> Pessoal: {technician.personal_phone_number}
                             </div>
                           )}
                           {technician.team_shift && (
@@ -299,10 +317,25 @@ export const TechnicianManagement = () => {
                               <MapPin className="h-3 w-3" /> Endereço: {technician.address}
                             </div>
                           )}
+                          {technician.user_email && (
+                            <div className="flex items-center gap-1 col-span-full">
+                              <Mail className="h-3 w-3" /> Email: {technician.user_email}
+                            </div>
+                          )}
                         </div>
                       </div>
                     </div>
                     <div className="flex gap-2 flex-wrap justify-end">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="border-success-green text-success-green hover:bg-success-green/10"
+                        onClick={() => handleSendMessage(technician)}
+                        disabled={!technician.phone_number && !technician.personal_phone_number && !technician.user_email}
+                      >
+                        <MessageSquare className="mr-1 h-3 w-3" />
+                        Mensagem
+                      </Button>
                       <Button
                         variant="outline"
                         size="sm"
@@ -348,6 +381,17 @@ export const TechnicianManagement = () => {
             setEditingTechnician(null);
           }}
           profileType="technician"
+        />
+      )}
+
+      {selectedTechnicianForMessage && (
+        <SendMessageDialog
+          isOpen={isSendMessageDialogOpen}
+          onClose={() => setIsSendMessageDialogOpen(false)}
+          technicianName={`${selectedTechnicianForMessage.first_name || ''} ${selectedTechnicianForMessage.last_name || ''}`.trim()}
+          companyPhoneNumber={selectedTechnicianForMessage.phone_number}
+          personalPhoneNumber={selectedTechnicianForMessage.personal_phone_number}
+          email={selectedTechnicianForMessage.user_email}
         />
       )}
     </div>

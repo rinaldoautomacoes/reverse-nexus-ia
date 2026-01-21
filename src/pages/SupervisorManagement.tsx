@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { ArrowLeft, Edit, Trash2, Users, Search, User as UserIcon, Phone, Briefcase, Loader2, UserCheck, Sun, Moon, Square, CheckSquare, MapPin } from "lucide-react";
+import { ArrowLeft, Edit, Trash2, Users, Search, User as UserIcon, Phone, Briefcase, Loader2, UserCheck, Sun, Moon, Square, CheckSquare, MapPin, MessageSquare, Mail } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -12,8 +12,11 @@ import { useAuth } from "@/hooks/use-auth";
 import { CreateProfileDialog } from "@/components/CreateProfileDialog";
 import { EditProfileDialog } from "@/components/EditProfileDialog";
 import { Checkbox } from "@/components/ui/checkbox";
+import { SendMessageDialog } from "@/components/SendMessageDialog"; // Importar o novo diálogo
 
 type Profile = Tables<'profiles'>;
+// Define a local type for the fetched profile with email from auth.users
+type ProfileWithEmail = Tables<'profiles_with_email'>;
 
 export const SupervisorManagement = () => {
   const navigate = useNavigate();
@@ -24,15 +27,18 @@ export const SupervisorManagement = () => {
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [editingSupervisor, setEditingSupervisor] = useState<Profile | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
-  const [selectedSupervisorIds, setSelectedSupervisorIds] = useState<Set<string>>(new Set()); // Correção aqui
+  const [selectedSupervisorIds, setSelectedSupervisorIds] = useState<Set<string>>(new Set());
 
-  const { data: allProfiles, isLoading: isLoadingProfiles, error: profilesError } = useQuery<Profile[], Error>({
+  const [isSendMessageDialogOpen, setIsSendMessageDialogOpen] = useState(false);
+  const [selectedSupervisorForMessage, setSelectedSupervisorForMessage] = useState<ProfileWithEmail | null>(null);
+
+  const { data: allProfiles, isLoading: isLoadingProfiles, error: profilesError } = useQuery<ProfileWithEmail[], Error>({
     queryKey: ['allProfiles', currentUser?.id],
     queryFn: async () => {
       if (!currentUser?.id) return [];
       const { data, error } = await supabase
-        .from('profiles')
-        .select('*')
+        .from('profiles_with_email') // Usando a nova VIEW
+        .select(`*`) // Seleciona tudo da VIEW, que já inclui user_email
         .order('first_name', { ascending: true });
       if (error) throw new Error(error.message);
       return data;
@@ -121,12 +127,19 @@ export const SupervisorManagement = () => {
     }
   };
 
+  const handleSendMessage = (supervisor: ProfileWithEmail) => {
+    setSelectedSupervisorForMessage(supervisor);
+    setIsSendMessageDialogOpen(true);
+  };
+
   const filteredSupervisors = supervisors?.filter(supervisor =>
     supervisor.first_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
     supervisor.last_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
     supervisor.phone_number?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    supervisor.personal_phone_number?.toLowerCase().includes(searchTerm.toLowerCase()) || // Incluído o novo campo na busca
     supervisor.team_shift?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    supervisor.address?.toLowerCase().includes(searchTerm.toLowerCase())
+    supervisor.address?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    supervisor.user_email?.toLowerCase().includes(searchTerm.toLowerCase()) // Incluído o novo campo na busca
   ) || [];
 
   const isAnySupervisorSelected = selectedSupervisorIds.size > 0;
@@ -275,7 +288,12 @@ export const SupervisorManagement = () => {
                           </div>
                           {supervisor.phone_number && (
                             <div className="flex items-center gap-1">
-                              <Phone className="h-3 w-3" /> {supervisor.phone_number}
+                              <Phone className="h-3 w-3" /> Empresa: {supervisor.phone_number}
+                            </div>
+                          )}
+                          {supervisor.personal_phone_number && (
+                            <div className="flex items-center gap-1">
+                              <UserIcon className="h-3 w-3" /> Pessoal: {supervisor.personal_phone_number}
                             </div>
                           )}
                           {supervisor.team_shift && (
@@ -293,10 +311,25 @@ export const SupervisorManagement = () => {
                               <MapPin className="h-3 w-3" /> Endereço: {supervisor.address}
                             </div>
                           )}
+                          {supervisor.user_email && (
+                            <div className="flex items-center gap-1 col-span-full">
+                              <Mail className="h-3 w-3" /> Email: {supervisor.user_email}
+                            </div>
+                          )}
                         </div>
                     </div>
                     </div>
                     <div className="flex gap-2 flex-wrap justify-end">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="border-success-green text-success-green hover:bg-success-green/10"
+                        onClick={() => handleSendMessage(supervisor)}
+                        disabled={!supervisor.phone_number && !supervisor.personal_phone_number && !supervisor.user_email}
+                      >
+                        <MessageSquare className="mr-1 h-3 w-3" />
+                        Mensagem
+                      </Button>
                       <Button
                         variant="outline"
                         size="sm"
@@ -341,6 +374,17 @@ export const SupervisorManagement = () => {
             setEditingSupervisor(null);
           }}
           profileType="supervisor"
+        />
+      )}
+
+      {selectedSupervisorForMessage && (
+        <SendMessageDialog
+          isOpen={isSendMessageDialogOpen}
+          onClose={() => setIsSendMessageDialogOpen(false)}
+          technicianName={`${selectedSupervisorForMessage.first_name || ''} ${selectedSupervisorForMessage.last_name || ''}`.trim()}
+          companyPhoneNumber={selectedSupervisorForMessage.phone_number}
+          personalPhoneNumber={selectedSupervisorForMessage.personal_phone_number}
+          email={selectedSupervisorForMessage.user_email}
         />
       )}
     </div>
