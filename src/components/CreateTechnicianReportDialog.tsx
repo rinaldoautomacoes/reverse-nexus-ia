@@ -10,6 +10,7 @@ import { useAuth } from "@/hooks/use-auth";
 import { SupervisorCombobox } from "./SupervisorCombobox";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { generateTechnicianReport } from "@/lib/technician-report-utils"; // Importar o novo utilitário
+import { Label } from "@/components/ui/label"; // Adicionado: Importação do componente Label
 
 type Profile = Tables<'profiles'>;
 
