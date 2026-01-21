@@ -376,7 +376,7 @@ export const SupervisorManagement = () => {
           technicianName={`${selectedSupervisorForMessage.first_name || ''} ${selectedSupervisorForMessage.last_name || ''}`.trim()}
           companyPhoneNumber={selectedSupervisorForMessage.phone_number}
           personalPhoneNumber={selectedSupervisorForMessage.personal_phone_number}
-          email={allProfiles?.find(p => p.id === selectedSupervisorForMessage.id)?.email} {/* Fetch email from allProfiles */}
+          email={allProfiles?.find(p => p.id === selectedSupervisorForMessage.id)?.email} /* Fetch email from allProfiles */
         />
       )}
     </div>
