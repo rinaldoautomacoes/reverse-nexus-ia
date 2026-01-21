@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { ArrowLeft, Edit, Trash2, Users, Search, User as UserIcon, Phone, Briefcase, Loader2, UserCheck, Sun, Moon, Square, CheckSquare, MapPin } from "lucide-react";
+import { ArrowLeft, Edit, Trash2, Users, Search, User as UserIcon, Phone, Briefcase, Loader2, UserCheck, Sun, Moon, Square, CheckSquare, MapPin, MessageSquare, Send } from "lucide-react"; // Adicionado MessageSquare e Send
 import { useNavigate } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -19,7 +19,7 @@ export const SupervisorManagement = () => {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const { toast } = useToast();
-  const { user: currentUser } = useAuth();
+  const { user: currentUser, profile: currentProfile } = useAuth(); // Obter o perfil do usuário logado
 
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [editingSupervisor, setEditingSupervisor] = useState<Profile | null>(null);
@@ -121,10 +121,35 @@ export const SupervisorManagement = () => {
     }
   };
 
+  const handleWhatsAppClick = (supervisor: Profile) => {
+    if (supervisor.personal_phone_number) { // Usar personal_phone_number
+      const cleanedPhone = supervisor.personal_phone_number.replace(/\D/g, '');
+      const userName = currentProfile?.first_name || 'Usuário';
+      const message = `Olá ${supervisor.first_name || 'Supervisor'},\n\nMe chamo ${userName}, representante da LogiReverseIA. Gostaria de conversar sobre suas responsabilidades como supervisor. Quando possível, me retorne. Desde já agradeço.`;
+      window.open(`https://wa.me/${cleanedPhone}?text=${encodeURIComponent(message)}`, '_blank');
+    } else {
+      toast({ title: "Dados incompletos", description: "Telefone pessoal do supervisor não disponível.", variant: "destructive" });
+    }
+  };
+
+  const handleEmailClick = (supervisor: Profile) => {
+    // O email não está diretamente no perfil, mas se fosse, seria assim:
+    // if (supervisor.email) {
+    //   const subject = encodeURIComponent("Contato referente à LogiReverseIA");
+    //   const userName = currentProfile?.first_name || 'Usuário';
+    //   const body = encodeURIComponent(`Olá ${supervisor.first_name || 'Supervisor'},\n\nMe chamo ${userName}, representante da LogiReverseIA. Gostaria de conversar sobre suas responsabilidades como supervisor. Quando possível, me retorne. Desde já agradeço.`);
+    //   window.open(`mailto:${supervisor.email}?subject=${subject}&body=${body}`, '_blank');
+    // } else {
+    //   toast({ title: "Dados incompletos", description: "Email do supervisor não disponível.", variant: "destructive" });
+    // }
+    toast({ title: "Funcionalidade em desenvolvimento", description: "O envio de e-mail para supervisores ainda não está disponível.", variant: "info" });
+  };
+
   const filteredSupervisors = supervisors?.filter(supervisor =>
     supervisor.first_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
     supervisor.last_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
     supervisor.phone_number?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    supervisor.personal_phone_number?.toLowerCase().includes(searchTerm.toLowerCase()) || // Incluído o novo campo na busca
     supervisor.team_shift?.toLowerCase().includes(searchTerm.toLowerCase()) ||
     supervisor.address?.toLowerCase().includes(searchTerm.toLowerCase())
   ) || [];
@@ -275,7 +300,12 @@ export const SupervisorManagement = () => {
                           </div>
                           {supervisor.phone_number && (
                             <div className="flex items-center gap-1">
-                              <Phone className="h-3 w-3" /> {supervisor.phone_number}
+                              <Phone className="h-3 w-3" /> Empresa: {supervisor.phone_number}
+                            </div>
+                          )}
+                          {supervisor.personal_phone_number && (
+                            <div className="flex items-center gap-1">
+                              <Phone className="h-3 w-3" /> Pessoal: {supervisor.personal_phone_number}
                             </div>
                           )}
                           {supervisor.team_shift && (
@@ -307,6 +337,26 @@ export const SupervisorManagement = () => {
                       >
                         <Edit className="mr-1 h-3 w-3" />
                         Editar
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="border-success-green text-success-green hover:bg-success-green/10"
+                        onClick={() => handleWhatsAppClick(supervisor)}
+                        disabled={!supervisor.personal_phone_number}
+                      >
+                        <MessageSquare className="mr-1 h-3 w-3" />
+                        WhatsApp
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="border-neural text-neural hover:bg-neural/10"
+                        onClick={() => handleEmailClick(supervisor)}
+                        disabled={!supervisor.email}
+                      >
+                        <Send className="mr-1 h-3 w-3" />
+                        E-mail
                       </Button>
                       <Button
                         variant="outline"

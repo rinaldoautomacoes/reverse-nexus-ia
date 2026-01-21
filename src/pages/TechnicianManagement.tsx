@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { ArrowLeft, Edit, Trash2, Users, Search, User as UserIcon, Phone, Briefcase, Loader2, UserCog, Sun, Moon, Square, CheckSquare, MapPin, FileText } from "lucide-react"; // Adicionado FileText
+import { ArrowLeft, Edit, Trash2, Users, Search, User as UserIcon, Phone, Briefcase, Loader2, UserCog, Sun, Moon, Square, CheckSquare, MapPin, FileText, MessageSquare, Send } from "lucide-react"; // Adicionado MessageSquare e Send
 import { useNavigate } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -12,7 +12,7 @@ import { useAuth } from "@/hooks/use-auth";
 import { CreateProfileDialog } from "@/components/CreateProfileDialog";
 import { EditProfileDialog } from "@/components/EditProfileDialog";
 import { Checkbox } from "@/components/ui/checkbox";
-import { CreateTechnicianReportDialog } from "@/components/CreateTechnicianReportDialog"; // Importar o novo diálogo
+import { CreateTechnicianReportDialog } from "@/components/CreateTechnicianReportDialog";
 
 type Profile = Tables<'profiles'>;
 
@@ -20,7 +20,7 @@ export const TechnicianManagement = () => {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const { toast } = useToast();
-  const { user: currentUser } = useAuth();
+  const { user: currentUser, profile: currentProfile } = useAuth(); // Obter o perfil do usuário logado
 
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [editingTechnician, setEditingTechnician] = useState<Profile | null>(null);
@@ -120,6 +120,30 @@ export const TechnicianManagement = () => {
       const allTechnicianIds = new Set(filteredTechnicians.map(t => t.id));
       setSelectedTechnicianIds(allTechnicianIds);
     }
+  };
+
+  const handleWhatsAppClick = (technician: Profile) => {
+    if (technician.personal_phone_number) { // Usar personal_phone_number
+      const cleanedPhone = technician.personal_phone_number.replace(/\D/g, '');
+      const userName = currentProfile?.first_name || 'Usuário';
+      const message = `Olá ${technician.first_name || 'Técnico'},\n\nMe chamo ${userName}, representante da LogiReverseIA. Gostaria de conversar sobre suas atividades como técnico. Quando possível, me retorne. Desde já agradeço.`;
+      window.open(`https://wa.me/${cleanedPhone}?text=${encodeURIComponent(message)}`, '_blank');
+    } else {
+      toast({ title: "Dados incompletos", description: "Telefone pessoal do técnico não disponível.", variant: "destructive" });
+    }
+  };
+
+  const handleEmailClick = (technician: Profile) => {
+    // O email não está diretamente no perfil, mas se fosse, seria assim:
+    // if (technician.email) {
+    //   const subject = encodeURIComponent("Contato referente à LogiReverseIA");
+    //   const userName = currentProfile?.first_name || 'Usuário';
+    //   const body = encodeURIComponent(`Olá ${technician.first_name || 'Técnico'},\n\nMe chamo ${userName}, representante da LogiReverseIA. Gostaria de conversar sobre suas atividades como técnico. Quando possível, me retorne. Desde já agradeço.`);
+    //   window.open(`mailto:${technician.email}?subject=${subject}&body=${body}`, '_blank');
+    // } else {
+    //   toast({ title: "Dados incompletos", description: "Email do técnico não disponível.", variant: "destructive" });
+    // }
+    toast({ title: "Funcionalidade em desenvolvimento", description: "O envio de e-mail para técnicos ainda não está disponível.", variant: "info" });
   };
 
   const filteredTechnicians = technicians?.filter(technician =>
@@ -327,6 +351,26 @@ export const TechnicianManagement = () => {
                       >
                         <Edit className="mr-1 h-3 w-3" />
                         Editar
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="border-success-green text-success-green hover:bg-success-green/10"
+                        onClick={() => handleWhatsAppClick(technician)}
+                        disabled={!technician.personal_phone_number}
+                      >
+                        <MessageSquare className="mr-1 h-3 w-3" />
+                        WhatsApp
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="border-neural text-neural hover:bg-neural/10"
+                        onClick={() => handleEmailClick(technician)}
+                        disabled={!technician.email}
+                      >
+                        <Send className="mr-1 h-3 w-3" />
+                        E-mail
                       </Button>
                       <Button
                         variant="outline"
