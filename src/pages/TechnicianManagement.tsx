@@ -15,8 +15,6 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { SendMessageDialog } from "@/components/SendMessageDialog"; // Importar o novo diálogo
 
 type Profile = Tables<'profiles'>;
-// Define a local type for the fetched profile with email
-type ProfileWithEmail = Tables<'profiles_with_email'>;
 
 export const TechnicianManagement = () => {
   const navigate = useNavigate();
@@ -30,15 +28,15 @@ export const TechnicianManagement = () => {
   const [selectedTechnicianIds, setSelectedTechnicianIds] = useState<Set<string>>(new Set());
 
   const [isSendMessageDialogOpen, setIsSendMessageDialogOpen] = useState(false);
-  const [selectedTechnicianForMessage, setSelectedTechnicianForMessage] = useState<ProfileWithEmail | null>(null);
+  const [selectedTechnicianForMessage, setSelectedTechnicianForMessage] = useState<Profile | null>(null);
 
-  const { data: allProfiles, isLoading: isLoadingProfiles, error: profilesError } = useQuery<ProfileWithEmail[], Error>({
+  const { data: allProfiles, isLoading: isLoadingProfiles, error: profilesError } = useQuery<Profile[], Error>({
     queryKey: ['allProfiles', currentUser?.id],
     queryFn: async () => {
       if (!currentUser?.id) return [];
       const { data, error } = await supabase
-        .from('profiles_with_email') // Usando a nova VIEW
-        .select(`*`) // Seleciona tudo da VIEW, que já inclui user_email
+        .from('profiles')
+        .select('*')
         .order('first_name', { ascending: true });
       if (error) throw new Error(error.message);
       return data;
@@ -127,7 +125,7 @@ export const TechnicianManagement = () => {
     }
   };
 
-  const handleSendMessage = (technician: ProfileWithEmail) => {
+  const handleSendMessage = (technician: Profile) => {
     setSelectedTechnicianForMessage(technician);
     setIsSendMessageDialogOpen(true);
   };
@@ -139,8 +137,7 @@ export const TechnicianManagement = () => {
     technician.personal_phone_number?.toLowerCase().includes(searchTerm.toLowerCase()) || // Incluído o novo campo na busca
     technician.team_shift?.toLowerCase().includes(searchTerm.toLowerCase()) ||
     technician.address?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    (technician.supervisor_id && allProfiles?.find(s => s.id === technician.supervisor_id)?.first_name?.toLowerCase().includes(searchTerm.toLowerCase())) ||
-    technician.user_email?.toLowerCase().includes(searchTerm.toLowerCase()) // Incluído o novo campo na busca
+    (technician.supervisor_id && allProfiles?.find(s => s.id === technician.supervisor_id)?.first_name?.toLowerCase().includes(searchTerm.toLowerCase()))
   ) || [];
 
   const isAnyTechnicianSelected = selectedTechnicianIds.size > 0;
@@ -317,11 +314,6 @@ export const TechnicianManagement = () => {
                               <MapPin className="h-3 w-3" /> Endereço: {technician.address}
                             </div>
                           )}
-                          {technician.user_email && (
-                            <div className="flex items-center gap-1 col-span-full">
-                              <Mail className="h-3 w-3" /> Email: {technician.user_email}
-                            </div>
-                          )}
                         </div>
                       </div>
                     </div>
@@ -331,7 +323,7 @@ export const TechnicianManagement = () => {
                         size="sm"
                         className="border-success-green text-success-green hover:bg-success-green/10"
                         onClick={() => handleSendMessage(technician)}
-                        disabled={!technician.phone_number && !technician.personal_phone_number && !technician.user_email}
+                        disabled={!technician.phone_number && !technician.personal_phone_number && !technician.email}
                       >
                         <MessageSquare className="mr-1 h-3 w-3" />
                         Mensagem
@@ -391,7 +383,7 @@ export const TechnicianManagement = () => {
           technicianName={`${selectedTechnicianForMessage.first_name || ''} ${selectedTechnicianForMessage.last_name || ''}`.trim()}
           companyPhoneNumber={selectedTechnicianForMessage.phone_number}
           personalPhoneNumber={selectedTechnicianForMessage.personal_phone_number}
-          email={selectedTechnicianForMessage.user_email}
+          email={allProfiles?.find(p => p.id === selectedTechnicianForMessage.id)?.email} {/* Fetch email from allProfiles */}
         />
       )}
     </div>

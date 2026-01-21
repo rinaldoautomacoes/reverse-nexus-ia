@@ -3,7 +3,7 @@
 import React from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { MessageSquare, Mail, Phone, XCircle } from 'lucide-react';
+import { MessageSquare, Mail, Phone, Briefcase, User as UserIcon } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
 
@@ -26,33 +26,31 @@ export const SendMessageDialog: React.FC<SendMessageDialogProps> = ({
 }) => {
   const { toast } = useToast();
 
-  const cleanPhoneNumber = (phone: string | null | undefined): string | null => {
-    if (!phone) return null;
-    const cleaned = phone.replace(/\D/g, '');
-    return cleaned.length > 0 ? cleaned : null;
-  };
-
   const handleWhatsAppClick = (phoneNumber: string | null | undefined) => {
-    const cleaned = cleanPhoneNumber(phoneNumber);
-    if (cleaned) {
-      const message = `Olá ${technicianName}, estou entrando em contato da LogiReverseIA.`;
-      window.open(`https://wa.me/${cleaned}?text=${encodeURIComponent(message)}`, '_blank');
+    if (phoneNumber) {
+      const cleanedPhone = phoneNumber.replace(/\D/g, '');
+      const message = `Olá ${technicianName}, tudo bem? Gostaria de entrar em contato sobre assuntos relacionados à LogiReverseIA.`;
+      window.open(`https://wa.me/${cleanedPhone}?text=${encodeURIComponent(message)}`, '_blank');
+      onClose();
     } else {
-      toast({ title: "Número de WhatsApp não disponível", description: "Não foi possível encontrar um número de telefone válido para WhatsApp.", variant: "destructive" });
+      toast({ title: "Telefone não disponível", description: "O número de telefone selecionado não está disponível.", variant: "destructive" });
     }
   };
 
-  const handleEmailClick = (emailAddress: string | null | undefined) => {
-    if (emailAddress) {
-      const subject = encodeURIComponent("Contato da LogiReverseIA");
-      const body = encodeURIComponent(`Olá ${technicianName},\n\nEstou entrando em contato da LogiReverseIA.`);
-      window.open(`mailto:${emailAddress}?subject=${subject}&body=${body}`, '_blank');
+  const handleEmailClick = () => {
+    if (email) {
+      const subject = encodeURIComponent("Contato sobre LogiReverseIA");
+      const body = encodeURIComponent(`Olá ${technicianName},\n\nGostaria de entrar em contato sobre assuntos relacionados à LogiReverseIA.\n\nAtenciosamente,`);
+      window.open(`mailto:${email}?subject=${subject}&body=${body}`, '_blank');
+      onClose();
     } else {
-      toast({ title: "Email não disponível", description: "Não foi possível encontrar um endereço de email válido.", variant: "destructive" });
+      toast({ title: "Email não disponível", description: "O endereço de e-mail do técnico não está disponível.", variant: "destructive" });
     }
   };
 
-  const hasAnyContact = companyPhoneNumber || personalPhoneNumber || email;
+  const hasCompanyPhone = !!companyPhoneNumber && companyPhoneNumber.trim() !== '';
+  const hasPersonalPhone = !!personalPhoneNumber && personalPhoneNumber.trim() !== '';
+  const hasEmail = !!email && email.trim() !== '';
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
@@ -63,48 +61,65 @@ export const SendMessageDialog: React.FC<SendMessageDialogProps> = ({
             Enviar Mensagem para {technicianName}
           </DialogTitle>
           <DialogDescription>
-            Selecione o método de contato para enviar uma mensagem.
+            Selecione como você gostaria de entrar em contato com {technicianName}.
           </DialogDescription>
         </DialogHeader>
-        <div className="py-4 space-y-4">
-          {!hasAnyContact && (
-            <div className="text-center text-muted-foreground">
-              <XCircle className="h-12 w-12 mx-auto mb-4 text-destructive" />
-              <p>Nenhuma informação de contato disponível para {technicianName}.</p>
-            </div>
-          )}
+        <div className="grid gap-4 py-4">
+          <h4 className="text-sm font-semibold text-muted-foreground">Via WhatsApp:</h4>
+          <div className="flex flex-col gap-2">
+            {hasCompanyPhone ? (
+              <Button
+                variant="outline"
+                className="w-full justify-start border-success-green text-success-green hover:bg-success-green/10"
+                onClick={() => handleWhatsAppClick(companyPhoneNumber)}
+              >
+                <Phone className="mr-2 h-4 w-4" />
+                Telefone da Empresa ({companyPhoneNumber})
+              </Button>
+            ) : (
+              <p className="text-sm text-muted-foreground flex items-center gap-2">
+                <Phone className="h-4 w-4 text-muted-foreground" />
+                Telefone da Empresa não disponível.
+              </p>
+            )}
+            {hasPersonalPhone ? (
+              <Button
+                variant="outline"
+                className="w-full justify-start border-success-green text-success-green hover:bg-success-green/10"
+                onClick={() => handleWhatsAppClick(personalPhoneNumber)}
+              >
+                <UserIcon className="mr-2 h-4 w-4" />
+                Telefone Pessoal ({personalPhoneNumber})
+              </Button>
+            ) : (
+              <p className="text-sm text-muted-foreground flex items-center gap-2">
+                <UserIcon className="h-4 w-4 text-muted-foreground" />
+                Telefone Pessoal não disponível.
+              </p>
+            )}
+            {!hasCompanyPhone && !hasPersonalPhone && (
+              <p className="text-sm text-destructive flex items-center gap-2">
+                <Phone className="h-4 w-4 text-destructive" />
+                Nenhum telefone disponível para WhatsApp.
+              </p>
+            )}
+          </div>
 
-          {companyPhoneNumber && (
-            <Button
-              variant="outline"
-              className="w-full justify-start border-success-green text-success-green hover:bg-success-green/10"
-              onClick={() => handleWhatsAppClick(companyPhoneNumber)}
-            >
-              <MessageSquare className="mr-2 h-4 w-4" />
-              WhatsApp (Empresa): {companyPhoneNumber}
-            </Button>
-          )}
-
-          {personalPhoneNumber && (
-            <Button
-              variant="outline"
-              className="w-full justify-start border-success-green text-success-green hover:bg-success-green/10"
-              onClick={() => handleWhatsAppClick(personalPhoneNumber)}
-            >
-              <MessageSquare className="mr-2 h-4 w-4" />
-              WhatsApp (Pessoal): {personalPhoneNumber}
-            </Button>
-          )}
-
-          {email && (
+          <h4 className="text-sm font-semibold text-muted-foreground mt-4">Via E-mail:</h4>
+          {hasEmail ? (
             <Button
               variant="outline"
               className="w-full justify-start border-neural text-neural hover:bg-neural/10"
-              onClick={() => handleEmailClick(email)}
+              onClick={handleEmailClick}
             >
               <Mail className="mr-2 h-4 w-4" />
-              Email: {email}
+              E-mail ({email})
             </Button>
+          ) : (
+            <p className="text-sm text-destructive flex items-center gap-2">
+              <Mail className="h-4 w-4 text-destructive" />
+              E-mail não disponível.
+            </p>
           )}
         </div>
         <div className="flex justify-end">

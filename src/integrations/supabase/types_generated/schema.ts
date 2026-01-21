@@ -89,7 +89,7 @@ export type PublicSchema = {
       Update: TransportadoraUpdate;
       Relationships: TransportadoraRelationships;
     };
-    debt_records: {
+    debt_records: { // New table definition
       Row: DebtRecordRow;
       Insert: DebtRecordInsert;
       Update: DebtRecordUpdate;
@@ -97,25 +97,6 @@ export type PublicSchema = {
     };
   }
   Views: {
-    profiles_with_email: {
-      Row: {
-        avatar_url: string | null
-        first_name: string | null
-        id: string
-        last_name: string | null
-        phone_number: string | null
-        personal_phone_number: string | null
-        role: string
-        updated_at: string | null
-        supervisor_id: string | null
-        address: string | null
-        team_shift: "day" | "night"
-        user_email: string | null // Added email from auth.users
-      }
-      Insert: never;
-      Update: never;
-      Relationships: ProfileRelationships;
-    };
     [_ in never]: never
   }
   Functions: {
