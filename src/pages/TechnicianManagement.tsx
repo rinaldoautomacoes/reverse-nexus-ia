@@ -24,7 +24,7 @@ export const TechnicianManagement = () => {
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [editingTechnician, setEditingTechnician] = useState<Profile | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
-  const [selectedTechnicianIds, setSelectedTechnicianIds] = useState<Set<string>>(new Set()); // Correção aplicada aqui
+  const [selectedTechnicianIds, setSelectedTechnicianIds] = useState<Set<string>>(new Set());
 
   const { data: allProfiles, isLoading: isLoadingProfiles, error: profilesError } = useQuery<Profile[], Error>({
     queryKey: ['allProfiles', currentUser?.id],
@@ -125,6 +125,7 @@ export const TechnicianManagement = () => {
     technician.first_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
     technician.last_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
     technician.phone_number?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    technician.personal_phone_number?.toLowerCase().includes(searchTerm.toLowerCase()) || // Incluído o novo campo na busca
     technician.team_shift?.toLowerCase().includes(searchTerm.toLowerCase()) ||
     technician.address?.toLowerCase().includes(searchTerm.toLowerCase()) ||
     (technician.supervisor_id && allProfiles?.find(s => s.id === technician.supervisor_id)?.first_name?.toLowerCase().includes(searchTerm.toLowerCase()))
@@ -276,7 +277,12 @@ export const TechnicianManagement = () => {
                           </div>
                           {technician.phone_number && (
                             <div className="flex items-center gap-1">
-                              <Phone className="h-3 w-3" /> {technician.phone_number}
+                              <Phone className="h-3 w-3" /> Empresa: {technician.phone_number}
+                            </div>
+                          )}
+                          {technician.personal_phone_number && (
+                            <div className="flex items-center gap-1">
+                              <Phone className="h-3 w-3" /> Pessoal: {technician.personal_phone_number}
                             </div>
                           )}
                           {technician.team_shift && (
