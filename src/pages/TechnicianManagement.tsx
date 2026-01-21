@@ -46,7 +46,13 @@ export const TechnicianManagement = () => {
     enabled: !!currentUser?.id,
   });
 
+  // LOG: Verificando todos os perfis carregados
+  console.log("[TechnicianManagement] All profiles fetched:", allProfiles);
+
   const technicians = allProfiles?.filter(profile => profile.role === 'standard' && profile.supervisor_id !== null) || [];
+
+  // LOG: Verificando técnicos após o filtro
+  console.log("[TechnicianManagement] Filtered technicians:", technicians);
 
   const deleteTechnicianMutation = useMutation({
     mutationFn: async (technicianId: string) => {

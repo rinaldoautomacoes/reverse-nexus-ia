@@ -46,7 +46,13 @@ export const SupervisorManagement = () => {
     enabled: !!currentUser?.id,
   });
 
+  // LOG: Verificando todos os perfis carregados
+  console.log("[SupervisorManagement] All profiles fetched:", allProfiles);
+
   const supervisors = allProfiles?.filter(profile => profile.role === 'standard' && profile.supervisor_id === null) || [];
+
+  // LOG: Verificando supervisores após o filtro
+  console.log("[SupervisorManagement] Filtered supervisors:", supervisors);
 
   const deleteSupervisorMutation = useMutation({
     mutationFn: async (supervisorId: string) => {
