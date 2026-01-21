@@ -26,8 +26,7 @@ export const UserForm: React.FC<UserFormProps> = ({ initialData, onSave, onCance
     first_name: "",
     last_name: "",
     role: defaultRole,
-    phone_number: "", // Telefone da Empresa
-    personal_phone_number: "", // Telefone Pessoal
+    phone_number: "",
     avatar_url: "",
     supervisor_id: null,
     team_shift: "day",
@@ -46,7 +45,6 @@ export const UserForm: React.FC<UserFormProps> = ({ initialData, onSave, onCance
         last_name: "",
         role: defaultRole,
         phone_number: "",
-        personal_phone_number: "",
         avatar_url: "",
         supervisor_id: null,
         team_shift: "day",
@@ -149,7 +147,7 @@ export const UserForm: React.FC<UserFormProps> = ({ initialData, onSave, onCance
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div className="space-y-2">
-          <Label htmlFor="phone_number">Telefone da Empresa</Label> {/* Label ajustado */}
+          <Label htmlFor="phone_number">Telefone</Label>
           <div className="relative">
             <Phone className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
             <Input
@@ -162,23 +160,6 @@ export const UserForm: React.FC<UserFormProps> = ({ initialData, onSave, onCance
             />
           </div>
         </div>
-        <div className="space-y-2">
-          <Label htmlFor="personal_phone_number">Telefone Pessoal</Label> {/* Novo campo */}
-          <div className="relative">
-            <Phone className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-            <Input
-              id="personal_phone_number"
-              placeholder="(XX) XXXXX-XXXX"
-              className="pl-10"
-              value={formData.personal_phone_number || ''}
-              onChange={(e) => handleInputChange("personal_phone_number", e.target.value)}
-              disabled={isPending}
-            />
-          </div>
-        </div>
-      </div>
-
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div className="space-y-2">
           <Label htmlFor="role">Função *</Label>
           <Select
@@ -196,6 +177,9 @@ export const UserForm: React.FC<UserFormProps> = ({ initialData, onSave, onCance
             </SelectContent>
           </Select>
         </div>
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div className="space-y-2">
           <Label htmlFor="team_shift">Equipe</Label>
           <Select
@@ -217,19 +201,18 @@ export const UserForm: React.FC<UserFormProps> = ({ initialData, onSave, onCance
             </SelectContent>
           </Select>
         </div>
+        {!isSupervisorProfile && (
+          <div className="space-y-2">
+            <Label htmlFor="supervisor_id">Supervisor</Label>
+            <SupervisorCombobox
+              value={formData.supervisor_id || null}
+              onValueChange={handleSupervisorSelect}
+              disabled={isPending}
+              excludeUserId={initialData?.id}
+            />
+          </div>
+        )}
       </div>
-
-      {!isSupervisorProfile && (
-        <div className="space-y-2">
-          <Label htmlFor="supervisor_id">Supervisor</Label>
-          <SupervisorCombobox
-            value={formData.supervisor_id || null}
-            onValueChange={handleSupervisorSelect}
-            disabled={isPending}
-            excludeUserId={initialData?.id}
-          />
-        </div>
-      )}
 
       <div className="space-y-2">
         <Label htmlFor="address">Endereço</Label>
