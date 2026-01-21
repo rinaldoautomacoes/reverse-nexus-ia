@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { ArrowLeft, Edit, Trash2, Users, Search, User as UserIcon, Phone, Briefcase, Loader2, UserCheck, Sun, Moon, Square, CheckSquare, MapPin } from "lucide-react";
+import { ArrowLeft, Edit, Trash2, Users, Search, User as UserIcon, Phone, Briefcase, Loader2, UserCheck, Sun, Moon, Square, CheckSquare, MapPin, MessageSquare, Mail } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -12,6 +12,7 @@ import { useAuth } from "@/hooks/use-auth";
 import { CreateProfileDialog } from "@/components/CreateProfileDialog";
 import { EditProfileDialog } from "@/components/EditProfileDialog";
 import { Checkbox } from "@/components/ui/checkbox";
+import { SendMessageDialog } from "@/components/SendMessageDialog"; // Importar o novo diálogo
 
 type Profile = Tables<'profiles'>;
 
@@ -24,7 +25,10 @@ export const SupervisorManagement = () => {
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [editingSupervisor, setEditingSupervisor] = useState<Profile | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
-  const [selectedSupervisorIds, setSelectedSupervisorIds] = useState<Set<string>>(new Set()); // Correção aqui
+  const [selectedSupervisorIds, setSelectedSupervisorIds] = useState<Set<string>>(new Set());
+
+  const [isSendMessageDialogOpen, setIsSendMessageDialogOpen] = useState(false);
+  const [selectedSupervisorForMessage, setSelectedSupervisorForMessage] = useState<Profile | null>(null);
 
   const { data: allProfiles, isLoading: isLoadingProfiles, error: profilesError } = useQuery<Profile[], Error>({
     queryKey: ['allProfiles', currentUser?.id],
@@ -121,10 +125,16 @@ export const SupervisorManagement = () => {
     }
   };
 
+  const handleSendMessage = (supervisor: Profile) => {
+    setSelectedSupervisorForMessage(supervisor);
+    setIsSendMessageDialogOpen(true);
+  };
+
   const filteredSupervisors = supervisors?.filter(supervisor =>
     supervisor.first_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
     supervisor.last_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
     supervisor.phone_number?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    supervisor.personal_phone_number?.toLowerCase().includes(searchTerm.toLowerCase()) || // Incluído o novo campo na busca
     supervisor.team_shift?.toLowerCase().includes(searchTerm.toLowerCase()) ||
     supervisor.address?.toLowerCase().includes(searchTerm.toLowerCase())
   ) || [];
@@ -275,7 +285,12 @@ export const SupervisorManagement = () => {
                           </div>
                           {supervisor.phone_number && (
                             <div className="flex items-center gap-1">
-                              <Phone className="h-3 w-3" /> {supervisor.phone_number}
+                              <Phone className="h-3 w-3" /> Empresa: {supervisor.phone_number}
+                            </div>
+                          )}
+                          {supervisor.personal_phone_number && (
+                            <div className="flex items-center gap-1">
+                              <UserIcon className="h-3 w-3" /> Pessoal: {supervisor.personal_phone_number}
                             </div>
                           )}
                           {supervisor.team_shift && (
@@ -297,6 +312,16 @@ export const SupervisorManagement = () => {
                     </div>
                     </div>
                     <div className="flex gap-2 flex-wrap justify-end">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="border-success-green text-success-green hover:bg-success-green/10"
+                        onClick={() => handleSendMessage(supervisor)}
+                        disabled={!supervisor.phone_number && !supervisor.personal_phone_number && !supervisor.email}
+                      >
+                        <MessageSquare className="mr-1 h-3 w-3" />
+                        Mensagem
+                      </Button>
                       <Button
                         variant="outline"
                         size="sm"
@@ -341,6 +366,17 @@ export const SupervisorManagement = () => {
             setEditingSupervisor(null);
           }}
           profileType="supervisor"
+        />
+      )}
+
+      {selectedSupervisorForMessage && (
+        <SendMessageDialog
+          isOpen={isSendMessageDialogOpen}
+          onClose={() => setIsSendMessageDialogOpen(false)}
+          technicianName={`${selectedSupervisorForMessage.first_name || ''} ${selectedSupervisorForMessage.last_name || ''}`.trim()}
+          companyPhoneNumber={selectedSupervisorForMessage.phone_number}
+          personalPhoneNumber={selectedSupervisorForMessage.personal_phone_number}
+          email={allProfiles?.find(p => p.id === selectedSupervisorForMessage.id)?.email} {/* Fetch email from allProfiles */}
         />
       )}
     </div>

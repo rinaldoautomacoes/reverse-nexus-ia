@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { ArrowLeft, Edit, Trash2, Users, Search, User as UserIcon, Phone, Briefcase, Loader2, UserCog, Sun, Moon, Square, CheckSquare, MapPin } from "lucide-react";
+import { ArrowLeft, Edit, Trash2, Users, Search, User as UserIcon, Phone, Briefcase, Loader2, UserCog, Sun, Moon, Square, CheckSquare, MapPin, MessageSquare, Mail } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -12,6 +12,7 @@ import { useAuth } from "@/hooks/use-auth";
 import { CreateProfileDialog } from "@/components/CreateProfileDialog";
 import { EditProfileDialog } from "@/components/EditProfileDialog";
 import { Checkbox } from "@/components/ui/checkbox";
+import { SendMessageDialog } from "@/components/SendMessageDialog"; // Importar o novo diálogo
 
 type Profile = Tables<'profiles'>;
 
@@ -24,7 +25,10 @@ export const TechnicianManagement = () => {
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [editingTechnician, setEditingTechnician] = useState<Profile | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
-  const [selectedTechnicianIds, setSelectedTechnicianIds] = useState<Set<string>>(new Set()); // Correção aplicada aqui
+  const [selectedTechnicianIds, setSelectedTechnicianIds] = useState<Set<string>>(new Set());
+
+  const [isSendMessageDialogOpen, setIsSendMessageDialogOpen] = useState(false);
+  const [selectedTechnicianForMessage, setSelectedTechnicianForMessage] = useState<Profile | null>(null);
 
   const { data: allProfiles, isLoading: isLoadingProfiles, error: profilesError } = useQuery<Profile[], Error>({
     queryKey: ['allProfiles', currentUser?.id],
@@ -121,10 +125,16 @@ export const TechnicianManagement = () => {
     }
   };
 
+  const handleSendMessage = (technician: Profile) => {
+    setSelectedTechnicianForMessage(technician);
+    setIsSendMessageDialogOpen(true);
+  };
+
   const filteredTechnicians = technicians?.filter(technician =>
     technician.first_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
     technician.last_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
     technician.phone_number?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    technician.personal_phone_number?.toLowerCase().includes(searchTerm.toLowerCase()) || // Incluído o novo campo na busca
     technician.team_shift?.toLowerCase().includes(searchTerm.toLowerCase()) ||
     technician.address?.toLowerCase().includes(searchTerm.toLowerCase()) ||
     (technician.supervisor_id && allProfiles?.find(s => s.id === technician.supervisor_id)?.first_name?.toLowerCase().includes(searchTerm.toLowerCase()))
@@ -276,7 +286,12 @@ export const TechnicianManagement = () => {
                           </div>
                           {technician.phone_number && (
                             <div className="flex items-center gap-1">
-                              <Phone className="h-3 w-3" /> {technician.phone_number}
+                              <Phone className="h-3 w-3" /> Empresa: {technician.phone_number}
+                            </div>
+                          )}
+                          {technician.personal_phone_number && (
+                            <div className="flex items-center gap-1">
+                              <UserIcon className="h-3 w-3" /> Pessoal: {technician.personal_phone_number}
                             </div>
                           )}
                           {technician.team_shift && (
@@ -303,6 +318,16 @@ export const TechnicianManagement = () => {
                       </div>
                     </div>
                     <div className="flex gap-2 flex-wrap justify-end">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="border-success-green text-success-green hover:bg-success-green/10"
+                        onClick={() => handleSendMessage(technician)}
+                        disabled={!technician.phone_number && !technician.personal_phone_number && !technician.email}
+                      >
+                        <MessageSquare className="mr-1 h-3 w-3" />
+                        Mensagem
+                      </Button>
                       <Button
                         variant="outline"
                         size="sm"
@@ -348,6 +373,17 @@ export const TechnicianManagement = () => {
             setEditingTechnician(null);
           }}
           profileType="technician"
+        />
+      )}
+
+      {selectedTechnicianForMessage && (
+        <SendMessageDialog
+          isOpen={isSendMessageDialogOpen}
+          onClose={() => setIsSendMessageDialogOpen(false)}
+          technicianName={`${selectedTechnicianForMessage.first_name || ''} ${selectedTechnicianForMessage.last_name || ''}`.trim()}
+          companyPhoneNumber={selectedTechnicianForMessage.phone_number}
+          personalPhoneNumber={selectedTechnicianForMessage.personal_phone_number}
+          email={allProfiles?.find(p => p.id === selectedTechnicianForMessage.id)?.email} {/* Fetch email from allProfiles */}
         />
       )}
     </div>
