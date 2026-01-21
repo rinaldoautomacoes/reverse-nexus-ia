@@ -128,6 +128,7 @@ export const TechnicianManagement = () => {
     technician.phone_number?.toLowerCase().includes(searchTerm.toLowerCase()) ||
     technician.personal_phone_number?.toLowerCase().includes(searchTerm.toLowerCase()) || // Incluído o novo campo na busca
     technician.team_shift?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    technician.team_name?.toLowerCase().includes(searchTerm.toLowerCase()) || // Incluído o novo campo na busca
     technician.address?.toLowerCase().includes(searchTerm.toLowerCase()) ||
     (technician.supervisor_id && allProfiles?.find(s => s.id === technician.supervisor_id)?.first_name?.toLowerCase().includes(searchTerm.toLowerCase()))
   ) || [];
@@ -298,6 +299,7 @@ export const TechnicianManagement = () => {
                                 <Moon className="h-3 w-3" />
                               )}
                               Equipe: {technician.team_shift === 'day' ? 'Dia' : 'Noite'}
+                              {technician.team_name && <span className="ml-1">({technician.team_name})</span>} {/* Exibindo o nome da equipe */}
                             </div>
                           )}
                           {technician.supervisor_id && (
