@@ -6,12 +6,13 @@ export type ProfileRow = {
   id: string
   last_name: string | null
   phone_number: string | null
-  personal_phone_number: string | null // Novo campo
+  personal_phone_number: string | null
   role: string
   updated_at: string | null
   supervisor_id: string | null
   address: string | null
   team_shift: "day" | "night"
+  team_name: string | null // Novo campo
 }
 
 export type ProfileInsert = {
@@ -20,12 +21,13 @@ export type ProfileInsert = {
   id?: string
   last_name?: string | null
   phone_number?: string | null
-  personal_phone_number?: string | null // Novo campo
+  personal_phone_number?: string | null
   role?: string
   updated_at?: string | null
   supervisor_id?: string | null
   address?: string | null
   team_shift?: "day" | "night"
+  team_name?: string | null // Novo campo
 }
 
 export type ProfileUpdate = {
@@ -34,12 +36,13 @@ export type ProfileUpdate = {
   id?: string
   last_name?: string | null
   phone_number?: string | null
-  personal_phone_number?: string | null // Novo campo
+  personal_phone_number?: string | null
   role?: string
   updated_at?: string | null
   supervisor_id?: string | null
   address?: string | null
   team_shift?: "day" | "night"
+  team_name?: string | null // Novo campo
 }
 
 export type ProfileRelationships = []

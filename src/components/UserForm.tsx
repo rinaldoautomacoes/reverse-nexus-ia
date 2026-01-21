@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Loader2, User as UserIcon, Mail, Lock, Phone, Briefcase, UserCog, Sun, Moon, MapPin } from "lucide-react";
+import { Loader2, User as UserIcon, Mail, Lock, Phone, Briefcase, UserCog, Sun, Moon, MapPin, Users } from "lucide-react"; // Adicionado Users para o ícone da equipe
 import type { TablesInsert, TablesUpdate } from "@/integrations/supabase/types_generated";
 import { SupervisorCombobox } from "./SupervisorCombobox";
 
@@ -31,6 +31,7 @@ export const UserForm: React.FC<UserFormProps> = ({ initialData, onSave, onCance
     avatar_url: "",
     supervisor_id: null,
     team_shift: "day",
+    team_name: "", // Novo campo
     address: "",
     id: "",
   });
@@ -50,6 +51,7 @@ export const UserForm: React.FC<UserFormProps> = ({ initialData, onSave, onCance
         avatar_url: "",
         supervisor_id: null,
         team_shift: "day",
+        team_name: "", // Novo campo
         address: "",
         id: "",
       });
@@ -149,7 +151,7 @@ export const UserForm: React.FC<UserFormProps> = ({ initialData, onSave, onCance
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div className="space-y-2">
-          <Label htmlFor="phone_number">Telefone da Empresa</Label> {/* Label ajustado */}
+          <Label htmlFor="phone_number">Telefone da Empresa</Label>
           <div className="relative">
             <Phone className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
             <Input
@@ -163,7 +165,7 @@ export const UserForm: React.FC<UserFormProps> = ({ initialData, onSave, onCance
           </div>
         </div>
         <div className="space-y-2">
-          <Label htmlFor="personal_phone_number">Telefone Pessoal</Label> {/* Novo campo */}
+          <Label htmlFor="personal_phone_number">Telefone Pessoal</Label>
           <div className="relative">
             <Phone className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
             <Input
@@ -197,7 +199,7 @@ export const UserForm: React.FC<UserFormProps> = ({ initialData, onSave, onCance
           </Select>
         </div>
         <div className="space-y-2">
-          <Label htmlFor="team_shift">Equipe</Label>
+          <Label htmlFor="team_shift">Turno da Equipe</Label> {/* Label ajustado */}
           <Select
             value={formData.team_shift || 'day'}
             onValueChange={(value) => handleInputChange("team_shift", value)}
@@ -209,13 +211,28 @@ export const UserForm: React.FC<UserFormProps> = ({ initialData, onSave, onCance
               ) : (
                 <Moon className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
               )}
-              <SelectValue placeholder="Selecionar equipe" />
+              <SelectValue placeholder="Selecionar turno" />
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="day">Dia</SelectItem>
               <SelectItem value="night">Noite</SelectItem>
             </SelectContent>
           </Select>
+        </div>
+      </div>
+
+      <div className="space-y-2"> {/* Novo campo para Nome da Equipe */}
+        <Label htmlFor="team_name">Nome da Equipe</Label>
+        <div className="relative">
+          <Users className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+          <Input
+            id="team_name"
+            placeholder="Ex: Equipe Alfa, Equipe Noturna SP"
+            className="pl-10"
+            value={formData.team_name || ''}
+            onChange={(e) => handleInputChange("team_name", e.target.value)}
+            disabled={isPending}
+          />
         </div>
       </div>
 
