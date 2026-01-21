@@ -12,6 +12,7 @@ import { useAuth } from "@/hooks/use-auth";
 import { CreateProfileDialog } from "@/components/CreateProfileDialog";
 import { EditProfileDialog } from "@/components/EditProfileDialog";
 import { Checkbox } from "@/components/ui/checkbox";
+import { ConfirmationDialog } from "@/components/ConfirmationDialog"; // Importar o novo componente
 
 // Updated type to use the view that includes email
 type Profile = Tables<'profiles_with_email'>;
@@ -26,6 +27,11 @@ export const SupervisorManagement = () => {
   const [editingSupervisor, setEditingSupervisor] = useState<Profile | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedSupervisorIds, setSelectedSupervisorIds] = useState<Set<string>>(new Set());
+
+  // Estados para o diálogo de confirmação
+  const [isConfirmDeleteDialogOpen, setIsConfirmDeleteDialogOpen] = useState(false);
+  const [supervisorToDelete, setSupervisorToDelete] = useState<string | null>(null);
+  const [isBulkConfirmDeleteDialogOpen, setIsBulkConfirmDeleteDialogOpen] = useState(false);
 
   const { data: allProfiles, isLoading: isLoadingProfiles, error: profilesError } = useQuery<Profile[], Error>({
     queryKey: ['allProfiles', currentUser?.id],
@@ -55,9 +61,13 @@ export const SupervisorManagement = () => {
       queryClient.invalidateQueries({ queryKey: ['allProfiles', currentUser?.id] });
       queryClient.invalidateQueries({ queryKey: ['allProfilesForSupervisor', currentUser?.id] });
       toast({ title: "Supervisor excluído!", description: "Supervisor removido com sucesso." });
+      setIsConfirmDeleteDialogOpen(false); // Fecha o diálogo após sucesso
+      setSupervisorToDelete(null);
     },
     onError: (err) => {
       toast({ title: "Erro ao excluir supervisor", description: err.message, variant: "destructive" });
+      setIsConfirmDeleteDialogOpen(false); // Fecha o diálogo mesmo com erro
+      setSupervisorToDelete(null);
     },
   });
 
@@ -74,9 +84,11 @@ export const SupervisorManagement = () => {
       queryClient.invalidateQueries({ queryKey: ['allProfilesForSupervisor', currentUser?.id] });
       setSelectedSupervisorIds(new Set());
       toast({ title: "Supervisores excluídos!", description: `${selectedSupervisorIds.size} supervisores removidos com sucesso.` });
+      setIsBulkConfirmDeleteDialogOpen(false); // Fecha o diálogo após sucesso
     },
     onError: (err) => {
       toast({ title: "Erro ao excluir supervisores", description: err.message, variant: "destructive" });
+      setIsBulkConfirmDeleteDialogOpen(false); // Fecha o diálogo mesmo com erro
     },
   });
 
@@ -85,20 +97,27 @@ export const SupervisorManagement = () => {
     setIsEditDialogOpen(true);
   };
 
-  const handleDeleteSupervisor = (id: string) => {
-    if (window.confirm("Tem certeza que deseja excluir este supervisor? Esta ação não pode ser desfeita.")) {
-      deleteSupervisorMutation.mutate(id);
+  const handleDeleteSupervisorClick = (id: string) => {
+    setSupervisorToDelete(id);
+    setIsConfirmDeleteDialogOpen(true);
+  };
+
+  const confirmDeleteSupervisor = () => {
+    if (supervisorToDelete) {
+      deleteSupervisorMutation.mutate(supervisorToDelete);
     }
   };
 
-  const handleBulkDeleteSupervisors = () => {
+  const handleBulkDeleteSupervisorsClick = () => {
     if (selectedSupervisorIds.size === 0) {
       toast({ title: "Nenhum supervisor selecionado", description: "Selecione os supervisores que deseja excluir.", variant: "warning" });
       return;
     }
-    if (window.confirm(`Tem certeza que deseja excluir ${selectedSupervisorIds.size} supervisores selecionados? Esta ação não pode ser desfeita.`)) {
-      bulkDeleteSupervisorsMutation.mutate(Array.from(selectedSupervisorIds));
-    }
+    setIsBulkConfirmDeleteDialogOpen(true);
+  };
+
+  const confirmBulkDeleteSupervisors = () => {
+    bulkDeleteSupervisorsMutation.mutate(Array.from(selectedSupervisorIds));
   };
 
   const handleToggleSelectSupervisor = (supervisorId: string) => {
@@ -124,19 +143,14 @@ export const SupervisorManagement = () => {
 
   const handleWhatsAppClick = (supervisor: Profile) => {
     let phoneNumber = supervisor.personal_phone_number;
-    let messageDescription = "Telefone pessoal do supervisor não disponível.";
+    if (!phoneNumber) {
+      phoneNumber = supervisor.phone_number; // Fallback to company phone number
+    }
 
     if (phoneNumber) {
       const cleanedPhone = phoneNumber.replace(/\D/g, '');
       const userName = currentProfile?.first_name || 'Usuário';
       const message = `Olá ${supervisor.first_name || 'Supervisor'},\n\nMe chamo ${userName}, representante da LogiReverseIA. Gostaria de conversar sobre suas responsabilidades como supervisor. Quando possível, me retorne. Desde já agradeço.`;
-      window.open(`https://wa.me/${cleanedPhone}?text=${encodeURIComponent(message)}`, '_blank');
-    } else if (supervisor.phone_number) {
-      phoneNumber = supervisor.phone_number;
-      const cleanedPhone = phoneNumber.replace(/\D/g, '');
-      const userName = currentProfile?.first_name || 'Usuário';
-      const message = `Olá ${supervisor.first_name || 'Supervisor'},\n\nMe chamo ${userName}, representante da LogiReverseIA. Gostaria de conversar sobre suas responsabilidades como supervisor. Quando possível, me retorne. Desde já agradeço.`;
-      toast({ title: "Aviso", description: "Telefone pessoal não disponível. Usando telefone da empresa.", variant: "warning" });
       window.open(`https://wa.me/${cleanedPhone}?text=${encodeURIComponent(message)}`, '_blank');
     } else {
       toast({ title: "Dados incompletos", description: "Nenhum número de telefone disponível para o supervisor.", variant: "destructive" });
@@ -255,7 +269,7 @@ export const SupervisorManagement = () => {
                   <Button
                     size="sm"
                     variant="destructive"
-                    onClick={handleBulkDeleteSupervisors}
+                    onClick={handleBulkDeleteSupervisorsClick}
                     disabled={bulkDeleteSupervisorsMutation.isPending}
                     className="bg-destructive hover:bg-destructive/80"
                   >
@@ -358,7 +372,6 @@ export const SupervisorManagement = () => {
                         size="sm"
                         className="border-success-green text-success-green hover:bg-success-green/10"
                         onClick={() => handleWhatsAppClick(supervisor)}
-                        // Removed disabled prop
                       >
                         <MessageSquare className="mr-1 h-3 w-3" />
                         WhatsApp
@@ -368,7 +381,6 @@ export const SupervisorManagement = () => {
                         size="sm"
                         className="border-neural text-neural hover:bg-neural/10"
                         onClick={() => handleEmailClick(supervisor)}
-                        // Removed disabled prop
                       >
                         <Send className="mr-1 h-3 w-3" />
                         E-mail
@@ -377,7 +389,7 @@ export const SupervisorManagement = () => {
                         variant="outline"
                         size="sm"
                         className="border-destructive text-destructive hover:bg-destructive/10"
-                        onClick={() => handleDeleteSupervisor(supervisor.id)}
+                        onClick={() => handleDeleteSupervisorClick(supervisor.id)}
                         disabled={deleteSupervisorMutation.isPending}
                       >
                         <Trash2 className="mr-1 h-3 w-3" />
@@ -408,6 +420,26 @@ export const SupervisorManagement = () => {
           profileType="supervisor"
         />
       )}
+
+      <ConfirmationDialog
+        isOpen={isConfirmDeleteDialogOpen}
+        onOpenChange={setIsConfirmDeleteDialogOpen}
+        title="Confirmar Exclusão de Supervisor"
+        description="Tem certeza que deseja excluir permanentemente este supervisor? Esta ação não pode ser desfeita."
+        onConfirm={confirmDeleteSupervisor}
+        isConfirming={deleteSupervisorMutation.isPending}
+        confirmButtonText="Excluir"
+      />
+
+      <ConfirmationDialog
+        isOpen={isBulkConfirmDeleteDialogOpen}
+        onOpenChange={setIsBulkConfirmDeleteDialogOpen}
+        title={`Confirmar Exclusão de ${selectedSupervisorIds.size} Supervisores`}
+        description={`Tem certeza que deseja excluir permanentemente os ${selectedSupervisorIds.size} supervisores selecionados? Esta ação não pode ser desfeita.`}
+        onConfirm={confirmBulkDeleteSupervisors}
+        isConfirming={bulkDeleteSupervisorsMutation.isPending}
+        confirmButtonText={`Excluir ${selectedSupervisorIds.size} Supervisores`}
+      />
     </div>
   );
 };

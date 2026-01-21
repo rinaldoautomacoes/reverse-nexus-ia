@@ -13,6 +13,7 @@ import { CreateProfileDialog } from "@/components/CreateProfileDialog";
 import { EditProfileDialog } from "@/components/EditProfileDialog";
 import { Checkbox } from "@/components/ui/checkbox";
 import { CreateTechnicianReportDialog } from "@/components/CreateTechnicianReportDialog";
+import { ConfirmationDialog } from "@/components/ConfirmationDialog"; // Importar o novo componente
 
 // Updated type to use the view that includes email
 type Profile = Tables<'profiles_with_email'>;
@@ -27,6 +28,11 @@ export const TechnicianManagement = () => {
   const [editingTechnician, setEditingTechnician] = useState<Profile | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedTechnicianIds, setSelectedTechnicianIds] = useState<Set<string>>(new Set());
+
+  // Estados para o diálogo de confirmação
+  const [isConfirmDeleteDialogOpen, setIsConfirmDeleteDialogOpen] = useState(false);
+  const [technicianToDelete, setTechnicianToDelete] = useState<string | null>(null);
+  const [isBulkConfirmDeleteDialogOpen, setIsBulkConfirmDeleteDialogOpen] = useState(false);
 
   const { data: allProfiles, isLoading: isLoadingProfiles, error: profilesError } = useQuery<Profile[], Error>({
     queryKey: ['allProfiles', currentUser?.id],
@@ -56,9 +62,13 @@ export const TechnicianManagement = () => {
       queryClient.invalidateQueries({ queryKey: ['allProfiles', currentUser?.id] });
       queryClient.invalidateQueries({ queryKey: ['allProfilesForSupervisor', currentUser?.id] });
       toast({ title: "Técnico excluído!", description: "Técnico removido com sucesso." });
+      setIsConfirmDeleteDialogOpen(false); // Fecha o diálogo após sucesso
+      setTechnicianToDelete(null);
     },
     onError: (err) => {
       toast({ title: "Erro ao excluir técnico", description: err.message, variant: "destructive" });
+      setIsConfirmDeleteDialogOpen(false); // Fecha o diálogo mesmo com erro
+      setTechnicianToDelete(null);
     },
   });
 
@@ -75,9 +85,11 @@ export const TechnicianManagement = () => {
       queryClient.invalidateQueries({ queryKey: ['allProfilesForSupervisor', currentUser?.id] });
       setSelectedTechnicianIds(new Set());
       toast({ title: "Técnicos excluídos!", description: `${selectedTechnicianIds.size} técnicos removidos com sucesso.` });
+      setIsBulkConfirmDeleteDialogOpen(false); // Fecha o diálogo após sucesso
     },
     onError: (err) => {
       toast({ title: "Erro ao excluir técnicos", description: err.message, variant: "destructive" });
+      setIsBulkConfirmDeleteDialogOpen(false); // Fecha o diálogo mesmo com erro
     },
   });
 
@@ -86,20 +98,27 @@ export const TechnicianManagement = () => {
     setIsEditDialogOpen(true);
   };
 
-  const handleDeleteTechnician = (id: string) => {
-    if (window.confirm("Tem certeza que deseja excluir este técnico? Esta ação não pode ser desfeita.")) {
-      deleteTechnicianMutation.mutate(id);
+  const handleDeleteTechnicianClick = (id: string) => {
+    setTechnicianToDelete(id);
+    setIsConfirmDeleteDialogOpen(true);
+  };
+
+  const confirmDeleteTechnician = () => {
+    if (technicianToDelete) {
+      deleteTechnicianMutation.mutate(technicianToDelete);
     }
   };
 
-  const handleBulkDeleteTechnicians = () => {
+  const handleBulkDeleteTechniciansClick = () => {
     if (selectedTechnicianIds.size === 0) {
       toast({ title: "Nenhum técnico selecionado", description: "Selecione os técnicos que deseja excluir.", variant: "warning" });
       return;
     }
-    if (window.confirm(`Tem certeza que deseja excluir ${selectedTechnicianIds.size} técnicos selecionados? Esta ação não pode ser desfeita.`)) {
-      bulkDeleteTechniciansMutation.mutate(Array.from(selectedTechnicianIds));
-    }
+    setIsBulkConfirmDeleteDialogOpen(true);
+  };
+
+  const confirmBulkDeleteTechnicians = () => {
+    bulkDeleteTechniciansMutation.mutate(Array.from(selectedTechnicianIds));
   };
 
   const handleToggleSelectTechnician = (technicianId: string) => {
@@ -125,19 +144,14 @@ export const TechnicianManagement = () => {
 
   const handleWhatsAppClick = (technician: Profile) => {
     let phoneNumber = technician.personal_phone_number;
-    let messageDescription = "Telefone pessoal do técnico não disponível.";
+    if (!phoneNumber) {
+      phoneNumber = technician.phone_number; // Fallback to company phone number
+    }
 
     if (phoneNumber) {
       const cleanedPhone = phoneNumber.replace(/\D/g, '');
       const userName = currentProfile?.first_name || 'Usuário';
       const message = `Olá ${technician.first_name || 'Técnico'},\n\nMe chamo ${userName}, representante da LogiReverseIA. Gostaria de conversar sobre suas atividades como técnico. Quando possível, me retorne. Desde já agradeço.`;
-      window.open(`https://wa.me/${cleanedPhone}?text=${encodeURIComponent(message)}`, '_blank');
-    } else if (technician.phone_number) {
-      phoneNumber = technician.phone_number;
-      const cleanedPhone = phoneNumber.replace(/\D/g, '');
-      const userName = currentProfile?.first_name || 'Usuário';
-      const message = `Olá ${technician.first_name || 'Técnico'},\n\nMe chamo ${userName}, representante da LogiReverseIA. Gostaria de conversar sobre suas atividades como técnico. Quando possível, me retorne. Desde já agradeço.`;
-      toast({ title: "Aviso", description: "Telefone pessoal não disponível. Usando telefone da empresa.", variant: "warning" });
       window.open(`https://wa.me/${cleanedPhone}?text=${encodeURIComponent(message)}`, '_blank');
     } else {
       toast({ title: "Dados incompletos", description: "Nenhum número de telefone disponível para o técnico.", variant: "destructive" });
@@ -258,7 +272,7 @@ export const TechnicianManagement = () => {
                   <Button
                     size="sm"
                     variant="destructive"
-                    onClick={handleBulkDeleteTechnicians}
+                    onClick={handleBulkDeleteTechniciansClick}
                     disabled={bulkDeleteTechniciansMutation.isPending}
                     className="bg-destructive hover:bg-destructive/80"
                   >
@@ -371,7 +385,6 @@ export const TechnicianManagement = () => {
                         size="sm"
                         className="border-success-green text-success-green hover:bg-success-green/10"
                         onClick={() => handleWhatsAppClick(technician)}
-                        // Removed disabled prop
                       >
                         <MessageSquare className="mr-1 h-3 w-3" />
                         WhatsApp
@@ -381,7 +394,6 @@ export const TechnicianManagement = () => {
                         size="sm"
                         className="border-neural text-neural hover:bg-neural/10"
                         onClick={() => handleEmailClick(technician)}
-                        // Removed disabled prop
                       >
                         <Send className="mr-1 h-3 w-3" />
                         E-mail
@@ -390,7 +402,7 @@ export const TechnicianManagement = () => {
                         variant="outline"
                         size="sm"
                         className="border-destructive text-destructive hover:bg-destructive/10"
-                        onClick={() => handleDeleteTechnician(technician.id)}
+                        onClick={() => handleDeleteTechnicianClick(technician.id)}
                         disabled={deleteTechnicianMutation.isPending}
                       >
                         <Trash2 className="mr-1 h-3 w-3" />
@@ -421,6 +433,26 @@ export const TechnicianManagement = () => {
           profileType="technician"
         />
       )}
+
+      <ConfirmationDialog
+        isOpen={isConfirmDeleteDialogOpen}
+        onOpenChange={setIsConfirmDeleteDialogOpen}
+        title="Confirmar Exclusão de Técnico"
+        description="Tem certeza que deseja excluir permanentemente este técnico? Esta ação não pode ser desfeita."
+        onConfirm={confirmDeleteTechnician}
+        isConfirming={deleteTechnicianMutation.isPending}
+        confirmButtonText="Excluir"
+      />
+
+      <ConfirmationDialog
+        isOpen={isBulkConfirmDeleteDialogOpen}
+        onOpenChange={setIsBulkConfirmDeleteDialogOpen}
+        title={`Confirmar Exclusão de ${selectedTechnicianIds.size} Técnicos`}
+        description={`Tem certeza que deseja excluir permanentemente os ${selectedTechnicianIds.size} técnicos selecionados? Esta ação não pode ser desfeita.`}
+        onConfirm={confirmBulkDeleteTechnicians}
+        isConfirming={bulkDeleteTechniciansMutation.isPending}
+        confirmButtonText={`Excluir ${selectedTechnicianIds.size} Técnicos`}
+      />
     </div>
   );
 };
