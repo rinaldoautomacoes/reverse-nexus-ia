@@ -383,7 +383,7 @@ export const TechnicianManagement = () => {
           technicianName={`${selectedTechnicianForMessage.first_name || ''} ${selectedTechnicianForMessage.last_name || ''}`.trim()}
           companyPhoneNumber={selectedTechnicianForMessage.phone_number}
           personalPhoneNumber={selectedTechnicianForMessage.personal_phone_number}
-          email={allProfiles?.find(p => p.id === selectedTechnicianForMessage.id)?.email} {/* Fetch email from allProfiles */}
+          email={allProfiles?.find(p => p.id === selectedTechnicianForMessage.id)?.email}
         />
       )}
     </div>
