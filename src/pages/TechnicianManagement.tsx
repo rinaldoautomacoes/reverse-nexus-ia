@@ -15,6 +15,8 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { SendMessageDialog } from "@/components/SendMessageDialog"; // Importar o novo diálogo
 
 type Profile = Tables<'profiles'>;
+// Define a local type for the fetched profile with email
+type ProfileWithEmail = Profile & { auth_users?: { email: string | null } | null };
 
 export const TechnicianManagement = () => {
   const navigate = useNavigate();
@@ -28,15 +30,18 @@ export const TechnicianManagement = () => {
   const [selectedTechnicianIds, setSelectedTechnicianIds] = useState<Set<string>>(new Set());
 
   const [isSendMessageDialogOpen, setIsSendMessageDialogOpen] = useState(false);
-  const [selectedTechnicianForMessage, setSelectedTechnicianForMessage] = useState<Profile | null>(null);
+  const [selectedTechnicianForMessage, setSelectedTechnicianForMessage] = useState<ProfileWithEmail | null>(null);
 
-  const { data: allProfiles, isLoading: isLoadingProfiles, error: profilesError } = useQuery<Profile[], Error>({
+  const { data: allProfiles, isLoading: isLoadingProfiles, error: profilesError } = useQuery<ProfileWithEmail[], Error>({
     queryKey: ['allProfiles', currentUser?.id],
     queryFn: async () => {
       if (!currentUser?.id) return [];
       const { data, error } = await supabase
         .from('profiles')
-        .select('*')
+        .select(`
+          *,
+          auth_users:auth.users(email)
+        `)
         .order('first_name', { ascending: true });
       if (error) throw new Error(error.message);
       return data;
@@ -125,7 +130,7 @@ export const TechnicianManagement = () => {
     }
   };
 
-  const handleSendMessage = (technician: Profile) => {
+  const handleSendMessage = (technician: ProfileWithEmail) => {
     setSelectedTechnicianForMessage(technician);
     setIsSendMessageDialogOpen(true);
   };
@@ -323,7 +328,7 @@ export const TechnicianManagement = () => {
                         size="sm"
                         className="border-success-green text-success-green hover:bg-success-green/10"
                         onClick={() => handleSendMessage(technician)}
-                        disabled={!technician.phone_number && !technician.personal_phone_number && !technician.email}
+                        disabled={!technician.phone_number && !technician.personal_phone_number && !technician.auth_users?.email}
                       >
                         <MessageSquare className="mr-1 h-3 w-3" />
                         Mensagem
@@ -383,7 +388,7 @@ export const TechnicianManagement = () => {
           technicianName={`${selectedTechnicianForMessage.first_name || ''} ${selectedTechnicianForMessage.last_name || ''}`.trim()}
           companyPhoneNumber={selectedTechnicianForMessage.phone_number}
           personalPhoneNumber={selectedTechnicianForMessage.personal_phone_number}
-          email={allProfiles?.find(p => p.id === selectedTechnicianForMessage.id)?.email}
+          email={selectedTechnicianForMessage.auth_users?.email}
         />
       )}
     </div>
