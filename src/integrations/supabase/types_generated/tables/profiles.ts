@@ -13,6 +13,7 @@ export type ProfileRow = {
   address: string | null
   team_shift: "day" | "night"
   team_name: string | null // Novo campo
+  user_email: string | null // Adicionado: Email do usuário
 }
 
 export type ProfileInsert = {
@@ -28,6 +29,7 @@ export type ProfileInsert = {
   address?: string | null
   team_shift?: "day" | "night"
   team_name?: string | null // Novo campo
+  user_email?: string | null // Adicionado: Email do usuário
 }
 
 export type ProfileUpdate = {
@@ -43,6 +45,7 @@ export type ProfileUpdate = {
   address?: string | null
   team_shift?: "day" | "night"
   team_name?: string | null // Novo campo
+  user_email?: string | null // Adicionado: Email do usuário
 }
 
 export type ProfileRelationships = []

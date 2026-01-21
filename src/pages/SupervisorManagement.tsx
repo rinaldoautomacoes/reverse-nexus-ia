@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { ArrowLeft, Edit, Trash2, Users, Search, User as UserIcon, Phone, Briefcase, Loader2, UserCheck, Sun, Moon, Square, CheckSquare, MapPin, MessageSquare, Send } from "lucide-react"; // Adicionado MessageSquare e Send
+import { ArrowLeft, Edit, Trash2, Users, Search, User as UserIcon, Phone, Briefcase, Loader2, UserCheck, Sun, Moon, Square, CheckSquare, MapPin, MessageSquare, Send } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -13,25 +13,26 @@ import { CreateProfileDialog } from "@/components/CreateProfileDialog";
 import { EditProfileDialog } from "@/components/EditProfileDialog";
 import { Checkbox } from "@/components/ui/checkbox";
 
-type Profile = Tables<'profiles'>;
+// Updated type to use the view that includes email
+type Profile = Tables<'profiles_with_email'>;
 
 export const SupervisorManagement = () => {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const { toast } = useToast();
-  const { user: currentUser, profile: currentProfile } = useAuth(); // Obter o perfil do usuário logado
+  const { user: currentUser, profile: currentProfile } = useAuth();
 
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [editingSupervisor, setEditingSupervisor] = useState<Profile | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
-  const [selectedSupervisorIds, setSelectedSupervisorIds] = useState<Set<string>>(new Set()); // Correção aqui
+  const [selectedSupervisorIds, setSelectedSupervisorIds] = useState<Set<string>>(new Set());
 
   const { data: allProfiles, isLoading: isLoadingProfiles, error: profilesError } = useQuery<Profile[], Error>({
     queryKey: ['allProfiles', currentUser?.id],
     queryFn: async () => {
       if (!currentUser?.id) return [];
       const { data, error } = await supabase
-        .from('profiles')
+        .from('profiles_with_email') // Changed to use the view
         .select('*')
         .order('first_name', { ascending: true });
       if (error) throw new Error(error.message);
@@ -45,7 +46,7 @@ export const SupervisorManagement = () => {
   const deleteSupervisorMutation = useMutation({
     mutationFn: async (supervisorId: string) => {
       const { error } = await supabase
-        .from('profiles')
+        .from('profiles') // Still deleting from the base table
         .delete()
         .eq('id', supervisorId);
       if (error) throw new Error(error.message);
@@ -63,7 +64,7 @@ export const SupervisorManagement = () => {
   const bulkDeleteSupervisorsMutation = useMutation({
     mutationFn: async (supervisorIds: string[]) => {
       const { error } = await supabase
-        .from('profiles')
+        .from('profiles') // Still deleting from the base table
         .delete()
         .in('id', supervisorIds);
       if (error) throw new Error(error.message);
@@ -122,7 +123,7 @@ export const SupervisorManagement = () => {
   };
 
   const handleWhatsAppClick = (supervisor: Profile) => {
-    if (supervisor.personal_phone_number) { // Usar personal_phone_number
+    if (supervisor.personal_phone_number) {
       const cleanedPhone = supervisor.personal_phone_number.replace(/\D/g, '');
       const userName = currentProfile?.first_name || 'Usuário';
       const message = `Olá ${supervisor.first_name || 'Supervisor'},\n\nMe chamo ${userName}, representante da LogiReverseIA. Gostaria de conversar sobre suas responsabilidades como supervisor. Quando possível, me retorne. Desde já agradeço.`;
@@ -133,25 +134,24 @@ export const SupervisorManagement = () => {
   };
 
   const handleEmailClick = (supervisor: Profile) => {
-    // O email não está diretamente no perfil, mas se fosse, seria assim:
-    // if (supervisor.email) {
-    //   const subject = encodeURIComponent("Contato referente à LogiReverseIA");
-    //   const userName = currentProfile?.first_name || 'Usuário';
-    //   const body = encodeURIComponent(`Olá ${supervisor.first_name || 'Supervisor'},\n\nMe chamo ${userName}, representante da LogiReverseIA. Gostaria de conversar sobre suas responsabilidades como supervisor. Quando possível, me retorne. Desde já agradeço.`);
-    //   window.open(`mailto:${supervisor.email}?subject=${subject}&body=${body}`, '_blank');
-    // } else {
-    //   toast({ title: "Dados incompletos", description: "Email do supervisor não disponível.", variant: "destructive" });
-    // }
-    toast({ title: "Funcionalidade em desenvolvimento", description: "O envio de e-mail para supervisores ainda não está disponível.", variant: "info" });
+    if (supervisor.user_email) { // Use user_email from the view
+      const subject = encodeURIComponent("Contato referente à LogiReverseIA");
+      const userName = currentProfile?.first_name || 'Usuário';
+      const body = encodeURIComponent(`Olá ${supervisor.first_name || 'Supervisor'},\n\nMe chamo ${userName}, representante da LogiReverseIA. Gostaria de conversar sobre suas responsabilidades como supervisor. Quando possível, me retorne. Desde já agradeço.`);
+      window.open(`mailto:${supervisor.user_email}?subject=${subject}&body=${body}`, '_blank');
+    } else {
+      toast({ title: "Dados incompletos", description: "Email do supervisor não disponível.", variant: "destructive" });
+    }
   };
 
   const filteredSupervisors = supervisors?.filter(supervisor =>
     supervisor.first_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
     supervisor.last_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
     supervisor.phone_number?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    supervisor.personal_phone_number?.toLowerCase().includes(searchTerm.toLowerCase()) || // Incluído o novo campo na busca
+    supervisor.personal_phone_number?.toLowerCase().includes(searchTerm.toLowerCase()) ||
     supervisor.team_shift?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    supervisor.address?.toLowerCase().includes(searchTerm.toLowerCase())
+    supervisor.address?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    (supervisor.user_email?.toLowerCase().includes(searchTerm.toLowerCase())) // Include email in search
   ) || [];
 
   const isAnySupervisorSelected = selectedSupervisorIds.size > 0;
@@ -323,6 +323,11 @@ export const SupervisorManagement = () => {
                               <MapPin className="h-3 w-3" /> Endereço: {supervisor.address}
                             </div>
                           )}
+                          {supervisor.user_email && (
+                            <div className="flex items-center gap-1 col-span-full">
+                              <Mail className="h-3 w-3" /> Email: {supervisor.user_email}
+                            </div>
+                          )}
                         </div>
                     </div>
                     </div>
@@ -353,7 +358,7 @@ export const SupervisorManagement = () => {
                         size="sm"
                         className="border-neural text-neural hover:bg-neural/10"
                         onClick={() => handleEmailClick(supervisor)}
-                        disabled={!supervisor.email}
+                        disabled={!supervisor.user_email}
                       >
                         <Send className="mr-1 h-3 w-3" />
                         E-mail

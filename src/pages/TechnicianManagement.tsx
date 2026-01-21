@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { ArrowLeft, Edit, Trash2, Users, Search, User as UserIcon, Phone, Briefcase, Loader2, UserCog, Sun, Moon, Square, CheckSquare, MapPin, FileText, MessageSquare, Send } from "lucide-react"; // Adicionado MessageSquare e Send
+import { ArrowLeft, Edit, Trash2, Users, Search, User as UserIcon, Phone, Briefcase, Loader2, UserCog, Sun, Moon, Square, CheckSquare, MapPin, FileText, MessageSquare, Send } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -14,13 +14,14 @@ import { EditProfileDialog } from "@/components/EditProfileDialog";
 import { Checkbox } from "@/components/ui/checkbox";
 import { CreateTechnicianReportDialog } from "@/components/CreateTechnicianReportDialog";
 
-type Profile = Tables<'profiles'>;
+// Updated type to use the view that includes email
+type Profile = Tables<'profiles_with_email'>;
 
 export const TechnicianManagement = () => {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const { toast } = useToast();
-  const { user: currentUser, profile: currentProfile } = useAuth(); // Obter o perfil do usuário logado
+  const { user: currentUser, profile: currentProfile } = useAuth();
 
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [editingTechnician, setEditingTechnician] = useState<Profile | null>(null);
@@ -32,7 +33,7 @@ export const TechnicianManagement = () => {
     queryFn: async () => {
       if (!currentUser?.id) return [];
       const { data, error } = await supabase
-        .from('profiles')
+        .from('profiles_with_email') // Changed to use the view
         .select('*')
         .order('first_name', { ascending: true });
       if (error) throw new Error(error.message);
@@ -46,7 +47,7 @@ export const TechnicianManagement = () => {
   const deleteTechnicianMutation = useMutation({
     mutationFn: async (technicianId: string) => {
       const { error } = await supabase
-        .from('profiles')
+        .from('profiles') // Still deleting from the base table
         .delete()
         .eq('id', technicianId);
       if (error) throw new Error(error.message);
@@ -64,7 +65,7 @@ export const TechnicianManagement = () => {
   const bulkDeleteTechniciansMutation = useMutation({
     mutationFn: async (technicianIds: string[]) => {
       const { error } = await supabase
-        .from('profiles')
+        .from('profiles') // Still deleting from the base table
         .delete()
         .in('id', technicianIds);
       if (error) throw new Error(error.message);
@@ -123,7 +124,7 @@ export const TechnicianManagement = () => {
   };
 
   const handleWhatsAppClick = (technician: Profile) => {
-    if (technician.personal_phone_number) { // Usar personal_phone_number
+    if (technician.personal_phone_number) {
       const cleanedPhone = technician.personal_phone_number.replace(/\D/g, '');
       const userName = currentProfile?.first_name || 'Usuário';
       const message = `Olá ${technician.first_name || 'Técnico'},\n\nMe chamo ${userName}, representante da LogiReverseIA. Gostaria de conversar sobre suas atividades como técnico. Quando possível, me retorne. Desde já agradeço.`;
@@ -134,27 +135,26 @@ export const TechnicianManagement = () => {
   };
 
   const handleEmailClick = (technician: Profile) => {
-    // O email não está diretamente no perfil, mas se fosse, seria assim:
-    // if (technician.email) {
-    //   const subject = encodeURIComponent("Contato referente à LogiReverseIA");
-    //   const userName = currentProfile?.first_name || 'Usuário';
-    //   const body = encodeURIComponent(`Olá ${technician.first_name || 'Técnico'},\n\nMe chamo ${userName}, representante da LogiReverseIA. Gostaria de conversar sobre suas atividades como técnico. Quando possível, me retorne. Desde já agradeço.`);
-    //   window.open(`mailto:${technician.email}?subject=${subject}&body=${body}`, '_blank');
-    // } else {
-    //   toast({ title: "Dados incompletos", description: "Email do técnico não disponível.", variant: "destructive" });
-    // }
-    toast({ title: "Funcionalidade em desenvolvimento", description: "O envio de e-mail para técnicos ainda não está disponível.", variant: "info" });
+    if (technician.user_email) { // Use user_email from the view
+      const subject = encodeURIComponent("Contato referente à LogiReverseIA");
+      const userName = currentProfile?.first_name || 'Usuário';
+      const body = encodeURIComponent(`Olá ${technician.first_name || 'Técnico'},\n\nMe chamo ${userName}, representante da LogiReverseIA. Gostaria de conversar sobre suas atividades como técnico. Quando possível, me retorne. Desde já agradeço.`);
+      window.open(`mailto:${technician.user_email}?subject=${subject}&body=${body}`, '_blank');
+    } else {
+      toast({ title: "Dados incompletos", description: "Email do técnico não disponível.", variant: "destructive" });
+    }
   };
 
   const filteredTechnicians = technicians?.filter(technician =>
     technician.first_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
     technician.last_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
     technician.phone_number?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    technician.personal_phone_number?.toLowerCase().includes(searchTerm.toLowerCase()) || // Incluído o novo campo na busca
+    technician.personal_phone_number?.toLowerCase().includes(searchTerm.toLowerCase()) ||
     technician.team_shift?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    technician.team_name?.toLowerCase().includes(searchTerm.toLowerCase()) || // Incluído o novo campo na busca
+    technician.team_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
     technician.address?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    (technician.supervisor_id && allProfiles?.find(s => s.id === technician.supervisor_id)?.first_name?.toLowerCase().includes(searchTerm.toLowerCase()))
+    (technician.supervisor_id && allProfiles?.find(s => s.id === technician.supervisor_id)?.first_name?.toLowerCase().includes(searchTerm.toLowerCase())) ||
+    (technician.user_email?.toLowerCase().includes(searchTerm.toLowerCase())) // Include email in search
   ) || [];
 
   const isAnyTechnicianSelected = selectedTechnicianIds.size > 0;
@@ -274,8 +274,7 @@ export const TechnicianManagement = () => {
                   )}
                   {isAllTechniciansSelected ? "Desselecionar Todos" : "Selecionar Todos"}
                 </Button>
-                {/* Botão para gerar relatório */}
-                {allProfiles && ( // Renderiza o diálogo apenas se allProfiles estiver carregado
+                {allProfiles && (
                   <CreateTechnicianReportDialog technicians={technicians} allProfiles={allProfiles} />
                 )}
                 <CreateProfileDialog profileType="technician" />
@@ -323,7 +322,7 @@ export const TechnicianManagement = () => {
                                 <Moon className="h-3 w-3" />
                               )}
                               Equipe: {technician.team_shift === 'day' ? 'Dia' : 'Noite'}
-                              {technician.team_name && <span className="ml-1">({technician.team_name})</span>} {/* Exibindo o nome da equipe */}
+                              {technician.team_name && <span className="ml-1">({technician.team_name})</span>}
                             </div>
                           )}
                           {technician.supervisor_id && (
@@ -334,6 +333,11 @@ export const TechnicianManagement = () => {
                           {technician.address && (
                             <div className="flex items-center gap-1 col-span-full">
                               <MapPin className="h-3 w-3" /> Endereço: {technician.address}
+                            </div>
+                          )}
+                          {technician.user_email && (
+                            <div className="flex items-center gap-1 col-span-full">
+                              <Mail className="h-3 w-3" /> Email: {technician.user_email}
                             </div>
                           )}
                         </div>
@@ -367,7 +371,7 @@ export const TechnicianManagement = () => {
                         size="sm"
                         className="border-neural text-neural hover:bg-neural/10"
                         onClick={() => handleEmailClick(technician)}
-                        disabled={!technician.email}
+                        disabled={!technician.user_email}
                       >
                         <Send className="mr-1 h-3 w-3" />
                         E-mail
