@@ -123,13 +123,23 @@ export const SupervisorManagement = () => {
   };
 
   const handleWhatsAppClick = (supervisor: Profile) => {
-    if (supervisor.personal_phone_number) {
-      const cleanedPhone = supervisor.personal_phone_number.replace(/\D/g, '');
+    let phoneNumber = supervisor.personal_phone_number;
+    let messageDescription = "Telefone pessoal do supervisor não disponível.";
+
+    if (phoneNumber) {
+      const cleanedPhone = phoneNumber.replace(/\D/g, '');
       const userName = currentProfile?.first_name || 'Usuário';
       const message = `Olá ${supervisor.first_name || 'Supervisor'},\n\nMe chamo ${userName}, representante da LogiReverseIA. Gostaria de conversar sobre suas responsabilidades como supervisor. Quando possível, me retorne. Desde já agradeço.`;
       window.open(`https://wa.me/${cleanedPhone}?text=${encodeURIComponent(message)}`, '_blank');
+    } else if (supervisor.phone_number) {
+      phoneNumber = supervisor.phone_number;
+      const cleanedPhone = phoneNumber.replace(/\D/g, '');
+      const userName = currentProfile?.first_name || 'Usuário';
+      const message = `Olá ${supervisor.first_name || 'Supervisor'},\n\nMe chamo ${userName}, representante da LogiReverseIA. Gostaria de conversar sobre suas responsabilidades como supervisor. Quando possível, me retorne. Desde já agradeço.`;
+      toast({ title: "Aviso", description: "Telefone pessoal não disponível. Usando telefone da empresa.", variant: "warning" });
+      window.open(`https://wa.me/${cleanedPhone}?text=${encodeURIComponent(message)}`, '_blank');
     } else {
-      toast({ title: "Dados incompletos", description: "Telefone pessoal do supervisor não disponível.", variant: "destructive" });
+      toast({ title: "Dados incompletos", description: "Nenhum número de telefone disponível para o supervisor.", variant: "destructive" });
     }
   };
 
