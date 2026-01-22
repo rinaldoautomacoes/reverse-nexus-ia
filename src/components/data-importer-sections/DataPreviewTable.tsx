@@ -63,8 +63,9 @@ export const DataPreviewTable: React.FC<DataPreviewTableProps> = ({ activeTab, e
                     <TableHead>Telefone Empresa</TableHead> {/* Ajustado */}
                     <TableHead>Telefone Pessoal</TableHead> {/* Novo campo */}
                     <TableHead>Função</TableHead>
-                    <TableHead>ID Supervisor</TableHead>
                     <TableHead>Equipe</TableHead>
+                    <TableHead>Nome da Equipe</TableHead> {/* Novo campo */}
+                    <TableHead>ID Supervisor</TableHead>
                   </>
                 ) : ( // Caso 'supervisors'
                   <>
@@ -74,6 +75,7 @@ export const DataPreviewTable: React.FC<DataPreviewTableProps> = ({ activeTab, e
                     <TableHead>Telefone Pessoal</TableHead> {/* Novo campo */}
                     <TableHead>Função</TableHead>
                     <TableHead>Equipe</TableHead>
+                    <TableHead>Nome da Equipe</TableHead> {/* Novo campo */}
                   </>
                 )}
               </TableRow>
@@ -120,8 +122,9 @@ export const DataPreviewTable: React.FC<DataPreviewTableProps> = ({ activeTab, e
                     <TableCell>{item.phone_number}</TableCell>
                     <TableCell>{item.personal_phone_number}</TableCell> {/* Novo campo */}
                     <TableCell>{item.role}</TableCell>
-                    <TableCell>{item.supervisor_id || 'N/A'}</TableCell>
                     <TableCell>{item.team_shift === 'day' ? 'Dia' : 'Noite'}</TableCell>
+                    <TableCell>{item.team_name || 'N/A'}</TableCell> {/* Novo campo */}
+                    <TableCell>{item.supervisor_id || 'N/A'}</TableCell>
                   </TableRow>
                 ))
               ) : ( // Caso 'supervisors'
@@ -133,6 +136,7 @@ export const DataPreviewTable: React.FC<DataPreviewTableProps> = ({ activeTab, e
                     <TableCell>{item.personal_phone_number}</TableCell> {/* Novo campo */}
                     <TableCell>{item.role}</TableCell>
                     <TableCell>{item.team_shift === 'day' ? 'Dia' : 'Noite'}</TableCell>
+                    <TableCell>{item.team_name || 'N/A'}</TableCell> {/* Novo campo */}
                   </TableRow>
                 ))
               )}

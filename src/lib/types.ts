@@ -91,6 +91,7 @@ export interface TechnicianImportData { // Nova interface para técnicos
   role?: 'standard' | 'admin'; // Padrão para 'standard'
   supervisor_id?: string | null;
   team_shift?: 'day' | 'night'; // Novo campo
+  team_name?: string | null; // Novo campo
   address?: string | null; // Novo campo
 }
 
@@ -103,6 +104,7 @@ export interface SupervisorImportData { // Nova interface para supervisores
   personal_phone_number?: string | null; // Telefone Pessoal
   role?: 'standard' | 'admin'; // Padrão para 'standard'
   team_shift?: 'day' | 'night'; // Novo campo
+  team_name?: string | null; // Novo campo
   address?: string | null; // Novo campo
   // supervisor_id é implicitamente null para supervisores
 }

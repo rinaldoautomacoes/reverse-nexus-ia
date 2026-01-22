@@ -175,7 +175,7 @@ export const TechnicianManagement = () => {
     technician.phone_number?.toLowerCase().includes(searchTerm.toLowerCase()) ||
     technician.personal_phone_number?.toLowerCase().includes(searchTerm.toLowerCase()) ||
     technician.team_shift?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    technician.team_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    technician.team_name?.toLowerCase().includes(searchTerm.toLowerCase()) || // Incluído o novo campo na busca
     technician.address?.toLowerCase().includes(searchTerm.toLowerCase()) ||
     (technician.supervisor_id && allProfiles?.find(s => s.id === technician.supervisor_id)?.first_name?.toLowerCase().includes(searchTerm.toLowerCase())) ||
     (technician.user_email?.toLowerCase().includes(searchTerm.toLowerCase())) // Include email in search

@@ -126,6 +126,7 @@ const mapRowToTechnician = (row: any): TechnicianImportData => {
   let supervisorIdRaw = row['ID Supervisor'] || row['supervisor_id'] || null;
   let supervisor_id: string | null = null;
   let teamShift: 'day' | 'night' = (row['Equipe']?.toLowerCase() === 'night' ? 'night' : 'day');
+  let teamName: string | null = row['Nome da Equipe'] || row['team_name'] || null; // Novo campo
   let address: string | null = row['Endereço'] || null;
 
   if (row['Técnico'] && (!firstName || !lastName)) {
@@ -155,6 +156,7 @@ const mapRowToTechnician = (row: any): TechnicianImportData => {
     role: role,
     supervisor_id: supervisor_id,
     team_shift: teamShift,
+    team_name: teamName, // Novo campo
     address: address,
   };
   return technicianData;
@@ -167,6 +169,7 @@ const mapRowToSupervisor = (row: any): SupervisorImportData => {
   let personalPhoneNumber = cleanPhoneNumber(row['Telefone Pessoal'] || row['personal_phone_number']); // Novo campo
   let role = (row['Função']?.toLowerCase() === 'admin' ? 'admin' : 'standard');
   let teamShift: 'day' | 'night' = (row['Equipe']?.toLowerCase() === 'night' ? 'night' : 'day');
+  let teamName: string | null = row['Nome da Equipe'] || row['team_name'] || null; // Novo campo
   let address: string | null = row['Endereço'] || null;
 
   if (row['Supervisor'] && (!firstName || !lastName)) {
@@ -189,6 +192,7 @@ const mapRowToSupervisor = (row: any): SupervisorImportData => {
     personal_phone_number: personalPhoneNumber, // Incluído o novo campo
     role: role,
     team_shift: teamShift,
+    team_name: teamName, // Novo campo
     address: address,
   };
   return supervisorData;

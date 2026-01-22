@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Loader2, User as UserIcon, Phone, Briefcase, UserCog, Sun, Moon } from "lucide-react"; // Adicionado Sun e Moon
+import { Loader2, User as UserIcon, Phone, Briefcase, UserCog, Sun, Moon, Users } from "lucide-react"; // Adicionado Users
 import type { TablesInsert } from "@/integrations/supabase/types_generated";
 import { SupervisorCombobox } from "./SupervisorCombobox";
 import { useToast } from "@/hooks/use-toast"; // Import useToast
@@ -23,9 +23,12 @@ export const CreateTechnicianForm: React.FC<CreateTechnicianFormProps> = ({ onSa
     last_name: "",
     role: "standard", // Default role for technicians
     phone_number: "",
+    personal_phone_number: "", // Novo campo
     avatar_url: "",
     supervisor_id: null,
     team_shift: "day", // Novo campo com valor padrão
+    team_name: "", // Novo campo
+    address: "",
     id: crypto.randomUUID(), // Generate ID here for new profiles
   });
 
@@ -81,24 +84,40 @@ export const CreateTechnicianForm: React.FC<CreateTechnicianFormProps> = ({ onSa
         </div>
       </div>
 
-      <div className="space-y-2">
-        <Label htmlFor="phone_number">Telefone</Label>
-        <div className="relative">
-          <Phone className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-          <Input
-            id="phone_number"
-            placeholder="(XX) XXXXX-XXXX"
-            className="pl-10"
-            value={formData.phone_number || ''}
-            onChange={(e) => handleInputChange("phone_number", e.target.value)}
-            disabled={isPending}
-          />
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="space-y-2">
+          <Label htmlFor="phone_number">Telefone da Empresa</Label>
+          <div className="relative">
+            <Phone className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+            <Input
+              id="phone_number"
+              placeholder="(XX) XXXXX-XXXX"
+              className="pl-10"
+              value={formData.phone_number || ''}
+              onChange={(e) => handleInputChange("phone_number", e.target.value)}
+              disabled={isPending}
+            />
+          </div>
+        </div>
+        <div className="space-y-2">
+          <Label htmlFor="personal_phone_number">Telefone Pessoal</Label>
+          <div className="relative">
+            <Phone className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+            <Input
+              id="personal_phone_number"
+              placeholder="(XX) XXXXX-XXXX"
+              className="pl-10"
+              value={formData.personal_phone_number || ''}
+              onChange={(e) => handleInputChange("personal_phone_number", e.target.value)}
+              disabled={isPending}
+            />
+          </div>
         </div>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4"> {/* Novo grid para team_shift e supervisor */}
         <div className="space-y-2">
-          <Label htmlFor="team_shift">Equipe</Label>
+          <Label htmlFor="team_shift">Turno da Equipe</Label>
           <Select
             value={formData.team_shift || 'day'}
             onValueChange={(value) => handleInputChange("team_shift", value)}
@@ -118,14 +137,29 @@ export const CreateTechnicianForm: React.FC<CreateTechnicianFormProps> = ({ onSa
             </SelectContent>
           </Select>
         </div>
-        <div className="space-y-2">
-          <Label htmlFor="supervisor_id">Supervisor</Label>
-          <SupervisorCombobox
-            value={formData.supervisor_id || null}
-            onValueChange={handleSupervisorSelect}
-            disabled={isPending}
-          />
+        <div className="space-y-2"> {/* Novo campo para Nome da Equipe */}
+          <Label htmlFor="team_name">Nome da Equipe</Label>
+          <div className="relative">
+            <Users className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+            <Input
+              id="team_name"
+              placeholder="Ex: Equipe Alfa, Equipe Noturna SP"
+              className="pl-10"
+              value={formData.team_name || ''}
+              onChange={(e) => handleInputChange("team_name", e.target.value)}
+              disabled={isPending}
+            />
+          </div>
         </div>
+      </div>
+
+      <div className="space-y-2">
+        <Label htmlFor="supervisor_id">Supervisor</Label>
+        <SupervisorCombobox
+          value={formData.supervisor_id || null}
+          onValueChange={handleSupervisorSelect}
+          disabled={isPending}
+        />
       </div>
 
       <div className="flex gap-2 justify-end pt-4">

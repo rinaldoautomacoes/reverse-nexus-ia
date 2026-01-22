@@ -174,6 +174,7 @@ export const SupervisorManagement = () => {
     supervisor.phone_number?.toLowerCase().includes(searchTerm.toLowerCase()) ||
     supervisor.personal_phone_number?.toLowerCase().includes(searchTerm.toLowerCase()) ||
     supervisor.team_shift?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    supervisor.team_name?.toLowerCase().includes(searchTerm.toLowerCase()) || // Incluído o novo campo na busca
     supervisor.address?.toLowerCase().includes(searchTerm.toLowerCase()) ||
     (supervisor.user_email?.toLowerCase().includes(searchTerm.toLowerCase())) // Include email in search
   ) || [];
@@ -340,6 +341,7 @@ export const SupervisorManagement = () => {
                                 <Moon className="h-3 w-3" />
                               )}
                               Equipe: {supervisor.team_shift === 'day' ? 'Dia' : 'Noite'}
+                              {supervisor.team_name && <span className="ml-1">({supervisor.team_name})</span>}
                             </div>
                           )}
                           {supervisor.address && (

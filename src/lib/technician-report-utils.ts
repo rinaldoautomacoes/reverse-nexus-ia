@@ -45,40 +45,41 @@ export const generateTechnicianReport = async (
       doc.text("Plataforma Logística 360", margin, currentY + 4);
       doc.text(`Gerado em: ${format(new Date(), 'dd/MM/yyyy HH:mm:ss', { locale: ptBR })}`, pageWidth - margin, currentY + 4, { align: "right" });
       currentY += 15;
-      doc.setDrawColor(...COLOR_BORDER_LIGHT);
-      doc.line(margin, currentY, pageWidth - margin, currentY);
-      currentY += 10;
+    doc.setDrawColor(...COLOR_BORDER_LIGHT);
+    doc.line(margin, currentY, pageWidth - margin, currentY);
+    currentY += 10;
     };
 
     // --- Report Title ---
-    doc.setFontSize(18);
+    doc.setFontSize(18); // Increased font size for title
     doc.setTextColor(...COLOR_BLACK);
     doc.setFont("helvetica", "bold");
-    doc.text(reportTitle, pageWidth / 2, currentY + 5, { align: "center" });
-    currentY += 15;
+    doc.text(reportTitle, pageWidth / 2, currentY + 5, { align: "center" }); // Centered title
+    currentY += 15; // Adjust Y position after title
     doc.setDrawColor(...COLOR_BLACK);
     doc.setLineWidth(0.5);
-    doc.line(margin, currentY, pageWidth - margin, currentY);
+    doc.line(margin, currentY, pageWidth - margin, currentY); // Separator line
     currentY += 10;
 
     // --- Technicians Table ---
-    const tableHeaders = ["Nome Completo", "Função", "Equipe", "Telefone Empresa", "Telefone Pessoal", "Supervisor", "Endereço"];
+    const tableHeaders = ["Nome Completo", "Função", "Equipe", "Nome da Equipe", "Telefone Empresa", "Telefone Pessoal", "Supervisor", "Endereço"];
     const tableUsableWidth = pageWidth - 2 * margin;
     const columnWidths = [
-      tableUsableWidth * 0.20, // Nome Completo
-      tableUsableWidth * 0.10, // Função
-      tableUsableWidth * 0.10, // Equipe
-      tableUsableWidth * 0.15, // Telefone Empresa
-      tableUsableWidth * 0.15, // Telefone Pessoal
-      tableUsableWidth * 0.15, // Supervisor
-      tableUsableWidth * 0.15, // Endereço
+      tableUsableWidth * 0.18, // Nome Completo
+      tableUsableWidth * 0.09, // Função
+      tableUsableWidth * 0.09, // Equipe
+      tableUsableWidth * 0.12, // Nome da Equipe (novo)
+      tableUsableWidth * 0.14, // Telefone Empresa
+      tableUsableWidth * 0.14, // Telefone Pessoal
+      tableUsableWidth * 0.12, // Supervisor
+      tableUsableWidth * 0.12, // Endereço
     ];
     const tableRowHeight = 8;
     const tableHeaderHeight = 10;
     const tableCellPadding = 2;
 
     const drawTableHeader = () => {
-      doc.setFillColor(...COLOR_GRAY_DARK);
+      doc.setFillColor(...COLOR_GRAY_DARK); // Dark gray background for item table header
       doc.rect(margin, currentY, tableUsableWidth, tableHeaderHeight, 'F');
       doc.setDrawColor(...COLOR_BLACK);
       doc.setLineWidth(0.2);
@@ -86,7 +87,7 @@ export const generateTechnicianReport = async (
 
       let currentX = margin;
       doc.setFontSize(8);
-      doc.setTextColor(255, 255, 255);
+      doc.setTextColor(255, 255, 255); // White text for item table header
       doc.setFont("helvetica", "bold");
       tableHeaders.forEach((header, i) => {
         doc.text(header, currentX + columnWidths[i] / 2, currentY + tableHeaderHeight / 2 + 1, { align: "center" });
@@ -101,7 +102,7 @@ export const generateTechnicianReport = async (
     drawTableHeader();
 
     doc.setFont("helvetica", "normal");
-    doc.setTextColor(...COLOR_BLACK);
+    doc.setTextColor(...COLOR_BLACK); // Black text for item table content
 
     for (const tech of technicians) {
       const supervisorName = tech.supervisor_id ? 
@@ -112,6 +113,7 @@ export const generateTechnicianReport = async (
         `${tech.first_name || ''} ${tech.last_name || ''}`.trim(),
         tech.role === 'standard' ? 'Técnico' : tech.role,
         tech.team_shift === 'day' ? 'Dia' : 'Noite',
+        tech.team_name || 'N/A', // Novo campo
         tech.phone_number || 'N/A',
         tech.personal_phone_number || 'N/A',
         supervisorName,
@@ -152,7 +154,7 @@ export const generateTechnicianReport = async (
         let textY = currentY + tableCellPadding + doc.getFontSize() / doc.internal.scaleFactor;
         let align: 'left' | 'center' | 'right' = 'left';
 
-        if (i === 1 || i === 2) { // Função, Equipe
+        if (i === 1 || i === 2 || i === 3) { // Função, Equipe, Nome da Equipe
           textX = currentX + columnWidths[i] / 2;
           align = 'center';
         }
@@ -176,7 +178,7 @@ export const generateTechnicianReport = async (
 
   } else if (formatType === 'csv') {
     const headers = [
-      "Nome Completo", "Primeiro Nome", "Sobrenome", "Função", "Equipe", 
+      "Nome Completo", "Primeiro Nome", "Sobrenome", "Função", "Equipe", "Nome da Equipe", // Novo campo
       "Telefone Empresa", "Telefone Pessoal", "Supervisor ID", "Nome Supervisor", "Endereço"
     ];
 
@@ -190,6 +192,7 @@ export const generateTechnicianReport = async (
         `"${(tech.last_name || '').replace(/"/g, '""')}"`,
         `"${(tech.role === 'standard' ? 'Técnico' : tech.role).replace(/"/g, '""')}"`,
         `"${(tech.team_shift === 'day' ? 'Dia' : 'Noite').replace(/"/g, '""')}"`,
+        `"${(tech.team_name || '').replace(/"/g, '""')}"`, // Novo campo
         `"${(tech.phone_number || '').replace(/"/g, '""')}"`,
         `"${(tech.personal_phone_number || '').replace(/"/g, '""')}"`,
         `"${(tech.supervisor_id || '').replace(/"/g, '""')}"`,
