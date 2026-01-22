@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Loader2, User as UserIcon, Mail, Lock, Phone, Briefcase, UserCog, Sun, Moon, MapPin, Users } from "lucide-react"; // Adicionado Users para o ícone da equipe
+import { Loader2, User as UserIcon, Mail, Lock, Phone, Briefcase, UserCog, Sun, Moon, MapPin, Users } from "lucide-react";
 import type { TablesInsert, TablesUpdate } from "@/integrations/supabase/types_generated";
 import { SupervisorCombobox } from "./SupervisorCombobox";
 
@@ -11,7 +11,7 @@ type ProfileInsert = TablesInsert<'profiles'>;
 type ProfileUpdate = TablesUpdate<'profiles'>;
 
 interface UserFormProps {
-  initialData?: ProfileUpdate;
+  initialData?: ProfileUpdate & { user_email?: string | null }; // Adicionado user_email como opcional para compatibilidade
   onSave: (data: ProfileInsert | ProfileUpdate) => void;
   onCancel: () => void;
   isPending: boolean;
@@ -40,7 +40,13 @@ export const UserForm: React.FC<UserFormProps> = ({ initialData, onSave, onCance
 
   useEffect(() => {
     if (initialData) {
-      setFormData(initialData);
+      // Destructure user_email out of initialData before setting formData
+      const { user_email, ...restOfInitialData } = initialData;
+      setFormData(restOfInitialData);
+      // If showAuthFields is true, we might want to set the email input field
+      if (showAuthFields && user_email) {
+        setEmail(user_email);
+      }
     } else {
       setFormData({
         first_name: "",
@@ -58,7 +64,7 @@ export const UserForm: React.FC<UserFormProps> = ({ initialData, onSave, onCance
       setEmail("");
       setPassword("");
     }
-  }, [initialData, defaultRole]);
+  }, [initialData, defaultRole, showAuthFields]);
 
   const handleInputChange = (field: keyof (ProfileInsert | ProfileUpdate), value: string | null) => {
     setFormData(prev => ({ ...prev, [field]: value }));
@@ -73,7 +79,9 @@ export const UserForm: React.FC<UserFormProps> = ({ initialData, onSave, onCance
     if (showAuthFields && onAuthFieldsChange) {
       onAuthFieldsChange(email, password);
     }
-    onSave(formData);
+    // Ensure user_email is not part of the object passed to onSave
+    const { user_email, ...dataToSave } = formData as ProfileUpdate & { user_email?: string | null };
+    onSave(dataToSave);
   };
 
   const isSupervisorProfile = profileType === 'supervisor';
@@ -199,7 +207,7 @@ export const UserForm: React.FC<UserFormProps> = ({ initialData, onSave, onCance
           </Select>
         </div>
         <div className="space-y-2">
-          <Label htmlFor="team_shift">Turno da Equipe</Label> {/* Label ajustado */}
+          <Label htmlFor="team_shift">Turno da Equipe</Label>
           <Select
             value={formData.team_shift || 'day'}
             onValueChange={(value) => handleInputChange("team_shift", value)}
@@ -221,7 +229,7 @@ export const UserForm: React.FC<UserFormProps> = ({ initialData, onSave, onCance
         </div>
       </div>
 
-      <div className="space-y-2"> {/* Novo campo para Nome da Equipe */}
+      <div className="space-y-2">
         <Label htmlFor="team_name">Nome da Equipe</Label>
         <div className="relative">
           <Users className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
@@ -281,5 +289,3 @@ export const UserForm: React.FC<UserFormProps> = ({ initialData, onSave, onCance
         </Button>
       </div>
     </form>
-  );
-};
