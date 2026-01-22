@@ -289,3 +289,5 @@ export const UserForm: React.FC<UserFormProps> = ({ initialData, onSave, onCance
         </Button>
       </div>
     </form>
+  );
+};
