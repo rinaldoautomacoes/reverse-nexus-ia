@@ -98,7 +98,7 @@ const AppLayout = () => {
             <Route path="/excel-extractor" element={<ExcelExtractorPage />} />
             <Route path="/agendamento-automatico" element={<AutomaticCollectionSchedulerPage />} />
             <Route path="/data-import" element={<DataImportPage />} />
-            <Route path="/pest-control" element={<PestControlService />} />
+            {/* <Route path="/pest-control" element={<PestControlService />} /> */} {/* Removido conforme solicitado */}
             {/* <Route path="/pest-control-dashboard" element={<PestControlDashboardPage selectedYear={selectedYear} />} /> */}
           </Route>
 

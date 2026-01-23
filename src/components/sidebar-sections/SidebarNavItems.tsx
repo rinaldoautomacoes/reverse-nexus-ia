@@ -74,19 +74,12 @@ const navItems: NavItem[] = [
     group: 'main',
   },
   // {
-  //   label: 'Dashboard Controle de Pragas',
-  //   icon: LayoutDashboard,
-  //   path: '/pest-control-dashboard',
+  //   label: 'Controle de Pragas', // Removido conforme solicitado
+  //   icon: Bug,
+  //   path: '/pest-control',
   //   roles: ['standard', 'admin'],
   //   group: 'main',
   // },
-  {
-    label: 'Controle de Pragas',
-    icon: Bug,
-    path: '/pest-control',
-    roles: ['standard', 'admin'],
-    group: 'main',
-  },
   {
     label: 'Importar Dados',
     icon: FileUp,
