@@ -40,6 +40,7 @@ import { ExcelExtractorPage } from "./pages/ExcelExtractorPage";
 import { AutomaticCollectionSchedulerPage } from "./pages/AutomaticCollectionSchedulerPage";
 import { DataImportPage } from "./pages/DataImportPage";
 import { PestControlService } from "@/pages/PestControlService";
+import { TechnicianPage } from "./pages/TechnicianPage"; // Importação atualizada
 // import { PestControlDashboardPage } from "./pages/PestControlDashboardPage"; // Removido
 
 const queryClient = new QueryClient();
@@ -109,7 +110,7 @@ const AppLayout = () => {
             <Route path="/product-management" element={<ProductManagement />} />
             <Route path="/driver-management" element={<DriverManagement />} />
             <Route path="/transportadora-management" element={<TransportadoraManagement />} />
-            <Route path="/technician-management" element={<TechnicianManagement />} />
+            <Route path="/technician-management" element={<TechnicianPage />} /> {/* Uso atualizado */}
             <Route path="/supervisor-management" element={<SupervisorManagement />} /> {/* New route */}
           </Route>
           
