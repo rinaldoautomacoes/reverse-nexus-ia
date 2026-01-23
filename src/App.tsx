@@ -40,9 +40,7 @@ import { ExcelExtractorPage } from "./pages/ExcelExtractorPage";
 import { AutomaticCollectionSchedulerPage } from "./pages/AutomaticCollectionSchedulerPage";
 import { DataImportPage } from "./pages/DataImportPage";
 import { PestControlService } from "@/pages/PestControlService";
-import { PestControlDashboardPage } from "./pages/PestControlDashboardPage";
-import { TechnicianManagement } from "./pages/TechnicianManagement";
-import { SupervisorManagement } from "./pages/SupervisorManagement"; // New import
+// import { PestControlDashboardPage } from "./pages/PestControlDashboardPage"; // Removido
 
 const queryClient = new QueryClient();
 
@@ -99,7 +97,7 @@ const AppLayout = () => {
             <Route path="/agendamento-automatico" element={<AutomaticCollectionSchedulerPage />} />
             <Route path="/data-import" element={<DataImportPage />} />
             <Route path="/pest-control" element={<PestControlService />} />
-            <Route path="/pest-control-dashboard" element={<PestControlDashboardPage selectedYear={selectedYear} />} />
+            {/* <Route path="/pest-control-dashboard" element={<PestControlDashboardPage selectedYear={selectedYear} />} /> */}
           </Route>
 
           {/* Rotas protegidas APENAS para administradores */}

@@ -73,13 +73,13 @@ const navItems: NavItem[] = [
     roles: ['standard', 'admin'],
     group: 'main',
   },
-  {
-    label: 'Dashboard Controle de Pragas',
-    icon: LayoutDashboard,
-    path: '/pest-control-dashboard',
-    roles: ['standard', 'admin'],
-    group: 'main',
-  },
+  // {
+  //   label: 'Dashboard Controle de Pragas',
+  //   icon: LayoutDashboard,
+  //   path: '/pest-control-dashboard',
+  //   roles: ['standard', 'admin'],
+  //   group: 'main',
+  // },
   {
     label: 'Controle de Pragas',
     icon: Bug,
