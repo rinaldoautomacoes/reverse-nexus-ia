@@ -40,7 +40,7 @@ import { ExcelExtractorPage } from "./pages/ExcelExtractorPage";
 import { AutomaticCollectionSchedulerPage } from "./pages/AutomaticCollectionSchedulerPage";
 import { DataImportPage } from "./pages/DataImportPage";
 import { PestControlService } from "@/pages/PestControlService";
-import { TechnicianPage } from "./pages/TechnicianPage"; // Importação atualizada
+import { TechnicianManagementPage } from "./pages/TechnicianPage"; // Importação atualizada
 import { SupervisorManagementPage } from "./pages/SupervisorManagementPage"; // Importação atualizada
 // import { PestControlDashboardPage } from "./pages/PestControlDashboardPage"; // Removido
 
@@ -98,7 +98,7 @@ const AppLayout = () => {
             <Route path="/excel-extractor" element={<ExcelExtractorPage />} />
             <Route path="/agendamento-automatico" element={<AutomaticCollectionSchedulerPage />} />
             <Route path="/data-import" element={<DataImportPage />} />
-            {/* <Route path="/pest-control" element={<PestControlService />} /> */} {/* Removido conforme solicitado */}
+            <Route path="/pest-control" element={<PestControlService />} />
             {/* <Route path="/pest-control-dashboard" element={<PestControlDashboardPage selectedYear={selectedYear} />} /> */}
           </Route>
 
@@ -111,7 +111,7 @@ const AppLayout = () => {
             <Route path="/product-management" element={<ProductManagement />} />
             <Route path="/driver-management" element={<DriverManagement />} />
             <Route path="/transportadora-management" element={<TransportadoraManagement />} />
-            <Route path="/technician-management" element={<TechnicianPage />} /> {/* Uso atualizado */}
+            <Route path="/technician-management" element={<TechnicianManagementPage />} /> {/* Uso atualizado */}
             <Route path="/supervisor-management" element={<SupervisorManagementPage />} /> {/* New route */}
           </Route>
           
