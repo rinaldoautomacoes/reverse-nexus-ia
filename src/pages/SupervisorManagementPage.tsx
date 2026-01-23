@@ -17,7 +17,7 @@ import { ConfirmationDialog } from "@/components/ConfirmationDialog"; // Importa
 // Updated type to use the view that includes email
 type Profile = Tables<'profiles_with_email'>;
 
-export const SupervisorManagement = () => {
+export const SupervisorManagementPage = () => {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const { toast } = useToast();

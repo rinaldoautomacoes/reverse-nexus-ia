@@ -41,6 +41,7 @@ import { AutomaticCollectionSchedulerPage } from "./pages/AutomaticCollectionSch
 import { DataImportPage } from "./pages/DataImportPage";
 import { PestControlService } from "@/pages/PestControlService";
 import { TechnicianPage } from "./pages/TechnicianPage"; // Importação atualizada
+import { SupervisorManagementPage } from "./pages/SupervisorManagementPage"; // Importação atualizada
 // import { PestControlDashboardPage } from "./pages/PestControlDashboardPage"; // Removido
 
 const queryClient = new QueryClient();
@@ -111,7 +112,7 @@ const AppLayout = () => {
             <Route path="/driver-management" element={<DriverManagement />} />
             <Route path="/transportadora-management" element={<TransportadoraManagement />} />
             <Route path="/technician-management" element={<TechnicianPage />} /> {/* Uso atualizado */}
-            <Route path="/supervisor-management" element={<SupervisorManagement />} /> {/* New route */}
+            <Route path="/supervisor-management" element={<SupervisorManagementPage />} /> {/* New route */}
           </Route>
           
           <Route path="*" element={<NotFound />} />
