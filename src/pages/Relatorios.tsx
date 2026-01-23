@@ -200,13 +200,16 @@ export const Relatorios = () => {
         </Button>
 
         <div className="space-y-6">
-          <div className="text-center">
-            <h1 className="text-4xl font-bold font-orbitron gradient-text mb-4">
-              Relatórios de Coletas
-            </h1>
-            <p className="text-muted-foreground">
-              Visualize e gere relatórios detalhados das suas coletas.
-            </p>
+          <div className="flex justify-between items-center mb-6"> {/* Novo wrapper para título e botão */}
+            <div className="text-left">
+              <h1 className="text-4xl font-bold font-orbitron gradient-text mb-2">
+                Relatórios de Coletas
+              </h1>
+              <p className="text-muted-foreground">
+                Visualize e gere relatórios detalhados das suas coletas.
+              </p>
+            </div>
+            <CreateReportDialog collectionTypeFilter="coleta" /> {/* Botão movido */}
           </div>
 
           <Card className="card-futuristic">
@@ -262,7 +265,7 @@ export const Relatorios = () => {
                   )}
                   {isAllReportsSelected ? "Desselecionar Todos" : "Selecionar Todos"}
                 </Button>
-                <CreateReportDialog collectionTypeFilter="coleta" />
+                {/* Botão CreateReportDialog removido daqui */}
               </div>
             </CardHeader>
             <CardContent className="space-y-4">

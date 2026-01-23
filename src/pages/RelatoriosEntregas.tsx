@@ -200,13 +200,16 @@ export const RelatoriosEntregas = () => {
         </Button>
 
         <div className="space-y-6">
-          <div className="text-center">
-            <h1 className="text-4xl font-bold font-orbitron gradient-text mb-4">
-              Relatórios de Entregas
-            </h1>
-            <p className="text-muted-foreground">
-              Visualize e gere relatórios detalhados das suas entregas.
-            </p>
+          <div className="flex justify-between items-center mb-6"> {/* Novo wrapper para título e botão */}
+            <div className="text-left">
+              <h1 className="text-4xl font-bold font-orbitron gradient-text mb-2">
+                Relatórios de Entregas
+              </h1>
+              <p className="text-muted-foreground">
+                Visualize e gere relatórios detalhados das suas entregas.
+              </p>
+            </div>
+            <CreateReportDialog collectionTypeFilter="entrega" /> {/* Botão movido */}
           </div>
 
           <Card className="card-futuristic">
@@ -262,7 +265,7 @@ export const RelatoriosEntregas = () => {
                   )}
                   {isAllReportsSelected ? "Desselecionar Todos" : "Selecionar Todos"}
                 </Button>
-                <CreateReportDialog collectionTypeFilter="entrega" />
+                {/* Botão CreateReportDialog removido daqui */}
               </div>
             </CardHeader>
             <CardContent className="space-y-4">
