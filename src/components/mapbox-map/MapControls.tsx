@@ -1,7 +1,7 @@
 import React from 'react';
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Loader2, Clock, Gauge, Car, Bike, Bus, Footprints } from "lucide-react"; // Changed from Walk to Footprints
+import { Loader2, Clock, Gauge, Car, Bike, Bus, Footprints } from "lucide-react";
 import { cn, formatDuration } from "@/lib/utils";
 
 type TransportMode = 'driving' | 'walking' | 'cycling' | 'public_transport';
@@ -18,8 +18,16 @@ interface MapControlsProps {
 const modeIcons = {
   driving: Car,
   cycling: Bike,
-  walking: Footprints, // Changed from Walk to Footprints
+  walking: Footprints,
   public_transport: Bus,
+};
+
+// Mapeamento dos rótulos para Português do Brasil
+const modeLabels: Record<TransportMode, string> = {
+  driving: 'Carro',
+  walking: 'A Pé',
+  cycling: 'Bicicleta',
+  public_transport: 'Transporte Público',
 };
 
 export const MapControls: React.FC<MapControlsProps> = ({
@@ -83,7 +91,7 @@ export const MapControls: React.FC<MapControlsProps> = ({
           {Object.entries(modeDurations).map(([mode, duration]) => (
             <div key={mode} className="flex items-center gap-1">
               {modeIcons[mode as keyof typeof modeIcons] && React.createElement(modeIcons[mode as keyof typeof modeIcons], { className: "h-3 w-3 text-primary" })}
-              <span className="capitalize">{mode.replace('_', ' ')}:</span>
+              <span className="capitalize">{modeLabels[mode as TransportMode]}:</span> {/* Usando modeLabels aqui */}
               <span className="font-medium text-foreground">
                 {duration !== undefined ? formatDuration(duration) : 'N/A'}
               </span>
