@@ -1,7 +1,7 @@
 import React from 'react';
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Loader2, Clock, Gauge, Car, Bike, Bus, Walk } from "lucide-react"; // Corrected: Walk instead of Walking
+import { Loader2, Clock, Gauge, Car, Bike, Bus, Footprints } from "lucide-react"; // Changed from Walk to Footprints
 import { cn, formatDuration } from "@/lib/utils";
 
 type TransportMode = 'driving' | 'walking' | 'cycling' | 'public_transport';
@@ -18,7 +18,7 @@ interface MapControlsProps {
 const modeIcons = {
   driving: Car,
   cycling: Bike,
-  walking: Walk, // Corrected: Walk instead of Walking
+  walking: Footprints, // Changed from Walk to Footprints
   public_transport: Bus,
 };
 
