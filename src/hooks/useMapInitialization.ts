@@ -13,8 +13,13 @@ export const useMapInitialization = ({ mapContainerRef, mapboxToken, isTokenSet 
   const [isMapInitialized, setIsMapInitialized] = useState(false);
 
   useEffect(() => {
-    if (!isTokenSet || !mapContainerRef.current || mapRef.current) return;
+    // Only proceed if token is set, container ref is available, and map hasn't been initialized yet
+    if (!isTokenSet || !mapContainerRef.current || mapRef.current) {
+      console.log("[useMapInitialization] Skipping map initialization:", { isTokenSet, mapContainerCurrent: mapContainerRef.current, mapRefCurrent: mapRef.current });
+      return;
+    }
 
+    console.log("[useMapInitialization] Initializing Mapbox map...");
     mapboxgl.accessToken = mapboxToken;
 
     mapRef.current = new mapboxgl.Map({
@@ -27,6 +32,7 @@ export const useMapInitialization = ({ mapContainerRef, mapboxToken, isTokenSet 
     mapRef.current.addControl(new mapboxgl.NavigationControl(), "top-right");
 
     mapRef.current.on('load', () => {
+      console.log("[useMapInitialization] Map loaded. Adding sources and layers.");
       mapRef.current?.addSource("route-line", {
         type: "geojson",
         data: {
@@ -54,14 +60,20 @@ export const useMapInitialization = ({ mapContainerRef, mapboxToken, isTokenSet 
         }
       });
       setIsMapInitialized(true);
+      console.log("[useMapInitialization] Map initialized successfully.");
+    });
+
+    mapRef.current.on('error', (e) => {
+      console.error("[useMapInitialization] Mapbox GL JS Error:", e.error);
     });
 
     return () => {
+      console.log("[useMapInitialization] Cleaning up map...");
       mapRef.current?.remove();
       mapRef.current = null;
       setIsMapInitialized(false);
     };
-  }, [isTokenSet, mapboxToken, mapContainerRef]);
+  }, [isTokenSet, mapboxToken, mapContainerRef.current]); // Added mapContainerRef.current as dependency
 
   return { map: mapRef.current, isMapInitialized };
 };
