@@ -9,6 +9,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/use-auth";
 import { z } from "zod";
+import { ForgotPasswordDialog } from "@/components/ForgotPasswordDialog"; // Importar o novo diálogo
 
 const loginSchema = z.object({
   email: z.string().trim().email("E-mail inválido").max(255, "E-mail muito longo"),
@@ -20,6 +21,7 @@ export const Auth = () => {
   const [loading, setLoading] = useState(false);
   const [loginEmail, setLoginEmail] = useState("");
   const [loginPassword, setLoginPassword] = useState("");
+  const [isForgotPasswordDialogOpen, setIsForgotPasswordDialogOpen] = useState(false); // Estado para o diálogo
   const navigate = useNavigate();
   const location = useLocation();
   const { toast } = useToast();
@@ -174,11 +176,23 @@ export const Auth = () => {
                   )}
                   Entrar
                 </Button>
+                <Button
+                  variant="link"
+                  className="text-sm text-muted-foreground hover:text-primary w-full p-0 h-auto justify-center"
+                  onClick={() => setIsForgotPasswordDialogOpen(true)}
+                  disabled={loading}
+                >
+                  Esqueceu sua senha?
+                </Button>
               </form>
             </CardContent>
           </Card>
         </div>
       </div>
+      <ForgotPasswordDialog
+        isOpen={isForgotPasswordDialogOpen}
+        onClose={() => setIsForgotPasswordDialogOpen(false)}
+      />
     </div>
   );
 };
