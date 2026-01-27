@@ -74,6 +74,7 @@ export const MapControls: React.FC<MapControlsProps> = ({
 
       <div className="absolute top-4 right-4 z-10 bg-card/80 backdrop-blur-sm border-border/50 rounded-lg shadow-lg p-2 flex gap-2">
         {Object.entries(modeIcons).map(([mode, Icon]) => (
+          // Desabilita se nenhuma rota for selecionada ou se as direções estão carregando
           <Button
             key={mode}
             variant="ghost"
@@ -83,7 +84,7 @@ export const MapControls: React.FC<MapControlsProps> = ({
               selectedTransportMode === mode ? "bg-primary/20 text-primary" : "text-muted-foreground hover:bg-muted/20"
             )}
             onClick={() => setSelectedTransportMode(mode as TransportMode)}
-            disabled={isLoadingDirections || !selectedRouteDetails} {/* Desabilita se nenhuma rota for selecionada */}
+            disabled={isLoadingDirections || !selectedRouteDetails}
           >
             <Icon className="h-5 w-5" />
           </Button>
