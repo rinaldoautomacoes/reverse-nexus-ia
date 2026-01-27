@@ -9,7 +9,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/use-auth";
 import { z } from "zod";
-import { ForgotPasswordDialog } from "@/components/ForgotPasswordDialog"; // Importar o novo diálogo
+import { ForgotPasswordDialog } from "@/components/ForgotPasswordDialog";
+import { SetNewPasswordForm } from "@/components/SetNewPasswordForm"; // Importar o novo componente
 
 const loginSchema = z.object({
   email: z.string().trim().email("E-mail inválido").max(255, "E-mail muito longo"),
@@ -21,14 +22,17 @@ export const Auth = () => {
   const [loading, setLoading] = useState(false);
   const [loginEmail, setLoginEmail] = useState("");
   const [loginPassword, setLoginPassword] = useState("");
-  const [isForgotPasswordDialogOpen, setIsForgotPasswordDialogOpen] = useState(false); // Estado para o diálogo
+  const [isForgotPasswordDialogOpen, setIsForgotPasswordDialogOpen] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();
   const { toast } = useToast();
 
+  const queryParams = new URLSearchParams(location.search);
+  const isResettingPassword = queryParams.get('reset') === 'true';
+
   useEffect(() => {
     // Only redirect if we are on the /auth path AND user is logged in
-    if (!isLoading && user && profile && location.pathname === '/auth') {
+    if (!isLoading && user && profile && location.pathname === '/auth' && !isResettingPassword) {
       if (profile.role === 'admin') {
         navigate('/dashboard-geral', { replace: true });
       } else {
@@ -36,7 +40,7 @@ export const Auth = () => {
       }
     }
     // If not loading and no user/profile, or not on /auth path, do nothing (stay on current page or render login form)
-  }, [user, profile, isLoading, navigate, location.pathname]);
+  }, [user, profile, isLoading, navigate, location.pathname, isResettingPassword]);
 
   const handleSignIn = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -92,6 +96,13 @@ export const Auth = () => {
     }
   };
 
+  const handlePasswordSetSuccess = () => {
+    // Remove the 'reset=true' parameter from the URL after successful password set
+    navigate('/auth', { replace: true });
+    // Optionally, pre-fill the email field with the user's email if available
+    // setLoginEmail(user?.email || '');
+  };
+
   // Show loading state while auth is being checked
   if (isLoading) {
     return (
@@ -127,64 +138,70 @@ export const Auth = () => {
           {/* Auth Card */}
           <Card className="card-futuristic border-primary/20">
             <CardHeader className="text-center">
-              <CardTitle className="text-2xl font-semibold">Acesso à Plataforma</CardTitle>
+              <CardTitle className="text-2xl font-semibold">
+                {isResettingPassword ? "Definir Nova Senha" : "Acesso à Plataforma"}
+              </CardTitle>
               <CardDescription>
-                Entre na sua conta
+                {isResettingPassword ? "Crie uma nova senha para sua conta." : "Entre na sua conta"}
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <form onSubmit={handleSignIn} className="space-y-4">
-                <div className="space-y-2">
-                  <Label htmlFor="login-email">Email</Label>
-                  <div className="relative">
-                    <Mail className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                    <Input
-                      id="login-email"
-                      type="email"
-                      placeholder="seu@email.com"
-                      className="pl-10"
-                      value={loginEmail}
-                      onChange={(e) => setLoginEmail(e.target.value)}
-                      required
-                    />
+              {isResettingPassword ? (
+                <SetNewPasswordForm onPasswordSet={handlePasswordSetSuccess} />
+              ) : (
+                <form onSubmit={handleSignIn} className="space-y-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="login-email">Email</Label>
+                    <div className="relative">
+                      <Mail className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                      <Input
+                        id="login-email"
+                        type="email"
+                        placeholder="seu@email.com"
+                        className="pl-10"
+                        value={loginEmail}
+                        onChange={(e) => setLoginEmail(e.target.value)}
+                        required
+                      />
+                    </div>
                   </div>
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="login-password">Senha</Label>
-                  <div className="relative">
-                    <Lock className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                    <Input
-                      id="login-password"
-                      type="password"
-                      placeholder="••••••••"
-                      className="pl-10"
-                      value={loginPassword}
-                      onChange={(e) => setLoginPassword(e.target.value)}
-                      required
-                    />
+                  <div className="space-y-2">
+                    <Label htmlFor="login-password">Senha</Label>
+                    <div className="relative">
+                      <Lock className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                      <Input
+                        id="login-password"
+                        type="password"
+                        placeholder="••••••••"
+                        className="pl-10"
+                        value={loginPassword}
+                        onChange={(e) => setLoginPassword(e.target.value)}
+                        required
+                      />
+                    </div>
                   </div>
-                </div>
-                <Button
-                  type="submit"
-                  className="w-full bg-gradient-primary hover:bg-gradient-primary/80 glow-effect"
-                  disabled={loading}
-                >
-                  {loading ? (
-                    <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin mr-2" />
-                  ) : (
-                    <Zap className="w-4 h-4 mr-2" />
-                  )}
-                  Entrar
-                </Button>
-                <Button
-                  variant="link"
-                  className="text-sm text-muted-foreground hover:text-primary w-full p-0 h-auto justify-center"
-                  onClick={() => setIsForgotPasswordDialogOpen(true)}
-                  disabled={loading}
-                >
-                  Esqueceu sua senha?
-                </Button>
-              </form>
+                  <Button
+                    type="submit"
+                    className="w-full bg-gradient-primary hover:bg-gradient-primary/80 glow-effect"
+                    disabled={loading}
+                  >
+                    {loading ? (
+                      <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin mr-2" />
+                    ) : (
+                      <Zap className="w-4 h-4 mr-2" />
+                    )}
+                    Entrar
+                  </Button>
+                  <Button
+                    variant="link"
+                    className="text-sm text-muted-foreground hover:text-primary w-full p-0 h-auto justify-center"
+                    onClick={() => setIsForgotPasswordDialogOpen(true)}
+                    disabled={loading}
+                  >
+                    Esqueceu sua senha?
+                  </Button>
+                </form>
+              )}
             </CardContent>
           </Card>
         </div>
