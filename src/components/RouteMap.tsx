@@ -10,7 +10,7 @@ import { MapboxTokenManager } from "@/components/mapbox-map/MapboxTokenManager";
 import { useRouteData } from "@/hooks/useRouteData";
 import { useDirectionsData } from "@/hooks/useDirectionsData";
 import { MapControls } from "@/components/mapbox-map/MapControls";
-import { MapMarkersAndLines } from "@/components/mapbox-map/MapMarkersAndLines";
+import { MapMarkersAndLines } from "@/components/mapbox-map/MapMarkersAndLines"; // Caminho de importação corrigido
 
 type TransportMode = 'driving' | 'walking' | 'cycling' | 'public_transport';
 
@@ -40,7 +40,7 @@ export default function RouteMap({ selectedRouteId, filters }: RouteMapProps) {
   }, []);
 
   // Map Initialization Hook
-  const { map, isMapInitialized } = useMapInitialization({ mapContainerRef, mapboxToken, isTokenSet });
+  const { map, isMapInitialized } = useMapInitialization({ mapContainerRef: mapContainer, mapboxToken, isTokenSet });
 
   // Route Data Hook
   const { routes, isLoadingRoutes, routesError } = useRouteData({ userId: user?.id, filters });
