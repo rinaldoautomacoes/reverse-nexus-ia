@@ -38,31 +38,36 @@ export const MapControls: React.FC<MapControlsProps> = ({
   setSelectedTransportMode,
   modeDurations,
 }) => {
-  if (!selectedRouteDetails) return null;
+  // Sempre renderiza o container, mas ajusta o conteúdo com base em selectedRouteDetails
+  const routeName = selectedRouteDetails?.name || "Nenhuma Rota Selecionada";
+  const distance = directionsData?.distance?.toFixed(2) || 'N/A';
+  const duration = directionsData?.duration ? formatDuration(directionsData.duration) : 'N/A';
 
   return (
     <>
       <Card className="absolute top-4 left-4 z-10 bg-card/80 backdrop-blur-sm border-border/50 shadow-lg">
         <CardContent className="p-4 space-y-2">
-          <h3 className="font-semibold text-lg">{selectedRouteDetails.name}</h3>
-          {isLoadingDirections ? (
-            <div className="flex items-center gap-2 text-sm text-muted-foreground">
-              <Loader2 className="h-4 w-4 animate-spin" />
-              <span>Calculando rota...</span>
-            </div>
-          ) : directionsData ? (
-            <>
+          <h3 className="font-semibold text-lg">{routeName}</h3>
+          {selectedRouteDetails ? (
+            isLoadingDirections ? (
               <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                <Gauge className="h-4 w-4" />
-                <span>Distância: {directionsData.distance.toFixed(2)} km</span>
+                <Loader2 className="h-4 w-4 animate-spin" />
+                <span>Calculando rota...</span>
               </div>
-              <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                <Clock className="h-4 w-4" />
-                <span>Duração: {formatDuration(directionsData.duration)}</span>
-              </div>
-            </>
+            ) : (
+              <>
+                <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                  <Gauge className="h-4 w-4" />
+                  <span>Distância: {distance} km</span>
+                </div>
+                <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                  <Clock className="h-4 w-4" />
+                  <span>Duração: {duration}</span>
+                </div>
+              </>
+            )
           ) : (
-            <p className="text-sm text-destructive">Não foi possível calcular a rota.</p>
+            <p className="text-sm text-muted-foreground">Selecione uma rota para ver os detalhes.</p>
           )}
         </CardContent>
       </Card>
@@ -78,7 +83,7 @@ export const MapControls: React.FC<MapControlsProps> = ({
               selectedTransportMode === mode ? "bg-primary/20 text-primary" : "text-muted-foreground hover:bg-muted/20"
             )}
             onClick={() => setSelectedTransportMode(mode as TransportMode)}
-            disabled={isLoadingDirections}
+            disabled={isLoadingDirections || !selectedRouteDetails} {/* Desabilita se nenhuma rota for selecionada */}
           >
             <Icon className="h-5 w-5" />
           </Button>
@@ -91,12 +96,17 @@ export const MapControls: React.FC<MapControlsProps> = ({
           {Object.entries(modeDurations).map(([mode, duration]) => (
             <div key={mode} className="flex items-center gap-1">
               {modeIcons[mode as keyof typeof modeIcons] && React.createElement(modeIcons[mode as keyof typeof modeIcons], { className: "h-3 w-3 text-primary" })}
-              <span className="capitalize">{modeLabels[mode as TransportMode]}:</span> {/* Usando modeLabels aqui */}
+              <span className="capitalize">{modeLabels[mode as TransportMode]}:</span>
               <span className="font-medium text-foreground">
-                {duration !== undefined ? formatDuration(duration) : 'N/A'}
+                {selectedRouteDetails && duration !== undefined ? formatDuration(duration) : 'N/A'}
               </span>
             </div>
           ))}
+          {!selectedRouteDetails && (
+            <div className="col-span-2 text-center text-xs text-muted-foreground mt-2">
+              Selecione uma rota para ver as durações.
+            </div>
+          )}
         </div>
       </div>
     </>
