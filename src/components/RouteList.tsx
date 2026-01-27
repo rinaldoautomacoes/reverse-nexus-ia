@@ -3,12 +3,12 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/use-auth";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { MapPin, User, Clock, Home, Flag, Edit, Gauge, Trash2, Loader2 } from "lucide-react"; // Added Trash2 and Loader2
-import { cn } from "@/lib/utils";
+import { MapPin, User, Clock, Home, Flag, Edit, Gauge, Trash2, Loader2 } from "lucide-react";
+import { cn, formatDuration } from "@/lib/utils"; // Importar formatDuration
 import { Button } from "@/components/ui/button";
 import type { Tables } from "@/integrations/supabase/types_generated";
-import { format, isValid } from "date-fns"; // Importar isValid
-import { ptBR } from "date-fns/locale"; // Importar locale
+import { format, isValid } from "date-fns";
+import { ptBR } from "date-fns/locale";
 
 type Route = Tables<'routes'> & {
   driver?: { name: string } | null;
@@ -24,8 +24,8 @@ interface RouteListProps {
   selectedRouteId: string | null;
   onSelectRoute: (id: string | null) => void;
   onEditRoute: (route: Route) => void;
-  onDeleteRoute: (routeId: string) => void; // New prop for deleting
-  isDeleting: boolean; // New prop to indicate if a deletion is in progress
+  onDeleteRoute: (routeId: string) => void;
+  isDeleting: boolean;
 }
 
 export default function RouteList({ filters, selectedRouteId, onSelectRoute, onEditRoute, onDeleteRoute, isDeleting }: RouteListProps) {
@@ -154,7 +154,7 @@ export default function RouteList({ filters, selectedRouteId, onSelectRoute, onE
             {route.estimated_duration && (
               <div className="flex items-center gap-2">
                 <Clock className="h-4 w-4 text-warning-yellow" />
-                <span>Duração Estimada: {isValid(new Date(route.estimated_duration * 1000)) ? format(new Date(route.estimated_duration * 1000), 'mm', { locale: ptBR }) : 'N/A'} min</span>
+                <span>Duração Estimada: {formatDuration(route.estimated_duration * 60)}</span> {/* Convertendo minutos para segundos */}
               </div>
             )}
           </div>

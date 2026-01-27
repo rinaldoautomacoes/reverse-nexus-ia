@@ -11,10 +11,11 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/use-auth";
 import { toast } from "@/hooks/use-toast";
 import type { Tables, TablesUpdate } from "@/integrations/supabase/types_generated";
-import RouteMap from "./RouteMap"; // Import the map component
-import axios from "axios"; // Import axios
-import { format, isValid } from "date-fns"; // Importar isValid
-import { ptBR } from "date-fns/locale"; // Importar locale
+import RouteMap from "./RouteMap";
+import axios from "axios";
+import { format, isValid } from "date-fns";
+import { ptBR } from "date-fns/locale";
+import { formatDuration } from "@/lib/utils"; // Importar formatDuration
 
 type Route = Tables<'routes'>;
 type RouteUpdate = TablesUpdate<'routes'>;
@@ -23,16 +24,16 @@ type Driver = Tables<'drivers'>;
 interface EditRouteDialogProps {
   isOpen: boolean;
   onOpenChange: (open: boolean) => void;
-  route: Route | null; // The route to edit
-  onRouteUpdated: () => void; // Callback after successful update
+  route: Route | null;
+  onRouteUpdated: () => void;
 }
 
 export const EditRouteDialog: React.FC<EditRouteDialogProps> = ({ isOpen, onOpenChange, route, onRouteUpdated }) => {
   const { user } = useAuth();
   const queryClient = useQueryClient();
   const [formData, setFormData] = useState<RouteUpdate | null>(null);
-  const [isFetchingAddress, setIsFetchingAddress] = useState(false); // For address geocoding
-  const [isCalculatingRoute, setIsCalculatingRoute] = useState(false); // State for route calculation
+  const [isFetchingAddress, setIsFetchingAddress] = useState(false);
+  const [isCalculatingRoute, setIsCalculatingRoute] = useState(false);
 
   useEffect(() => {
     if (route) {
@@ -120,7 +121,7 @@ export const EditRouteDialog: React.FC<EditRouteDialogProps> = ({ isOpen, onOpen
       toast({ title: "Rota atualizada!", description: "As informações da rota foram salvas com sucesso." });
       queryClient.invalidateQueries({ queryKey: ["routes"] });
       queryClient.invalidateQueries({ queryKey: ["routes-list"] });
-      onRouteUpdated(); // Call the callback
+      onRouteUpdated();
       onOpenChange(false);
     },
     onError: (error) => {
@@ -136,7 +137,7 @@ export const EditRouteDialog: React.FC<EditRouteDialogProps> = ({ isOpen, onOpen
   };
 
   if (!route || !formData) {
-    return null; // Or a loading spinner
+    return null;
   }
 
   const isFormDisabled = updateRouteMutation.isPending || isFetchingAddress || isCalculatingRoute;
@@ -268,7 +269,7 @@ export const EditRouteDialog: React.FC<EditRouteDialogProps> = ({ isOpen, onOpen
               <Label>Duração Estimada</Label>
               <div className="flex items-center gap-2 text-muted-foreground">
                 <Clock className="h-4 w-4" />
-                <p>{formData.estimated_duration ? `${Math.round(formData.estimated_duration)} min` : 'N/A'}</p>
+                <p>{formData.estimated_duration ? formatDuration(formData.estimated_duration * 60) : 'N/A'}</p> {/* Convertendo minutos para segundos */}
               </div>
             </div>
           </div>
@@ -277,7 +278,6 @@ export const EditRouteDialog: React.FC<EditRouteDialogProps> = ({ isOpen, onOpen
           <div className="space-y-2 border-t border-border/30 pt-4">
             <Label>Visualização da Rota</Label>
             <div className="h-64 w-full rounded-lg overflow-hidden border border-border/50">
-              {/* Ensure RouteMap receives correct props and is enabled */}
               {route.id && <RouteMap selectedRouteId={route.id} filters={{ date: route.date, driverId: route.driver_id || 'all', status: route.status }} />}
             </div>
           </div>

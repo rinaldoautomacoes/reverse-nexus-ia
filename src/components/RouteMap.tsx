@@ -7,11 +7,12 @@ import "mapbox-gl/dist/mapbox-gl.css";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { toast } from "@/hooks/use-toast";
-import { MapPin, Truck, Package, Settings, Home, Flag, Clock, Gauge, Loader2 } from "lucide-react";
+import { MapPin, Truck, Package, Settings, Home, Flag, Clock, Gauge, Loader2, Car, Bike, Bus, Walk } from "lucide-react"; // Adicionado Car, Bike, Bus, Walk
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent } from "@/components/ui/card";
-import axios from "axios"; // Import Card and CardContent
+import axios from "axios";
+import { cn, formatDuration } from "@/lib/utils"; // Importado formatDuration
 
 interface RouteMapProps {
   selectedRouteId: string | null;
@@ -28,8 +29,15 @@ export default function RouteMap({ selectedRouteId, filters }: RouteMapProps) {
   const map = useRef<mapboxgl.Map | null>(null);
   const [mapboxToken, setMapboxToken] = useState("");
   const [isTokenSet, setIsTokenSet] = useState(false);
-  // const [isConfigDialogOpen, setIsConfigDialogOpen] = useState(false); // Removido
   const markers = useRef<mapboxgl.Marker[]>([]);
+
+  const [selectedTransportMode, setSelectedTransportMode] = useState<'driving' | 'walking' | 'cycling' | 'public_transport'>('driving');
+  const [modeDurations, setModeDurations] = useState<{
+    driving?: number;
+    walking?: number;
+    cycling?: number;
+    public_transport?: number; // Placeholder for public transport
+  }>({});
 
   // Load token from localStorage on mount
   useEffect(() => {
@@ -121,23 +129,21 @@ export default function RouteMap({ selectedRouteId, filters }: RouteMapProps) {
       if (error) throw new Error(error.message);
       return data;
     },
-    enabled: !!user?.id && isTokenSet
+    enabled: !!user?.id
   });
 
   const selectedRouteDetails = routes?.find(r => r.id === selectedRouteId);
 
-  // Query para buscar as direções do Mapbox Directions API
-  const { data: directionsData, isLoading: isLoadingDirections } = useQuery({
-    queryKey: ['mapboxDirections', selectedRouteId, mapboxToken],
-    queryFn: async () => {
+  // NEW: Fetch durations for all modes when selectedRouteDetails changes
+  useEffect(() => {
+    const fetchAllModeDurations = async () => {
       if (!selectedRouteDetails || !mapboxToken || !selectedRouteDetails.origin_lat || !selectedRouteDetails.origin_lng || !selectedRouteDetails.destination_lat || !selectedRouteDetails.destination_lng) {
-        return null;
+        setModeDurations({});
+        return;
       }
 
       const coordinates = [];
       coordinates.push(`${selectedRouteDetails.origin_lng},${selectedRouteDetails.origin_lat}`);
-
-      // Adicionar paradas intermediárias se existirem e estiverem ordenadas
       if (selectedRouteDetails.stops && selectedRouteDetails.stops.length > 0) {
         selectedRouteDetails.stops
           .sort((a: any, b: any) => a.stop_order - b.stop_order)
@@ -147,24 +153,82 @@ export default function RouteMap({ selectedRouteId, filters }: RouteMapProps) {
             }
           });
       }
+      coordinates.push(`${selectedRouteDetails.destination_lng},${selectedRouteDetails.destination_lat}`);
+      const coordinatesString = coordinates.join(';');
+
+      const modesToFetch: Array<'driving' | 'walking' | 'cycling'> = ['driving', 'walking', 'cycling'];
+      const fetchedDurations: typeof modeDurations = {};
+
+      for (const mode of modesToFetch) {
+        try {
+          const url = `https://api.mapbox.com/directions/v5/mapbox/${mode}/${coordinatesString}?alternatives=false&geometries=geojson&steps=false&access_token=${mapboxToken}`;
+          const response = await axios.get(url);
+          if (response.data.routes && response.data.routes.length > 0) {
+            fetchedDurations[mode] = response.data.routes[0].duration; // duration in seconds
+          }
+        } catch (error) {
+          console.error(`Error fetching directions for ${mode}:`, error);
+        }
+      }
+
+      // Simulate public transport duration (e.g., 2x driving time, or a fixed value)
+      if (fetchedDurations.driving) {
+        fetchedDurations.public_transport = fetchedDurations.driving * 2; // Example: 2x driving time
+      } else {
+        fetchedDurations.public_transport = 2 * 86400; // 2 days in seconds
+      }
       
+      setModeDurations(fetchedDurations);
+    };
+
+    fetchAllModeDurations();
+  }, [selectedRouteDetails, mapboxToken]);
+
+  // Query para buscar as direções do Mapbox Directions API for the *selected* mode
+  const { data: directionsData, isLoading: isLoadingDirections } = useQuery({
+    queryKey: ['mapboxDirections', selectedRouteId, mapboxToken, selectedTransportMode], // Add selectedTransportMode
+    queryFn: async () => {
+      if (!selectedRouteDetails || !mapboxToken || !selectedRouteDetails.origin_lat || !selectedRouteDetails.origin_lng || !selectedRouteDetails.destination_lat || !selectedRouteDetails.destination_lng) {
+        return null;
+      }
+
+      // Handle public_transport as a special case (no direct Mapbox API profile)
+      if (selectedTransportMode === 'public_transport') {
+        return {
+          geometry: { type: "LineString", coordinates: [] }, // Empty geometry
+          distance: 0,
+          duration: modeDurations.public_transport || 0, // Use the pre-calculated/simulated duration
+        };
+      }
+
+      const coordinates = [];
+      coordinates.push(`${selectedRouteDetails.origin_lng},${selectedRouteDetails.origin_lat}`);
+      if (selectedRouteDetails.stops && selectedRouteDetails.stops.length > 0) {
+        selectedRouteDetails.stops
+          .sort((a: any, b: any) => a.stop_order - b.stop_order)
+          .forEach((stop: any) => {
+            if (stop.latitude && stop.longitude) {
+              coordinates.push(`${stop.longitude},${stop.latitude}`);
+            }
+          });
+      }
       coordinates.push(`${selectedRouteDetails.destination_lng},${selectedRouteDetails.destination_lat}`);
 
       const coordinatesString = coordinates.join(';');
-      const url = `https://api.mapbox.com/directions/v5/mapbox/driving/${coordinatesString}?alternatives=false&geometries=geojson&steps=false&access_token=${mapboxToken}`;
-
+      const url = `https://api.mapbox.com/directions/v5/mapbox/${selectedTransportMode}/${coordinatesString}?alternatives=false&geometries=geojson&steps=false&access_token=${mapboxAccessToken}`; // Use selectedTransportMode
+      
       const response = await axios.get(url);
       if (response.data.routes && response.data.routes.length > 0) {
         const route = response.data.routes[0];
         return {
           geometry: route.geometry,
           distance: route.distance / 1000, // Convert meters to kilometers
-          duration: route.duration / 60, // Convert seconds to minutes
+          duration: route.duration, // Keep duration in seconds
         };
       }
       return null;
     },
-    enabled: !!selectedRouteDetails && !!mapboxToken, // Só executa se houver rota selecionada e token
+    enabled: !!selectedRouteDetails && !!mapboxToken,
   });
 
   const updateMapWithRoutes = useCallback(() => {
@@ -188,8 +252,17 @@ export default function RouteMap({ selectedRouteId, filters }: RouteMapProps) {
 
     let allCoordinates: [number, number][] = [];
 
-    routes.forEach(route => {
-      // Add origin and destination markers for each route
+    // Draw the selected route line
+    if (selectedRouteId && directionsData && directionsData.geometry && map.current.getSource("route-line")) {
+      (map.current.getSource("route-line") as mapboxgl.GeoJSONSource).setData(directionsData.geometry);
+      allCoordinates.push(...directionsData.geometry.coordinates);
+    }
+
+    // Add markers for all routes (or just the selected one if preferred)
+    const routesToMark = selectedRouteDetails ? [selectedRouteDetails] : routes;
+
+    routesToMark.forEach(route => {
+      // Add origin and destination markers
       if (route.origin_lat && route.origin_lng) {
         const el = document.createElement("div");
         el.className = "marker-origin";
@@ -222,7 +295,7 @@ export default function RouteMap({ selectedRouteId, filters }: RouteMapProps) {
           )
           .addTo(map.current!);
         markers.current.push(marker);
-        allCoordinates.push([route.origin_lng, route.origin_lat]);
+        if (!selectedRouteId) allCoordinates.push([route.origin_lng, route.origin_lat]);
       }
 
       if (route.destination_lat && route.destination_lng) {
@@ -257,7 +330,7 @@ export default function RouteMap({ selectedRouteId, filters }: RouteMapProps) {
           )
           .addTo(map.current!);
         markers.current.push(marker);
-        allCoordinates.push([route.destination_lng, route.destination_lat]);
+        if (!selectedRouteId) allCoordinates.push([route.destination_lng, route.destination_lat]);
       }
 
       // Add markers for stops (coletas/entregas)
@@ -297,26 +370,18 @@ export default function RouteMap({ selectedRouteId, filters }: RouteMapProps) {
             .addTo(map.current!);
 
           markers.current.push(marker);
-          allCoordinates.push([stop.longitude, stop.latitude]);
+          if (!selectedRouteId) allCoordinates.push([stop.longitude, stop.latitude]);
         }
       });
     });
 
-    // Draw route line for the selected route using directionsData
-    if (selectedRouteId && directionsData && map.current.getSource("route-line")) {
-      (map.current.getSource("route-line") as mapboxgl.GeoJSONSource).setData(directionsData.geometry);
-
-      // Fit map to route bounds
-      const bounds = new mapboxgl.LngLatBounds();
-      directionsData.geometry.coordinates.forEach((coord: [number, number]) => bounds.extend(coord as mapboxgl.LngLatLike));
-      map.current.fitBounds(bounds, { padding: 50, duration: 1000 });
-    } else if (allCoordinates.length > 0) {
-      // If no specific route is selected or directions not loaded, fit to all markers
+    // Fit map to bounds
+    if (allCoordinates.length > 0) {
       const bounds = new mapboxgl.LngLatBounds();
       allCoordinates.forEach(coord => bounds.extend(coord as mapboxgl.LngLatLike));
       map.current.fitBounds(bounds, { padding: 50, duration: 1000 });
     }
-  }, [routes, selectedRouteId, directionsData]); // Adicionado directionsData como dependência
+  }, [routes, selectedRouteId, directionsData]);
 
   useEffect(() => {
     updateMapWithRoutes();
@@ -333,11 +398,17 @@ export default function RouteMap({ selectedRouteId, filters }: RouteMapProps) {
     }
     localStorage.setItem("mapbox_token", mapboxToken);
     setIsTokenSet(true);
-    // setIsConfigDialogOpen(false); // Removido
     toast({
       title: "Token Mapbox Salvo",
       description: "O token foi salvo e o mapa será inicializado.",
     });
+  };
+
+  const modeIcons = {
+    driving: Car,
+    cycling: Bike,
+    walking: Walk,
+    public_transport: Bus,
   };
 
   return (
@@ -381,35 +452,6 @@ export default function RouteMap({ selectedRouteId, filters }: RouteMapProps) {
 
       {isTokenSet && (
         <>
-          {/* Removido o botão de configuração */}
-          {/* <div className="absolute top-4 right-4 z-10">
-            <Dialog open={isConfigDialogOpen} onOpenChange={setIsConfigDialogOpen}>
-              <DialogTrigger asChild>
-                <Button variant="outline" size="icon" className="bg-card/80 hover:bg-card border border-border/50 rounded-full shadow-lg">
-                  <Settings className="h-5 w-5" />
-                </Button>
-              </DialogTrigger>
-              <DialogContent className="sm:max-w-[425px] bg-card border-primary/20">
-                <DialogHeader>
-                  <DialogTitle>Configurações do Mapa</DialogTitle>
-                </DialogHeader>
-                <div className="grid gap-4 py-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="mapbox-token">Token Público do Mapbox</Label>
-                    <Input
-                      id="mapbox-token"
-                      type="text"
-                      value={mapboxToken}
-                      onChange={(e) => setMapboxToken(e.target.value)}
-                      placeholder="pk.eyJ1Ijoi..."
-                    />
-                  </div>
-                  <Button onClick={handleTokenSubmit}>Salvar Token</Button>
-                </div>
-              </DialogContent>
-            </Dialog>
-          </div> */}
-
           {selectedRouteDetails && (
             <Card className="absolute top-4 left-4 z-10 bg-card/80 backdrop-blur-sm border-border/50 shadow-lg">
               <CardContent className="p-4 space-y-2">
@@ -427,7 +469,7 @@ export default function RouteMap({ selectedRouteId, filters }: RouteMapProps) {
                     </div>
                     <div className="flex items-center gap-2 text-sm text-muted-foreground">
                       <Clock className="h-4 w-4" />
-                      <span>Duração: {Math.round(directionsData.duration)} min</span>
+                      <span>Duração: {formatDuration(directionsData.duration)}</span>
                     </div>
                   </>
                 ) : (
@@ -435,6 +477,43 @@ export default function RouteMap({ selectedRouteId, filters }: RouteMapProps) {
                 )}
               </CardContent>
             </Card>
+          )}
+
+          {selectedRouteDetails && (
+            <div className="absolute top-4 right-4 z-10 bg-card/80 backdrop-blur-sm border-border/50 rounded-lg shadow-lg p-2 flex gap-2">
+              {Object.entries(modeIcons).map(([mode, Icon]) => (
+                <Button
+                  key={mode}
+                  variant="ghost"
+                  size="icon"
+                  className={cn(
+                    "h-10 w-10 rounded-full",
+                    selectedTransportMode === mode ? "bg-primary/20 text-primary" : "text-muted-foreground hover:bg-muted/20"
+                  )}
+                  onClick={() => setSelectedTransportMode(mode as typeof selectedTransportMode)}
+                  disabled={isLoadingDirections}
+                >
+                  <Icon className="h-5 w-5" />
+                </Button>
+              ))}
+            </div>
+          )}
+
+          {selectedRouteDetails && (
+            <div className="absolute bottom-4 left-4 z-10 bg-card/80 backdrop-blur-sm border-border/50 rounded-lg shadow-lg p-3">
+              <h4 className="text-sm font-semibold text-foreground mb-2">Durações por Modalidade:</h4>
+              <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-xs text-muted-foreground">
+                {Object.entries(modeDurations).map(([mode, duration]) => (
+                  <div key={mode} className="flex items-center gap-1">
+                    {modeIcons[mode as keyof typeof modeIcons] && React.createElement(modeIcons[mode as keyof typeof modeIcons], { className: "h-3 w-3 text-primary" })}
+                    <span className="capitalize">{mode.replace('_', ' ')}:</span>
+                    <span className="font-medium text-foreground">
+                      {duration !== undefined ? formatDuration(duration) : 'N/A'}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </div>
           )}
         </>
       )}

@@ -31,3 +31,22 @@ export const formatItemDescriptionsForColeta = (items: Tables<'items'>[] | null)
   const descriptions = items.map(item => item.description || 'N/A').filter(Boolean).join(', ');
   return descriptions.length > 255 ? descriptions.substring(0, 252) + '...' : descriptions;
 };
+
+// NEW: Helper function to format duration from seconds to human-readable string
+export function formatDuration(seconds: number): string {
+  if (seconds === 0) return "0 min";
+  if (seconds < 60) return `${Math.round(seconds)} seg`;
+
+  const minutes = Math.round(seconds / 60);
+  if (minutes < 60) return `${minutes} min`;
+
+  const hours = Math.floor(minutes / 60);
+  const remainingMinutes = minutes % 60;
+  if (hours < 24) {
+    return `${hours} h ${remainingMinutes > 0 ? `${remainingMinutes} min` : ''}`.trim();
+  }
+
+  const days = Math.floor(hours / 24);
+  const remainingHours = hours % 24;
+  return `${days} dias ${remainingHours > 0 ? `${remainingHours} h` : ''}`.trim();
+}
