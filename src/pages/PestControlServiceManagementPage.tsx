@@ -3,7 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { ArrowLeft, PlusCircle, Edit, Trash2, Bug, Search, Calendar as CalendarIcon, User, MapPin, Clock, CheckCircle, XCircle } from "lucide-react";
+import { ArrowLeft, PlusCircle, Edit, Trash2, Bug, Search, Calendar as CalendarIcon, User, MapPin, Clock, CheckCircle, XCircle, Download, FileText, FileSpreadsheet, Loader2 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -19,6 +19,13 @@ import { cn } from "@/lib/utils";
 import { PestControlServiceForm } from "@/components/PestControlServiceForm";
 import { ConfirmationDialog } from "@/components/ConfirmationDialog";
 import { CollectionAttachmentsDialog } from "@/components/CollectionAttachmentsDialog"; // Re-using for attachments
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"; // Importar DropdownMenu components
+import { generatePestControlServiceReport } from "@/lib/pest-control-report-utils"; // Importar o novo utilitário
 
 type PestControlService = Tables<'pest_control_services'> & {
   client?: { name: string } | null;
@@ -54,6 +61,7 @@ export const PestControlServiceManagementPage: React.FC = () => {
   const [isAttachmentsDialogOpen, setIsAttachmentsDialogOpen] = useState(false);
   const [selectedServiceAttachments, setSelectedServiceAttachments] = useState<FileAttachment[]>([]);
   const [selectedServiceName, setSelectedServiceName] = useState<string>('');
+  const [isExporting, setIsExporting] = useState(false); // Novo estado para controlar o loading da exportação
 
   const { data: services, isLoading: isLoadingServices, error: servicesError } = useQuery<PestControlService[], Error>({
     queryKey: ['pestControlServices', user?.id, searchTerm, filterDate?.toISOString().split('T')[0], filterStatus, filterPriority],
@@ -194,6 +202,23 @@ export const PestControlServiceManagementPage: React.FC = () => {
     setIsAttachmentsDialogOpen(true);
   };
 
+  const handleExportReport = async (formatType: 'pdf' | 'csv') => {
+    if (!services || services.length === 0) {
+      toast({ title: "Nenhum serviço para exportar", description: "Não há serviços para gerar o relatório.", variant: "warning" });
+      return;
+    }
+    setIsExporting(true);
+    try {
+      await generatePestControlServiceReport(services, formatType, "Relatório de Serviços de Controle de Pragas");
+      toast({ title: "Exportação Concluída", description: `O relatório de serviços foi exportado com sucesso para ${formatType.toUpperCase()}.` });
+    } catch (error: any) {
+      console.error("Erro ao exportar relatório de serviços:", error);
+      toast({ title: "Erro na Exportação", description: error.message || "Ocorreu um erro ao gerar o relatório.", variant: "destructive" });
+    } finally {
+      setIsExporting(false);
+    }
+  };
+
   const getStatusBadgeColor = (status: Enums<'pest_service_status'>) => {
     switch (status) {
       case 'agendado': return 'bg-primary/20 text-primary';
@@ -327,27 +352,49 @@ export const PestControlServiceManagementPage: React.FC = () => {
                 <Bug className="h-5 w-5 text-primary" />
                 Meus Serviços
               </CardTitle>
-              <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
-                <DialogTrigger asChild>
-                  <Button size="sm" className="bg-gradient-primary hover:bg-gradient-primary/80">
-                    <PlusCircle className="mr-2 h-4 w-4" />
-                    Novo Serviço
-                  </Button>
-                </DialogTrigger>
-                <DialogContent className="sm:max-w-[700px] bg-card border-primary/20 max-h-[90vh] overflow-y-auto">
-                  <DialogHeader>
-                    <DialogTitle className="flex items-center gap-2 gradient-text">
-                      <Bug className="h-5 w-5" />
-                      Agendar Novo Serviço
-                    </DialogTitle>
-                  </DialogHeader>
-                  <PestControlServiceForm
-                    onSave={handleAddService}
-                    onCancel={() => setIsAddDialogOpen(false)}
-                    isPending={addServiceMutation.isPending}
-                  />
-                </DialogContent>
-              </Dialog>
+              <div className="flex gap-2">
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button size="sm" className="bg-gradient-secondary hover:bg-gradient-secondary/80" disabled={isExporting || !services || services.length === 0}>
+                      {isExporting ? (
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      ) : (
+                        <Download className="mr-2 h-4 w-4" />
+                      )}
+                      Gerar Relatório
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end">
+                    <DropdownMenuItem onClick={() => handleExportReport('pdf')} disabled={isExporting}>
+                      <FileText className="mr-2 h-4 w-4" /> Exportar para PDF
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => handleExportReport('csv')} disabled={isExporting}>
+                      <FileSpreadsheet className="mr-2 h-4 w-4" /> Exportar para CSV
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+                <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
+                  <DialogTrigger asChild>
+                    <Button size="sm" className="bg-gradient-primary hover:bg-gradient-primary/80">
+                      <PlusCircle className="mr-2 h-4 w-4" />
+                      Novo Serviço
+                    </Button>
+                  </DialogTrigger>
+                  <DialogContent className="sm:max-w-[700px] bg-card border-primary/20 max-h-[90vh] overflow-y-auto">
+                    <DialogHeader>
+                      <DialogTitle className="flex items-center gap-2 gradient-text">
+                        <Bug className="h-5 w-5" />
+                        Agendar Novo Serviço
+                      </DialogTitle>
+                    </DialogHeader>
+                    <PestControlServiceForm
+                      onSave={handleAddService}
+                      onCancel={() => setIsAddDialogOpen(false)}
+                      isPending={addServiceMutation.isPending}
+                    />
+                  </DialogContent>
+                </Dialog>
+              </div>
             </CardHeader>
             <CardContent className="space-y-4">
               {services && services.length > 0 ? (
