@@ -22,6 +22,7 @@ import { ResponsibleUserSection } from "@/components/shared-form-sections/Respon
 import { ObservationSection } from "@/components/shared-form-sections/ObservationSection"; // Caminho corrigido
 import { FileUploadField } from "@/components/FileUploadField";
 import { DateSelectionSection } from "@/components/shared-form-sections/DateSelectionSection"; // Caminho corrigido
+import { ItemsTableSection } from '@/components/shared-scheduler-sections/ItemsTableSection'; // Adicionado: Importação do ItemsTableSection
 
 // Import types
 import type { TablesInsert, Tables, TablesUpdate } from "@/integrations/supabase/types_generated";
