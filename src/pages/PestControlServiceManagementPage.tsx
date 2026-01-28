@@ -1,31 +1,30 @@
-import { useState } from "react";
+import { useState, useCallback } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { ArrowLeft, PlusCircle, Edit, Trash2, Bug, Search, Calendar as CalendarIcon, User, MapPin, Clock, CheckCircle, XCircle, Download, FileText, FileSpreadsheet, Loader2 } from "lucide-react";
+import { ArrowLeft, Bug, Download, FileText, FileSpreadsheet, Loader2 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import type { Tables, TablesInsert, TablesUpdate, Enums } from "@/integrations/supabase/types_generated";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/use-auth";
-import { Badge } from "@/components/ui/badge";
-import { format, isValid } from "date-fns";
-import { ptBR } from "date-fns/locale";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { Calendar } from "@/components/ui/calendar";
-import { cn } from "@/lib/utils";
-import { PestControlServiceForm } from "@/components/PestControlServiceForm";
+import { CollectionAttachmentsDialog } from "@/components/CollectionAttachmentsDialog";
 import { ConfirmationDialog } from "@/components/ConfirmationDialog";
-import { CollectionAttachmentsDialog } from "@/components/CollectionAttachmentsDialog"; // Re-using for attachments
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"; // Importar DropdownMenu components
-import { generatePestControlServiceReport } from "@/lib/pest-control-report-utils"; // Importar o novo utilitário
+} from "@/components/ui/dropdown-menu";
+import { generatePestControlServiceReport } from "@/lib/pest-control-report-utils";
+
+// Importando os novos componentes modulares
+import { PestControlServiceHeader } from "@/components/pest-control-page/PestControlServiceHeader";
+import { PestControlServiceFilters } from "@/components/pest-control-page/PestControlServiceFilters";
+import { PestControlServiceCard } from "@/components/pest-control-page/PestControlServiceCard";
+import { CreatePestControlServiceDialog } from "@/components/pest-control-page/CreatePestControlServiceDialog";
+import { EditPestControlServiceDialog } from "@/components/pest-control-page/EditPestControlServiceDialog";
 
 type PestControlService = Tables<'pest_control_services'> & {
   client?: { name: string } | null;
@@ -61,7 +60,7 @@ export const PestControlServiceManagementPage: React.FC = () => {
   const [isAttachmentsDialogOpen, setIsAttachmentsDialogOpen] = useState(false);
   const [selectedServiceAttachments, setSelectedServiceAttachments] = useState<FileAttachment[]>([]);
   const [selectedServiceName, setSelectedServiceName] = useState<string>('');
-  const [isExporting, setIsExporting] = useState(false); // Novo estado para controlar o loading da exportação
+  const [isExporting, setIsExporting] = useState(false);
 
   const { data: services, isLoading: isLoadingServices, error: servicesError } = useQuery<PestControlService[], Error>({
     queryKey: ['pestControlServices', user?.id, searchTerm, filterDate?.toISOString().split('T')[0], filterStatus, filterPriority],
@@ -172,37 +171,37 @@ export const PestControlServiceManagementPage: React.FC = () => {
     },
   });
 
-  const handleAddService = (data: PestControlServiceInsert) => {
+  const handleAddService = useCallback((data: PestControlServiceInsert) => {
     addServiceMutation.mutate(data);
-  };
+  }, [addServiceMutation]);
 
-  const handleUpdateService = (data: PestControlServiceUpdate) => {
+  const handleUpdateService = useCallback((data: PestControlServiceUpdate) => {
     updateServiceMutation.mutate(data);
-  };
+  }, [updateServiceMutation]);
 
-  const handleDeleteServiceClick = (id: string) => {
+  const handleDeleteServiceClick = useCallback((id: string) => {
     setServiceToDelete(id);
     setIsConfirmDeleteDialogOpen(true);
-  };
+  }, []);
 
-  const confirmDeleteService = () => {
+  const confirmDeleteService = useCallback(() => {
     if (serviceToDelete) {
       deleteServiceMutation.mutate(serviceToDelete);
     }
-  };
+  }, [serviceToDelete, deleteServiceMutation]);
 
-  const handleEditService = (service: PestControlService) => {
+  const handleEditService = useCallback((service: PestControlService) => {
     setEditingService(service);
     setIsEditDialogOpen(true);
-  };
+  }, []);
 
-  const handleViewAttachments = (attachments: FileAttachment[], serviceName: string) => {
+  const handleViewAttachments = useCallback((attachments: FileAttachment[], serviceName: string) => {
     setSelectedServiceAttachments(attachments);
     setSelectedServiceName(serviceName);
     setIsAttachmentsDialogOpen(true);
-  };
+  }, []);
 
-  const handleExportReport = async (formatType: 'pdf' | 'csv') => {
+  const handleExportReport = useCallback(async (formatType: 'pdf' | 'csv') => {
     if (!services || services.length === 0) {
       toast({ title: "Nenhum serviço para exportar", description: "Não há serviços para gerar o relatório.", variant: "warning" });
       return;
@@ -217,26 +216,7 @@ export const PestControlServiceManagementPage: React.FC = () => {
     } finally {
       setIsExporting(false);
     }
-  };
-
-  const getStatusBadgeColor = (status: Enums<'pest_service_status'>) => {
-    switch (status) {
-      case 'agendado': return 'bg-primary/20 text-primary';
-      case 'em_andamento': return 'bg-warning-yellow/20 text-warning-yellow';
-      case 'concluido': return 'bg-success-green/20 text-success-green';
-      case 'cancelado': return 'bg-destructive/20 text-destructive';
-      default: return 'bg-muted/20 text-muted-foreground';
-    }
-  };
-
-  const getPriorityBadgeColor = (priority: Enums<'pest_service_priority'>) => {
-    switch (priority) {
-      case 'urgente': return 'bg-destructive/20 text-destructive';
-      case 'contrato': return 'bg-neural/20 text-neural';
-      case 'normal': return 'bg-muted/20 text-muted-foreground';
-      default: return 'bg-muted/20 text-muted-foreground';
-    }
-  };
+  }, [services, toast]);
 
   if (isLoadingServices) {
     return (
@@ -272,79 +252,21 @@ export const PestControlServiceManagementPage: React.FC = () => {
         </Button>
 
         <div className="space-y-6">
-          <div className="text-center">
-            <h1 className="text-4xl font-bold font-orbitron gradient-text mb-4">
-              Gerenciar Serviços de Controle de Pragas
-            </h1>
-            <p className="text-muted-foreground">
-              Agende, edite e acompanhe os serviços de controle de pragas.
-            </p>
-          </div>
+          <PestControlServiceHeader
+            title="Gerenciar Serviços de Controle de Pragas"
+            description="Agende, edite e acompanhe os serviços de controle de pragas."
+          />
 
-          <Card className="card-futuristic">
-            <CardContent className="p-6">
-              <div className="flex flex-col md:flex-row gap-4 items-center">
-                <div className="flex-1 relative">
-                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
-                  <Input
-                    placeholder="Buscar por cliente, endereço, pragas, técnico ou observações..."
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                    className="pl-10"
-                  />
-                </div>
-                <Popover>
-                  <PopoverTrigger asChild>
-                    <Button
-                      variant={"outline"}
-                      className={cn(
-                        "w-full md:w-auto justify-start text-left font-normal",
-                        !filterDate && "text-muted-foreground"
-                      )}
-                    >
-                      <CalendarIcon className="mr-2 h-4 w-4" />
-                      {filterDate ? (isValid(filterDate) ? format(filterDate, "dd/MM/yyyy", { locale: ptBR }) : "Data inválida") : "Filtrar por data"}
-                    </Button>
-                  </PopoverTrigger>
-                  <PopoverContent className="w-auto p-0">
-                    <Calendar
-                      mode="single"
-                      selected={filterDate}
-                      onSelect={setFilterDate}
-                      initialFocus
-                      locale={ptBR}
-                    />
-                  </PopoverContent>
-                </Popover>
-                {filterDate && (
-                  <Button variant="ghost" onClick={() => setFilterDate(undefined)} className="w-full md:w-auto">
-                    Limpar Data
-                  </Button>
-                )}
-                <select
-                  value={filterStatus}
-                  onChange={(e) => setFilterStatus(e.target.value as Enums<'pest_service_status'> | 'all')}
-                  className="h-10 px-3 py-2 rounded-md border border-input bg-background text-foreground shadow-sm hover:bg-accent hover:text-accent-foreground focus:outline-none focus:ring-1 focus:ring-ring w-full md:w-auto"
-                >
-                  <option value="all">Todos os Status</option>
-                  <option value="agendado">Agendado</option>
-                  <option value="em_andamento">Em Andamento</option>
-                  <option value="concluido">Concluído</option>
-                  <option value="cancelado">Cancelado</option>
-                </select>
-                <select
-                  value={filterPriority}
-                  onChange={(e) => setFilterPriority(e.target.value as Enums<'pest_service_priority'> | 'all')}
-                  className="h-10 px-3 py-2 rounded-md border border-input bg-background text-foreground shadow-sm hover:bg-accent hover:text-accent-foreground focus:outline-none focus:ring-1 focus:ring-ring w-full md:w-auto"
-                >
-                  <option value="all">Todas as Prioridades</option>
-                  <option value="normal">Normal</option>
-                  <option value="urgente">Urgente</option>
-                  <option value="contrato">Contrato</option>
-                </select>
-              </div>
-            </CardContent>
-          </Card>
+          <PestControlServiceFilters
+            searchTerm={searchTerm}
+            setSearchTerm={setSearchTerm}
+            filterDate={filterDate}
+            setFilterDate={setFilterDate}
+            filterStatus={filterStatus}
+            setFilterStatus={setFilterStatus}
+            filterPriority={filterPriority}
+            setFilterPriority={setFilterPriority}
+          />
 
           <Card className="card-futuristic">
             <CardHeader className="flex flex-row items-center justify-between">
@@ -373,98 +295,26 @@ export const PestControlServiceManagementPage: React.FC = () => {
                     </DropdownMenuItem>
                   </DropdownMenuContent>
                 </DropdownMenu>
-                <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
-                  <DialogTrigger asChild>
-                    <Button size="sm" className="bg-gradient-primary hover:bg-gradient-primary/80">
-                      <PlusCircle className="mr-2 h-4 w-4" />
-                      Novo Serviço
-                    </Button>
-                  </DialogTrigger>
-                  <DialogContent className="sm:max-w-[700px] bg-card border-primary/20 max-h-[90vh] overflow-y-auto">
-                    <DialogHeader>
-                      <DialogTitle className="flex items-center gap-2 gradient-text">
-                        <Bug className="h-5 w-5" />
-                        Agendar Novo Serviço
-                      </DialogTitle>
-                    </DialogHeader>
-                    <PestControlServiceForm
-                      onSave={handleAddService}
-                      onCancel={() => setIsAddDialogOpen(false)}
-                      isPending={addServiceMutation.isPending}
-                    />
-                  </DialogContent>
-                </Dialog>
+                <CreatePestControlServiceDialog
+                  isOpen={isAddDialogOpen}
+                  onOpenChange={setIsAddDialogOpen}
+                  onSave={handleAddService}
+                  isPending={addServiceMutation.isPending}
+                />
               </div>
             </CardHeader>
             <CardContent className="space-y-4">
               {services && services.length > 0 ? (
                 services.map((service, index) => (
-                  <div
+                  <PestControlServiceCard
                     key={service.id}
-                    className="flex flex-col lg:flex-row items-start lg:items-center justify-between p-4 rounded-lg border border-primary/10 bg-slate-darker/10 animate-slide-up"
-                    style={{ animationDelay: `${index * 100}ms` }}
-                  >
-                    <div className="flex-1 min-w-0 mb-3 lg:mb-0">
-                      <h3 className="font-semibold text-lg">{service.client?.name || 'Cliente Desconhecido'}</h3>
-                      <p className="text-sm text-muted-foreground flex items-center gap-1">
-                        <MapPin className="h-3 w-3" /> {service.address}
-                      </p>
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-sm text-muted-foreground mt-1">
-                        <div className="flex items-center gap-1">
-                          <CalendarIcon className="h-3 w-3" /> Data: {format(new Date(service.service_date), 'dd/MM/yyyy', { locale: ptBR })} {service.service_time && `(${service.service_time})`}
-                        </div>
-                        <div className="flex items-center gap-1">
-                          <User className="h-3 w-3" /> Técnico: {service.responsible_user ? `${service.responsible_user.first_name} ${service.responsible_user.last_name || ''}`.trim() : 'Não atribuído'}
-                        </div>
-                        <div className="flex items-center gap-1">
-                          <Bug className="h-3 w-3" /> Pragas: {(service.pests_detected as string[] || []).join(', ') || 'N/A'}
-                        </div>
-                        <div className="flex items-center gap-1">
-                          <Clock className="h-3 w-3" /> Duração Est.: {service.estimated_duration ? `${service.estimated_duration} min` : 'N/A'}
-                        </div>
-                        <div className="flex items-center gap-1">
-                          Status: <Badge className={getStatusBadgeColor(service.status)}>{service.status}</Badge>
-                        </div>
-                        <div className="flex items-center gap-1">
-                          Prioridade: <Badge className={getPriorityBadgeColor(service.priority)}>{service.priority}</Badge>
-                        </div>
-                        {(service.attachments as FileAttachment[] || []).length > 0 && (
-                          <div className="flex items-center gap-1 col-span-full">
-                            <Paperclip className="h-3 w-3" /> Anexos: {(service.attachments as FileAttachment[]).length}
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              className="ml-2 h-6 px-2 text-xs text-primary hover:bg-primary/10"
-                              onClick={() => handleViewAttachments(service.attachments as FileAttachment[], service.client?.name || 'Serviço')}
-                            >
-                              Ver Anexos
-                            </Button>
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                    <div className="flex gap-2 flex-wrap justify-end">
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        className="border-accent text-accent hover:bg-accent/10"
-                        onClick={() => handleEditService(service)}
-                      >
-                        <Edit className="mr-1 h-3 w-3" />
-                        Editar
-                      </Button>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        className="border-destructive text-destructive hover:bg-destructive/10"
-                        onClick={() => handleDeleteServiceClick(service.id)}
-                        disabled={deleteServiceMutation.isPending}
-                      >
-                        <Trash2 className="mr-1 h-3 w-3" />
-                        Excluir
-                      </Button>
-                    </div>
-                  </div>
+                    service={service}
+                    index={index}
+                    onEdit={handleEditService}
+                    onDeleteClick={handleDeleteServiceClick}
+                    onViewAttachments={handleViewAttachments}
+                    isDeleting={deleteServiceMutation.isPending}
+                  />
                 ))
               ) : (
                 <div className="p-12 text-center text-muted-foreground">
@@ -478,24 +328,13 @@ export const PestControlServiceManagementPage: React.FC = () => {
         </div>
       </div>
 
-      {editingService && (
-        <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
-          <DialogContent className="sm:max-w-[700px] bg-card border-primary/20 max-h-[90vh] overflow-y-auto">
-            <DialogHeader>
-              <DialogTitle className="flex items-center gap-2 gradient-text">
-                <Edit className="h-5 w-5" />
-                Editar Serviço: {editingService.client?.name || 'N/A'}
-              </DialogTitle>
-            </DialogHeader>
-            <PestControlServiceForm
-              initialData={editingService}
-              onSave={handleUpdateService}
-              onCancel={() => setIsEditDialogOpen(false)}
-              isPending={updateServiceMutation.isPending}
-            />
-          </DialogContent>
-        </Dialog>
-      )}
+      <EditPestControlServiceDialog
+        isOpen={isEditDialogOpen}
+        onOpenChange={setIsEditDialogOpen}
+        service={editingService}
+        onSave={handleUpdateService}
+        isPending={updateServiceMutation.isPending}
+      />
 
       <ConfirmationDialog
         isOpen={isConfirmDeleteDialogOpen}
