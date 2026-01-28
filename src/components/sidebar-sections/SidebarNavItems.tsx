@@ -73,13 +73,13 @@ const navItems: NavItem[] = [
     roles: ['standard', 'admin'],
     group: 'main',
   },
-  // {
-  //   label: 'Controle de Pragas', // Removido conforme solicitado
-  //   icon: Bug,
-  //   path: '/pest-control',
-  //   roles: ['standard', 'admin'],
-  //   group: 'main',
-  // },
+  {
+    label: 'Controle de Pragas',
+    icon: Bug,
+    path: '/pest-control-management', // Updated path
+    roles: ['standard', 'admin'],
+    group: 'main',
+  },
   {
     label: 'Importar Dados',
     icon: FileUp,

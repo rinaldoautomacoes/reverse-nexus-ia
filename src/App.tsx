@@ -39,7 +39,7 @@ import { GeneralDashboard } from "./pages/GeneralDashboard";
 import { ExcelExtractorPage } from "./pages/ExcelExtractorPage";
 import { AutomaticCollectionSchedulerPage } from "./pages/AutomaticCollectionSchedulerPage";
 import { DataImportPage } from "./pages/DataImportPage";
-import { PestControlService } from "@/pages/PestControlService";
+import { PestControlServiceManagementPage } from "@/pages/PestControlServiceManagementPage"; // Updated import
 import { TechnicianManagementPage } from "./pages/TechnicianPage"; // Importação atualizada
 import { SupervisorManagementPage } from "./pages/SupervisorManagementPage"; // Importação atualizada
 // import { PestControlDashboardPage } from "./pages/PestControlDashboardPage"; // Removido
@@ -98,7 +98,7 @@ const AppLayout = () => {
             <Route path="/excel-extractor" element={<ExcelExtractorPage />} />
             <Route path="/agendamento-automatico" element={<AutomaticCollectionSchedulerPage />} />
             <Route path="/data-import" element={<DataImportPage />} />
-            <Route path="/pest-control" element={<PestControlService />} />
+            <Route path="/pest-control-management" element={<PestControlServiceManagementPage />} /> {/* New route */}
             {/* <Route path="/pest-control-dashboard" element={<PestControlDashboardPage selectedYear={selectedYear} />} /> */}
           </Route>
 
