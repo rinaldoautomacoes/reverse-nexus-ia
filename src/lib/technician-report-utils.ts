@@ -62,17 +62,19 @@ export const generateTechnicianReport = async (
     currentY += 10;
 
     // --- Technicians Table ---
-    const tableHeaders = ["Nome Completo", "Função", "Equipe", "Nome da Equipe", "Telefone Empresa", "Telefone Pessoal", "Supervisor", "Endereço"];
+    const tableHeaders = ["Nome Completo", "Função", "Equipe", "Nome da Equipe", "Modelo Moto", "Placa", "Telefone Empresa", "Telefone Pessoal", "Supervisor", "Endereço"];
     const tableUsableWidth = pageWidth - 2 * margin;
     const columnWidths = [
-      tableUsableWidth * 0.18, // Nome Completo
-      tableUsableWidth * 0.09, // Função
-      tableUsableWidth * 0.09, // Equipe
-      tableUsableWidth * 0.12, // Nome da Equipe (novo)
-      tableUsableWidth * 0.14, // Telefone Empresa
-      tableUsableWidth * 0.14, // Telefone Pessoal
-      tableUsableWidth * 0.12, // Supervisor
-      tableUsableWidth * 0.12, // Endereço
+      tableUsableWidth * 0.14, // Nome Completo
+      tableUsableWidth * 0.07, // Função
+      tableUsableWidth * 0.07, // Equipe
+      tableUsableWidth * 0.09, // Nome da Equipe
+      tableUsableWidth * 0.09, // Modelo Moto
+      tableUsableWidth * 0.07, // Placa
+      tableUsableWidth * 0.10, // Telefone Empresa
+      tableUsableWidth * 0.10, // Telefone Pessoal
+      tableUsableWidth * 0.10, // Supervisor
+      tableUsableWidth * 0.17, // Endereço
     ];
     const tableRowHeight = 8;
     const tableHeaderHeight = 10;
