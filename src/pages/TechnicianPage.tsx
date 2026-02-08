@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { ArrowLeft, Edit, Trash2, Users, Search, User as UserIcon, Phone, Briefcase, Loader2, UserCog, Sun, Moon, Square, CheckSquare, MapPin, MessageSquare, Send, Mail, UserCheck } from "lucide-react"; // Adicionado UserCheck aqui
+import { ArrowLeft, Edit, Trash2, Users, Search, User as UserIcon, Phone, Briefcase, Loader2, UserCog, Sun, Moon, Square, CheckSquare, MapPin, MessageSquare, Send, Mail, UserCheck, Bike } from "lucide-react"; // Adicionado UserCheck aqui
 import { useNavigate } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -353,6 +353,16 @@ export const TechnicianManagementPage = () => { // Renamed component
                             {technician.supervisor_id && (
                               <div className="flex items-center gap-1">
                                 <UserCheck className="h-3 w-3" /> Supervisor: {supervisorName}
+                              </div>
+                            )}
+                            {(technician as any).motorcycle_model && (
+                              <div className="flex items-center gap-1">
+                                <Bike className="h-3 w-3" /> Moto: {(technician as any).motorcycle_model}
+                              </div>
+                            )}
+                            {(technician as any).license_plate && (
+                              <div className="flex items-center gap-1">
+                                <Square className="h-3 w-3" /> Placa: {(technician as any).license_plate}
                               </div>
                             )}
                             {technician.address && (

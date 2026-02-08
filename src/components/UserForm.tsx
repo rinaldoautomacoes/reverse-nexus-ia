@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Loader2, User as UserIcon, Mail, Lock, Phone, Briefcase, UserCog, Sun, Moon, MapPin, Users } from "lucide-react";
+import { Loader2, User as UserIcon, Mail, Lock, Phone, Briefcase, UserCog, Sun, Moon, MapPin, Users, Bike, Square } from "lucide-react";
 import type { TablesInsert, TablesUpdate } from "@/integrations/supabase/types_generated";
 import { SupervisorCombobox } from "./SupervisorCombobox";
 
@@ -32,6 +32,8 @@ export const UserForm: React.FC<UserFormProps> = ({ initialData, onSave, onCance
     supervisor_id: null,
     team_shift: "day",
     team_name: "", // Novo campo
+    motorcycle_model: "", // Novo campo
+    license_plate: "", // Novo campo
     address: "",
     id: "",
   });
@@ -58,6 +60,8 @@ export const UserForm: React.FC<UserFormProps> = ({ initialData, onSave, onCance
         supervisor_id: null,
         team_shift: "day",
         team_name: "", // Novo campo
+        motorcycle_model: "", // Novo campo
+        license_plate: "", // Novo campo
         address: "",
         id: "",
       });
@@ -243,6 +247,39 @@ export const UserForm: React.FC<UserFormProps> = ({ initialData, onSave, onCance
           />
         </div>
       </div>
+
+      {profileType === 'technician' && (
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="space-y-2">
+            <Label htmlFor="motorcycle_model">Modelo da Moto</Label>
+            <div className="relative">
+              <Bike className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+              <Input
+                id="motorcycle_model"
+                placeholder="Ex: Honda CG 160"
+                className="pl-10"
+                value={(formData as any).motorcycle_model || ''}
+                onChange={(e) => handleInputChange("motorcycle_model" as any, e.target.value)}
+                disabled={isPending}
+              />
+            </div>
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="license_plate">Placa</Label>
+            <div className="relative">
+              <Square className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+              <Input
+                id="license_plate"
+                placeholder="ABC-1234"
+                className="pl-10"
+                value={(formData as any).license_plate || ''}
+                onChange={(e) => handleInputChange("license_plate" as any, e.target.value)}
+                disabled={isPending}
+              />
+            </div>
+          </div>
+        </div>
+      )}
 
       {!isSupervisorProfile && (
         <div className="space-y-2">
