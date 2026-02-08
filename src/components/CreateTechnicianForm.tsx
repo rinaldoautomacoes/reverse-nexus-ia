@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Loader2, User as UserIcon, Phone, Briefcase, UserCog, Sun, Moon, Users } from "lucide-react"; // Adicionado Users
+import { Loader2, User as UserIcon, Phone, Briefcase, UserCog, Sun, Moon, Users, Bike, Square, MapPin } from "lucide-react"; // Adicionado Bike, Square, MapPin
 import type { TablesInsert } from "@/integrations/supabase/types_generated";
 import { SupervisorCombobox } from "./SupervisorCombobox";
 import { useToast } from "@/hooks/use-toast"; // Import useToast
@@ -28,6 +28,8 @@ export const CreateTechnicianForm: React.FC<CreateTechnicianFormProps> = ({ onSa
     supervisor_id: null,
     team_shift: "day", // Novo campo com valor padrão
     team_name: "", // Novo campo
+    motorcycle_model: "", // Novo campo
+    license_plate: "", // Novo campo
     address: "",
     id: crypto.randomUUID(), // Generate ID here for new profiles
   });

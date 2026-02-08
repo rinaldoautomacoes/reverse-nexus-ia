@@ -115,7 +115,9 @@ export const generateTechnicianReport = async (
         `${tech.first_name || ''} ${tech.last_name || ''}`.trim(),
         tech.role === 'standard' ? 'Técnico' : tech.role,
         tech.team_shift === 'day' ? 'Dia' : 'Noite',
-        tech.team_name || 'N/A', // Novo campo
+        tech.team_name || 'N/A',
+        tech.motorcycle_model || 'N/A',
+        tech.license_plate || 'N/A',
         tech.phone_number || 'N/A',
         tech.personal_phone_number || 'N/A',
         supervisorName,
@@ -180,13 +182,13 @@ export const generateTechnicianReport = async (
 
   } else if (formatType === 'csv') {
     const headers = [
-      "Nome Completo", "Primeiro Nome", "Sobrenome", "Função", "Equipe", "Nome da Equipe", // Novo campo
-      "Telefone Empresa", "Telefone Pessoal", "Supervisor ID", "Nome Supervisor", "Endereço"
+      "Nome Completo", "Primeiro Nome", "Sobrenome", "Função", "Equipe", "Nome da Equipe",
+      "Modelo Moto", "Placa", "Telefone Empresa", "Telefone Pessoal", "Supervisor ID", "Nome Supervisor", "Endereço"
     ];
 
     const rows = technicians.map(tech => {
-      const supervisorName = tech.supervisor_id ? 
-        allProfiles.find(p => p.id === tech.supervisor_id)?.first_name || '' : 
+      const supervisorName = tech.supervisor_id ?
+        allProfiles.find(p => p.id === tech.supervisor_id)?.first_name || '' :
         '';
       return [
         `"${`${tech.first_name || ''} ${tech.last_name || ''}`.trim().replace(/"/g, '""')}"`,
@@ -194,7 +196,9 @@ export const generateTechnicianReport = async (
         `"${(tech.last_name || '').replace(/"/g, '""')}"`,
         `"${(tech.role === 'standard' ? 'Técnico' : tech.role).replace(/"/g, '""')}"`,
         `"${(tech.team_shift === 'day' ? 'Dia' : 'Noite').replace(/"/g, '""')}"`,
-        `"${(tech.team_name || '').replace(/"/g, '""')}"`, // Novo campo
+        `"${(tech.team_name || '').replace(/"/g, '""')}"`,
+        `"${(tech.motorcycle_model || '').replace(/"/g, '""')}"`,
+        `"${(tech.license_plate || '').replace(/"/g, '""')}"`,
         `"${(tech.phone_number || '').replace(/"/g, '""')}"`,
         `"${(tech.personal_phone_number || '').replace(/"/g, '""')}"`,
         `"${(tech.supervisor_id || '').replace(/"/g, '""')}"`,

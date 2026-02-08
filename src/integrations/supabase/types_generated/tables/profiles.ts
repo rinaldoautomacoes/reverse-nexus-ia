@@ -13,6 +13,8 @@ export type ProfileRow = {
   address: string | null
   team_shift: "day" | "night"
   team_name: string | null
+  motorcycle_model: string | null
+  license_plate: string | null
 }
 
 export type ProfileInsert = {
@@ -28,6 +30,8 @@ export type ProfileInsert = {
   address?: string | null
   team_shift?: "day" | "night"
   team_name?: string | null
+  motorcycle_model?: string | null
+  license_plate?: string | null
 }
 
 export type ProfileUpdate = {
@@ -43,6 +47,8 @@ export type ProfileUpdate = {
   address?: string | null
   team_shift?: "day" | "night"
   team_name?: string | null
+  motorcycle_model?: string | null
+  license_plate?: string | null
 }
 
 export type ProfileRelationships = []
