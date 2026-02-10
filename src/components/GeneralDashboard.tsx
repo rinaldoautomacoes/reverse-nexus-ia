@@ -23,7 +23,7 @@ export const GeneralDashboard: React.FC<GeneralDashboardProps> = ({ selectedYear
   const { user } = useAuth();
 
   // Fetch all coletas (both 'coleta' and 'entrega' types) for the selected year
-  const { data: allColetas, isLoading: isLoadingAllColetas, error: allColetasError } = useQuery<Coleta[], Error>({
+  const { data: allColetas, isLoading: isLoadingAllColetas, error: allColetasError } = useQuery({
     queryKey: ['allColetasForGeneralDashboard', user?.id, selectedYear],
     queryFn: async () => {
       if (!user?.id) return [];
@@ -50,7 +50,7 @@ export const GeneralDashboard: React.FC<GeneralDashboardProps> = ({ selectedYear
   });
 
   // Fetch all products to get their descriptions (needed for charts)
-  const { data: products, isLoading: isLoadingProducts, error: productsError } = useQuery<Product[], Error>({
+  const { data: products, isLoading: isLoadingProducts, error: productsError } = useQuery({
     queryKey: ['allProductsForGeneralDashboard', user?.id],
     queryFn: async () => {
       if (!user?.id) return [];
@@ -59,7 +59,7 @@ export const GeneralDashboard: React.FC<GeneralDashboardProps> = ({ selectedYear
         .select('code, description')
         .eq('user_id', user.id);
       if (error) throw new Error(error.message);
-      return data;
+      return data ?? [];
     },
     enabled: !!user?.id,
   });
@@ -116,7 +116,7 @@ export const GeneralDashboard: React.FC<GeneralDashboardProps> = ({ selectedYear
       {/* Main Dashboard Content */}
       <div className="px-6 lg:px-8 py-8 space-y-8">
         {/* Metrics Cards */}
-        <GeneralMetricsCards allColetas={allColetas || []} selectedYear={selectedYear} />
+        <GeneralMetricsCards allColetas={allColetas || []} selectedYear={selectedYear} outstandingItems={[]} />
 
         {/* Main Grid */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">

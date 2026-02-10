@@ -35,7 +35,7 @@ export const EntregasMetricsCards: React.FC<EntregasMetricsCardsProps> = ({ sele
   const { user } = useAuth();
 
   // Fetch all products to get their descriptions (still needed for generateItemDescription in other components)
-  const { data: products, isLoading: isLoadingProducts, error: productsError } = useQuery<Product[], Error>({
+  const { data: products, isLoading: isLoadingProducts, error: productsError } = useQuery({
     queryKey: ['allProducts', user?.id],
     queryFn: async () => {
       if (!user?.id) return [];
@@ -44,7 +44,7 @@ export const EntregasMetricsCards: React.FC<EntregasMetricsCardsProps> = ({ sele
         .select('code, description')
         .eq('user_id', user.id);
       if (error) throw new Error(error.message);
-      return data;
+      return data ?? [];
     },
     enabled: !!user?.id,
   });
@@ -57,7 +57,7 @@ export const EntregasMetricsCards: React.FC<EntregasMetricsCardsProps> = ({ sele
   });
 
   // Fetch all deliveries for the selected year and type 'entrega'
-  const { data: entregas, isLoading: isLoadingEntregas, error: entregasError } = useQuery<Coleta[], Error>({
+  const { data: entregas, isLoading: isLoadingEntregas, error: entregasError } = useQuery({
     queryKey: ['entregasForMetrics', user?.id, selectedYear],
     queryFn: async () => {
       if (!user?.id) return [];
@@ -67,18 +67,18 @@ export const EntregasMetricsCards: React.FC<EntregasMetricsCardsProps> = ({ sele
 
       const { data, error } = await supabase
         .from('coletas')
-        .select('id, status_coleta, previsao_coleta, items(quantity)') // Added previsao_coleta for debugging
+        .select('id, status_coleta, previsao_coleta, items(quantity)')
         .eq('user_id', user.id)
         .eq('type', 'entrega')
         .gte('previsao_coleta', startDate)
         .lt('previsao_coleta', endDate);
       
       if (error) {
-        console.error("Supabase query error in EntregasMetricsCards:", error.message); // Added log
+        console.error("Supabase query error in EntregasMetricsCards:", error.message);
         throw new Error(error.message);
       }
-      console.log("Fetched entregas for metrics:", data); // Added log
-      return data;
+      console.log("Fetched entregas for metrics:", data);
+      return data ?? [];
     },
     enabled: !!user?.id,
   });
@@ -100,13 +100,13 @@ export const EntregasMetricsCards: React.FC<EntregasMetricsCardsProps> = ({ sele
     }
   }, [entregasError, productsError, toast]);
 
-  const calculateEntregasMetrics = (entregasData: Coleta[] | undefined) => {
-    console.log("Calculating entregas metrics with entregasData:", entregasData); // Added log
-    const totalAllProducts = entregasData?.reduce((sum, entrega) => sum + getTotalQuantityOfItems(entrega.items), 0) || 0;
+  const calculateEntregasMetrics = (entregasData: typeof entregas) => {
+    console.log("Calculating entregas metrics with entregasData:", entregasData);
+    const totalAllProducts = entregasData?.reduce((sum, entrega) => sum + getTotalQuantityOfItems(entrega.items as unknown as Array<{ quantity: number }>), 0) || 0;
     
-    const pendenteProducts = entregasData?.filter(e => e.status_coleta === 'pendente').reduce((sum, entrega) => sum + getTotalQuantityOfItems(entrega.items), 0) || 0;
-    const emTransitoProducts = entregasData?.filter(e => e.status_coleta === 'agendada').reduce((sum, entrega) => sum + getTotalQuantityOfItems(entrega.items), 0) || 0;
-    const entreguesProducts = entregasData?.filter(e => e.status_coleta === 'concluida').reduce((sum, entrega) => sum + getTotalQuantityOfItems(entrega.items), 0) || 0;
+    const pendenteProducts = entregasData?.filter(e => e.status_coleta === 'pendente').reduce((sum, entrega) => sum + getTotalQuantityOfItems(entrega.items as unknown as Array<{ quantity: number }>), 0) || 0;
+    const emTransitoProducts = entregasData?.filter(e => e.status_coleta === 'agendada').reduce((sum, entrega) => sum + getTotalQuantityOfItems(entrega.items as unknown as Array<{ quantity: number }>), 0) || 0;
+    const entreguesProducts = entregasData?.filter(e => e.status_coleta === 'concluida').reduce((sum, entrega) => sum + getTotalQuantityOfItems(entrega.items as unknown as Array<{ quantity: number }>), 0) || 0;
 
     return [
       {

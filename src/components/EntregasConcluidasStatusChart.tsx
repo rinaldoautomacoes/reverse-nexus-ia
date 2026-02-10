@@ -32,7 +32,7 @@ export const EntregasConcluidasStatusChart: React.FC<EntregasConcluidasStatusCha
   const { toast } = useToast();
 
   // NEW: Fetch all products to get their descriptions
-  const { data: products, isLoading: isLoadingProducts, error: productsError } = useQuery<Product[], Error>({
+  const { data: products, isLoading: isLoadingProducts, error: productsError } = useQuery({
     queryKey: ['allProducts', user?.id],
     queryFn: async () => {
       if (!user?.id) return [];
@@ -41,7 +41,7 @@ export const EntregasConcluidasStatusChart: React.FC<EntregasConcluidasStatusCha
         .select('code, description')
         .eq('user_id', user.id);
       if (error) throw new Error(error.message);
-      return data;
+      return data ?? [];
     },
     enabled: !!user?.id,
   });
@@ -53,7 +53,7 @@ export const EntregasConcluidasStatusChart: React.FC<EntregasConcluidasStatusCha
     }
   });
 
-  const { data: entregas, isLoading: isLoadingEntregas, error: entregasError } = useQuery<Coleta[], Error>({
+  const { data: entregas, isLoading: isLoadingEntregas, error: entregasError } = useQuery({
     queryKey: ['entregasConcluidasStatusChart', user?.id, selectedYear],
     queryFn: async () => {
       if (!user?.id) return [];
@@ -68,7 +68,7 @@ export const EntregasConcluidasStatusChart: React.FC<EntregasConcluidasStatusCha
           status_coleta,
           previsao_coleta,
           items(name, quantity, description)
-        `) // Select items directly
+        `)
         .eq('user_id', user.id)
         .eq('type', 'entrega')
         .eq('status_coleta', 'concluida')
@@ -76,7 +76,7 @@ export const EntregasConcluidasStatusChart: React.FC<EntregasConcluidasStatusCha
         .lt('previsao_coleta', endDate)
         .order('created_at', { ascending: true });
       if (error) throw new Error(error.message);
-      return data || [];
+      return data ?? [];
     },
     enabled: !!user?.id,
   });
@@ -110,9 +110,9 @@ export const EntregasConcluidasStatusChart: React.FC<EntregasConcluidasStatusCha
     return `${descriptions[0]}, ${descriptions[1]} e outros`;
   };
 
-  const processEntregasData = (entregasData: Coleta[] | undefined) => {
+  const processEntregasData = (entregasData: typeof entregas) => {
     const monthlyDataMap = new Map<string, { 
-      entregues: Tables<'items'>[]; 
+      entregues: any[]; 
       total_all: number 
     }>();
     const allMonths: string[] = [];
@@ -238,7 +238,7 @@ export const EntregasConcluidasStatusChart: React.FC<EntregasConcluidasStatusCha
       <CardContent>
         <div className="space-y-6">
           <div className="h-64 relative">
-            {totalAllItems > 0 ? (
+            {totalAll > 0 ? (
               <ResponsiveContainer width="100%" height="100%">
                 <AreaChart
                   data={chartData}
@@ -292,7 +292,7 @@ export const EntregasConcluidasStatusChart: React.FC<EntregasConcluidasStatusCha
             )}
           </div>
 
-          {totalAllItems > 0 && (
+          {totalAll > 0 && (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="flex items-center gap-3 p-3 bg-secondary/10 rounded-lg">
                 <div className="w-4 h-4 rounded" style={{ backgroundColor: 'hsl(var(--success-green))' }} />

@@ -80,7 +80,7 @@ export const DataImporter: React.FC<DataImporterProps> = ({ initialTab = 'collec
 
       {step === 'review_dialog' && extractedData && (
         <ReviewImportDialog
-          activeTab={activeTab}
+          activeTab={activeTab as 'collections' | 'products' | 'clients' | 'technicians'}
           extractedData={extractedData}
           onConfirm={handleConfirmImport}
           onCancel={() => setStep('preview_table')}

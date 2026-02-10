@@ -37,7 +37,7 @@ export const CreateProfileDialog: React.FC<CreateProfileDialogProps> = ({ profil
         toast({
           title: "Supervisor Padrão Atribuído",
           description: "Nenhum supervisor foi selecionado para o técnico. O usuário atual foi atribuído como supervisor.",
-          variant: "warning",
+          variant: "destructive",
         });
       }
       // Se estiver criando um supervisor, garanta que supervisor_id seja nulo

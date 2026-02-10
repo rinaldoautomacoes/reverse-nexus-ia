@@ -54,12 +54,12 @@ export const PestControlServiceForm: React.FC<PestControlServiceFormProps> = ({ 
   const [attachments, setAttachments] = useState<FileAttachment[]>(() => {
     const initial = initialData?.attachments;
     if (Array.isArray(initial)) {
-      return initial.filter((file): file is FileAttachment => 
+      return (initial as unknown as FileAttachment[]).filter((file) => 
         file !== null && typeof file === 'object' && 
-        typeof (file as FileAttachment).size === 'number' && 
-        typeof (file as FileAttachment).name === 'string' && 
-        typeof (file as FileAttachment).url === 'string' && 
-        typeof (file as FileAttachment).type === 'string'
+        typeof file.size === 'number' && 
+        typeof file.name === 'string' && 
+        typeof file.url === 'string' && 
+        typeof file.type === 'string'
       );
     }
     return [];
@@ -75,12 +75,12 @@ export const PestControlServiceForm: React.FC<PestControlServiceFormProps> = ({ 
         setChecklistItems(Object.keys(initialData.checklist));
       }
       if (Array.isArray(initialData.attachments)) {
-        setAttachments(initialData.attachments.filter((file): file is FileAttachment => 
+        setAttachments((initialData.attachments as unknown as FileAttachment[]).filter((file) => 
           file !== null && typeof file === 'object' && 
-          typeof (file as FileAttachment).size === 'number' && 
-          typeof (file as FileAttachment).name === 'string' && 
-          typeof (file as FileAttachment).url === 'string' && 
-          typeof (file as FileAttachment).type === 'string'
+          typeof file.size === 'number' && 
+          typeof file.name === 'string' && 
+          typeof file.url === 'string' && 
+          typeof file.type === 'string'
         ));
       } else {
         setAttachments([]);
@@ -147,7 +147,7 @@ export const PestControlServiceForm: React.FC<PestControlServiceFormProps> = ({ 
       ...formData,
       pests_detected: pestsInput.split(',').map(p => p.trim()).filter(p => p.length > 0),
       checklist: finalChecklist,
-      attachments: attachments,
+      attachments: attachments as unknown as typeof formData.attachments,
     });
   };
 

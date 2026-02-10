@@ -35,7 +35,7 @@ export const OutstandingCollectionItemForm: React.FC<OutstandingCollectionItemFo
   });
 
   // Fetch all products for the current user
-  const { data: products, isLoading: isLoadingProducts, error: productsError } = useQuery<Product[], Error>({
+  const { data: products, isLoading: isLoadingProducts, error: productsError } = useQuery({
     queryKey: ['products', user?.id],
     queryFn: async () => {
       if (!user?.id) return [];
@@ -44,7 +44,7 @@ export const OutstandingCollectionItemForm: React.FC<OutstandingCollectionItemFo
         .select('code, description')
         .eq('user_id', user.id);
       if (error) throw new Error(error.message);
-      return data;
+      return data ?? [];
     },
     enabled: !!user?.id,
   });

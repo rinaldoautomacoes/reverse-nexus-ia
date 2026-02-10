@@ -37,7 +37,7 @@ export const ColetasMetricsCards: React.FC<ColetasMetricsCardsProps> = ({ select
   const { user } = useAuth();
 
   // Fetch all products to get their descriptions (still needed for generateItemDescription in other components)
-  const { data: products, isLoading: isLoadingProducts, error: productsError } = useQuery<Product[], Error>({
+  const { data: products, isLoading: isLoadingProducts, error: productsError } = useQuery({
     queryKey: ['allProducts', user?.id],
     queryFn: async () => {
       if (!user?.id) return [];
@@ -46,7 +46,7 @@ export const ColetasMetricsCards: React.FC<ColetasMetricsCardsProps> = ({ select
         .select('code, description')
         .eq('user_id', user.id);
       if (error) throw new Error(error.message);
-      return data;
+      return data ?? [];
     },
     enabled: !!user?.id,
   });
@@ -59,7 +59,7 @@ export const ColetasMetricsCards: React.FC<ColetasMetricsCardsProps> = ({ select
   });
 
   // Fetch all coletas for the selected year and type 'coleta'
-  const { data: coletas, isLoading: isLoadingColetas, error: coletasError } = useQuery<Coleta[], Error>({
+  const { data: coletas, isLoading: isLoadingColetas, error: coletasError } = useQuery({
     queryKey: ['coletasForMetrics', user?.id, selectedYear],
     queryFn: async () => {
       if (!user?.id) return [];
@@ -69,18 +69,18 @@ export const ColetasMetricsCards: React.FC<ColetasMetricsCardsProps> = ({ select
 
       const { data, error } = await supabase
         .from('coletas')
-        .select(`id, status_coleta, previsao_coleta, items(quantity)`) // Added previsao_coleta for debugging
+        .select(`id, status_coleta, previsao_coleta, items(quantity)`)
         .eq('user_id', user.id)
         .eq('type', 'coleta')
-        .gte('previsao_coleta', startDate) // Use previsao_coleta for filtering
-        .lt('previsao_coleta', endDate); // Use previsao_coleta for filtering
+        .gte('previsao_coleta', startDate)
+        .lt('previsao_coleta', endDate);
       
       if (error) {
-        console.error("Supabase query error in ColetasMetricsCards:", error.message); // Added log
+        console.error("Supabase query error in ColetasMetricsCards:", error.message);
         throw new Error(error.message);
       }
-      console.log("Fetched coletas for metrics:", data); // Added log
-      return data;
+      console.log("Fetched coletas for metrics:", data);
+      return data ?? [];
     },
     enabled: !!user?.id,
   });
@@ -102,12 +102,12 @@ export const ColetasMetricsCards: React.FC<ColetasMetricsCardsProps> = ({ select
     }
   }, [coletasError, productsError, toast]);
 
-  const calculateColetasMetrics = (coletasData: Coleta[] | undefined) => {
-    console.log("Calculating metrics with coletasData:", coletasData); // Added log
-    const totalAllProducts = coletasData?.reduce((sum, coleta) => sum + getTotalQuantityOfItems(coleta.items), 0) || 0;
-    const pendenteProducts = coletasData?.filter(c => c.status_coleta === 'pendente').reduce((sum, coleta) => sum + getTotalQuantityOfItems(coleta.items), 0) || 0;
-    const emTransitoProducts = coletasData?.filter(c => c.status_coleta === 'agendada').reduce((sum, coleta) => sum + getTotalQuantityOfItems(coleta.items), 0) || 0;
-    const coletadosProducts = coletasData?.filter(c => c.status_coleta === 'concluida').reduce((sum, coleta) => sum + getTotalQuantityOfItems(coleta.items), 0) || 0;
+  const calculateColetasMetrics = (coletasData: typeof coletas) => {
+    console.log("Calculating metrics with coletasData:", coletasData);
+    const totalAllProducts = coletasData?.reduce((sum, coleta) => sum + getTotalQuantityOfItems(coleta.items as unknown as Array<{ quantity: number }>), 0) || 0;
+    const pendenteProducts = coletasData?.filter(c => c.status_coleta === 'pendente').reduce((sum, coleta) => sum + getTotalQuantityOfItems(coleta.items as unknown as Array<{ quantity: number }>), 0) || 0;
+    const emTransitoProducts = coletasData?.filter(c => c.status_coleta === 'agendada').reduce((sum, coleta) => sum + getTotalQuantityOfItems(coleta.items as unknown as Array<{ quantity: number }>), 0) || 0;
+    const coletadosProducts = coletasData?.filter(c => c.status_coleta === 'concluida').reduce((sum, coleta) => sum + getTotalQuantityOfItems(coleta.items as unknown as Array<{ quantity: number }>), 0) || 0;
 
     return [
       {

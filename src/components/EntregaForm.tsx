@@ -97,12 +97,12 @@ export const EntregaForm: React.FC<EntregaFormProps> = ({ initialData, onSave, o
   const [attachments, setAttachments] = useState<FileAttachment[]>(() => {
     const initial = initialData?.attachments;
     if (Array.isArray(initial)) {
-      return initial.filter((file): file is FileAttachment => 
+      return (initial as unknown as FileAttachment[]).filter((file) => 
         file !== null && typeof file === 'object' && 
-        typeof (file as FileAttachment).size === 'number' && 
-        typeof (file as FileAttachment).name === 'string' && 
-        typeof (file as FileAttachment).url === 'string' && 
-        typeof (file as FileAttachment).type === 'string'
+        typeof file.size === 'number' && 
+        typeof file.name === 'string' && 
+        typeof file.url === 'string' && 
+        typeof file.type === 'string'
       );
     }
     return [];
@@ -117,12 +117,12 @@ export const EntregaForm: React.FC<EntregaFormProps> = ({ initialData, onSave, o
       setFormData(restOfEntregaData);
       setDeliveryItems(items || []);
       if (Array.isArray(initialAttachments)) {
-        setAttachments(initialAttachments.filter((file): file is FileAttachment => 
+        setAttachments((initialAttachments as unknown as FileAttachment[]).filter((file) => 
           file !== null && typeof file === 'object' && 
-          typeof (file as FileAttachment).size === 'number' && 
-          typeof (file as FileAttachment).name === 'string' && 
-          typeof (file as FileAttachment).url === 'string' && 
-          typeof (file as FileAttachment).type === 'string'
+          typeof file.size === 'number' && 
+          typeof file.name === 'string' && 
+          typeof file.url === 'string' && 
+          typeof file.type === 'string'
         ));
       } else {
         setAttachments([]);
@@ -262,7 +262,7 @@ export const EntregaForm: React.FC<EntregaFormProps> = ({ initialData, onSave, o
       cep: formData.cep_destino,
       user_id: user.id,
       modelo_aparelho: formatItemsForColetaModeloAparelho(deliveryItems), // Resumo dos itens
-      qtd_aparelhos_solicitado: getTotalQuantityOfItems(deliveryItems), // Quantidade total
+      qtd_aparelhos_solicitado: getTotalQuantityOfItems(deliveryItems as unknown as Array<{ quantity: number }>), // Quantidade total
     };
 
     console.log("EntregaForm: Submitting dataToSave:", dataToSave);

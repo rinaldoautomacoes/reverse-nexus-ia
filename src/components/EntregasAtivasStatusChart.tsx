@@ -32,7 +32,7 @@ export const EntregasAtivasStatusChart: React.FC<EntregasAtivasStatusChartProps>
   const { toast } = useToast();
 
   // NEW: Fetch all products to get their descriptions
-  const { data: products, isLoading: isLoadingProducts, error: productsError } = useQuery<Product[], Error>({
+  const { data: products, isLoading: isLoadingProducts, error: productsError } = useQuery({
     queryKey: ['allProducts', user?.id],
     queryFn: async () => {
       if (!user?.id) return [];
@@ -41,7 +41,7 @@ export const EntregasAtivasStatusChart: React.FC<EntregasAtivasStatusChartProps>
         .select('code, description')
         .eq('user_id', user.id);
       if (error) throw new Error(error.message);
-      return data;
+      return data ?? [];
     },
     enabled: !!user?.id,
   });
@@ -53,7 +53,7 @@ export const EntregasAtivasStatusChart: React.FC<EntregasAtivasStatusChartProps>
     }
   });
 
-  const { data: entregas, isLoading: isLoadingEntregas, error: entregasError } = useQuery<Coleta[], Error>({
+  const { data: entregas, isLoading: isLoadingEntregas, error: entregasError } = useQuery({
     queryKey: ['entregasAtivasStatusChart', user?.id, selectedYear],
     queryFn: async () => {
       if (!user?.id) return [];
@@ -68,18 +68,18 @@ export const EntregasAtivasStatusChart: React.FC<EntregasAtivasStatusChartProps>
           status_coleta,
           previsao_coleta,
           items(name, quantity, description)
-        `) // Select items directly
+        `)
         .eq('user_id', user.id)
         .eq('type', 'entrega')
         .gte('previsao_coleta', startDate)
         .lt('previsao_coleta', endDate)
         .order('created_at', { ascending: true });
       if (error) {
-        console.error("Supabase query error in EntregasAtivasStatusChart:", error.message); // Added log
+        console.error("Supabase query error in EntregasAtivasStatusChart:", error.message);
         throw new Error(error.message);
       }
-      console.log("Fetched entregas for status chart:", data); // Added log
-      return data || [];
+      console.log("Fetched entregas for status chart:", data);
+      return data ?? [];
     },
     enabled: !!user?.id,
   });
@@ -113,11 +113,11 @@ export const EntregasAtivasStatusChart: React.FC<EntregasAtivasStatusChartProps>
     return `${descriptions[0]}, ${descriptions[1]} e outros`;
   };
 
-  const processEntregasData = (entregasData: Coleta[] | undefined) => {
+  const processEntregasData = (entregasData: typeof entregas) => {
     const monthlyDataMap = new Map<string, { 
-      pendente: Tables<'items'>[]; 
-      em_transito: Tables<'items'>[]; 
-      entregues: Tables<'items'>[]; 
+      pendente: any[]; 
+      em_transito: any[]; 
+      entregues: any[];
       total_all: number 
     }>();
     const allMonths: string[] = [];

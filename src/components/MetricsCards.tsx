@@ -39,7 +39,7 @@ export const MetricsCards: React.FC<MetricsCardsProps> = ({ selectedYear }) => {
   const { toast } = useToast();
   const { user } = useAuth();
 
-  const { data: coletas, isLoading, error } = useQuery<Coleta[], Error>({
+  const { data: coletas, isLoading, error } = useQuery({
     queryKey: ['dashboardColetasMetrics', user?.id, selectedYear],
     queryFn: async () => {
       if (!user?.id) {
@@ -51,7 +51,7 @@ export const MetricsCards: React.FC<MetricsCardsProps> = ({ selectedYear }) => {
 
       const { data, error } = await supabase
         .from('coletas')
-        .select(`status_coleta, items(quantity)`) // Select items(quantity)
+        .select(`status_coleta, items(quantity)`)
         .eq('user_id', user.id)
         .eq('type', 'coleta')
         .gte('previsao_coleta', startDate)
@@ -60,7 +60,7 @@ export const MetricsCards: React.FC<MetricsCardsProps> = ({ selectedYear }) => {
       if (error) {
         throw new Error(error.message);
       }
-      return data;
+      return data ?? [];
     },
     enabled: !!user?.id,
   });
@@ -75,7 +75,7 @@ export const MetricsCards: React.FC<MetricsCardsProps> = ({ selectedYear }) => {
     }
   }, [error, toast]);
 
-  const calculateCollectionMetrics = (coletasData: Coleta[] | undefined) => {
+  const calculateCollectionMetrics = (coletasData: typeof coletas) => {
     const totalColetas = coletasData?.length || 0;
     const pendenteCount = coletasData?.filter(c => c.status_coleta === 'pendente').length || 0;
     const agendadaCount = coletasData?.filter(c => c.status_coleta === 'agendada').length || 0;

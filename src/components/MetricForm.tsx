@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Loader2, Gauge, TrendingUp, Palette, Zap } from "lucide-react";
+import { Loader2, Gauge, TrendingUp, Palette, Zap, Package, Truck, Clock, CheckCircle, ListChecks } from "lucide-react";
 import type { TablesInsert, TablesUpdate } from "@/integrations/supabase/types_generated";
 
 type MetricInsert = TablesInsert<'metrics'>;

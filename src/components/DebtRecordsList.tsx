@@ -85,7 +85,7 @@ export const DebtRecordsList: React.FC<DebtRecordsListProps> = ({ selectedYear }
     record.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
     record.notes?.toLowerCase().includes(searchTerm.toLowerCase()) ||
     record.status.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    (record.item_details as DebtItem[])?.some(item =>
+    (record.item_details as unknown as DebtItem[])?.some(item =>
       item.code.toLowerCase().includes(searchTerm.toLowerCase()) ||
       item.description.toLowerCase().includes(searchTerm.toLowerCase())
     )
@@ -168,11 +168,11 @@ export const DebtRecordsList: React.FC<DebtRecordsListProps> = ({ selectedYear }
                   {record.notes && (
                     <p className="text-xs text-muted-foreground mt-1">Notas: {record.notes}</p>
                   )}
-                  {(record.item_details as DebtItem[])?.length > 0 && (
+                  {(record.item_details as unknown as DebtItem[])?.length > 0 && (
                     <div className="mt-2 text-xs text-muted-foreground">
                       <p className="font-semibold text-foreground">Itens:</p>
                       <ul className="list-disc list-inside ml-2">
-                        {(record.item_details as DebtItem[]).map((item, itemIndex) => (
+                        {(record.item_details as unknown as DebtItem[]).map((item, itemIndex) => (
                           <li key={itemIndex}>
                             {item.quantity}x {item.code} - {item.description}
                           </li>

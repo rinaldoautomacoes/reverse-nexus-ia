@@ -97,12 +97,12 @@ export const ColetaForm: React.FC<ColetaFormProps> = ({ initialData, onSave, onC
   const [attachments, setAttachments] = useState<FileAttachment[]>(() => {
     const initial = initialData?.attachments;
     if (Array.isArray(initial)) {
-      return initial.filter((file): file is FileAttachment => 
+      return (initial as unknown as FileAttachment[]).filter((file) => 
         file !== null && typeof file === 'object' && 
-        typeof (file as FileAttachment).size === 'number' && 
-        typeof (file as FileAttachment).name === 'string' && 
-        typeof (file as FileAttachment).url === 'string' && 
-        typeof (file as FileAttachment).type === 'string'
+        typeof file.size === 'number' && 
+        typeof file.name === 'string' && 
+        typeof file.url === 'string' && 
+        typeof file.type === 'string'
       );
     }
     return [];
@@ -117,12 +117,12 @@ export const ColetaForm: React.FC<ColetaFormProps> = ({ initialData, onSave, onC
       setFormData(restOfColetaData);
       setCollectionItems(items || []);
       if (Array.isArray(initialAttachments)) {
-        setAttachments(initialAttachments.filter((file): file is FileAttachment => 
+        setAttachments((initialAttachments as unknown as FileAttachment[]).filter((file) => 
           file !== null && typeof file === 'object' && 
-          typeof (file as FileAttachment).size === 'number' && 
-          typeof (file as FileAttachment).name === 'string' && 
-          typeof (file as FileAttachment).url === 'string' && 
-          typeof (file as FileAttachment).type === 'string'
+          typeof file.size === 'number' && 
+          typeof file.name === 'string' && 
+          typeof file.url === 'string' && 
+          typeof file.type === 'string'
         ));
       } else {
         setAttachments([]);
@@ -261,7 +261,7 @@ export const ColetaForm: React.FC<ColetaFormProps> = ({ initialData, onSave, onC
       endereco: formData.endereco_origem,
       cep: formData.cep_origem,
       modelo_aparelho: formatItemsForColetaModeloAparelho(collectionItems), // Resumo dos itens
-      qtd_aparelhos_solicitado: getTotalQuantityOfItems(collectionItems), // Quantidade total
+      qtd_aparelhos_solicitado: getTotalQuantityOfItems(collectionItems as unknown as Array<{ quantity: number }>), // Quantidade total
     }, collectionItems, attachments);
   };
 
