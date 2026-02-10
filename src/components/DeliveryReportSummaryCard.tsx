@@ -19,19 +19,19 @@ interface DeliveryReportSummaryCardProps {
 export const DeliveryReportSummaryCard: React.FC<DeliveryReportSummaryCardProps> = ({ selectedYear }) => {
   const { user } = useAuth();
 
-  const { data: entregas, isLoading } = useQuery<Coleta[], Error>({
+  const { data: entregas, isLoading } = useQuery({
     queryKey: ['delivery-summary', user?.id, selectedYear],
     queryFn: async () => {
       const { data, error } = await supabase
         .from('coletas')
-        .select(`*, items(quantity)`) // Select items(quantity)
+        .select(`*, items(quantity)`)
         .eq('user_id', user?.id)
         .eq('type', 'entrega')
         .gte('created_at', `${selectedYear}-01-01`)
         .lte('created_at', `${selectedYear}-12-31`);
 
       if (error) throw error;
-      return data || [];
+      return data ?? [];
     },
     enabled: !!user?.id,
   });

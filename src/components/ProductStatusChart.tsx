@@ -33,7 +33,7 @@ export const ProductStatusChart: React.FC<ProductStatusChartProps> = ({ selected
   const { toast } = useToast();
 
   // NEW: Fetch all products to get their descriptions
-  const { data: products, isLoading: isLoadingProducts, error: productsError } = useQuery<Product[], Error>({
+  const { data: products, isLoading: isLoadingProducts, error: productsError } = useQuery({
     queryKey: ['allProducts', user?.id],
     queryFn: async () => {
       if (!user?.id) return [];
@@ -42,7 +42,7 @@ export const ProductStatusChart: React.FC<ProductStatusChartProps> = ({ selected
         .select('code, description')
         .eq('user_id', user.id);
       if (error) throw new Error(error.message);
-      return data;
+      return data ?? [];
     },
     enabled: !!user?.id,
   });
@@ -148,7 +148,7 @@ export const ProductStatusChart: React.FC<ProductStatusChartProps> = ({ selected
       
       if (monthlyDataMap.has(coletaMonthKey)) {
         const currentMonthData = monthlyDataMap.get(coletaMonthKey)!;
-        const totalItemsInColeta = getTotalQuantityOfItems(coleta.items);
+        const totalItemsInColeta = (coleta.items as any[])?.reduce((sum: number, item: any) => sum + (item.quantity || 0), 0) || 0;
 
         switch (coleta.status_coleta) {
           case 'pendente':

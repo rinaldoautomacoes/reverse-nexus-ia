@@ -40,7 +40,7 @@ export const DebtRecordForm: React.FC<DebtRecordFormProps> = ({ initialData, onS
   useEffect(() => {
     if (initialData) {
       setFormData(initialData);
-      setDebtItems((initialData.item_details as DebtItem[]) || []);
+      setDebtItems((initialData.item_details as unknown as DebtItem[]) || []);
     } else {
       setFormData({
         title: "",
@@ -93,7 +93,7 @@ export const DebtRecordForm: React.FC<DebtRecordFormProps> = ({ initialData, onS
 
     const itemsWithValidQuantity = debtItems.filter(item => item.code.trim() !== '' && item.quantity > 0);
 
-    onSave({ ...formData, item_details: itemsWithValidQuantity });
+    onSave({ ...formData, item_details: itemsWithValidQuantity as unknown as typeof formData.item_details });
   };
 
   return (

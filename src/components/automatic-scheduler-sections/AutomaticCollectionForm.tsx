@@ -120,16 +120,16 @@ export const AutomaticCollectionForm: React.FC<AutomaticCollectionFormProps> = (
   }, [setFormData]);
 
   const handleResponsibleUserSelect = useCallback((userProfile: Profile | null) => {
-    handleParsedDataChange("responsible_user_id", userProfile?.id || null);
+    handleParsedDataChange("responsible_user_id" as any, userProfile?.id || null);
     handleParsedDataChange("responsavel", userProfile ? `${userProfile.first_name || ''} ${userProfile.last_name || ''}`.trim() : null);
   }, [handleParsedDataChange]);
 
   const handleDriverSelect = useCallback((driver: Driver | null) => {
-    handleParsedDataChange("driver_id", driver?.id || null);
+    handleParsedDataChange("driver_id" as any, driver?.id || null);
   }, [handleParsedDataChange]);
 
   const handleTransportadoraSelect = useCallback((transportadora: Transportadora | null) => {
-    handleParsedDataChange("transportadora_id", transportadora?.id || null);
+    handleParsedDataChange("transportadora_id" as any, transportadora?.id || null);
   }, [handleParsedDataChange]);
 
   return (
@@ -211,14 +211,14 @@ export const AutomaticCollectionForm: React.FC<AutomaticCollectionFormProps> = (
 
       <ClientDetailsSection
         formData={formData}
-        handleInputChange={handleParsedDataChange}
+        handleInputChange={handleParsedDataChange as any}
         onClientSelect={handleClientSelectedInDetails}
         isPending={isFormDisabled}
       />
 
       <OriginAddressSection
         formData={formData}
-        handleInputChange={handleParsedDataChange}
+        handleInputChange={handleParsedDataChange as any}
         isFormDisabled={isFormDisabled}
         setIsGeocoding={setIsGeocoding}
         title="Origem da Coleta"
@@ -228,7 +228,7 @@ export const AutomaticCollectionForm: React.FC<AutomaticCollectionFormProps> = (
 
       <DestinationAddressSection
         formData={formData}
-        handleInputChange={handleParsedDataChange}
+        handleInputChange={handleParsedDataChange as any}
         isFormDisabled={isFormDisabled}
         setIsGeocoding={setIsGeocoding}
         title="Destino da Coleta"
@@ -238,7 +238,7 @@ export const AutomaticCollectionForm: React.FC<AutomaticCollectionFormProps> = (
 
       <DateSelectionSection
         formData={formData}
-        handleInputChange={handleParsedDataChange}
+        handleInputChange={handleParsedDataChange as any}
         isPending={isFormDisabled}
         type="coleta"
       />

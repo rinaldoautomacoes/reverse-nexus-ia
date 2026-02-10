@@ -19,19 +19,19 @@ interface CollectionReportSummaryCardProps {
 export const CollectionReportSummaryCard: React.FC<CollectionReportSummaryCardProps> = ({ selectedYear }) => {
   const { user } = useAuth();
 
-  const { data: coletas, isLoading } = useQuery<Coleta[], Error>({
+  const { data: coletas, isLoading } = useQuery({
     queryKey: ['collection-summary', user?.id, selectedYear],
     queryFn: async () => {
       const { data, error } = await supabase
         .from('coletas')
-        .select(`*, items(quantity)`) // Select items(quantity)
+        .select(`*, items(quantity)`)
         .eq('user_id', user?.id)
         .eq('type', 'coleta')
         .gte('created_at', `${selectedYear}-01-01`)
         .lte('created_at', `${selectedYear}-12-31`);
 
       if (error) throw error;
-      return data || [];
+      return data ?? [];
     },
     enabled: !!user?.id,
   });

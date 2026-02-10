@@ -32,7 +32,7 @@ export const ColetasStatusChart: React.FC<ColetasStatusChartProps> = ({ selected
   const { toast } = useToast();
 
   // NEW: Fetch all products to get their descriptions
-  const { data: products, isLoading: isLoadingProducts, error: productsError } = useQuery<Product[], Error>({
+  const { data: products, isLoading: isLoadingProducts, error: productsError } = useQuery({
     queryKey: ['allProducts', user?.id],
     queryFn: async () => {
       if (!user?.id) return [];
@@ -41,7 +41,7 @@ export const ColetasStatusChart: React.FC<ColetasStatusChartProps> = ({ selected
         .select('code, description')
         .eq('user_id', user.id);
       if (error) throw new Error(error.message);
-      return data;
+      return data ?? [];
     },
     enabled: !!user?.id,
   });
@@ -53,7 +53,7 @@ export const ColetasStatusChart: React.FC<ColetasStatusChartProps> = ({ selected
     }
   });
 
-  const { data: coletas, isLoading: isLoadingColetas, error: coletasError } = useQuery<Coleta[], Error>({
+  const { data: coletas, isLoading: isLoadingColetas, error: coletasError } = useQuery({
     queryKey: ['coletasStatusChart', user?.id, selectedYear],
     queryFn: async () => {
       if (!user?.id) return [];
@@ -68,18 +68,18 @@ export const ColetasStatusChart: React.FC<ColetasStatusChartProps> = ({ selected
           status_coleta,
           previsao_coleta,
           items(name, quantity, description)
-        `) // Select items directly
+        `)
         .eq('user_id', user.id)
         .eq('type', 'coleta')
-        .gte('previsao_coleta', startDate) // Use previsao_coleta for filtering
-        .lt('previsao_coleta', endDate) // Use previsao_coleta for filtering
+        .gte('previsao_coleta', startDate)
+        .lt('previsao_coleta', endDate)
         .order('created_at', { ascending: true });
       if (error) {
-        console.error("Supabase query error in ColetasStatusChart:", error.message); // Added log
+        console.error("Supabase query error in ColetasStatusChart:", error.message);
         throw new Error(error.message);
       }
-      console.log("Fetched coletas for status chart:", data); // Added log
-      return data || [];
+      console.log("Fetched coletas for status chart:", data);
+      return data ?? [];
     },
     enabled: !!user?.id,
   });
@@ -113,11 +113,11 @@ export const ColetasStatusChart: React.FC<ColetasStatusChartProps> = ({ selected
     return `${descriptions[0]}, ${descriptions[1]} e outros`;
   };
 
-  const processColetasData = (coletasData: Coleta[] | undefined) => {
+  const processColetasData = (coletasData: typeof coletas) => {
     const monthlyDataMap = new Map<string, { 
-      pendente: Tables<'items'>[]; 
-      em_transito: Tables<'items'>[]; 
-      concluidas: Tables<'items'>[]; 
+      pendente: any[]; 
+      em_transito: any[]; 
+      concluidas: any[]; 
       total_all: number 
     }>();
     const allMonths: string[] = [];
@@ -150,7 +150,7 @@ export const ColetasStatusChart: React.FC<ColetasStatusChartProps> = ({ selected
       const [year, month, day] = coleta.previsao_coleta.split('-').map(Number);
       const itemDate = new Date(year, month - 1, day); // month is 0-indexed
       const coletaMonthKey = format(startOfMonth(itemDate), 'MMM', { locale: ptBR });
-      const totalItemsInColeta = getTotalQuantityOfItems(coleta.items);
+      const totalItemsInColeta = getTotalQuantityOfItems(coleta.items as unknown as Array<{ quantity: number }>);
 
       if (monthlyDataMap.has(coletaMonthKey)) {
         const currentMonthData = monthlyDataMap.get(coletaMonthKey)!;

@@ -41,7 +41,7 @@ export const ProductCombobox: React.FC<ProductComboboxProps> = ({
     setInputValue(value);
   }, [value]);
 
-  const { data: products, isLoading, error } = useQuery<Product[], Error>({
+  const { data: products, isLoading, error } = useQuery({
     queryKey: ['products', user?.id],
     queryFn: async () => {
       if (!user?.id) return [];

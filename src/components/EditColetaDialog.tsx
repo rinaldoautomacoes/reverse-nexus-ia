@@ -7,7 +7,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/use-auth";
 import { Package, Edit } from "lucide-react";
 import { ColetaForm } from "./ColetaForm";
-import { ItemData } from "./coleta-form-sections/ColetaItemRow"; // Importa a interface ItemData
+import { ItemData } from "./shared-form-sections/ItemRow";
 import { formatItemsForColetaModeloAparelho, getTotalQuantityOfItems } from "@/lib/utils";
 
 interface FileAttachment {
@@ -44,14 +44,14 @@ export const EditColetaDialog: React.FC<EditColetaDialogProps> = ({ coleta, isOp
 
       // Destructure to omit 'driver' and 'transportadora' properties from the object
       // as they are relations and not direct columns on the 'coletas' table.
-      const { driver, transportadora, ...restOfColeta } = updatedColeta;
+      const { driver, transportadora, ...restOfColeta } = updatedColeta as any;
 
       // 1. Update the coleta record, deriving modelo_aparelho and qtd_aparelhos_solicitado from the items list
       const coletaToUpdate: ColetaUpdate = {
         ...restOfColeta, // Use the rest of the object without 'driver' and 'transportadora'
         modelo_aparelho: formatItemsForColetaModeloAparelho(updatedItems),
-        qtd_aparelhos_solicitado: getTotalQuantityOfItems(updatedItems),
-        attachments: updatedAttachments, // Salvar os anexos atualizados
+        qtd_aparelhos_solicitado: getTotalQuantityOfItems(updatedItems as unknown as Array<{ quantity: number }>),
+        attachments: updatedAttachments as unknown as ColetaUpdate['attachments'],
       };
 
       console.log("EditColetaDialog: Sending to Supabase update:", coletaToUpdate);
@@ -103,7 +103,7 @@ export const EditColetaDialog: React.FC<EditColetaDialogProps> = ({ coleta, isOp
             // Insert new item
             const { error: insertItemError } = await supabase
               .from('items')
-              .insert(itemData);
+              .insert(itemData as ItemInsert);
             if (insertItemError) console.error("Erro ao inserir novo item:", insertItemError.message);
           }
         }
@@ -141,7 +141,7 @@ export const EditColetaDialog: React.FC<EditColetaDialogProps> = ({ coleta, isOp
   })) || [];
 
   // Ensure attachments is an array, even if null or undefined
-  const initialAttachmentsForForm: FileAttachment[] = (coleta.attachments as FileAttachment[] || []);
+  const initialAttachmentsForForm: FileAttachment[] = (coleta.attachments as unknown as FileAttachment[] || []);
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
@@ -153,7 +153,7 @@ export const EditColetaDialog: React.FC<EditColetaDialogProps> = ({ coleta, isOp
           </DialogTitle>
         </DialogHeader>
         <ColetaForm
-          initialData={{ ...coleta, items: initialItemsForForm, attachments: initialAttachmentsForForm }} // Passa os itens e anexos para o formulário
+          initialData={{ ...coleta, items: initialItemsForForm, attachments: initialAttachmentsForForm as unknown as ColetaUpdate['attachments'] }}
           onSave={handleSave}
           onCancel={onClose}
           isPending={updateColetaMutation.isPending}

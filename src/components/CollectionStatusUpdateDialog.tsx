@@ -110,7 +110,7 @@ export const CollectionStatusUpdateDialog: React.FC<CollectionStatusUpdateDialog
           }
 
           if (remainingToDebit > 0) {
-            toast({ title: "Aviso de Débito", description: `A quantidade coletada de ${collectedItem.name} (${collectedItem.quantity}) excedeu o saldo pendente registrado. ${remainingToDebit} unidades não foram debitadas.`, variant: "warning" }); // Corrected: Use collectedItem.name
+            toast({ title: "Aviso de Débito", description: `A quantidade coletada de ${collectedItem.name} (${collectedItem.quantity}) excedeu o saldo pendente registrado. ${remainingToDebit} unidades não foram debitadas.`, variant: "destructive" });
           }
         }
         queryClient.invalidateQueries({ queryKey: ['outstandingCollectionItems', user?.id] }); // Invalida a lista de itens pendentes

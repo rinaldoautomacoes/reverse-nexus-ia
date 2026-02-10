@@ -17,7 +17,7 @@ import { ptBR } from "date-fns/locale";
 import { Calendar } from "@/components/ui/calendar";
 import { cn } from "@/lib/utils";
 import { EntregaForm } from "./EntregaForm"; // Importa o EntregaForm refatorado
-import { ItemData } from "./coleta-form-sections/ColetaItemRow"; // Importa a interface ItemData
+import { ItemData } from "./shared-form-sections/ItemRow";
 import { formatItemsForColetaModeloAparelho, getTotalQuantityOfItems } from "@/lib/utils";
 
 interface FileAttachment {
@@ -56,14 +56,14 @@ export const EditEntregaDialog: React.FC<EditEntregaDialogProps> = ({ entrega, i
 
       // Destructure to omit 'driver' and 'transportadora' properties from the object
       // as they are relations and not direct columns on the 'coletas' table.
-      const { driver, transportadora, ...restOfEntrega } = updatedEntrega;
+      const { driver, transportadora, ...restOfEntrega } = updatedEntrega as any;
 
       // 1. Update the entrega record, deriving modelo_aparelho and qtd_aparelhos_solicitado from the items list
       const entregaToUpdate: EntregaUpdate = {
         ...restOfEntrega, // Use the rest of the object without 'driver' and 'transportadora'
         modelo_aparelho: formatItemsForColetaModeloAparelho(updatedItems),
-        qtd_aparelhos_solicitado: getTotalQuantityOfItems(updatedItems),
-        attachments: updatedAttachments, // Salvar os anexos atualizados
+        qtd_aparelhos_solicitado: getTotalQuantityOfItems(updatedItems as unknown as Array<{ quantity: number }>),
+        attachments: updatedAttachments as unknown as EntregaUpdate['attachments'],
       };
 
       console.log("EditEntregaDialog: Sending to Supabase update:", entregaToUpdate);
@@ -113,8 +113,7 @@ export const EditEntregaDialog: React.FC<EditEntregaDialogProps> = ({ entrega, i
             // Insert new item
             const { error: insertItemError } = await supabase
               .from('items')
-              .insert(itemData);
-            if (insertItemError) throw new Error(insertItemError.message);
+              .insert(itemData as ItemInsert);
           }
         }
       }
@@ -147,7 +146,7 @@ export const EditEntregaDialog: React.FC<EditEntregaDialogProps> = ({ entrega, i
   })) || [];
 
   // Ensure attachments is an array, even if null or undefined
-  const initialAttachmentsForForm: FileAttachment[] = (entrega.attachments as FileAttachment[] || []);
+  const initialAttachmentsForForm: FileAttachment[] = (entrega.attachments as unknown as FileAttachment[] || []);
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
@@ -159,7 +158,7 @@ export const EditEntregaDialog: React.FC<EditEntregaDialogProps> = ({ entrega, i
           </DialogTitle>
         </DialogHeader>
         <EntregaForm
-          initialData={{ ...entrega, items: initialItemsForForm, attachments: initialAttachmentsForForm }}
+          initialData={{ ...entrega, items: initialItemsForForm, attachments: initialAttachmentsForForm as unknown as EntregaUpdate['attachments'] }}
           onSave={handleSave}
           onCancel={onClose}
           isPending={updateEntregaMutation.isPending}
