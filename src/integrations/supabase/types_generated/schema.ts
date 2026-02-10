@@ -1,6 +1,6 @@
 import type { Json } from './database';
 
--- Import modular table types
+// Import modular table types
 import type { ClientRow, ClientInsert, ClientUpdate, ClientRelationships } from './tables/clients';
 import type { ColetaRow, ColetaInsert, ColetaUpdate, ColetaRelationships } from './tables/coletas';
 import type { DriverRow, DriverInsert, DriverUpdate, DriverRelationships } from './tables/drivers';

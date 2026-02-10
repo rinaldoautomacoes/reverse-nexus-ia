@@ -182,3 +182,5 @@ export const CreateTechnicianForm: React.FC<CreateTechnicianFormProps> = ({ onSa
         </Button>
       </div>
     </form>
+  );
+};
