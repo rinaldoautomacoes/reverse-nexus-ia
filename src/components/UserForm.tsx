@@ -258,8 +258,8 @@ export const UserForm: React.FC<UserFormProps> = ({ initialData, onSave, onCance
                 id="motorcycle_model"
                 placeholder="Ex: Honda CG 160"
                 className="pl-10"
-                value={(formData as any).motorcycle_model || ''}
-                onChange={(e) => handleInputChange("motorcycle_model" as any, e.target.value)}
+                value={formData.motorcycle_model || ''}
+                onChange={(e) => handleInputChange("motorcycle_model", e.target.value)}
                 disabled={isPending}
               />
             </div>
@@ -272,8 +272,8 @@ export const UserForm: React.FC<UserFormProps> = ({ initialData, onSave, onCance
                 id="license_plate"
                 placeholder="ABC-1234"
                 className="pl-10"
-                value={(formData as any).license_plate || ''}
-                onChange={(e) => handleInputChange("license_plate" as any, e.target.value)}
+                value={formData.license_plate || ''}
+                onChange={(e) => handleInputChange("license_plate", e.target.value)}
                 disabled={isPending}
               />
             </div>
