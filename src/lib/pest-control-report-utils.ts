@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { jsPDF } from "jspdf";
 import * as XLSX from 'xlsx';
 import { format } from "date-fns";

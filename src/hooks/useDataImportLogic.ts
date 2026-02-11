@@ -93,7 +93,7 @@ export const useDataImportLogic = ({ initialTab = 'collections', onImportSuccess
           toast({
             title: 'Extração de PDF (Simulada)',
             description: 'A extração de PDF está usando dados fictícios. Para uma funcionalidade real, integre uma API de OCR.',
-            variant: 'warning',
+            variant: 'default',
             duration: 8000,
           });
           data = await parsePDF(selectedFile);
@@ -169,7 +169,7 @@ export const useDataImportLogic = ({ initialTab = 'collections', onImportSuccess
         throw new Error('Nenhum dado válido foi extraído do arquivo. Verifique se as colunas estão corretas e se há dados preenchidos.');
       }
 
-      setExtractedData(filteredData);
+      setExtractedData(filteredData as ExtractedDataType);
       setStep('preview_table');
       toast({ title: 'Dados extraídos com sucesso!', description: `Foram encontrados ${filteredData.length} registros para importação.` });
 

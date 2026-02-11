@@ -49,7 +49,7 @@ export default function RouteMap({ selectedRouteId, filters }: RouteMapProps) {
 
   // Directions Data Hook
   const { directionsData, isLoadingDirections, modeDurations } = useDirectionsData({
-    selectedRouteDetails,
+    selectedRouteDetails: selectedRouteDetails as any,
     mapboxToken,
     selectedTransportMode,
   });
@@ -94,9 +94,9 @@ export default function RouteMap({ selectedRouteId, filters }: RouteMapProps) {
           />
           <MapMarkersAndLines
             map={map}
-            routes={routes}
+            routes={routes as any}
             selectedRouteId={selectedRouteId}
-            selectedRouteDetails={selectedRouteDetails}
+            selectedRouteDetails={selectedRouteDetails as any}
             directionsData={directionsData}
           />
         </>

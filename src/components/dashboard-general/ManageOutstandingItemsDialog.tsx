@@ -95,9 +95,9 @@ export const ManageOutstandingItemsDialog: React.FC<ManageOutstandingItemsDialog
                 <OutstandingItemListItem
                   key={item.id}
                   item={item}
-                  // onEdit={handleEditItem} // Removido para corresponder à imagem
-                  // onDelete={handleDeleteItem} // Removido para corresponder à imagem
-                  // isDeleting={deleteOutstandingCollectionItemMutation.isPending} // Removido para corresponder à imagem
+                  onEdit={handleEditItem}
+                  onDelete={handleDeleteItem}
+                  isDeleting={deleteOutstandingCollectionItemMutation.isPending}
                 />
               ))}
             </div>

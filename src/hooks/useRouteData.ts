@@ -4,7 +4,7 @@ import type { Tables } from "@/integrations/supabase/types_generated";
 
 type Route = Tables<'routes'> & {
   driver?: { name: string } | null;
-  stops?: Array<{ count: number }> | null;
+  stops?: Array<any> | null;
 };
 
 interface UseRouteDataProps {

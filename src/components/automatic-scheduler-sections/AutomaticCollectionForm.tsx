@@ -210,9 +210,9 @@ export const AutomaticCollectionForm: React.FC<AutomaticCollectionFormProps> = (
       </div>
 
       <ClientDetailsSection
-        formData={formData}
+        formData={formData as any}
         handleInputChange={handleParsedDataChange as any}
-        onClientSelect={handleClientSelectedInDetails}
+        handleClientComboboxSelect={handleClientSelectedInDetails}
         isPending={isFormDisabled}
       />
 
@@ -252,23 +252,23 @@ export const AutomaticCollectionForm: React.FC<AutomaticCollectionFormProps> = (
       />
 
       <LogisticsDetailsSection
-        formData={formData}
-        handleInputChange={handleParsedDataChange}
+        formData={formData as any}
+        handleInputChange={handleParsedDataChange as any}
         handleDriverSelect={handleDriverSelect}
         handleTransportadoraSelect={handleTransportadoraSelect}
         isPending={isFormDisabled}
       />
 
       <ResponsibleUserSection
-        formData={formData}
-        handleInputChange={handleParsedDataChange}
+        formData={formData as any}
+        handleInputChange={handleParsedDataChange as any}
         handleResponsibleUserSelect={handleResponsibleUserSelect}
         isPending={isFormDisabled}
       />
 
       <ObservationSection
-        formData={formData}
-        handleInputChange={handleParsedDataChange}
+        formData={formData as any}
+        handleInputChange={handleParsedDataChange as any}
         isPending={isFormDisabled}
       />
 

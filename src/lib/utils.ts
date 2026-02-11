@@ -1,7 +1,7 @@
 import { clsx, type ClassValue } from "clsx"
 import { twMerge } from "tailwind-merge"
 import type { TablesInsert, Tables } from "@/integrations/supabase/types_generated";
-import type { ItemData } from "@/components/coleta-form-sections/ColetaItemRow"; // Import ItemData
+import type { ItemData } from "@/components/shared-form-sections/ItemRow";
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs))

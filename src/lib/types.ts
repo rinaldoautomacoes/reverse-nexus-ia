@@ -16,21 +16,24 @@ export interface ParsedCollectionData {
   cep_origem?: string | null;
   origin_lat?: number | null;
   origin_lng?: number | null;
-  origin_address_number?: string | null; // Novo campo
+  origin_address_number?: string | null;
   endereco_destino?: string | null;
   cep_destino?: string | null;
   destination_lat?: number | null;
   destination_lng?: number | null;
-  destination_address_number?: string | null; // Novo campo
-  previsao_coleta: string; // Formato 'yyyy-MM-dd'
+  destination_address_number?: string | null;
+  previsao_coleta: string;
   observacao?: string | null;
-  responsavel?: string | null; // Técnico Responsável
+  responsavel?: string | null;
   status_coleta: 'pendente' | 'agendada' | 'concluida';
   type: 'coleta' | 'entrega';
   items: ParsedItem[];
-  contrato?: string | null; // Novo campo
-  nf_glbl?: string | null; // Novo campo
-  partner_code?: string | null; // Novo campo
+  contrato?: string | null;
+  nf_glbl?: string | null;
+  partner_code?: string | null;
+  modelo_aparelho?: string | null;
+  modelo_aparelho_description?: string | null;
+  responsible_user_id?: string | null;
 }
 
 export interface ColetaImportData {

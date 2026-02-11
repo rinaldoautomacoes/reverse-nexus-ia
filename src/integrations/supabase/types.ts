@@ -808,6 +808,8 @@ export type Database = {
           first_name: string | null
           id: string | null
           last_name: string | null
+          license_plate: string | null
+          motorcycle_model: string | null
           personal_phone_number: string | null
           phone_number: string | null
           role: string | null

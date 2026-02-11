@@ -126,28 +126,28 @@ export const GeneralMetricsCards: React.FC<GeneralMetricsCardsProps> = ({ allCol
             quantity: item.quantity,
             name: item.name,
             description: item.description || 'N/A',
-            type: c.type,
+            type: c.type as 'coleta' | 'entrega',
           });
           if (c.status_coleta === 'pendente') {
             pendingItemsDetails.push({
               quantity: item.quantity,
               name: item.name,
               description: item.description || 'N/A',
-              type: c.type,
+              type: c.type as 'coleta' | 'entrega',
             });
           } else if (c.status_coleta === 'agendada') {
             inTransitItemsDetails.push({
               quantity: item.quantity,
               name: item.name,
               description: item.description || 'N/A',
-              type: c.type,
+              type: c.type as 'coleta' | 'entrega',
             });
           } else if (c.status_coleta === 'concluida') {
             completedItemsDetails.push({
               quantity: item.quantity,
               name: item.name,
               description: item.description || 'N/A',
-              type: c.type,
+              type: c.type as 'coleta' | 'entrega',
             });
           }
         }

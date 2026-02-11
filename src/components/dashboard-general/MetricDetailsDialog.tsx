@@ -89,7 +89,7 @@ export const MetricDetailsDialog: React.FC<MetricDetailsDialogProps> = ({ metric
 
   const handleExport = async (format: 'pdf' | 'csv') => {
     if (!itemsToDisplay || itemsToDisplay.length === 0) {
-      toast({ title: "Nenhum item para exportar", description: "Não há dados de itens para gerar o relatório.", variant: "warning" });
+      toast({ title: "Nenhum item para exportar", description: "Não há dados de itens para gerar o relatório.", variant: "default" });
       return;
     }
 
