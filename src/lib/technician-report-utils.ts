@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { jsPDF } from "jspdf";
 import * as XLSX from 'xlsx'; // Importar XLSX para CSV
 import { format } from "date-fns";

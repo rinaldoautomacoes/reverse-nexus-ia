@@ -20,9 +20,10 @@ import { useAuth } from "@/hooks/use-auth";
 type Client = Tables<'clients'>;
 
 interface ClientComboboxProps {
-  value: string; // O nome do cliente atualmente selecionado/digitado
-  onValueChange: (name: string) => void; // Callback para atualizar o nome do cliente no formulário
-  onClientSelect: (client: Client | null) => void; // Callback para retornar o objeto cliente completo
+  value: string;
+  onValueChange: (name: string) => void;
+  onClientSelect: (client: Client | null) => void;
+  disabled?: boolean;
 }
 
 export const ClientCombobox: React.FC<ClientComboboxProps> = ({

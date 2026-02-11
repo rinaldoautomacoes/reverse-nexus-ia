@@ -153,7 +153,7 @@ const mapRowToTechnician = (row: any): TechnicianImportData => {
     email: row['Email'] || null,
     phone_number: phoneNumber,
     personal_phone_number: personalPhoneNumber, // Incluído o novo campo
-    role: role,
+    role: role as 'admin' | 'standard',
     supervisor_id: supervisor_id,
     team_shift: teamShift,
     team_name: teamName, // Novo campo
@@ -190,7 +190,7 @@ const mapRowToSupervisor = (row: any): SupervisorImportData => {
     email: row['Email'] || null,
     phone_number: phoneNumber,
     personal_phone_number: personalPhoneNumber, // Incluído o novo campo
-    role: role,
+    role: role as 'admin' | 'standard',
     team_shift: teamShift,
     team_name: teamName, // Novo campo
     address: address,

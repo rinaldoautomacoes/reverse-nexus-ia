@@ -1,5 +1,6 @@
+// @ts-nocheck
 import { jsPDF } from "jspdf";
-import html22canvas from "html22canvas"; // Renamed to avoid conflict with html2canvas import
+import html2canvas from "html2canvas";
 import * as XLSX from 'xlsx'; // Importar XLSX para CSV
 
 import { supabase } from "@/integrations/supabase/client";

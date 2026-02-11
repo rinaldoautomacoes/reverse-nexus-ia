@@ -23,9 +23,10 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 type Profile = Tables<'profiles'>;
 
 interface ResponsibleUserComboboxProps {
-  value: string | null; // O ID do usuário atualmente selecionado
-  onValueChange: (userId: string | null) => void; // Callback para atualizar o ID do usuário no formulário
-  onUserSelect: (userProfile: Profile | null) => void; // Callback para retornar o objeto de perfil completo
+  value: string | null;
+  onValueChange: (userId: string | null) => void;
+  onUserSelect: (userProfile: Profile | null) => void;
+  disabled?: boolean;
 }
 
 export const ResponsibleUserCombobox: React.FC<ResponsibleUserComboboxProps> = ({

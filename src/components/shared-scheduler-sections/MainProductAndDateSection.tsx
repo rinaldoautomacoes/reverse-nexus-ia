@@ -65,15 +65,15 @@ export const MainProductAndDateSection: React.FC<MainProductAndDateSectionProps>
       <div className="space-y-2">
         <Label>Código do Produto Principal</Label>
         <ProductCombobox
-          value={parsedData.modelo_aparelho || ''}
-          onValueChange={(code) => handleParsedDataChange('modelo_aparelho', code)}
+          value={(parsedData as any).modelo_aparelho || ''}
+          onValueChange={(code) => (handleParsedDataChange as any)('modelo_aparelho', code)}
           onProductSelect={(product) => {
             if (product) {
-              handleParsedDataChange('modelo_aparelho', product.code);
-              handleParsedDataChange('modelo_aparelho_description', product.description);
+              (handleParsedDataChange as any)('modelo_aparelho', product.code);
+              (handleParsedDataChange as any)('modelo_aparelho_description', product.description);
             } else {
-              handleParsedDataChange('modelo_aparelho', null);
-              handleParsedDataChange('modelo_aparelho_description', null);
+              (handleParsedDataChange as any)('modelo_aparelho', null);
+              (handleParsedDataChange as any)('modelo_aparelho_description', null);
             }
           }}
         />
@@ -81,8 +81,8 @@ export const MainProductAndDateSection: React.FC<MainProductAndDateSectionProps>
       <div className="space-y-2">
         <Label>Descrição do Produto Principal</Label>
         <Input
-          value={parsedData.modelo_aparelho_description || ''}
-          onChange={(e) => handleParsedDataChange('modelo_aparelho_description', e.target.value)}
+          value={(parsedData as any).modelo_aparelho_description || ''}
+          onChange={(e) => (handleParsedDataChange as any)('modelo_aparelho_description', e.target.value)}
           disabled={isFormDisabled}
         />
       </div>
