@@ -38,7 +38,7 @@ export const ResponsibleUserCombobox: React.FC<ResponsibleUserComboboxProps> = (
   const [inputValue, setInputValue] = React.useState(""); // Estado interno para o CommandInput, exibe o nome
   const { user: currentUser } = useAuth();
 
-  const { data: profiles, isLoading, error } = useQuery<Profile[], Error>({
+  const { data: profiles, isLoading, error } = useQuery({
     queryKey: ['responsibleUsers', currentUser?.id],
     queryFn: async () => {
       if (!currentUser?.id) return [];
@@ -47,7 +47,7 @@ export const ResponsibleUserCombobox: React.FC<ResponsibleUserComboboxProps> = (
         .select('*')
         .order('first_name', { ascending: true });
       if (error) throw new Error(error.message);
-      return data;
+      return data as unknown as Profile[];
     },
     enabled: !!currentUser?.id,
   });
