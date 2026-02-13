@@ -26,17 +26,17 @@ export const CreateTechnicianReportDialog: React.FC<CreateTechnicianReportDialog
   const [selectedSupervisorId, setSelectedSupervisorId] = useState<string | 'all'>('all');
   const [reportFormat, setReportFormat] = useState<'pdf' | 'csv'>('pdf');
 
-  const { data: supervisors, isLoading: isLoadingSupervisors } = useQuery<Profile[], Error>({
+  const { data: supervisors, isLoading: isLoadingSupervisors } = useQuery({
     queryKey: ['allSupervisorsForReport', currentUser?.id],
     queryFn: async () => {
       if (!currentUser?.id) return [];
       const { data, error } = await supabase
         .from('profiles')
         .select('*')
-        .is('supervisor_id', null) // Filtra perfis que são supervisores (não têm supervisor)
+        .is('supervisor_id', null)
         .order('first_name', { ascending: true });
       if (error) throw new Error(error.message);
-      return data;
+      return data as unknown as Profile[];
     },
     enabled: !!currentUser?.id && open,
   });

@@ -41,25 +41,22 @@ export const SupervisorCombobox: React.FC<SupervisorComboboxProps> = ({
   const [inputValue, setInputValue] = React.useState("");
   const { user: currentUser } = useAuth();
 
-  const { data: profiles, isLoading, error } = useQuery<Profile[], Error>({
+  const { data: profiles, isLoading, error } = useQuery({
     queryKey: ['allProfilesForSupervisor', currentUser?.id],
     queryFn: async () => {
       if (!currentUser?.id) {
-        console.log("[SupervisorCombobox] currentUser.id is null, returning empty array.");
         return [];
       }
       const { data, error } = await supabase
         .from('profiles')
         .select('*')
-        .is('supervisor_id', null) // Corrected: Use .is() to check for NULL values
+        .is('supervisor_id', null)
         .order('first_name', { ascending: true });
       
       if (error) {
-        console.error("[SupervisorCombobox] Error fetching profiles:", error.message, error);
         throw new Error(error.message);
       }
-      console.log("[SupervisorCombobox] Raw profiles fetched (supervisor_id IS NULL):", data);
-      return data;
+      return data as unknown as Profile[];
     },
     enabled: !!currentUser?.id,
   });
